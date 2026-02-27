@@ -21,6 +21,6 @@ enum Plan: string
 
     public function trialDays(): int
     {
-        return 14;
+        return 30;
     }
 }
