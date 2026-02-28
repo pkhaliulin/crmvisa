@@ -26,11 +26,13 @@ class CaseController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        $agencyId = $request->user()->agency_id;
+
         $data = $request->validate([
-            'client_id'    => ['required', 'uuid', 'exists:clients,id'],
+            'client_id'    => ['required', 'uuid', "exists:clients,id,agency_id,{$agencyId}"],
             'country_code' => ['required', 'string', 'size:2'],
             'visa_type'    => ['required', 'string', 'max:50'],
-            'assigned_to'  => ['nullable', 'uuid', 'exists:users,id'],
+            'assigned_to'  => ['nullable', 'uuid', "exists:users,id,agency_id,{$agencyId}"],
             'priority'     => ['nullable', 'in:low,normal,high,urgent'],
             'critical_date'=> ['nullable', 'date'],
             'travel_date'  => ['nullable', 'date'],
@@ -53,8 +55,10 @@ class CaseController extends Controller
 
     public function update(Request $request, string $id): JsonResponse
     {
+        $agencyId = $request->user()->agency_id;
+
         $data = $request->validate([
-            'assigned_to'  => ['sometimes', 'nullable', 'uuid', 'exists:users,id'],
+            'assigned_to'  => ['sometimes', 'nullable', 'uuid', "exists:users,id,agency_id,{$agencyId}"],
             'priority'     => ['sometimes', 'in:low,normal,high,urgent'],
             'critical_date'=> ['sometimes', 'nullable', 'date'],
             'travel_date'  => ['sometimes', 'nullable', 'date'],
