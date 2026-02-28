@@ -5,10 +5,11 @@ namespace App\Modules\Client\Models;
 use App\Support\Abstracts\BaseModel;
 use App\Support\Traits\HasTenant;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Notifications\Notifiable;
 
 class Client extends BaseModel
 {
-    use HasTenant;
+    use HasTenant, Notifiable;
 
     protected $fillable = [
         'agency_id',

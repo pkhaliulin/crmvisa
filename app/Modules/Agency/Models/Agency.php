@@ -5,6 +5,8 @@ namespace App\Modules\Agency\Models;
 use App\Modules\Agency\Enums\Plan;
 use App\Support\Abstracts\BaseModel;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 
 class Agency extends BaseModel
@@ -32,6 +34,25 @@ class Agency extends BaseModel
         'updated_at'      => 'datetime',
         'deleted_at'      => 'datetime',
     ];
+
+    // -------------------------------------------------------------------------
+    // Relations
+    // -------------------------------------------------------------------------
+
+    public function users(): HasMany
+    {
+        return $this->hasMany(\App\Modules\User\Models\User::class);
+    }
+
+    public function ownerRelation(): HasOne
+    {
+        return $this->hasOne(\App\Modules\User\Models\User::class)->where('role', 'owner');
+    }
+
+    public function owner(): ?\App\Modules\User\Models\User
+    {
+        return $this->ownerRelation()->first();
+    }
 
     // -------------------------------------------------------------------------
     // Scopes

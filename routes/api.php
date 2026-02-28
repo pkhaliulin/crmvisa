@@ -3,6 +3,7 @@
 use App\Modules\Auth\Controllers\AuthController;
 use App\Modules\Case\Controllers\CaseController;
 use App\Modules\Client\Controllers\ClientController;
+use App\Modules\Document\Controllers\DocumentController;
 use App\Modules\User\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -31,6 +32,14 @@ Route::prefix('v1')->group(function () {
         Route::get('cases/critical',          [CaseController::class, 'critical']);
         Route::post('cases/{id}/move-stage',  [CaseController::class, 'moveStage']);
         Route::apiResource('cases', CaseController::class);
+
+        // Документы (вложены в заявку)
+        Route::prefix('cases/{caseId}/documents')->group(function () {
+            Route::get('/',           [DocumentController::class, 'index']);
+            Route::post('/',          [DocumentController::class, 'store']);
+            Route::patch('/{docId}',  [DocumentController::class, 'updateStatus']);
+            Route::delete('/{docId}', [DocumentController::class, 'destroy']);
+        });
 
     });
 
