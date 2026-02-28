@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return response()->json(['app' => 'VisaBor API', 'status' => 'ok']);
-});
+// SPA — все non-API маршруты отдают Vue приложение
+Route::get('/{any}', function () {
+    return view('app');
+})->where('any', '^(?!api).*$');
