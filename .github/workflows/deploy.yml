@@ -9,10 +9,14 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy via SSH
+      - name: Setup SSH and deploy
+        env:
+          SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H 185.76.15.44 >> ~/.ssh/known_hosts
-          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no root@185.76.15.44 '/usr/local/bin/deploy-crmvisa'
+          printf '%s' "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          echo "Key length: $(wc -c < ~/.ssh/deploy_key)"
+          echo "Key first line: $(head -1 ~/.ssh/deploy_key)"
+          ssh-keyscan -H 185.76.15.44 >> ~/.ssh/known_hosts 2>/dev/null
+          ssh -i ~/.ssh/deploy_key -v -o StrictHostKeyChecking=no root@185.76.15.44 'echo connected && /usr/local/bin/deploy-crmvisa' 2>&1
