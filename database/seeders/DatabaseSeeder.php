@@ -15,6 +15,9 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $this->call(SlaRulesSeeder::class);
+        $this->call([
+            SlaRulesSeeder::class,
+            ScoringSeeder::class,
+        ]);
     }
 }

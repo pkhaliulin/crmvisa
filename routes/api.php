@@ -4,6 +4,7 @@ use App\Modules\Auth\Controllers\AuthController;
 use App\Modules\Case\Controllers\CaseController;
 use App\Modules\Client\Controllers\ClientController;
 use App\Modules\Document\Controllers\DocumentController;
+use App\Modules\Scoring\Controllers\ScoringController;
 use App\Modules\User\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -40,6 +41,14 @@ Route::prefix('v1')->group(function () {
             Route::patch('/{docId}',  [DocumentController::class, 'updateStatus']);
             Route::delete('/{docId}', [DocumentController::class, 'destroy']);
         });
+
+        // Скоринг
+        Route::get('scoring/countries',                   [ScoringController::class, 'countries']);
+        Route::get('clients/{id}/profile',                [ScoringController::class, 'getProfile']);
+        Route::post('clients/{id}/profile',               [ScoringController::class, 'saveProfile']);
+        Route::get('clients/{id}/scoring',                [ScoringController::class, 'scores']);
+        Route::post('clients/{id}/scoring/recalculate',   [ScoringController::class, 'recalculate']);
+        Route::get('clients/{id}/scoring/{country}',      [ScoringController::class, 'scoreByCountry']);
 
     });
 
