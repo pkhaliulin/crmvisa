@@ -15,13 +15,50 @@ class CaseController extends Controller
 
     public function index(Request $request): JsonResponse
     {
+        $agencyId = $request->user()->agency_id;
+
+        $query = VisaCase::where('cases.agency_id', $agencyId)
+            ->with(['client:id,name,phone', 'assignee:id,name']);
+
+        // Фильтр по этапу
         if ($request->filled('stage')) {
-            return ApiResponse::success(
-                $this->service->byStage($request->stage)
-            );
+            $query->where('stage', $request->stage);
         }
 
-        return ApiResponse::paginated($this->service->paginate(20));
+        // Фильтр по менеджеру
+        if ($request->filled('assigned_to')) {
+            $query->where('assigned_to', $request->assigned_to);
+        }
+
+        // Фильтр по приоритету
+        if ($request->filled('priority')) {
+            $query->where('priority', $request->priority);
+        }
+
+        // Фильтр по стране
+        if ($request->filled('country_code')) {
+            $query->where('country_code', strtoupper($request->country_code));
+        }
+
+        // Поиск по имени клиента
+        if ($request->filled('q')) {
+            $query->join('clients', 'clients.id', '=', 'cases.client_id')
+                  ->where('clients.name', 'ilike', '%' . $request->q . '%')
+                  ->select('cases.*');
+        }
+
+        // Сортировка: сначала просроченные, потом горящие, остальные по дате
+        $query->orderByRaw("
+            CASE
+                WHEN critical_date < NOW() AND stage != 'result' THEN 0
+                WHEN critical_date <= NOW() + INTERVAL '5 days' AND stage != 'result' THEN 1
+                ELSE 2
+            END ASC,
+            critical_date ASC NULLS LAST,
+            cases.created_at DESC
+        ");
+
+        return ApiResponse::paginated($query->paginate(20));
     }
 
     public function store(Request $request): JsonResponse

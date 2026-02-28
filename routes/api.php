@@ -2,6 +2,7 @@
 
 use App\Modules\Auth\Controllers\AuthController;
 use App\Modules\Case\Controllers\CaseController;
+use App\Modules\Case\Controllers\DashboardController;
 use App\Modules\Client\Controllers\ClientController;
 use App\Modules\Document\Controllers\DocumentController;
 use App\Modules\Scoring\Controllers\ScoringController;
@@ -28,6 +29,11 @@ Route::prefix('v1')->group(function () {
 
         // Клиенты
         Route::apiResource('clients', ClientController::class);
+
+        // Дашборд
+        Route::get('dashboard',                        [DashboardController::class, 'index']);
+        Route::get('dashboard/overdue',                [DashboardController::class, 'overdue']);
+        Route::get('dashboard/managers/{id}/cases',    [DashboardController::class, 'managerCases']);
 
         // Заявки
         Route::get('cases/critical',          [CaseController::class, 'critical']);
