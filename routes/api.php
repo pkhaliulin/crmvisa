@@ -6,6 +6,8 @@ use App\Modules\Case\Controllers\DashboardController;
 use App\Modules\Case\Controllers\KanbanController;
 use App\Modules\Client\Controllers\ClientController;
 use App\Modules\Document\Controllers\DocumentController;
+use App\Modules\Payment\Controllers\BillingController;
+use App\Modules\Payment\Controllers\MarketplaceController;
 use App\Modules\Scoring\Controllers\ScoringController;
 use App\Modules\User\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -68,6 +70,44 @@ Route::prefix('v1')->group(function () {
         Route::post('users',         [UserController::class, 'store']);
         Route::patch('users/{id}',   [UserController::class, 'update']);
         Route::delete('users/{id}',  [UserController::class, 'destroy']);
+    });
+
+    // -------------------------------------------------------------------------
+    // Биллинг
+    // -------------------------------------------------------------------------
+
+    // Публичный список тарифов
+    Route::get('billing/plans', [BillingController::class, 'plans']);
+
+    // Подписка и платежи (авторизован + активный план)
+    Route::middleware(['auth:api', 'role:owner,superadmin', 'plan.active'])->group(function () {
+        Route::get('billing/subscription',  [BillingController::class, 'subscription']);
+        Route::get('billing/limits',        [BillingController::class, 'limits']);
+        Route::get('billing/transactions',  [BillingController::class, 'transactions']);
+        Route::post('billing/cancel',       [BillingController::class, 'cancel']);
+    });
+
+    // Суперадмин: ручная активация плана
+    Route::middleware(['auth:api', 'role:superadmin'])->group(function () {
+        Route::post('admin/billing/activate',      [BillingController::class, 'adminActivate']);
+        Route::get('admin/marketplace/stats',      [MarketplaceController::class, 'adminStats']);
+    });
+
+    // -------------------------------------------------------------------------
+    // Маркетплейс
+    // -------------------------------------------------------------------------
+
+    // Публичный (без авторизации)
+    Route::get('marketplace',             [MarketplaceController::class, 'index']);
+    Route::get('marketplace/{slug}',      [MarketplaceController::class, 'show']);
+    Route::post('marketplace/{slug}/lead', [MarketplaceController::class, 'sendLead'])->middleware('throttle:5,1');
+
+    // Агентства Pro/Enterprise: управление профилем и лидами
+    Route::middleware(['auth:api', 'role:owner,superadmin', 'plan.active'])->group(function () {
+        Route::get('agency/marketplace/profile',              [MarketplaceController::class, 'myProfile']);
+        Route::put('agency/marketplace/profile',              [MarketplaceController::class, 'updateProfile']);
+        Route::get('agency/marketplace/leads',                [MarketplaceController::class, 'leads']);
+        Route::patch('agency/marketplace/leads/{id}/status',  [MarketplaceController::class, 'updateLeadStatus']);
     });
 
 });

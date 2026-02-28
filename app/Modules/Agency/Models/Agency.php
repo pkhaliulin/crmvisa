@@ -3,6 +3,8 @@
 namespace App\Modules\Agency\Models;
 
 use App\Modules\Agency\Enums\Plan;
+use App\Modules\Payment\Models\AgencyProfile;
+use App\Modules\Payment\Models\AgencySubscription;
 use App\Support\Abstracts\BaseModel;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -45,6 +47,23 @@ class Agency extends BaseModel
     public function users(): HasMany
     {
         return $this->hasMany(\App\Modules\User\Models\User::class);
+    }
+
+    public function subscriptions(): HasMany
+    {
+        return $this->hasMany(AgencySubscription::class);
+    }
+
+    public function activeSubscription(): HasOne
+    {
+        return $this->hasOne(AgencySubscription::class)
+                    ->whereIn('status', ['active', 'trialing'])
+                    ->latestOfMany('starts_at');
+    }
+
+    public function marketplaceProfile(): HasOne
+    {
+        return $this->hasOne(AgencyProfile::class);
     }
 
     public function ownerRelation(): HasOne

@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             SlaRulesSeeder::class,
             ScoringSeeder::class,
+            BillingPlansSeeder::class,
         ]);
     }
 }
