@@ -2,6 +2,7 @@
 
 namespace App\Modules\Case\Services;
 
+use App\Modules\Agency\Models\Agency;
 use App\Modules\Case\Models\CaseStage;
 use App\Modules\Case\Models\VisaCase;
 use App\Modules\Case\Repositories\CaseRepository;
@@ -11,6 +12,7 @@ use App\Support\Abstracts\BaseService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class CaseService extends BaseService
 {
@@ -29,7 +31,28 @@ class CaseService extends BaseService
 
     public function createCase(array $data): VisaCase
     {
-        $data['stage'] = $data['stage'] ?? 'lead';
+        $user     = Auth::user();
+        $agencyId = $user->agency_id;
+
+        // Проверка лимита заявок по плану
+        $agency      = Agency::findOrFail($agencyId);
+        $activeCount = VisaCase::where('agency_id', $agencyId)
+            ->whereNotIn('stage', ['result'])
+            ->count();
+
+        if ($activeCount >= $agency->plan->maxCases()) {
+            throw ValidationException::withMessages([
+                'cases' => "Active case limit reached for your plan ({$agency->plan->maxCases()} max). Upgrade to add more.",
+            ]);
+        }
+
+        $data['agency_id'] = $agencyId;
+        $data['stage']     = $data['stage'] ?? 'lead';
+
+        // Авто-назначение: менеджер создаёт → ставит себя; owner может явно указать менеджера
+        if (empty($data['assigned_to']) && $user->role === 'manager') {
+            $data['assigned_to'] = $user->id;
+        }
 
         // Автоматический расчёт critical_date через SLA-движок
         if (empty($data['critical_date']) && isset($data['country_code'], $data['visa_type'])) {
@@ -78,12 +101,31 @@ class CaseService extends BaseService
             return $case->fresh(['client', 'assignee', 'stageHistory']);
         });
 
-        // Уведомление клиенту (если есть email)
-        if ($result->client && $result->client->email) {
-            $result->client->notify(new CaseStageChangedNotification($result, $previousStage));
+        // Уведомление клиенту — email и Telegram
+        if ($result->client) {
+            if ($result->client->email) {
+                $result->client->notify(new CaseStageChangedNotification($result, $previousStage));
+            }
+
+            if ($result->client->telegram_chat_id) {
+                $this->sendTelegramStageNotification($result, $previousStage);
+            }
         }
 
         return $result;
+    }
+
+    private function sendTelegramStageNotification(VisaCase $case, string $previousStage): void
+    {
+        try {
+            $notification = new \App\Modules\Notification\Notifications\TelegramCaseNotification(
+                $case,
+                $previousStage
+            );
+            $case->client->notify($notification);
+        } catch (\Throwable) {
+            // Не даём Telegram-ошибке сломать основной флоу
+        }
     }
 
     public function byStage(string $stage): Collection

@@ -19,10 +19,13 @@ class Agency extends BaseModel
         'country',
         'timezone',
         'logo_path',
+        'logo_url',
         'plan',
         'plan_expires_at',
         'is_active',
         'settings',
+        'telegram_bot_token',
+        'telegram_bot_username',
     ];
 
     protected $casts = [

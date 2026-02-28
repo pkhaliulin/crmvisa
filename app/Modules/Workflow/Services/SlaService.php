@@ -25,22 +25,24 @@ class SlaService
     }
 
     /**
-     * Найти все заявки, по которым SLA истекает через ≤ warning_days дней.
-     * Группирует по agency_id для батчевых уведомлений.
+     * Найти все заявки, по которым SLA истекает в течение warning_days.
+     * Загружает правила одним запросом, избегая N+1.
      */
     public function findCasesApproachingDeadline(): Collection
     {
+        // Загружаем все правила одним запросом
+        $rules = SlaRule::all()->keyBy(fn ($r) => "{$r->country_code}:{$r->visa_type}");
+
         return VisaCase::query()
             ->whereNotNull('critical_date')
             ->whereNotIn('stage', ['result'])
             ->whereHas('agency', fn ($q) => $q->where('is_active', true))
             ->with(['client', 'assignee', 'agency'])
             ->get()
-            ->filter(function (VisaCase $case) {
-                $rule = SlaRule::findRule($case->country_code, $case->visa_type);
+            ->filter(function (VisaCase $case) use ($rules) {
+                $rule        = $rules->get("{$case->country_code}:{$case->visa_type}");
                 $warningDays = $rule ? $rule->warning_days : 5;
-
-                $daysLeft = Carbon::now()->diffInDays($case->critical_date, false);
+                $daysLeft    = Carbon::now()->diffInDays($case->critical_date, false);
 
                 return $daysLeft >= 0 && $daysLeft <= $warningDays;
             });

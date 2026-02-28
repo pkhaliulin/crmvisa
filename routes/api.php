@@ -12,8 +12,8 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
 
-    // Auth — публичные
-    Route::prefix('auth')->group(function () {
+    // Auth — публичные (защита от brute-force: 10 попыток в минуту)
+    Route::prefix('auth')->middleware('throttle:10,1')->group(function () {
         Route::post('register', [AuthController::class, 'register']);
         Route::post('login',    [AuthController::class, 'login']);
     });
@@ -25,8 +25,8 @@ Route::prefix('v1')->group(function () {
         Route::get('me',       [AuthController::class, 'me']);
     });
 
-    // Защищённые роуты (JWT + роли)
-    Route::middleware(['auth:api', 'role:owner,manager,superadmin'])->group(function () {
+    // Защищённые роуты (JWT + роли + активный план)
+    Route::middleware(['auth:api', 'role:owner,manager,superadmin', 'plan.active'])->group(function () {
 
         // Клиенты
         Route::apiResource('clients', ClientController::class);
@@ -63,7 +63,7 @@ Route::prefix('v1')->group(function () {
     });
 
     // Управление пользователями агентства (только owner)
-    Route::middleware(['auth:api', 'role:owner,superadmin'])->group(function () {
+    Route::middleware(['auth:api', 'role:owner,superadmin', 'plan.active'])->group(function () {
         Route::get('users',          [UserController::class, 'index']);
         Route::post('users',         [UserController::class, 'store']);
         Route::patch('users/{id}',   [UserController::class, 'update']);

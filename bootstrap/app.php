@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\CheckAgencyPlan;
 use App\Http\Middleware\CheckRole;
 use App\Support\Helpers\ApiResponse;
 use Illuminate\Auth\AuthenticationException;
@@ -17,7 +18,8 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'role' => CheckRole::class,
+            'role'        => CheckRole::class,
+            'plan.active' => CheckAgencyPlan::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

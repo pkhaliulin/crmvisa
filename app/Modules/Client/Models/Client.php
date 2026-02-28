@@ -16,6 +16,7 @@ class Client extends BaseModel
         'name',
         'email',
         'phone',
+        'telegram_chat_id',
         'passport_number',
         'nationality',
         'date_of_birth',

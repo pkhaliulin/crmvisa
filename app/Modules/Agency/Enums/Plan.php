@@ -23,4 +23,30 @@ enum Plan: string
     {
         return 30;
     }
+
+    public function maxManagers(): int
+    {
+        return match($this) {
+            Plan::Trial, Plan::Starter => 3,
+            Plan::Pro                  => 10,
+            Plan::Enterprise           => PHP_INT_MAX,
+        };
+    }
+
+    public function maxCases(): int
+    {
+        return match($this) {
+            Plan::Trial, Plan::Starter => 50,
+            Plan::Pro                  => 200,
+            Plan::Enterprise           => PHP_INT_MAX,
+        };
+    }
+
+    public function hasMarketplace(): bool
+    {
+        return match($this) {
+            Plan::Trial, Plan::Starter => false,
+            Plan::Pro, Plan::Enterprise => true,
+        };
+    }
 }
