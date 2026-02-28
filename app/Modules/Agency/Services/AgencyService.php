@@ -13,9 +13,15 @@ use Illuminate\Validation\ValidationException;
 
 class AgencyService extends BaseService
 {
-    public function __construct(protected AgencyRepository $repository)
+    public function __construct(AgencyRepository $repository)
     {
         parent::__construct($repository);
+    }
+
+    private function agencyRepository(): AgencyRepository
+    {
+        /** @var AgencyRepository */
+        return $this->repository;
     }
 
     public function register(RegisterAgencyDTO $dto): Agency
@@ -40,7 +46,7 @@ class AgencyService extends BaseService
 
     private function ensureEmailUnique(string $email): void
     {
-        if ($this->repository->existsByEmail($email)) {
+        if ($this->agencyRepository()->existsByEmail($email)) {
             throw ValidationException::withMessages([
                 'email' => 'An agency with this email address already exists.',
             ]);
@@ -52,7 +58,7 @@ class AgencyService extends BaseService
         $slug      = $base;
         $increment = 1;
 
-        while ($this->repository->existsBySlug($slug)) {
+        while ($this->agencyRepository()->existsBySlug($slug)) {
             $slug = $base . '-' . $increment++;
         }
 
