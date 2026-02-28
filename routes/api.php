@@ -3,6 +3,7 @@
 use App\Modules\Auth\Controllers\AuthController;
 use App\Modules\Case\Controllers\CaseController;
 use App\Modules\Case\Controllers\DashboardController;
+use App\Modules\Case\Controllers\KanbanController;
 use App\Modules\Client\Controllers\ClientController;
 use App\Modules\Document\Controllers\DocumentController;
 use App\Modules\Scoring\Controllers\ScoringController;
@@ -29,6 +30,9 @@ Route::prefix('v1')->group(function () {
 
         // Клиенты
         Route::apiResource('clients', ClientController::class);
+
+        // Канбан
+        Route::get('kanban', [KanbanController::class, 'board']);
 
         // Дашборд
         Route::get('dashboard',                        [DashboardController::class, 'index']);
