@@ -25,6 +25,8 @@ class CaseService extends BaseService
 
     public function createCase(array $data): VisaCase
     {
+        $data['stage'] = $data['stage'] ?? 'lead';
+
         return DB::transaction(function () use ($data) {
             /** @var VisaCase */
             $case = $this->repository->create($data);
@@ -32,7 +34,7 @@ class CaseService extends BaseService
             CaseStage::create([
                 'case_id'    => $case->id,
                 'user_id'    => Auth::id(),
-                'stage'      => $case->stage,
+                'stage'      => $data['stage'],
                 'entered_at' => now(),
             ]);
 
