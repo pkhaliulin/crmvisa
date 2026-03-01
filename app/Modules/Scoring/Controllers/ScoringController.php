@@ -131,11 +131,7 @@ class ScoringController extends Controller
     public function recalculate(Request $request, string $clientId): JsonResponse
     {
         $client  = $this->resolveClient($request, $clientId);
-        $profile = ClientProfile::where('client_id', $client->id)->first();
-
-        if (! $profile) {
-            return ApiResponse::error('Profile not found. Save profile first.', null, 422);
-        }
+        $profile = ClientProfile::firstOrCreate(['client_id' => $client->id]);
 
         $scores = $this->engine->calculateAll($profile);
 

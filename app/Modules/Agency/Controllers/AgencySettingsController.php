@@ -13,6 +13,10 @@ class AgencySettingsController extends Controller
 {
     public function show(Request $request): JsonResponse
     {
+        if (! $request->user()->agency_id) {
+            return ApiResponse::error('No agency assigned to this account.', null, 403);
+        }
+
         $agency = Agency::with('workCountries')->findOrFail($request->user()->agency_id);
 
         return ApiResponse::success($agency);
@@ -20,6 +24,10 @@ class AgencySettingsController extends Controller
 
     public function update(Request $request): JsonResponse
     {
+        if (! $request->user()->agency_id) {
+            return ApiResponse::error('No agency assigned to this account.', null, 403);
+        }
+
         $data = $request->validate([
             'managers_see_all_cases' => ['sometimes', 'boolean'],
             'lead_assignment_mode'   => ['sometimes', 'in:manual,round_robin,by_workload,by_country'],
