@@ -1,5 +1,12 @@
 <template>
-  <div class="max-w-xl">
+  <div class="max-w-xl space-y-4">
+    <button @click="$router.back()"
+        class="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 transition-colors">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+      </svg>
+      Назад
+    </button>
     <div class="bg-white rounded-xl border border-gray-200 p-6">
       <h2 class="text-lg font-bold text-gray-900 mb-6">Новая заявка</h2>
 
