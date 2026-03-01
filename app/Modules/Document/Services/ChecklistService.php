@@ -4,9 +4,9 @@ namespace App\Modules\Document\Services;
 
 use App\Modules\Case\Models\VisaCase;
 use App\Modules\Document\Models\CaseChecklist;
+use App\Modules\Document\Models\CountryVisaRequirement;
 use App\Modules\Document\Models\Document;
 use App\Modules\Document\Models\DocumentRequirement;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -16,9 +16,66 @@ class ChecklistService
 {
     /**
      * Авто-создать чек-лист для заявки при её создании.
+     * Использует новую архитектуру: CountryVisaRequirement → DocumentTemplate.
      * Вызывается из CaseService после создания case.
      */
     public function createForCase(VisaCase $case): void
+    {
+        $visaType = $case->visa_type ?? '*';
+
+        $requirements = CountryVisaRequirement::active()
+            ->forCountry($case->country_code, $visaType)
+            ->with('template')
+            ->orderBy('display_order')
+            ->get();
+
+        // Фолбэк: старая таблица document_requirements (если новая пуста)
+        if ($requirements->isEmpty()) {
+            $this->createForCaseLegacy($case);
+            return;
+        }
+
+        $items = [];
+        foreach ($requirements as $req) {
+            $tpl = $req->template;
+            if (! $tpl || ! $tpl->is_active) {
+                continue;
+            }
+
+            $baseItem = [
+                'id'                     => (string) \Illuminate\Support\Str::uuid(),
+                'agency_id'              => $case->agency_id,
+                'case_id'                => $case->id,
+                'country_requirement_id' => $req->id,
+                'type'                   => $tpl->type,
+                'name'                   => $tpl->name,
+                'description'            => $req->notes ?? $tpl->description,
+                'is_required'            => $req->isRequired(),
+                'requirement_level'      => $req->requirement_level,
+                'metadata'               => $req->effectiveMetadata() ? json_encode($req->effectiveMetadata()) : null,
+                'document_id'            => null,
+                'is_checked'             => false,
+                'status'                 => 'pending',
+                'notes'                  => null,
+                'sort_order'             => $req->display_order,
+                'created_at'             => now(),
+                'updated_at'             => now(),
+            ];
+
+            // Repeatable-документ (метрика ребёнка): добавляем 1 слот с запасом
+            $items[] = $baseItem;
+        }
+
+        if (! empty($items)) {
+            DB::table('case_checklist')->insert($items);
+        }
+    }
+
+    /**
+     * Фолбэк: создать чек-лист из старой таблицы document_requirements.
+     * Используется пока новые сидеры не запущены.
+     */
+    private function createForCaseLegacy(VisaCase $case): void
     {
         $requirements = DocumentRequirement::forCase($case->country_code, $case->visa_type ?? '*');
 

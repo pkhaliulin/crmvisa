@@ -20,6 +20,8 @@ class DatabaseSeeder extends Seeder
             ScoringSeeder::class,
             BillingPlansSeeder::class,
             DocumentRequirementsSeeder::class,
+            DocumentTemplatesSeeder::class,
+            CountryVisaRequirementsSeeder::class,
         ]);
     }
 }

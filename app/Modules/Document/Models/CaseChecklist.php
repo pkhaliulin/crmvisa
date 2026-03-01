@@ -17,10 +17,13 @@ class CaseChecklist extends BaseModel
         'agency_id',
         'case_id',
         'requirement_id',
+        'country_requirement_id',
         'type',
         'name',
         'description',
         'is_required',
+        'requirement_level',
+        'metadata',
         'document_id',
         'is_checked',
         'status',
@@ -32,6 +35,7 @@ class CaseChecklist extends BaseModel
         'is_required' => 'boolean',
         'is_checked'  => 'boolean',
         'sort_order'  => 'integer',
+        'metadata'    => 'array',
     ];
 
     // -------------------------------------------------------------------------
@@ -46,6 +50,11 @@ class CaseChecklist extends BaseModel
     public function requirement(): BelongsTo
     {
         return $this->belongsTo(DocumentRequirement::class);
+    }
+
+    public function countryRequirement(): BelongsTo
+    {
+        return $this->belongsTo(CountryVisaRequirement::class, 'country_requirement_id');
     }
 
     // -------------------------------------------------------------------------

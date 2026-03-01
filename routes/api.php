@@ -8,7 +8,9 @@ use App\Modules\Case\Controllers\KanbanController;
 use App\Modules\Client\Controllers\ClientController;
 use App\Modules\Client\Controllers\ClientPortalController;
 use App\Modules\Document\Controllers\ChecklistController;
+use App\Modules\Document\Controllers\CountryRequirementController;
 use App\Modules\Document\Controllers\DocumentController;
+use App\Modules\Document\Controllers\DocumentTemplateController;
 use App\Modules\Payment\Controllers\BillingController;
 use App\Modules\Payment\Controllers\MarketplaceController;
 use App\Modules\Scoring\Controllers\ScoringController;
@@ -122,10 +124,23 @@ Route::prefix('v1')->group(function () {
         Route::post('billing/cancel',       [BillingController::class, 'cancel']);
     });
 
-    // Суперадмин: ручная активация плана
+    // Суперадмин: ручная активация плана + управление справочниками документов
     Route::middleware(['auth:api', 'role:superadmin'])->group(function () {
         Route::post('admin/billing/activate',      [BillingController::class, 'adminActivate']);
         Route::get('admin/marketplace/stats',      [MarketplaceController::class, 'adminStats']);
+
+        // Справочник шаблонов документов
+        Route::get('admin/document-templates',         [DocumentTemplateController::class, 'index']);
+        Route::post('admin/document-templates',        [DocumentTemplateController::class, 'store']);
+        Route::patch('admin/document-templates/{id}',  [DocumentTemplateController::class, 'update']);
+        Route::delete('admin/document-templates/{id}', [DocumentTemplateController::class, 'destroy']);
+
+        // Требования стран к документам
+        Route::get('admin/country-requirements',                [CountryRequirementController::class, 'index']);
+        Route::get('admin/country-requirements/countries',      [CountryRequirementController::class, 'countries']);
+        Route::post('admin/country-requirements',               [CountryRequirementController::class, 'store']);
+        Route::patch('admin/country-requirements/{id}',         [CountryRequirementController::class, 'update']);
+        Route::delete('admin/country-requirements/{id}',        [CountryRequirementController::class, 'destroy']);
     });
 
     // -------------------------------------------------------------------------
