@@ -3,8 +3,10 @@
 namespace App\Modules\User\Models;
 
 use App\Modules\Agency\Models\Agency;
+use App\Modules\Case\Models\VisaCase;
 use App\Support\Traits\HasUuid;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -63,6 +65,11 @@ class User extends Authenticatable implements JWTSubject
     public function agency(): BelongsTo
     {
         return $this->belongsTo(Agency::class);
+    }
+
+    public function cases(): HasMany
+    {
+        return $this->hasMany(VisaCase::class, 'assigned_to');
     }
 
     // -------------------------------------------------------------------------

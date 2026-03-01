@@ -15,10 +15,19 @@ class CaseController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $agencyId = $request->user()->agency_id;
+        $user     = $request->user();
+        $agencyId = $user->agency_id;
 
         $query = VisaCase::where('cases.agency_id', $agencyId)
             ->with(['client:id,name,phone', 'assignee:id,name']);
+
+        // Менеджеры видят только свои кейсы, если агентство не разрешило иное
+        if ($user->role === 'manager') {
+            $agency = $user->agency;
+            if (! $agency?->managers_see_all_cases) {
+                $query->where('cases.assigned_to', $user->id);
+            }
+        }
 
         // Фильтр по этапу
         if ($request->filled('stage')) {

@@ -76,6 +76,11 @@ const routes = [
                 name: 'owner.finance',
                 component: () => import('@/pages/owner/OwnerFinancePage.vue'),
             },
+            {
+                path: 'services',
+                name: 'owner.services',
+                component: () => import('@/pages/owner/OwnerServicesPage.vue'),
+            },
         ],
     },
 
@@ -131,6 +136,29 @@ const routes = [
                 path: 'users',
                 name: 'users',
                 component: () => import('@/pages/UsersPage.vue'),
+                meta: { roles: ['owner', 'superadmin'] },
+            },
+            {
+                path: 'reports',
+                name: 'reports',
+                component: () => import('@/pages/ReportsPage.vue'),
+                meta: { roles: ['owner', 'superadmin'] },
+            },
+            {
+                path: 'services',
+                name: 'services',
+                component: () => import('@/pages/AgencyServicesPage.vue'),
+                meta: { roles: ['owner', 'superadmin'] },
+            },
+            {
+                path: 'overdue',
+                name: 'overdue',
+                component: () => import('@/pages/OverdueCasesPage.vue'),
+            },
+            {
+                path: 'settings',
+                name: 'settings',
+                component: () => import('@/pages/AgencySettingsPage.vue'),
                 meta: { roles: ['owner', 'superadmin'] },
             },
         ],

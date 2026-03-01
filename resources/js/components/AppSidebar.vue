@@ -54,7 +54,8 @@ import { useAuthStore } from '@/stores/auth';
 import SidebarLink from './SidebarLink.vue';
 import {
   HomeIcon, ViewColumnsIcon, ClipboardDocumentListIcon,
-  UsersIcon, UserGroupIcon, ArrowRightOnRectangleIcon
+  UsersIcon, UserGroupIcon, ArrowRightOnRectangleIcon,
+  ChartBarIcon, BriefcaseIcon, ExclamationTriangleIcon, Cog6ToothIcon
 } from '@heroicons/vue/24/outline';
 
 defineProps({ collapsed: Boolean });
@@ -66,12 +67,25 @@ const user   = computed(() => auth.user);
 const isOwner = computed(() => auth.isOwner);
 const userInitial = computed(() => user.value?.name?.[0]?.toUpperCase() ?? 'U');
 
-const navItems = [
-  { to: { name: 'dashboard' }, icon: HomeIcon,                   label: 'Дашборд' },
-  { to: { name: 'kanban' },    icon: ViewColumnsIcon,             label: 'Канбан' },
-  { to: { name: 'cases' },     icon: ClipboardDocumentListIcon,   label: 'Заявки' },
-  { to: { name: 'clients' },   icon: UsersIcon,                   label: 'Клиенты' },
-];
+const navItems = computed(() => {
+  const items = [
+    { to: { name: 'dashboard' }, icon: HomeIcon,                   label: 'Дашборд' },
+    { to: { name: 'kanban' },    icon: ViewColumnsIcon,             label: 'Канбан' },
+    { to: { name: 'cases' },     icon: ClipboardDocumentListIcon,   label: 'Заявки' },
+    { to: { name: 'clients' },   icon: UsersIcon,                   label: 'Клиенты' },
+    { to: { name: 'overdue' },   icon: ExclamationTriangleIcon,     label: 'Просрочки' },
+  ];
+
+  if (isOwner.value) {
+    items.push(
+      { to: { name: 'reports' },   icon: ChartBarIcon,   label: 'Отчёты' },
+      { to: { name: 'services' },  icon: BriefcaseIcon,  label: 'Услуги' },
+      { to: { name: 'settings' },  icon: Cog6ToothIcon,  label: 'Настройки' },
+    );
+  }
+
+  return items;
+});
 
 async function handleLogout() {
   await auth.logout();

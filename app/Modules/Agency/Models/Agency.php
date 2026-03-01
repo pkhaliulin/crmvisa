@@ -5,6 +5,7 @@ namespace App\Modules\Agency\Models;
 use App\Modules\Agency\Enums\Plan;
 use App\Modules\Payment\Models\AgencyProfile;
 use App\Modules\Payment\Models\AgencySubscription;
+use App\Modules\Service\Models\AgencyServicePackage;
 use App\Support\Abstracts\BaseModel;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -32,19 +33,32 @@ class Agency extends BaseModel
         'settings',
         'telegram_bot_token',
         'telegram_bot_username',
+        'managers_see_all_cases',
+        'lead_assignment_mode',
+        'description',
+        'experience_years',
+        'website_url',
+        'address',
+        'city',
+        'rating',
+        'reviews_count',
     ];
 
     protected $casts = [
-        'plan'            => Plan::class,
-        'plan_expires_at' => 'datetime',
-        'blocked_at'      => 'datetime',
-        'is_active'       => 'boolean',
-        'is_verified'     => 'boolean',
-        'commission_rate' => 'float',
-        'settings'        => 'array',
-        'created_at'      => 'datetime',
-        'updated_at'      => 'datetime',
-        'deleted_at'      => 'datetime',
+        'plan'                   => Plan::class,
+        'plan_expires_at'        => 'datetime',
+        'blocked_at'             => 'datetime',
+        'is_active'              => 'boolean',
+        'is_verified'            => 'boolean',
+        'commission_rate'        => 'float',
+        'settings'               => 'array',
+        'managers_see_all_cases' => 'boolean',
+        'experience_years'       => 'integer',
+        'rating'                 => 'float',
+        'reviews_count'          => 'integer',
+        'created_at'             => 'datetime',
+        'updated_at'             => 'datetime',
+        'deleted_at'             => 'datetime',
     ];
 
     // -------------------------------------------------------------------------
@@ -81,6 +95,21 @@ class Agency extends BaseModel
     public function owner(): ?\App\Modules\User\Models\User
     {
         return $this->ownerRelation()->first();
+    }
+
+    public function workCountries(): HasMany
+    {
+        return $this->hasMany(AgencyWorkCountry::class);
+    }
+
+    public function packages(): HasMany
+    {
+        return $this->hasMany(AgencyServicePackage::class);
+    }
+
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(AgencyReview::class);
     }
 
     // -------------------------------------------------------------------------

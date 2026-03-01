@@ -19,10 +19,12 @@ class SlaRule extends Model
         'max_days',
         'warning_days',
         'is_active',
+        'stage_sla_days',
     ];
 
     protected $casts = [
-        'is_active' => 'boolean',
+        'is_active'      => 'boolean',
+        'stage_sla_days' => 'array',
     ];
 
     public static function findRule(string $countryCode, string $visaType): ?self

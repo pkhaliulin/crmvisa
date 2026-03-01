@@ -2,6 +2,7 @@
 
 namespace App\Modules\Workflow\Services;
 
+use App\Modules\Case\Models\CaseStage;
 use App\Modules\Case\Models\VisaCase;
 use App\Modules\Workflow\Models\SlaRule;
 use Illuminate\Support\Carbon;
@@ -22,6 +23,40 @@ class SlaService
         }
 
         return ($from ?? Carbon::now())->addDays($rule->max_days);
+    }
+
+    /**
+     * Установить sla_due_at для CaseStage на основе stage_sla_days из правила SLA.
+     */
+    public function applyStageSla(CaseStage $caseStage, VisaCase $case): void
+    {
+        $rule = SlaRule::findRule($case->country_code, $case->visa_type);
+
+        if (! $rule || empty($rule->stage_sla_days)) {
+            return;
+        }
+
+        $stageSla = $rule->stage_sla_days;
+        $stage    = $caseStage->stage;
+
+        if (isset($stageSla[$stage]) && $stageSla[$stage] > 0) {
+            $caseStage->update([
+                'sla_due_at' => Carbon::now()->addDays($stageSla[$stage]),
+            ]);
+        }
+    }
+
+    /**
+     * Пометить просроченные case_stages как overdue.
+     * Вызывается из scheduler или при переходе этапа.
+     */
+    public function markOverdueStages(): int
+    {
+        return CaseStage::whereNull('exited_at')
+            ->whereNotNull('sla_due_at')
+            ->where('is_overdue', false)
+            ->where('sla_due_at', '<', Carbon::now())
+            ->update(['is_overdue' => true]);
     }
 
     /**

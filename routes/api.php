@@ -1,5 +1,7 @@
 <?php
 
+use App\Modules\Agency\Controllers\AgencySettingsController;
+use App\Modules\Agency\Controllers\ReportController;
 use App\Modules\Auth\Controllers\AuthController;
 use App\Modules\Auth\Controllers\ClientAuthController;
 use App\Modules\Case\Controllers\CaseController;
@@ -17,6 +19,7 @@ use App\Modules\Document\Controllers\DocumentTemplateController;
 use App\Modules\Payment\Controllers\BillingController;
 use App\Modules\Payment\Controllers\MarketplaceController;
 use App\Modules\Scoring\Controllers\ScoringController;
+use App\Modules\Service\Controllers\ServiceCatalogController;
 use App\Modules\Owner\Controllers\OwnerController;
 use App\Modules\TelegramBot\Controllers\TelegramBotController;
 use App\Modules\User\Controllers\UserController;
@@ -91,6 +94,31 @@ Route::prefix('v1')->group(function () {
         Route::post('users',         [UserController::class, 'store']);
         Route::patch('users/{id}',   [UserController::class, 'update']);
         Route::delete('users/{id}',  [UserController::class, 'destroy']);
+
+        // Настройки агентства
+        Route::get('agency/settings',                      [AgencySettingsController::class, 'show']);
+        Route::patch('agency/settings',                    [AgencySettingsController::class, 'update']);
+        Route::get('agency/work-countries',                [AgencySettingsController::class, 'workCountries']);
+        Route::post('agency/work-countries',               [AgencySettingsController::class, 'addWorkCountry']);
+        Route::delete('agency/work-countries/{cc}',        [AgencySettingsController::class, 'removeWorkCountry']);
+
+        // Пакеты услуг агентства
+        Route::get('agency/packages',          [ServiceCatalogController::class, 'myPackages']);
+        Route::post('agency/packages',         [ServiceCatalogController::class, 'store']);
+        Route::patch('agency/packages/{id}',   [ServiceCatalogController::class, 'update']);
+        Route::delete('agency/packages/{id}',  [ServiceCatalogController::class, 'destroy']);
+
+        // Отчёты (только owner)
+        Route::get('reports/overview',         [ReportController::class, 'overview']);
+        Route::get('reports/managers',         [ReportController::class, 'managers']);
+        Route::get('reports/countries',        [ReportController::class, 'countries']);
+        Route::get('reports/overdue',          [ReportController::class, 'overdue']);
+        Route::get('reports/sla-performance',  [ReportController::class, 'slaPerformance']);
+    });
+
+    // Глобальный каталог услуг (все авторизованные)
+    Route::middleware(['auth:api', 'role:owner,manager,superadmin', 'plan.active'])->group(function () {
+        Route::get('services', [ServiceCatalogController::class, 'index']);
     });
 
     // -------------------------------------------------------------------------
@@ -201,6 +229,12 @@ Route::prefix('v1')->group(function () {
 
         // Финансы
         Route::get('transactions', [OwnerController::class, 'transactions']);
+
+        // Глобальный каталог услуг (только superadmin)
+        Route::get('services',             [ServiceCatalogController::class, 'index']);
+        Route::post('services',            [ServiceCatalogController::class, 'storeGlobal']);
+        Route::patch('services/{id}',      [ServiceCatalogController::class, 'updateGlobal']);
+        Route::delete('services/{id}',     [ServiceCatalogController::class, 'destroyGlobal']);
     });
 
     // -------------------------------------------------------------------------

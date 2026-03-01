@@ -93,13 +93,16 @@ class CaseService extends BaseService
                 ->update(['exited_at' => now()]);
 
             // Открываем новый этап
-            CaseStage::create([
+            $newCaseStage = CaseStage::create([
                 'case_id'    => $case->id,
                 'user_id'    => Auth::id(),
                 'stage'      => $newStage,
                 'entered_at' => now(),
                 'notes'      => $notes,
             ]);
+
+            // Устанавливаем SLA дедлайн для нового этапа
+            $this->slaService->applyStageSla($newCaseStage, $case);
 
             $case->update(['stage' => $newStage]);
 

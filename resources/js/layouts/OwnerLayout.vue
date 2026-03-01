@@ -98,6 +98,7 @@ const navGroups = [
         items: [
             { to: '/crm/countries',  icon: '🌍', label: 'Страны и веса' },
             { to: '/crm/documents',  icon: '📄', label: 'Документы' },
+            { to: '/crm/services',   icon: '🛠', label: 'Каталог услуг' },
         ],
     },
     {
@@ -115,6 +116,7 @@ const routeTitles = {
     '/crm/leads':      'Лиды',
     '/crm/countries':  'Страны и веса скоринга',
     '/crm/documents':  'Справочник документов',
+    '/crm/services':   'Каталог услуг',
     '/crm/finance':    'Финансовые транзакции',
 };
 
