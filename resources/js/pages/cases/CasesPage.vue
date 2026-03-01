@@ -158,8 +158,8 @@ async function fetchCases() {
     if (filters.priority) params.priority = filters.priority;
     params.page = filters.page;
     const { data } = await casesApi.list(params);
-    cases.value = data.data.data;
-    meta.value  = data.data.meta;
+    cases.value = data.data ?? [];
+    meta.value  = data.meta ?? null;
   } finally {
     loading.value = false;
   }
