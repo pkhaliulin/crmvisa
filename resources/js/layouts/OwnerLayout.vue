@@ -6,12 +6,11 @@
       <!-- Логотип -->
       <div class="px-5 py-5 border-b border-white/10">
         <div class="flex items-center gap-2">
-          <svg width="22" height="22" viewBox="0 0 28 28" fill="none">
-            <path d="M2 8L10 20L14 14L18 20L26 8" stroke="#1BA97F" stroke-width="3.5"
-                  stroke-linecap="round" stroke-linejoin="round"/>
+          <svg width="24" height="24" viewBox="0 0 26 26" fill="none" class="shrink-0">
+            <path d="M2 5L10 21L13 14L16 21L24 5" stroke="#1BA97F" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
           <div>
-            <div class="font-bold text-sm leading-none">VisaBor</div>
+            <div class="font-bold text-sm leading-none text-white">VisaBor</div>
             <div class="text-[10px] text-white/40 mt-0.5 uppercase tracking-wider">Owner Panel</div>
           </div>
         </div>

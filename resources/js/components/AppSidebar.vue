@@ -6,11 +6,13 @@
     ]"
   >
     <!-- Logo -->
-    <div class="flex items-center gap-3 px-4 h-16 border-b border-gray-700/50">
-      <div class="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center shrink-0">
-        <span class="font-bold text-sm">V</span>
-      </div>
-      <span v-if="!collapsed" class="font-semibold text-sm truncate">VisaBor CRM</span>
+    <div class="flex items-center px-4 h-16 border-b border-gray-700/50">
+      <!-- Иконка — всегда видна -->
+      <svg width="26" height="26" viewBox="0 0 26 26" fill="none" class="shrink-0">
+        <path d="M2 5L10 21L13 14L16 21L24 5" stroke="#1BA97F" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <!-- Текст — только в развёрнутом виде -->
+      <span v-if="!collapsed" class="ml-2 font-bold text-sm text-white truncate">VisaBor</span>
     </div>
 
     <!-- Navigation -->

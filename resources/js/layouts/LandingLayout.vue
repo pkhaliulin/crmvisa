@@ -4,14 +4,10 @@
         <header class="fixed top-0 inset-x-0 z-50 bg-white/95 backdrop-blur border-b border-gray-100">
             <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
                 <!-- Логотип -->
-                <a href="/" class="flex items-center gap-1.5 select-none shrink-0">
-                    <svg width="26" height="26" viewBox="0 0 28 28" fill="none">
-                        <path d="M2 8L10 20L14 14L18 20L26 8" stroke="#1BA97F" stroke-width="3.5"
-                              stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                    <span class="text-xl font-bold tracking-tight text-[#0A1F44]">
-                        Visa<span class="font-light text-[#1BA97F]">Bor</span>
-                    </span>
+                <a href="/" class="flex items-center select-none shrink-0">
+                    <img src="/images/logo.png"
+                         srcset="/images/logo@1x.png 1x, /images/logo@2x.png 2x"
+                         alt="VisaBor" class="h-8 w-auto">
                 </a>
 
                 <!-- Десктоп навигация (скрываем если залогинен) -->

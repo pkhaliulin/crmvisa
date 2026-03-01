@@ -3,11 +3,10 @@
 
         <!-- Header -->
         <header class="fixed top-0 inset-x-0 z-50 h-14 bg-white border-b border-gray-100 flex items-center gap-3 px-4 sm:px-6">
-            <a href="/" class="flex items-center gap-2 shrink-0">
-                <svg width="22" height="22" viewBox="0 0 28 28" fill="none">
-                    <path d="M2 8L10 20L14 14L18 20L26 8" stroke="#1BA97F" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                <span class="text-base font-bold text-[#0A1F44] hidden sm:block">Visa<span class="font-light text-[#1BA97F]">Bor</span></span>
+            <a href="/" class="flex items-center shrink-0">
+                <img src="/images/logo.png"
+                     srcset="/images/logo@1x.png 1x, /images/logo@2x.png 2x"
+                     alt="VisaBor" class="h-7 w-auto">
             </a>
 
             <!-- Mobile page title -->
