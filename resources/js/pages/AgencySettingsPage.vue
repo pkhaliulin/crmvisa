@@ -156,11 +156,14 @@ onMounted(async () => {
 
     // Страны из API (portal_countries), или фолбэк на встроенный список
     if (countriesRes?.data?.data?.length) {
-      allCountries.value = countriesRes.data.data.map(c => ({
-        code: c.code,
-        name: countryName(c.code) || c.name || c.code,
-        flag: codeToFlag(c.code),
-      })).sort((a, b) => a.name.localeCompare(b.name, 'ru'));
+      allCountries.value = countriesRes.data.data.map(c => {
+        const cc = c.country_code ?? c.code;
+        return {
+          code: cc,
+          name: countryName(cc) || c.name || cc,
+          flag: codeToFlag(cc),
+        };
+      }).sort((a, b) => a.name.localeCompare(b.name, 'ru'));
     } else {
       // Фолбэк: популярные направления
       const codes = ['AT','AE','BE','BG','CA','CH','CN','CY','CZ','DE','DK',
