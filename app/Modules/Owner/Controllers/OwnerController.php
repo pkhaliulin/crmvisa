@@ -250,18 +250,28 @@ class OwnerController extends Controller
     public function countryUpdate(Request $request, string $code): JsonResponse
     {
         $data = $request->validate([
-            'name'                    => 'sometimes|string|max:100',
-            'flag_emoji'              => 'sometimes|string|max:10',
-            'is_active'               => 'sometimes|boolean',
-            'weight_finance'          => 'sometimes|numeric|min:0|max:1',
-            'weight_ties'             => 'sometimes|numeric|min:0|max:1',
-            'weight_travel'           => 'sometimes|numeric|min:0|max:1',
-            'weight_profile'          => 'sometimes|numeric|min:0|max:1',
-            'min_monthly_income_usd'  => 'sometimes|integer|min:0',
-            'min_score'               => 'sometimes|integer|min:0|max:100',
-            'sort_order'              => 'sometimes|integer|min:0',
-            'visa_types'              => 'sometimes|array',
-            'visa_types.*'            => 'string|max:50',
+            'name'                       => 'sometimes|string|max:100',
+            'flag_emoji'                 => 'sometimes|string|max:10',
+            'is_active'                  => 'sometimes|boolean',
+            'weight_finance'             => 'sometimes|numeric|min:0|max:1',
+            'weight_ties'                => 'sometimes|numeric|min:0|max:1',
+            'weight_travel'              => 'sometimes|numeric|min:0|max:1',
+            'weight_profile'             => 'sometimes|numeric|min:0|max:1',
+            'min_monthly_income_usd'     => 'sometimes|integer|min:0',
+            'min_score'                  => 'sometimes|integer|min:0|max:100',
+            'sort_order'                 => 'sometimes|integer|min:0',
+            'visa_types'                 => 'sometimes|array',
+            'visa_types.*'               => 'string|max:50',
+            // Посольство
+            'embassy_website'            => 'sometimes|nullable|url|max:500',
+            'appointment_url'            => 'sometimes|nullable|url|max:500',
+            'embassy_description'        => 'sometimes|nullable|string|max:5000',
+            'embassy_rules'              => 'sometimes|nullable|string|max:5000',
+            // Сроки обработки
+            'processing_days_standard'   => 'sometimes|nullable|integer|min:0',
+            'processing_days_expedited'  => 'sometimes|nullable|integer|min:0',
+            'appointment_wait_days'      => 'sometimes|nullable|integer|min:0',
+            'buffer_days_recommended'    => 'sometimes|nullable|integer|min:0',
         ]);
 
         if (isset($data['visa_types'])) {

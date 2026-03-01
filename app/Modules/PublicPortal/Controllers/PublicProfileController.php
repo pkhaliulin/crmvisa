@@ -177,6 +177,50 @@ class PublicProfileController extends Controller
     }
 
     /**
+     * POST /public/me/cases/{caseId}/checklist/{itemId}/upload
+     * Загрузить документ по пункту чек-листа.
+     */
+    public function uploadChecklistItem(Request $request, string $caseId, string $itemId): JsonResponse
+    {
+        $publicUser = $request->get('_public_user');
+
+        $request->validate([
+            'file' => 'required|file|max:20480|mimes:pdf,jpg,jpeg,png,doc,docx',
+        ]);
+
+        // Проверяем что кейс принадлежит пользователю
+        $case = VisaCase::whereHas('client', fn ($q) => $q->where('phone', $publicUser->phone))
+            ->findOrFail($caseId);
+
+        $item = CaseChecklist::where('case_id', $case->id)->findOrFail($itemId);
+
+        if (in_array($item->status, ['approved'])) {
+            return ApiResponse::error('Документ уже одобрен, замена невозможна.', null, 422);
+        }
+
+        $path = $request->file('file')->store("case-docs/{$case->id}", 'public');
+
+        // Создаём запись документа
+        $doc = \App\Modules\Document\Models\Document::create([
+            'agency_id'    => $case->agency_id,
+            'case_id'      => $case->id,
+            'original_name'=> $request->file('file')->getClientOriginalName(),
+            'file_path'    => $path,
+            'mime_type'    => $request->file('file')->getMimeType(),
+            'size'         => $request->file('file')->getSize(),
+            'type'         => 'client_upload',
+            'status'       => 'pending',
+        ]);
+
+        $item->update([
+            'document_id' => $doc->id,
+            'status'      => 'uploaded',
+        ]);
+
+        return ApiResponse::success(['status' => 'uploaded'], 'Документ загружен и отправлен на проверку');
+    }
+
+    /**
      * POST /public/me/passport
      * Загрузить фото паспорта для OCR (заглушка — реальный OCR через Queue).
      */

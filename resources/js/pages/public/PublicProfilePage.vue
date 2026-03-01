@@ -290,7 +290,7 @@ const wizardAnswers = reactive({});
 
 const form = reactive({
     name:               publicAuth.user?.name ?? '',
-    dob:                publicAuth.user?.dob ?? '',
+    dob:                publicAuth.user?.dob?.slice(0, 10) ?? '',
     citizenship:        publicAuth.user?.citizenship ?? '',
     gender:             publicAuth.user?.gender ?? '',
     passport_number:    publicAuth.user?.passport_number ?? '',
@@ -450,7 +450,7 @@ onMounted(async () => {
         Object.keys(form).forEach(key => {
             const val = publicAuth.user?.[key];
             if (val !== undefined && val !== null && val !== '') {
-                form[key] = key === 'passport_expires_at' ? val?.slice(0, 10) ?? '' : val;
+                form[key] = (key === 'passport_expires_at' || key === 'dob') ? val?.slice(0, 10) ?? '' : val;
             }
         });
         ocrStatus.value = publicAuth.user?.ocr_status ?? null;

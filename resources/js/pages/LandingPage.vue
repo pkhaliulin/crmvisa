@@ -287,31 +287,57 @@
         </section>
 
         <!-- ================================================================
-             АГЕНТСТВА
+             АГЕНТСТВА НА КАРТЕ
         ================================================================ -->
-        <section id="agencies" class="py-16 sm:py-24 px-4 sm:px-6 bg-[#0A1F44]">
-            <div class="max-w-5xl mx-auto text-center">
-                <h2 class="text-2xl sm:text-3xl font-bold text-white mb-3 sm:mb-4">
-                    Проверенные агентства
-                </h2>
-                <p class="text-white/60 text-base sm:text-lg mb-8 sm:mb-12">
-                    После скоринга вас соединят с агентством,
-                    специализирующимся на вашей стране
-                </p>
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-8 sm:mb-10">
-                    <div v-for="b in agencyBenefits" :key="b.title"
-                        class="p-5 sm:p-6 bg-white/5 rounded-2xl border border-white/10 text-left">
-                        <div class="text-2xl mb-3">{{ b.icon }}</div>
-                        <div class="font-bold text-white mb-1 text-sm sm:text-base">{{ b.title }}</div>
-                        <div class="text-white/50 text-xs sm:text-sm">{{ b.desc }}</div>
+        <section id="agencies" class="py-16 sm:py-20 px-4 sm:px-6 bg-gray-50">
+            <div class="max-w-6xl mx-auto">
+                <div class="text-center mb-10">
+                    <h2 class="text-2xl sm:text-3xl font-bold text-[#0A1F44] mb-3">Агентства на карте</h2>
+                    <p class="text-gray-500">Найдите ближайшее визовое агентство в вашем городе</p>
+                </div>
+
+                <!-- Карточки агентств -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+                    <div v-for="ag in mapAgencies" :key="ag.name"
+                        class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5
+                               hover:border-[#1BA97F]/40 hover:shadow-md transition-all">
+                        <div class="flex items-start gap-3 mb-3">
+                            <div class="w-10 h-10 rounded-xl bg-[#0A1F44]/5 flex items-center justify-center shrink-0">
+                                <svg class="w-5 h-5 text-[#0A1F44]" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="font-bold text-[#0A1F44] text-sm leading-tight">{{ ag.name }}</div>
+                                <div class="text-xs text-gray-400 mt-0.5">{{ ag.city }}</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                            <span v-for="country in ag.countries" :key="country"
+                                class="text-[10px] bg-[#1BA97F]/10 text-[#1BA97F] font-medium px-2 py-0.5 rounded-full">
+                                {{ country }}
+                            </span>
+                        </div>
+                        <button @click="showAuth = true"
+                            class="mt-4 w-full text-center text-xs font-semibold text-[#1BA97F]
+                                   hover:text-[#17956f] transition-colors py-1">
+                            Подать заявку
+                        </button>
                     </div>
                 </div>
-                <button @click="showAuth = true"
-                    class="w-full sm:w-auto px-8 py-4 bg-[#1BA97F] text-white font-semibold
-                           rounded-xl text-base sm:text-lg hover:bg-[#17956f] transition-colors
-                           active:scale-95">
-                    Найти агентство
-                </button>
+
+                <!-- Карта Leaflet -->
+                <div id="map" class="w-full h-80 sm:h-96 rounded-2xl overflow-hidden shadow-sm border border-gray-100"></div>
+
+                <div class="text-center mt-8">
+                    <button @click="showAuth = true"
+                        class="w-full sm:w-auto px-8 py-4 bg-[#0A1F44] text-white font-semibold
+                               rounded-xl text-base sm:text-lg hover:bg-[#0d2a5e] transition-colors
+                               active:scale-95">
+                        Найти агентство
+                    </button>
+                </div>
             </div>
         </section>
 
@@ -341,6 +367,39 @@ const countries  = ref([]);
 const selectedCountry = ref(null);
 const mockScore  = ref(0);
 
+const mapAgencies = [
+    { name: 'Silk Road Visa', city: 'Ташкент', lat: 41.2995, lng: 69.2401, countries: ['Шенген', 'США', 'Великобритания'] },
+    { name: 'Euro Visa Pro',  city: 'Самарканд', lat: 39.6270, lng: 66.9750, countries: ['Германия', 'Франция', 'Италия'] },
+    { name: 'Asia Passport',  city: 'Бухара', lat: 39.7747, lng: 64.4286, countries: ['ОАЭ', 'Турция', 'Китай'] },
+];
+
+async function initMap() {
+    if (typeof window === 'undefined') return;
+    // Inject Leaflet CSS
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+    document.head.appendChild(link);
+    // Load Leaflet JS
+    await new Promise(resolve => {
+        const script = document.createElement('script');
+        script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+        script.onload = resolve;
+        document.head.appendChild(script);
+    });
+    const L = window.L;
+    if (!L) return;
+    const map = L.map('map').setView([40.5, 65.5], 6);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    }).addTo(map);
+    mapAgencies.forEach(a => {
+        L.marker([a.lat, a.lng])
+            .addTo(map)
+            .bindPopup(`<b>${a.name}</b><br>${a.city}<br><small>${a.countries.join(', ')}</small>`);
+    });
+}
+
 onMounted(async () => {
     try {
         const { data } = await publicPortalApi.countries();
@@ -349,6 +408,7 @@ onMounted(async () => {
         loading.value = false;
     }
     setTimeout(() => { mockScore.value = 72; }, 600);
+    initMap();
 });
 
 const steps = [

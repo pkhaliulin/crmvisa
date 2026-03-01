@@ -43,13 +43,6 @@
           </div>
         </div>
 
-        <AppInput
-          v-model="form.address"
-          label="Адрес"
-          type="text"
-          placeholder="Ул. Амира Тимура, 1"
-          :maxlength="200"
-        />
       </section>
 
       <!-- Команда -->
@@ -108,6 +101,50 @@
         </p>
       </section>
 
+      <!-- Контакты и местоположение -->
+      <section class="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
+        <h2 class="font-semibold text-gray-700 text-sm uppercase tracking-wide">Контакты и местоположение</h2>
+
+        <div class="grid grid-cols-2 gap-4">
+          <AppInput
+            v-model="form.phone"
+            label="Телефон"
+            type="tel"
+            placeholder="+998 90 123-45-67"
+            :maxlength="30"
+          />
+          <AppInput
+            v-model="form.email"
+            label="Email агентства"
+            type="email"
+            placeholder="agency@example.com"
+            :maxlength="150"
+          />
+        </div>
+
+        <AppInput
+          v-model="form.address"
+          label="Адрес офиса"
+          type="text"
+          placeholder="Ул. Амира Тимура, 1, Ташкент"
+          :maxlength="200"
+        />
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Широта (Latitude)</label>
+            <input v-model="form.latitude" type="text" placeholder="41.2995"
+              class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Долгота (Longitude)</label>
+            <input v-model="form.longitude" type="text" placeholder="69.2401"
+              class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors" />
+          </div>
+        </div>
+        <p class="text-xs text-gray-400">Координаты используются для отображения агентства на карте в маркетплейсе</p>
+      </section>
+
       <div class="flex items-center justify-between">
         <div>
           <p v-if="successMsg" class="text-sm text-green-600 font-medium">{{ successMsg }}</p>
@@ -142,6 +179,10 @@ const form = ref({
   address: '',
   managers_see_all_cases: false,
   lead_assignment_mode: 'manual',
+  phone: '',
+  email: '',
+  latitude: '',
+  longitude: '',
 });
 
 const selectedCountries = ref([]);

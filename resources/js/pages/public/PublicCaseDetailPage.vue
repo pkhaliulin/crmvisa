@@ -1,6 +1,20 @@
 <template>
     <div class="max-w-2xl mx-auto space-y-4">
 
+        <!-- Toast уведомление о загрузке -->
+        <transition name="fade">
+            <div v-if="uploadToast"
+                class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50
+                       bg-[#1BA97F] text-white text-sm font-semibold
+                       px-5 py-3 rounded-2xl shadow-lg shadow-[#1BA97F]/30
+                       flex items-center gap-2 pointer-events-none">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                </svg>
+                {{ uploadToast }}
+            </div>
+        </transition>
+
         <!-- Назад -->
         <button @click="router.push({ name: 'me.cases' })"
             class="flex items-center gap-1.5 text-sm text-gray-400 hover:text-[#0A1F44] transition-colors">
@@ -149,6 +163,24 @@
                                 }">
                                 {{ statusLabel(item.status, item.is_required) }}
                             </div>
+
+                            <!-- Кнопка загрузки файла (не показываем для одобренных) -->
+                            <label v-if="item.status !== 'approved'"
+                                class="inline-flex items-center gap-1.5 text-xs text-[#1BA97F] font-medium
+                                       cursor-pointer hover:text-[#169B72] mt-1.5 select-none"
+                                :class="{ 'opacity-50 pointer-events-none': uploading[item.id] }">
+                                <svg v-if="!uploading[item.id]" class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                                </svg>
+                                <svg v-else class="w-3.5 h-3.5 shrink-0 animate-spin" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                                </svg>
+                                <span>{{ uploading[item.id] ? 'Загрузка...' : (item.status === 'uploaded' ? 'Заменить файл' : 'Загрузить') }}</span>
+                                <input type="file" class="hidden"
+                                    accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                                    @change="(e) => uploadDoc(item.id, e)"/>
+                            </label>
                         </div>
                     </div>
                 </div>
@@ -346,8 +378,31 @@ import { codeToFlag } from '@/utils/countries';
 const route  = useRoute();
 const router = useRouter();
 
-const loading  = ref(true);
-const caseData = ref(null);
+const loading     = ref(true);
+const caseData    = ref(null);
+const uploading   = ref({});
+const uploadToast = ref('');
+
+async function uploadDoc(itemId, event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    uploading.value[itemId] = true;
+    try {
+        const fd = new FormData();
+        fd.append('file', file);
+        await publicPortalApi.uploadChecklistItem(route.params.id, itemId, fd);
+        // Обновляем статус локально
+        const item = caseData.value?.checklist?.find(i => i.id === itemId);
+        if (item) item.status = 'uploaded';
+        uploadToast.value = 'Документ загружен и отправлен на проверку';
+        setTimeout(() => { uploadToast.value = ''; }, 3000);
+    } catch (e) {
+        alert(e?.response?.data?.message ?? 'Ошибка загрузки файла');
+    } finally {
+        uploading.value[itemId] = false;
+        event.target.value = '';
+    }
+}
 
 const STAGES = [
     { key: 'lead' }, { key: 'qualification' }, { key: 'documents' },
@@ -422,3 +477,8 @@ onMounted(async () => {
     }
 });
 </script>
+
+<style scoped>
+.fade-enter-active, .fade-leave-active { transition: opacity 0.25s, transform 0.25s; }
+.fade-enter-from, .fade-leave-to { opacity: 0; transform: translateY(8px); }
+</style>

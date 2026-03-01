@@ -116,7 +116,7 @@
 
         <!-- Модалка редактирования страны -->
         <div v-if="editingCountry" class="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-            <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
+            <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
                 <h3 class="font-bold text-[#0A1F44] text-lg mb-4">
                     {{ editingCountry.flag_emoji }} {{ editingCountry.name }}
                 </h3>
@@ -156,6 +156,69 @@
                         <label class="text-xs text-gray-500 mb-1 block">Минимальный порог скоринга (%)</label>
                         <input v-model.number="editForm.min_score" type="number" min="0" max="100"
                             class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]"/>
+                    </div>
+                </div>
+
+                <!-- Раздел: Информация о посольстве -->
+                <div class="mt-5 pt-5 border-t border-gray-100">
+                    <h4 class="text-sm font-semibold text-[#0A1F44] mb-3">Информация о посольстве</h4>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="text-xs text-gray-500 mb-1 block">Сайт посольства / визового центра</label>
+                            <input v-model="editForm.embassy_website" type="url" placeholder="https://"
+                                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]"/>
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-500 mb-1 block">Ссылка для записи на приём</label>
+                            <input v-model="editForm.appointment_url" type="url" placeholder="https://"
+                                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]"/>
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-500 mb-1 block">Описание: требования, особенности</label>
+                            <textarea v-model="editForm.embassy_description" rows="3" placeholder="Опишите требования посольства..."
+                                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F] resize-none"></textarea>
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-500 mb-1 block">Правила подачи документов</label>
+                            <textarea v-model="editForm.embassy_rules" rows="3" placeholder="Укажите правила подачи..."
+                                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F] resize-none"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Раздел: Сроки обработки -->
+                <div class="mt-5 pt-5 border-t border-gray-100">
+                    <h4 class="text-sm font-semibold text-[#0A1F44] mb-3">Сроки обработки (дни)</h4>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="text-xs text-gray-500 mb-1 block">Стандартный срок рассмотрения</label>
+                            <input v-model.number="editForm.processing_days_standard" type="number" min="0" placeholder="15"
+                                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]"/>
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-500 mb-1 block">Ускоренный срок</label>
+                            <input v-model.number="editForm.processing_days_expedited" type="number" min="0" placeholder="7"
+                                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]"/>
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-500 mb-1 block">Среднее время ожидания записи</label>
+                            <input v-model.number="editForm.appointment_wait_days" type="number" min="0" placeholder="10"
+                                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]"/>
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-500 mb-1 block">Рекомендуемый буфер (запас дней)</label>
+                            <input v-model.number="editForm.buffer_days_recommended" type="number" min="0" placeholder="5"
+                                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]"/>
+                        </div>
+                    </div>
+
+                    <!-- Расчётная формула -->
+                    <div v-if="totalRecommendedDays !== null"
+                        class="mt-3 flex items-center gap-2 bg-blue-50 text-blue-800 rounded-xl px-4 py-3 text-sm">
+                        <svg class="w-4 h-4 shrink-0 text-blue-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20A10 10 0 0012 2z"/>
+                        </svg>
+                        <span>Итого: рекомендуем подавать за <strong>{{ totalRecommendedDays }} дней</strong> до поездки</span>
                     </div>
                 </div>
 
@@ -318,6 +381,18 @@ const weightsSum = computed(() => {
     return +(( (f.weight_finance ?? 0) + (f.weight_ties ?? 0) + (f.weight_travel ?? 0) + (f.weight_profile ?? 0) ).toFixed(2));
 });
 
+const totalRecommendedDays = computed(() => {
+    const f = editForm.value;
+    const standard = f.processing_days_standard;
+    const wait     = f.appointment_wait_days;
+    const buffer   = f.buffer_days_recommended;
+    if (standard != null && wait != null && buffer != null &&
+        standard !== '' && wait !== '' && buffer !== '') {
+        return (Number(standard) + Number(wait) + Number(buffer)) || null;
+    }
+    return null;
+});
+
 function visaTypeName(slug) {
     return visaTypes.value.find(v => v.slug === slug)?.name_ru ?? slug;
 }
@@ -336,13 +411,23 @@ async function load() {
 function openEdit(c) {
     editingCountry.value = c;
     editForm.value = {
-        visa_types:             [...(c.visa_types || [])],
-        weight_finance:         parseFloat(c.weight_finance) || 0,
-        weight_ties:            parseFloat(c.weight_ties) || 0,
-        weight_travel:          parseFloat(c.weight_travel) || 0,
-        weight_profile:         parseFloat(c.weight_profile) || 0,
-        min_monthly_income_usd: c.min_monthly_income_usd,
-        min_score:              c.min_score,
+        visa_types:                 [...(c.visa_types || [])],
+        weight_finance:             parseFloat(c.weight_finance) || 0,
+        weight_ties:                parseFloat(c.weight_ties) || 0,
+        weight_travel:              parseFloat(c.weight_travel) || 0,
+        weight_profile:             parseFloat(c.weight_profile) || 0,
+        min_monthly_income_usd:     c.min_monthly_income_usd,
+        min_score:                  c.min_score,
+        // Посольство
+        embassy_website:            c.embassy_website ?? '',
+        appointment_url:            c.appointment_url ?? '',
+        embassy_description:        c.embassy_description ?? '',
+        embassy_rules:              c.embassy_rules ?? '',
+        // Сроки
+        processing_days_standard:   c.processing_days_standard ?? null,
+        processing_days_expedited:  c.processing_days_expedited ?? null,
+        appointment_wait_days:      c.appointment_wait_days ?? null,
+        buffer_days_recommended:    c.buffer_days_recommended ?? null,
     };
 }
 

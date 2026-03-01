@@ -19,6 +19,21 @@
                 <p class="text-gray-500 text-sm mt-0.5">Выберите агентство и отправьте заявку</p>
             </div>
 
+            <!-- Фильтр по стране -->
+            <div v-if="allCountries.length > 1" class="mb-4">
+                <label class="text-xs text-gray-400 mb-1.5 block">Страна назначения</label>
+                <div class="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                    <button v-for="c in allCountries" :key="c.code"
+                        @click="selectCountry(c.code)"
+                        class="flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-medium border transition-colors"
+                        :class="selectedCountryCode === c.code
+                            ? 'bg-[#0A1F44] text-white border-[#0A1F44]'
+                            : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'">
+                        <span v-if="c.flag" class="mr-1">{{ c.flag }}</span>{{ c.label }}
+                    </button>
+                </div>
+            </div>
+
             <!-- Фильтр по типу визы -->
             <div class="flex gap-2 mb-5 overflow-x-auto pb-1 scrollbar-hide">
                 <button v-for="vt in visaTypes" :key="vt.value"
@@ -107,10 +122,19 @@
 
                     <!-- Пакеты услуг -->
                     <div class="border-t border-gray-50">
-                        <div class="px-5 sm:px-6 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">
-                            Пакеты услуг
+                        <div class="px-5 sm:px-6 py-3 flex items-center justify-between">
+                            <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Пакеты услуг</span>
+                            <button @click="router.push({ name: 'me.agencies.show', params: { id: agency.id } })"
+                                class="text-xs text-[#0A1F44] font-medium hover:underline underline-offset-2">
+                                Подробнее об агентстве
+                            </button>
                         </div>
-                        <div class="divide-y divide-gray-50">
+                        <!-- Нет пакетов -->
+                        <div v-if="!agency.packages?.length"
+                            class="mx-5 sm:mx-6 mb-4 px-4 py-3 rounded-xl bg-amber-50 border border-amber-100 text-xs text-amber-700">
+                            Агентство принимает заявки. Подробности уточняйте напрямую.
+                        </div>
+                        <div v-else class="divide-y divide-gray-50">
                             <div v-for="pkg in agency.packages" :key="pkg.id"
                                 class="px-5 sm:px-6 py-4 flex items-start gap-4">
                                 <div class="flex-1 min-w-0">
@@ -239,7 +263,9 @@ import { countryName as getCountryName, codeToFlag } from '@/utils/countries';
 const route  = useRoute();
 const router = useRouter();
 
-const countryCode = computed(() => (route.query.country_code ?? '').toUpperCase());
+// Текущий код страны — из query или из выбранного фильтра
+const selectedCountryCode = ref((route.query.country_code ?? '').toUpperCase());
+const countryCode = computed(() => selectedCountryCode.value);
 
 const agencies = ref([]);
 const loading  = ref(false);
@@ -248,6 +274,9 @@ const submitting = ref(false);
 const toast = ref('');
 
 const confirm = ref({ show: false, agency: null, pkg: null });
+
+// Список стран для фильтра — заполняется из API
+const allCountries = ref([]);
 
 const visaTypes = [
     { value: '',          label: 'Все типы' },
@@ -261,11 +290,34 @@ const visaTypes = [
 function countryName(code) { return getCountryName(code) ?? code; }
 function countryFlag(code) { return codeToFlag(code); }
 
+async function loadCountries() {
+    try {
+        const res = await publicPortalApi.countries();
+        const list = res.data.data ?? [];
+        allCountries.value = [
+            { code: '', label: 'Все страны', flag: '' },
+            ...list.filter(c => c.is_active).map(c => ({
+                code:  c.country_code,
+                label: c.name ?? c.country_code,
+                flag:  c.flag_emoji ?? '',
+            })),
+        ];
+    } catch {
+        // Если ошибка — оставить пустой список, фильтр по стране не показывается
+    }
+}
+
+function selectCountry(code) {
+    selectedCountryCode.value = code;
+    router.replace({ query: { ...route.query, country_code: code || undefined } });
+    loadAgencies();
+}
+
 async function loadAgencies() {
-    if (!countryCode.value) return;
     loading.value = true;
     try {
-        const params = { country_code: countryCode.value };
+        const params = {};
+        if (countryCode.value) params.country_code = countryCode.value;
         if (selectedVisaType.value) params.visa_type = selectedVisaType.value;
         const res = await publicPortalApi.agencies(params);
         agencies.value = res.data.data?.agencies ?? [];
@@ -310,7 +362,10 @@ async function submitLead() {
 }
 
 watch(selectedVisaType, loadAgencies);
-onMounted(loadAgencies);
+onMounted(async () => {
+    await loadCountries();
+    loadAgencies();
+});
 </script>
 
 <style scoped>

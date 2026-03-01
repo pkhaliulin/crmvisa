@@ -45,6 +45,11 @@ const routes = [
                 name: 'me.agencies',
                 component: () => import('@/pages/public/PublicAgenciesPage.vue'),
             },
+            {
+                path: 'agencies/:id',
+                name: 'me.agencies.show',
+                component: () => import('@/pages/public/PublicAgencyDetailPage.vue'),
+            },
         ],
     },
 
@@ -200,6 +205,12 @@ const routes = [
                 path: 'settings',
                 name: 'settings',
                 component: () => import('@/pages/AgencySettingsPage.vue'),
+                meta: { roles: ['owner', 'superadmin'] },
+            },
+            {
+                path: 'billing',
+                name: 'billing',
+                component: () => import('@/pages/BillingPage.vue'),
                 meta: { roles: ['owner', 'superadmin'] },
             },
         ],

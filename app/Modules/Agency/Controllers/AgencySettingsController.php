@@ -31,11 +31,16 @@ class AgencySettingsController extends Controller
         $data = $request->validate([
             'managers_see_all_cases' => ['sometimes', 'boolean'],
             'lead_assignment_mode'   => ['sometimes', 'in:manual,round_robin,by_workload,by_country'],
+            'name'                   => ['sometimes', 'nullable', 'string', 'max:255'],
             'description'            => ['sometimes', 'nullable', 'string', 'max:2000'],
             'experience_years'       => ['sometimes', 'nullable', 'integer', 'min:0', 'max:100'],
             'website_url'            => ['sometimes', 'nullable', 'url', 'max:255'],
             'address'                => ['sometimes', 'nullable', 'string', 'max:500'],
             'city'                   => ['sometimes', 'nullable', 'string', 'max:100'],
+            'phone'                  => ['sometimes', 'nullable', 'string', 'max:30'],
+            'email'                  => ['sometimes', 'nullable', 'email', 'max:255'],
+            'latitude'               => ['sometimes', 'nullable', 'numeric', 'between:-90,90'],
+            'longitude'              => ['sometimes', 'nullable', 'numeric', 'between:-180,180'],
         ]);
 
         $agency = Agency::findOrFail($request->user()->agency_id);

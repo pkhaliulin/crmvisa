@@ -57,7 +57,7 @@ import SidebarLink from './SidebarLink.vue';
 import {
   HomeIcon, ViewColumnsIcon, ClipboardDocumentListIcon,
   UsersIcon, UserGroupIcon, ArrowRightOnRectangleIcon,
-  ChartBarIcon, BriefcaseIcon, ExclamationTriangleIcon, Cog6ToothIcon
+  ChartBarIcon, BriefcaseIcon, ExclamationTriangleIcon, Cog6ToothIcon, CreditCardIcon
 } from '@heroicons/vue/24/outline';
 
 defineProps({ collapsed: Boolean });
@@ -82,6 +82,7 @@ const navItems = computed(() => {
     items.push(
       { to: { name: 'reports' },   icon: ChartBarIcon,   label: 'Отчёты' },
       { to: { name: 'services' },  icon: BriefcaseIcon,  label: 'Услуги' },
+      { to: { name: 'billing' },   icon: CreditCardIcon, label: 'Тариф' },
       { to: { name: 'settings' },  icon: Cog6ToothIcon,  label: 'Настройки' },
     );
   }
