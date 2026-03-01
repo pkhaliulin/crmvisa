@@ -44,6 +44,7 @@ Route::prefix('v1')->group(function () {
     Route::middleware(['auth:api', 'role:owner,manager,superadmin', 'plan.active'])->group(function () {
 
         // Клиенты
+        Route::post('clients/parse-passport', [ClientController::class, 'parsePassport']);
         Route::apiResource('clients', ClientController::class);
 
         // Канбан

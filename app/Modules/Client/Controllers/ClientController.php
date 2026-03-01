@@ -30,7 +30,7 @@ class ClientController extends Controller
         $data = $request->validate([
             'name'                => ['required', 'string', 'max:255'],
             'email'               => ['nullable', 'email', 'max:255'],
-            'phone'               => ['nullable', 'string', 'max:30'],
+            'phone'               => ['required', 'string', 'max:30'],
             'telegram_chat_id'    => ['nullable', 'string', 'max:50'],
             'passport_number'     => ['nullable', 'string', 'max:30'],
             'nationality'         => ['nullable', 'string', 'size:3'],
@@ -77,5 +77,30 @@ class ClientController extends Controller
         $this->service->delete($id);
 
         return ApiResponse::success(null, 'Client deleted.');
+    }
+
+    /**
+     * POST /clients/parse-passport
+     * Загрузка фото паспорта. Сохраняет файл и возвращает распознанные поля.
+     * Реальный OCR — TODO (будет через Google Document AI / queue).
+     */
+    public function parsePassport(Request $request): JsonResponse
+    {
+        $request->validate([
+            'file' => ['required', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:10240'],
+        ]);
+
+        $path = $request->file('file')->store('passports', 'public');
+
+        // TODO: dispatch OCR job — пока возвращаем пустые поля
+        return ApiResponse::success([
+            'file_path'           => $path,
+            'ocr_status'          => 'pending',
+            'name'                => null,
+            'date_of_birth'       => null,
+            'passport_number'     => null,
+            'passport_expires_at' => null,
+            'nationality'         => null,
+        ], 'Паспорт загружен. Распознавание данных будет добавлено в ближайшем обновлении.');
     }
 }
