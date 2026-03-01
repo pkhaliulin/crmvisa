@@ -31,10 +31,12 @@ class ChecklistService
             'agency_id'      => $case->agency_id,
             'case_id'        => $case->id,
             'requirement_id' => $req->id,
+            'type'           => $req->type ?? 'upload',
             'name'           => $req->name,
             'description'    => $req->description,
             'is_required'    => $req->is_required,
             'document_id'    => null,
+            'is_checked'     => false,
             'status'         => 'pending',
             'notes'          => null,
             'sort_order'     => $req->sort_order,
@@ -144,6 +146,19 @@ class ChecklistService
             'is_required' => $isRequired,
             'sort_order'  => $maxOrder + 1,
         ]);
+    }
+
+    /**
+     * Отметить checkbox-слот как выполненный (клиент или менеджер).
+     */
+    public function toggleCheck(CaseChecklist $item, bool $checked): CaseChecklist
+    {
+        $item->update([
+            'is_checked' => $checked,
+            'status'     => $checked ? 'uploaded' : 'pending',
+        ]);
+
+        return $item->fresh();
     }
 
     /**

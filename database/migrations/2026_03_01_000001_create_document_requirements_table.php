@@ -13,8 +13,9 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->string('country_code', 2);          // DE, FR, US... или '*' = для всех стран
             $table->string('visa_type', 50);             // tourist, business, student... или '*' = для всех
-            $table->string('name');                      // "Загранпаспорт", "Фото 3x4", "Выписка из банка"
+            $table->string('name');                      // "Загранпаспорт", "Выписка из банка"
             $table->text('description')->nullable();     // Пояснение: что именно нужно
+            $table->enum('type', ['upload', 'checkbox'])->default('upload'); // upload=файл, checkbox=подтверждение
             $table->boolean('is_required')->default(true);
             $table->integer('sort_order')->default(0);
             $table->boolean('is_active')->default(true);
@@ -31,8 +32,10 @@ return new class extends Migration
             $table->uuid('requirement_id')->nullable(); // ссылка на справочник (nullable — если добавлен вручную)
             $table->string('name');                     // копируется из requirements.name
             $table->text('description')->nullable();
+            $table->enum('type', ['upload', 'checkbox'])->default('upload'); // копируется из requirements
             $table->boolean('is_required')->default(true);
-            $table->uuid('document_id')->nullable();    // загруженный файл (→ documents.id)
+            $table->uuid('document_id')->nullable();    // загруженный файл (→ documents.id), только для type=upload
+            $table->boolean('is_checked')->default(false); // для type=checkbox
             $table->enum('status', ['pending', 'uploaded', 'approved', 'rejected'])->default('pending');
             $table->text('notes')->nullable();          // комментарий менеджера при rejected
             $table->integer('sort_order')->default(0);

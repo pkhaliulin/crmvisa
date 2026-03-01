@@ -17,10 +17,12 @@ class CaseChecklist extends BaseModel
         'agency_id',
         'case_id',
         'requirement_id',
+        'type',
         'name',
         'description',
         'is_required',
         'document_id',
+        'is_checked',
         'status',
         'notes',
         'sort_order',
@@ -28,6 +30,7 @@ class CaseChecklist extends BaseModel
 
     protected $casts = [
         'is_required' => 'boolean',
+        'is_checked'  => 'boolean',
         'sort_order'  => 'integer',
     ];
 

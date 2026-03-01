@@ -14,6 +14,7 @@ class DocumentRequirement extends BaseModel
     protected $fillable = [
         'country_code',
         'visa_type',
+        'type',
         'name',
         'description',
         'is_required',

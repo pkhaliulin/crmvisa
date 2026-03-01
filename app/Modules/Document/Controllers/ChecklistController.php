@@ -106,6 +106,25 @@ class ChecklistController extends Controller
         return ApiResponse::success(null, 'Checklist item deleted');
     }
 
+    /**
+     * PATCH /api/v1/cases/{caseId}/checklist/{itemId}/check
+     * Отметить / снять отметку checkbox-слота
+     */
+    public function check(Request $request, string $caseId, string $itemId): JsonResponse
+    {
+        $this->authorizeCase($request, $caseId);
+        $item = $this->authorizeItem($request, $caseId, $itemId);
+
+        if ($item->type !== 'checkbox') {
+            return ApiResponse::error('This item requires file upload, not checkbox');
+        }
+
+        $validated = $request->validate(['checked' => ['required', 'boolean']]);
+        $result = $this->service->toggleCheck($item, $validated['checked']);
+
+        return ApiResponse::success($result, 'Updated');
+    }
+
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------

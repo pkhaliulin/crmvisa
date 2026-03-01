@@ -62,6 +62,7 @@ Route::prefix('v1')->group(function () {
             Route::get('/',                        [ChecklistController::class, 'index']);
             Route::post('/',                       [ChecklistController::class, 'store']);
             Route::post('/{itemId}/upload',        [ChecklistController::class, 'upload']);
+            Route::patch('/{itemId}/check',        [ChecklistController::class, 'check']);
             Route::patch('/{itemId}/review',       [ChecklistController::class, 'review']);
             Route::delete('/{itemId}',             [ChecklistController::class, 'destroy']);
         });
