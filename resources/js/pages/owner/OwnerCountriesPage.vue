@@ -154,8 +154,8 @@ const WeightBadge = {
     props: ['v'],
     template: `
         <span class="inline-block text-xs font-mono font-bold px-2 py-0.5 rounded"
-              :class="v >= 0.40 ? 'bg-blue-50 text-blue-700' : v >= 0.20 ? 'bg-gray-50 text-gray-600' : 'bg-gray-50 text-gray-400'">
-            {{ (v * 100).toFixed(0) }}%
+              :class="parseFloat(v) >= 0.40 ? 'bg-blue-50 text-blue-700' : parseFloat(v) >= 0.20 ? 'bg-gray-50 text-gray-600' : 'bg-gray-50 text-gray-400'">
+            {{ (parseFloat(v) * 100).toFixed(0) }}%
         </span>
     `,
 };
@@ -178,10 +178,10 @@ async function load() {
 function openEdit(c) {
     editingCountry.value = c;
     editForm.value = {
-        weight_finance:         c.weight_finance,
-        weight_ties:            c.weight_ties,
-        weight_travel:          c.weight_travel,
-        weight_profile:         c.weight_profile,
+        weight_finance:         parseFloat(c.weight_finance) || 0,
+        weight_ties:            parseFloat(c.weight_ties) || 0,
+        weight_travel:          parseFloat(c.weight_travel) || 0,
+        weight_profile:         parseFloat(c.weight_profile) || 0,
         min_monthly_income_usd: c.min_monthly_income_usd,
         min_score:              c.min_score,
     };

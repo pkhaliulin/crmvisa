@@ -42,13 +42,12 @@ class OwnerController extends Controller
                 'trial'    => Agency::where('plan', 'trial')->count(),
             ],
             'revenue' => [
-                'total'       => DB::table('billing_transactions')
-                    ->where('type', 'payment')->where('status', 'paid')->sum('amount') ?? 0,
-                'commissions' => DB::table('billing_transactions')
-                    ->where('type', 'commission')->where('status', 'paid')->sum('amount') ?? 0,
-                'this_month'  => DB::table('billing_transactions')
-                    ->where('type', 'payment')->where('status', 'paid')
-                    ->whereBetween('created_at', [now()->startOfMonth(), now()])->sum('amount') ?? 0,
+                'total'       => round((DB::table('payment_transactions')
+                    ->where('status', 'succeeded')->sum('amount') ?? 0) / 100, 2),
+                'commissions' => 0,
+                'this_month'  => round((DB::table('payment_transactions')
+                    ->where('status', 'succeeded')
+                    ->whereBetween('created_at', [now()->startOfMonth(), now()])->sum('amount') ?? 0) / 100, 2),
             ],
             'crm_users' => [
                 'total'   => DB::table('cases')->count(),
@@ -338,12 +337,15 @@ class OwnerController extends Controller
 
     public function transactions(Request $request): JsonResponse
     {
-        $transactions = DB::table('billing_transactions')
-            ->leftJoin('agencies', 'billing_transactions.agency_id', '=', 'agencies.id')
-            ->select('billing_transactions.*', 'agencies.name as agency_name')
-            ->when($request->type, fn ($q, $t) => $q->where('billing_transactions.type', $t))
-            ->when($request->status, fn ($q, $s) => $q->where('billing_transactions.status', $s))
-            ->orderByDesc('billing_transactions.created_at')
+        // Маппинг статусов из UI → реальные значения в БД
+        $statusMap = ['paid' => 'succeeded', 'pending' => 'pending', 'failed' => 'failed', 'refund' => 'refunded'];
+        $dbStatus  = $request->status ? ($statusMap[$request->status] ?? $request->status) : null;
+
+        $transactions = DB::table('payment_transactions')
+            ->leftJoin('agencies', 'payment_transactions.agency_id', '=', 'agencies.id')
+            ->select('payment_transactions.*', 'agencies.name as agency_name')
+            ->when($dbStatus, fn ($q, $s) => $q->where('payment_transactions.status', $s))
+            ->orderByDesc('payment_transactions.created_at')
             ->paginate(30);
 
         return ApiResponse::success($transactions);
