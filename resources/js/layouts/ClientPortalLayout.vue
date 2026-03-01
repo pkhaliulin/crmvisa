@@ -108,7 +108,7 @@
 
             <!-- Main Content -->
             <main class="flex-1 md:ml-64 min-w-0 p-4 sm:p-6">
-                <slot />
+                <router-view />
             </main>
         </div>
 
