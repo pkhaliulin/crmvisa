@@ -11,7 +11,7 @@
         <div>
           <div class="flex items-center gap-2 mb-1">
             <span class="text-2xl">{{ flagEmoji }}</span>
-            <h2 class="text-xl font-bold text-gray-900">{{ caseData.country_code }} — {{ caseData.visa_type }}</h2>
+            <h2 class="text-xl font-bold text-gray-900">{{ countryName(caseData.country_code) }} — {{ visaTypeName(caseData.visa_type) }}</h2>
             <AppBadge :color="urgencyColor">{{ urgencyLabel }}</AppBadge>
           </div>
           <p class="text-sm text-gray-500">
@@ -268,11 +268,14 @@
 import { ref, computed, onMounted, reactive } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { casesApi } from '@/api/cases';
+import { useCountries } from '@/composables/useCountries';
 import AppBadge  from '@/components/AppBadge.vue';
 import AppButton from '@/components/AppButton.vue';
 import AppModal  from '@/components/AppModal.vue';
 import AppSelect from '@/components/AppSelect.vue';
 import AppInput  from '@/components/AppInput.vue';
+
+const { countryName, countryFlag, visaTypeName } = useCountries();
 
 const route  = useRoute();
 const router = useRouter();
@@ -300,12 +303,7 @@ const STAGE_COLORS = {
   translation: 'yellow', appointment: 'orange', review: 'blue', result: 'green',
 };
 const stageOptions  = Object.entries(STAGE_LABELS).map(([value, label]) => ({ value, label }));
-const COUNTRY_FLAGS = {
-  DE: '🇩🇪', FR: '🇫🇷', IT: '🇮🇹', ES: '🇪🇸', CZ: '🇨🇿', PL: '🇵🇱',
-  US: '🇺🇸', GB: '🇬🇧', AE: '🇦🇪', TR: '🇹🇷', KR: '🇰🇷', CN: '🇨🇳', UZ: '🇺🇿',
-};
-
-const flagEmoji     = computed(() => COUNTRY_FLAGS[caseData.value?.country_code] ?? '🌍');
+const flagEmoji     = computed(() => countryFlag(caseData.value?.country_code ?? ''));
 const stageLabel    = computed(() => STAGE_LABELS[caseData.value?.stage] ?? '');
 const stageColor    = computed(() => STAGE_COLORS[caseData.value?.stage] ?? 'gray');
 const urgencyColor  = computed(() => {

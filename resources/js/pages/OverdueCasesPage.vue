@@ -37,7 +37,7 @@
                 <span class="text-sm font-medium text-gray-900">
                   {{ c.client?.name }}
                 </span>
-                <span class="text-xs text-gray-400">{{ c.country_code }} / {{ c.visa_type }}</span>
+                <span class="text-xs text-gray-400">{{ countryFlag(c.country_code) }} {{ countryName(c.country_code) }} / {{ visaTypeName(c.visa_type) }}</span>
               </div>
 
               <div class="flex items-center gap-4 mt-1.5 text-xs text-gray-500">
@@ -64,6 +64,9 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import api from '@/api/index';
+import { useCountries } from '@/composables/useCountries';
+
+const { countryName, countryFlag, visaTypeName } = useCountries();
 
 const loading = ref(true);
 const cases = ref([]);

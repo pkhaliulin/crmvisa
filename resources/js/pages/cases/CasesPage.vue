@@ -37,8 +37,9 @@
                 <p class="text-xs text-gray-400">{{ c.client?.phone }}</p>
               </td>
               <td class="px-4 py-3">
-                <span class="font-medium">{{ c.country_code }}</span>
-                <span class="text-gray-400"> · {{ c.visa_type }}</span>
+                <span class="text-base mr-1">{{ countryFlag(c.country_code) }}</span>
+                <span class="font-medium">{{ countryName(c.country_code) }}</span>
+                <span class="text-gray-400"> · {{ visaTypeName(c.visa_type) }}</span>
               </td>
               <td class="px-4 py-3">
                 <AppBadge :color="stageColor(c.stage)">{{ stageLabel(c.stage) }}</AppBadge>
@@ -87,10 +88,13 @@
 import { ref, reactive, onMounted } from 'vue';
 import { RouterLink } from 'vue-router';
 import { casesApi } from '@/api/cases';
+import { useCountries } from '@/composables/useCountries';
 import AppInput from '@/components/AppInput.vue';
 import AppSelect from '@/components/AppSelect.vue';
 import AppButton from '@/components/AppButton.vue';
 import AppBadge from '@/components/AppBadge.vue';
+
+const { countryName, countryFlag, visaTypeName } = useCountries();
 
 const cases   = ref([]);
 const meta    = ref(null);

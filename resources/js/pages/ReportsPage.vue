@@ -125,7 +125,7 @@
         <tbody>
           <tr v-for="row in countries" :key="row.country_code"
             class="border-t border-gray-100 hover:bg-gray-50 transition-colors">
-            <td class="px-4 py-3 font-medium text-gray-900">{{ row.country_code }}</td>
+            <td class="px-4 py-3 font-medium text-gray-900">{{ countryFlag(row.country_code) }} {{ countryName(row.country_code) }}</td>
             <td class="px-4 py-3 text-gray-700">{{ row.total }}</td>
             <td class="px-4 py-3 text-green-600">{{ row.completed }}</td>
             <td class="px-4 py-3 text-blue-600">
@@ -173,6 +173,9 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue';
 import api from '@/api/index';
+import { useCountries } from '@/composables/useCountries';
+
+const { countryName, countryFlag } = useCountries();
 
 const activeTab = ref('overview');
 const loading = ref(false);

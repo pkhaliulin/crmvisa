@@ -56,9 +56,9 @@
           :to="{ name: 'cases.show', params: { id: c.id } }"
           class="flex items-center gap-3 p-3 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors"
         >
-          <span class="text-lg">{{ flags[c.country_code] ?? '🌍' }}</span>
+          <span class="text-lg">{{ countryFlag(c.country_code) }}</span>
           <div class="flex-1">
-            <p class="text-sm font-medium">{{ c.country_code }} — {{ c.visa_type }}</p>
+            <p class="text-sm font-medium">{{ countryName(c.country_code) }} — {{ visaTypeName(c.visa_type) }}</p>
             <p class="text-xs text-gray-400">{{ STAGE_LABELS[c.stage] ?? c.stage }}</p>
           </div>
           <span class="text-xs text-gray-400">→</span>
@@ -100,8 +100,11 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, RouterLink } from 'vue-router';
 import { clientsApi } from '@/api/clients';
+import { useCountries } from '@/composables/useCountries';
 import AppBadge from '@/components/AppBadge.vue';
 import AppButton from '@/components/AppButton.vue';
+
+const { countryName, countryFlag, visaTypeName } = useCountries();
 
 const route  = useRoute();
 const id     = route.params.id;
@@ -114,10 +117,7 @@ const STAGE_LABELS = {
   lead: 'Лид', qualification: 'Квалификация', documents: 'Документы',
   translation: 'Перевод', appointment: 'Запись', review: 'Рассмотрение', result: 'Результат',
 };
-const flags = {
-  DE: '🇩🇪', FR: '🇫🇷', IT: '🇮🇹', ES: '🇪🇸', CZ: '🇨🇿', PL: '🇵🇱',
-  US: '🇺🇸', GB: '🇬🇧', AE: '🇦🇪', TR: '🇹🇷', KR: '🇰🇷', CN: '🇨🇳',
-};
+
 
 const sourceMap = {
   direct: { label: 'Прямой', color: 'blue' },
