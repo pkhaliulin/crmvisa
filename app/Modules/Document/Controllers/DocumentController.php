@@ -9,6 +9,8 @@ use App\Modules\Document\Services\DocumentService;
 use App\Support\Helpers\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use ZipArchive;
 
 class DocumentController extends Controller
 {
@@ -75,5 +77,42 @@ class DocumentController extends Controller
         $this->service->delete($document);
 
         return ApiResponse::success(null, 'Document deleted.');
+    }
+
+    /**
+     * GET /api/v1/cases/{caseId}/documents/zip
+     * Скачать все документы заявки одним ZIP-архивом
+     */
+    public function downloadZip(Request $request, string $caseId): \Symfony\Component\HttpFoundation\StreamedResponse|\Illuminate\Http\JsonResponse
+    {
+        $case = VisaCase::where('id', $caseId)
+                        ->where('agency_id', $request->user()->agency_id)
+                        ->firstOrFail();
+
+        $documents = Document::where('case_id', $caseId)->get();
+
+        if ($documents->isEmpty()) {
+            return ApiResponse::error('No documents to download', null, 404);
+        }
+
+        $tmpFile = tempnam(sys_get_temp_dir(), 'docs_') . '.zip';
+        $zip     = new ZipArchive();
+        $zip->open($tmpFile, ZipArchive::CREATE | ZipArchive::OVERWRITE);
+
+        foreach ($documents as $doc) {
+            $content = Storage::disk('public')->get($doc->file_path);
+            if ($content !== null) {
+                $zip->addFromString($doc->original_name, $content);
+            }
+        }
+
+        $zip->close();
+
+        $zipName  = "documents-{$case->country_code}-{$case->visa_type}-" . substr($caseId, 0, 8) . '.zip';
+
+        return response()->streamDownload(function () use ($tmpFile) {
+            readfile($tmpFile);
+            @unlink($tmpFile);
+        }, $zipName, ['Content-Type' => 'application/zip']);
     }
 }

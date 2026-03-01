@@ -49,9 +49,10 @@ Route::prefix('v1')->group(function () {
         Route::post('cases/{id}/move-stage',  [CaseController::class, 'moveStage']);
         Route::apiResource('cases', CaseController::class);
 
-        // Документы (вложены в заявку) — legacy загрузка без чек-листа
+        // Документы (вложены в заявку)
         Route::prefix('cases/{caseId}/documents')->group(function () {
             Route::get('/',           [DocumentController::class, 'index']);
+            Route::get('/zip',        [DocumentController::class, 'downloadZip']);
             Route::post('/',          [DocumentController::class, 'store']);
             Route::patch('/{docId}',  [DocumentController::class, 'updateStatus']);
             Route::delete('/{docId}', [DocumentController::class, 'destroy']);

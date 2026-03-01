@@ -10,11 +10,18 @@ export const casesApi = {
     critical:   ()       => api.get('/cases/critical'),
     kanban:     ()       => api.get('/kanban'),
 
-    // Документы
-    getDocuments:   (caseId)         => api.get(`/cases/${caseId}/documents`),
-    uploadDocument: (caseId, form)   => api.post(`/cases/${caseId}/documents`, form, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-    }),
+    // Документы (legacy)
+    getDocuments:    (caseId)              => api.get(`/cases/${caseId}/documents`),
+    uploadDocument:  (caseId, form)        => api.post(`/cases/${caseId}/documents`, form, { headers: { 'Content-Type': 'multipart/form-data' } }),
     updateDocStatus: (caseId, docId, data) => api.patch(`/cases/${caseId}/documents/${docId}`, data),
-    deleteDocument:  (caseId, docId) => api.delete(`/cases/${caseId}/documents/${docId}`),
+    deleteDocument:  (caseId, docId)       => api.delete(`/cases/${caseId}/documents/${docId}`),
+
+    // Чек-лист документов
+    getChecklist:       (caseId)            => api.get(`/cases/${caseId}/checklist`),
+    addChecklistItem:   (caseId, data)      => api.post(`/cases/${caseId}/checklist`, data),
+    uploadToSlot:       (caseId, itemId, form) => api.post(`/cases/${caseId}/checklist/${itemId}/upload`, form, { headers: { 'Content-Type': 'multipart/form-data' } }),
+    checkSlot:          (caseId, itemId, checked) => api.patch(`/cases/${caseId}/checklist/${itemId}/check`, { checked }),
+    reviewSlot:         (caseId, itemId, data)    => api.patch(`/cases/${caseId}/checklist/${itemId}/review`, data),
+    deleteChecklistItem:(caseId, itemId)    => api.delete(`/cases/${caseId}/checklist/${itemId}`),
+    downloadAllZip:     (caseId)            => api.get(`/cases/${caseId}/documents/zip`, { responseType: 'blob' }),
 };
