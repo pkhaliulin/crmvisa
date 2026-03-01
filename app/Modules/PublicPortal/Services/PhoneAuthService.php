@@ -17,7 +17,8 @@ class PhoneAuthService
 
     public function sendOtp(string $phone): bool
     {
-        $code = (string) random_int(100000, 999999);
+        $stubPin = config('services.sms_stub.pin');
+        $code    = $stubPin ?? str_pad((string) random_int(1000, 9999), 4, '0', STR_PAD_LEFT);
 
         // Удаляем старые OTP для этого номера
         DB::table('public_otp_codes')->where('phone', $phone)->delete();
@@ -31,8 +32,11 @@ class PhoneAuthService
             'updated_at' => now(),
         ]);
 
-        $message = "Ваш код подтверждения VisaBor: {$code}. Действует 10 минут.";
+        if ($stubPin) {
+            return true; // заглушка — SMS не отправляется
+        }
 
+        $message = "Ваш код VisaBor: {$code}. Действует 10 минут.";
         return $this->sms->send($phone, $message);
     }
 
@@ -42,11 +46,14 @@ class PhoneAuthService
 
     public function verifyOtp(string $phone, string $code): array
     {
+        $stubPin = config('services.sms_stub.pin');
+
         $otp = DB::table('public_otp_codes')
             ->where('phone', $phone)
-            ->where('code', $code)
             ->whereNull('used_at')
             ->where('expires_at', '>', now())
+            ->when($stubPin, fn ($q) => $q->where('code', $stubPin),
+                            fn ($q) => $q->where('code', $code))
             ->first();
 
         if (! $otp) {
@@ -72,9 +79,14 @@ class PhoneAuthService
 
     public function loginWithPin(string $phone, string $pin): array
     {
-        $user = PublicUser::where('phone', $phone)->first();
+        $stubPin = config('services.sms_stub.pin');
+        $user    = PublicUser::where('phone', $phone)->first();
 
-        if (! $user || ! $user->verifyPin($pin)) {
+        $pinOk = $stubPin
+            ? ($pin === $stubPin)
+            : ($user && $user->verifyPin($pin));
+
+        if (! $user || ! $pinOk) {
             throw new \InvalidArgumentException('Неверный телефон или PIN-код.');
         }
 

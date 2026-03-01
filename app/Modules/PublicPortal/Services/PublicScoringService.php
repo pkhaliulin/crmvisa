@@ -5,31 +5,59 @@ namespace App\Modules\PublicPortal\Services;
 use App\Modules\PublicPortal\Models\PublicLead;
 use App\Modules\PublicPortal\Models\PublicScoreCache;
 use App\Modules\PublicPortal\Models\PublicUser;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class PublicScoringService
 {
-    // Веса блоков по странам: [finance, ties, travel, profile]
-    private const WEIGHTS = [
-        'default' => ['finance' => 0.30, 'ties' => 0.40, 'travel' => 0.20, 'profile' => 0.10],
-        'US'      => ['finance' => 0.25, 'ties' => 0.50, 'travel' => 0.15, 'profile' => 0.10],
-        'CA'      => ['finance' => 0.25, 'ties' => 0.50, 'travel' => 0.15, 'profile' => 0.10],
-        'GB'      => ['finance' => 0.35, 'ties' => 0.40, 'travel' => 0.15, 'profile' => 0.10],
-        'DE'      => ['finance' => 0.40, 'ties' => 0.35, 'travel' => 0.15, 'profile' => 0.10],
-        'FR'      => ['finance' => 0.40, 'ties' => 0.35, 'travel' => 0.15, 'profile' => 0.10],
-        'ES'      => ['finance' => 0.35, 'ties' => 0.40, 'travel' => 0.15, 'profile' => 0.10],
-        'IT'      => ['finance' => 0.35, 'ties' => 0.40, 'travel' => 0.15, 'profile' => 0.10],
-        'PL'      => ['finance' => 0.35, 'ties' => 0.40, 'travel' => 0.15, 'profile' => 0.10],
-        'CZ'      => ['finance' => 0.35, 'ties' => 0.40, 'travel' => 0.15, 'profile' => 0.10],
-        'KR'      => ['finance' => 0.30, 'ties' => 0.45, 'travel' => 0.15, 'profile' => 0.10],
-        'AE'      => ['finance' => 0.35, 'ties' => 0.35, 'travel' => 0.20, 'profile' => 0.10],
-    ];
+    private const DEFAULT_WEIGHTS = ['finance' => 0.30, 'ties' => 0.40, 'travel' => 0.20, 'profile' => 0.10];
+
+    /**
+     * Веса из portal_countries (с кешем 1ч).
+     * Если таблица пуста — используем DEFAULT_WEIGHTS.
+     */
+    private function weights(): array
+    {
+        return Cache::remember('portal_countries_weights', 3600, function () {
+            $rows = DB::table('portal_countries')
+                ->where('is_active', true)
+                ->get(['country_code', 'weight_finance', 'weight_ties', 'weight_travel', 'weight_profile']);
+
+            if ($rows->isEmpty()) {
+                return [];
+            }
+
+            $map = [];
+            foreach ($rows as $r) {
+                $map[$r->country_code] = [
+                    'finance' => (float) $r->weight_finance,
+                    'ties'    => (float) $r->weight_ties,
+                    'travel'  => (float) $r->weight_travel,
+                    'profile' => (float) $r->weight_profile,
+                ];
+            }
+            return $map;
+        });
+    }
+
+    private function countryCodes(): array
+    {
+        return Cache::remember('portal_countries_codes', 3600, function () {
+            return DB::table('portal_countries')
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->pluck('country_code')
+                ->toArray();
+        });
+    }
 
     /**
      * Рассчитать и закэшировать скоринг для страны.
      */
     public function score(PublicUser $user, string $countryCode): array
     {
-        $weights = self::WEIGHTS[$countryCode] ?? self::WEIGHTS['default'];
+        $allWeights = $this->weights();
+        $weights    = $allWeights[$countryCode] ?? self::DEFAULT_WEIGHTS;
 
         $finance = $this->calcFinance($user);
         $ties    = $this->calcTies($user);
@@ -86,8 +114,11 @@ class PublicScoringService
      */
     public function scoreAll(PublicUser $user): array
     {
-        $countries = array_keys(self::WEIGHTS);
-        unset($countries[array_search('default', $countries)]);
+        $countries = $this->countryCodes();
+
+        if (empty($countries)) {
+            $countries = ['DE','ES','FR','IT','PL','CZ','GB','US','CA','KR','AE'];
+        }
 
         return collect($countries)->map(fn ($cc) => $this->score($user, $cc))
             ->sortByDesc('score')

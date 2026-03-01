@@ -17,6 +17,7 @@ use App\Modules\Document\Controllers\DocumentTemplateController;
 use App\Modules\Payment\Controllers\BillingController;
 use App\Modules\Payment\Controllers\MarketplaceController;
 use App\Modules\Scoring\Controllers\ScoringController;
+use App\Modules\Owner\Controllers\OwnerController;
 use App\Modules\TelegramBot\Controllers\TelegramBotController;
 use App\Modules\User\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -162,6 +163,44 @@ Route::prefix('v1')->group(function () {
         Route::put('agency/marketplace/profile',              [MarketplaceController::class, 'updateProfile']);
         Route::get('agency/marketplace/leads',                [MarketplaceController::class, 'leads']);
         Route::patch('agency/marketplace/leads/{id}/status',  [MarketplaceController::class, 'updateLeadStatus']);
+    });
+
+    // -------------------------------------------------------------------------
+    // Owner Admin API — только superadmin
+    // -------------------------------------------------------------------------
+
+    Route::middleware(['auth:api', 'role:superadmin'])->prefix('owner')->group(function () {
+        // Дашборд
+        Route::get('dashboard', [OwnerController::class, 'dashboard']);
+
+        // Агентства
+        Route::get('agencies',          [OwnerController::class, 'agencies']);
+        Route::get('agencies/{id}',     [OwnerController::class, 'agencyShow']);
+        Route::patch('agencies/{id}',   [OwnerController::class, 'agencyUpdate']);
+        Route::delete('agencies/{id}',  [OwnerController::class, 'agencyDestroy']);
+
+        // Пользователи публичного портала
+        Route::get('public-users',             [OwnerController::class, 'publicUsers']);
+        Route::get('public-users/{id}',        [OwnerController::class, 'publicUserShow']);
+        Route::post('public-users/{id}/block', [OwnerController::class, 'publicUserBlock']);
+
+        // Лиды
+        Route::get('leads',         [OwnerController::class, 'leads']);
+        Route::patch('leads/{id}',  [OwnerController::class, 'leadUpdate']);
+
+        // Страны (portal scoring)
+        Route::get('countries',            [OwnerController::class, 'countries']);
+        Route::post('countries',           [OwnerController::class, 'countryStore']);
+        Route::patch('countries/{code}',   [OwnerController::class, 'countryUpdate']);
+
+        // Документы
+        Route::get('documents', [OwnerController::class, 'documents']);
+
+        // CRM-пользователи
+        Route::get('crm-users', [OwnerController::class, 'crmUsers']);
+
+        // Финансы
+        Route::get('transactions', [OwnerController::class, 'transactions']);
     });
 
     // -------------------------------------------------------------------------

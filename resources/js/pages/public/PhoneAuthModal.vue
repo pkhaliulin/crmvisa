@@ -77,7 +77,11 @@
 
                 <!-- ШАГ 2: OTP -->
                 <template v-if="step === 'otp'">
-                    <div class="mt-4 flex gap-2 sm:gap-2 justify-center">
+                    <p class="mt-3 text-sm text-gray-500 text-center">
+                        Мы отправили вам SMS с ПИН-кодом.<br>
+                        Это ваш ПИН-код для входа в личный кабинет.
+                    </p>
+                    <div class="mt-4 flex gap-3 justify-center">
                         <input
                             v-for="(_, i) in otp"
                             :key="i"
@@ -86,7 +90,7 @@
                             type="tel"
                             maxlength="1"
                             inputmode="numeric"
-                            class="w-11 h-14 sm:w-12 sm:h-14 text-center text-xl font-bold text-[#0A1F44]
+                            class="w-14 h-16 text-center text-2xl font-bold text-[#0A1F44]
                                    border border-gray-200 rounded-xl outline-none
                                    focus:border-[#1BA97F] transition-colors"
                             @input="onOtpInput(i)"
@@ -94,7 +98,7 @@
                         />
                     </div>
                     <p v-if="error" class="mt-2 text-sm text-red-500 text-center">{{ error }}</p>
-                    <button @click="verifyOtp" :disabled="loading || otpCode.length < 6"
+                    <button @click="verifyOtp" :disabled="loading || otpCode.length < 4"
                         class="mt-6 w-full py-4 bg-[#0A1F44] text-white font-semibold rounded-xl
                                hover:bg-[#0d2a5e] active:scale-[0.98] transition-all disabled:opacity-60
                                text-base">
@@ -188,7 +192,7 @@ const publicAuth = usePublicAuthStore();
 
 const step    = ref('phone');
 const phone   = ref('');
-const otp     = ref(['', '', '', '', '', '']);
+const otp     = ref(['', '', '', '']);
 const pin     = ref('');
 const loading = ref(false);
 const error   = ref('');
@@ -230,10 +234,10 @@ async function sendOtp() {
 }
 
 function onOtpInput(i) {
-    if (otp.value[i] && i < 5) {
+    if (otp.value[i] && i < 3) {
         nextTick(() => otpRefs.value[i + 1]?.focus());
     }
-    if (otpCode.value.length === 6) verifyOtp();
+    if (otpCode.value.length === 4) verifyOtp();
 }
 
 function onOtpBackspace(i) {
@@ -244,7 +248,7 @@ function onOtpBackspace(i) {
 }
 
 async function verifyOtp() {
-    if (otpCode.value.length < 6) return;
+    if (otpCode.value.length < 4) return;
     error.value = '';
     loading.value = true;
     try {
@@ -255,7 +259,7 @@ async function verifyOtp() {
         if (!is_new) finish();
     } catch (e) {
         error.value = e.response?.data?.message || 'Неверный код';
-        otp.value = ['', '', '', '', '', ''];
+        otp.value = ['', '', '', ''];
         nextTick(() => otpRefs.value[0]?.focus());
     } finally {
         loading.value = false;

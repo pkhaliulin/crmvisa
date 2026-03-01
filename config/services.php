@@ -40,6 +40,12 @@ return [
         'webhook_secret' => env('TELEGRAM_WEBHOOK_SECRET'),
     ],
 
+    // SMS_STUB_PIN=6236 → принимает только этот код, SMS не отправляется
+    // Убрать из .env когда подключите реальный SMS-провайдер
+    'sms_stub' => [
+        'pin' => env('SMS_STUB_PIN'),
+    ],
+
     'eskiz' => [
         'email'    => env('ESKIZ_EMAIL'),
         'password' => env('ESKIZ_PASSWORD'),

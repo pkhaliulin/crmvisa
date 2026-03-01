@@ -60,7 +60,13 @@ async function handleSubmit() {
 
   try {
     await auth.login(form.value);
-    router.push(route.query.redirect || { name: 'dashboard', replace: true });
+    if (route.query.redirect) {
+        router.push(route.query.redirect);
+    } else {
+        router.replace(auth.user?.role === 'superadmin'
+            ? { name: 'owner.dashboard' }
+            : { name: 'dashboard' });
+    }
   } catch (err) {
     const data = err.response?.data;
     if (data?.errors) {

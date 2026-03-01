@@ -33,7 +33,55 @@ const routes = [
         meta: { guest: true },
     },
 
-    // App (CRM)
+    // ----------------------------------------------------------------
+    // Owner Admin (/crm) — только superadmin
+    // ----------------------------------------------------------------
+    {
+        path: '/crm',
+        component: () => import('@/layouts/OwnerLayout.vue'),
+        meta: { requiresAuth: true, roles: ['superadmin'] },
+        children: [
+            {
+                path: '',
+                name: 'owner.dashboard',
+                component: () => import('@/pages/owner/OwnerDashboard.vue'),
+            },
+            {
+                path: 'agencies',
+                name: 'owner.agencies',
+                component: () => import('@/pages/owner/OwnerAgenciesPage.vue'),
+            },
+            {
+                path: 'users',
+                name: 'owner.users',
+                component: () => import('@/pages/owner/OwnerUsersPage.vue'),
+            },
+            {
+                path: 'leads',
+                name: 'owner.leads',
+                component: () => import('@/pages/owner/OwnerLeadsPage.vue'),
+            },
+            {
+                path: 'countries',
+                name: 'owner.countries',
+                component: () => import('@/pages/owner/OwnerCountriesPage.vue'),
+            },
+            {
+                path: 'documents',
+                name: 'owner.documents',
+                component: () => import('@/pages/owner/OwnerDocumentsPage.vue'),
+            },
+            {
+                path: 'finance',
+                name: 'owner.finance',
+                component: () => import('@/pages/owner/OwnerFinancePage.vue'),
+            },
+        ],
+    },
+
+    // ----------------------------------------------------------------
+    // App (CRM для агентств) — /app
+    // ----------------------------------------------------------------
     {
         path: '/app',
         component: () => import('@/layouts/AppLayout.vue'),
@@ -112,12 +160,19 @@ router.beforeEach((to) => {
         return { name: 'login', query: { redirect: to.fullPath } };
     }
 
+    // Гость не должен попасть на /login если уже вошёл
     if (to.meta.guest && auth.isLoggedIn) {
-        return { name: 'dashboard' };
+        return auth.user?.role === 'superadmin'
+            ? { name: 'owner.dashboard' }
+            : { name: 'dashboard' };
     }
 
-    if (to.meta.roles && !to.meta.roles.includes(auth.user?.role)) {
-        return { name: 'dashboard' };
+    // Проверка ролей на маршруте
+    if (to.meta.roles && auth.user?.role && !to.meta.roles.includes(auth.user.role)) {
+        // Суперадмин → owner dashboard, остальные → dashboard
+        return auth.user.role === 'superadmin'
+            ? { name: 'owner.dashboard' }
+            : { name: 'dashboard' };
     }
 });
 
