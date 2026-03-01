@@ -116,7 +116,7 @@
         <nav class="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white border-t border-gray-100">
             <div class="flex items-stretch h-16">
                 <!-- Left nav items -->
-                <router-link v-for="item in navItems.slice(0, 1)" :key="item.name" :to="{ name: item.name }"
+                <router-link v-for="item in navItems.slice(0, 2)" :key="item.name" :to="{ name: item.name }"
                     class="flex-1 flex flex-col items-center justify-center gap-0.5 text-xs transition-colors"
                     :class="$route.name === item.name ? 'text-[#1BA97F]' : 'text-gray-400'">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
@@ -136,7 +136,7 @@
                 </button>
 
                 <!-- Right nav items -->
-                <router-link v-for="item in navItems.slice(1)" :key="item.name" :to="{ name: item.name }"
+                <router-link v-for="item in navItems.slice(2)" :key="item.name" :to="{ name: item.name }"
                     class="flex-1 flex flex-col items-center justify-center gap-0.5 text-xs transition-colors"
                     :class="$route.name === item.name ? 'text-[#1BA97F]' : 'text-gray-400'">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
@@ -247,9 +247,14 @@ const navItems = [
         label: 'Заявки',
         iconPath: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
     },
+    {
+        name: 'me.agencies',
+        label: 'Агентства',
+        iconPath: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4',
+    },
 ];
 
-const TITLES = { 'me.profile': 'Профиль', 'me.scoring': 'Скоринг', 'me.cases': 'Заявки' };
+const TITLES = { 'me.profile': 'Профиль', 'me.scoring': 'Скоринг', 'me.cases': 'Заявки', 'me.agencies': 'Агентства' };
 const currentTitle = computed(() => TITLES[route.name] ?? 'Кабинет');
 
 function logout() {

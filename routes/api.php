@@ -9,6 +9,7 @@ use App\Modules\Case\Controllers\DashboardController;
 use App\Modules\Case\Controllers\KanbanController;
 use App\Modules\Client\Controllers\ClientController;
 use App\Modules\Client\Controllers\ClientPortalController;
+use App\Modules\PublicPortal\Controllers\PublicAgencyController;
 use App\Modules\PublicPortal\Controllers\PublicAuthController;
 use App\Modules\PublicPortal\Controllers\PublicProfileController;
 use App\Modules\PublicPortal\Controllers\PublicScoringController;
@@ -277,6 +278,9 @@ Route::prefix('v1')->group(function () {
         Route::patch('me',           [PublicProfileController::class, 'update']);
         Route::post('me/passport',   [PublicProfileController::class, 'uploadPassport']);
         Route::get('me/cases',       [PublicProfileController::class, 'cases']);
+
+        Route::get('agencies',       [PublicAgencyController::class, 'index']);
+        Route::post('leads',         [PublicAgencyController::class, 'submitLead']);
 
         Route::get('scoring',        [PublicScoringController::class, 'scoreAll']);
         Route::get('scoring/{cc}',   [PublicScoringController::class, 'scoreCountry']);

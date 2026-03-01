@@ -84,8 +84,9 @@
                             </div>
 
                             <!-- Найти агентство -->
-                            <button class="mt-4 w-full py-3.5 bg-[#1BA97F] text-white font-semibold rounded-xl
-                                          hover:bg-[#17956f] active:scale-[0.98] transition-all">
+                            <button @click="goToAgencies(activeScore)"
+                                class="mt-4 w-full py-3.5 bg-[#1BA97F] text-white font-semibold rounded-xl
+                                      hover:bg-[#17956f] active:scale-[0.98] transition-all">
                                 Найти агентство для {{ countryName(activeScore.country_code) }}
                             </button>
                         </div>
@@ -177,7 +178,7 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import LandingLayout from '@/layouts/LandingLayout.vue';
 import { publicPortalApi } from '@/api/public';
 import { usePublicAuthStore } from '@/stores/publicAuth';
@@ -265,6 +266,7 @@ const ProfileForm = {
 };
 
 const route          = useRoute();
+const router         = useRouter();
 const publicAuth     = usePublicAuthStore();
 const scores         = ref([]);
 const activeScore    = ref(null);
@@ -300,6 +302,10 @@ function countryName(code)   { return countryMapDynamic.value[code]?.name ?? get
 function countryFlag(code)   { return countryMapDynamic.value[code]?.flag ?? codeToFlag(code); }
 function breakdownLabel(key) { return breakdownLabels[key]   ?? key; }
 function scoreColor(score)   { return score >= 60 ? '#1BA97F' : score >= 40 ? '#f59e0b' : '#ef4444'; }
+
+function goToAgencies(score) {
+    router.push({ name: 'me.agencies', query: { country_code: score.country_code } });
+}
 
 function selectCountry(s) {
     activeScore.value = s;

@@ -31,6 +31,10 @@ export const publicPortalApi = {
     // Cases
     cases: () => publicApi.get('/me/cases'),
 
+    // Agencies & Leads
+    agencies:   (params) => publicApi.get('/agencies', { params }),
+    submitLead: (data)   => publicApi.post('/leads', data),
+
     // Scoring
     countries:    ()     => publicApi.get('/countries'),
     scoreAll:     ()     => publicApi.get('/scoring'),

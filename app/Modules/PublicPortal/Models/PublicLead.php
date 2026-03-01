@@ -19,6 +19,8 @@ class PublicLead extends Model
         'score',
         'status',
         'assigned_agency_id',
+        'case_id',
+        'client_id',
         'notes',
     ];
 
