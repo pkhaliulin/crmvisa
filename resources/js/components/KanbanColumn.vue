@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col w-64 shrink-0 bg-gray-100 rounded-xl overflow-hidden">
+  <div class="flex flex-col w-64 shrink-0 bg-gray-100 rounded-xl">
     <!-- Column header -->
     <div class="px-3 py-3 flex items-center gap-2">
       <div class="flex items-center gap-1.5 flex-1 min-w-0">

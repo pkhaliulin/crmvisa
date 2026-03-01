@@ -12,11 +12,37 @@ const routes = [
         component: () => import('@/pages/LandingPage.vue'),
         meta: { public: true },
     },
+
+    // Личный кабинет публичного пользователя
+    {
+        path: '/me',
+        component: () => import('@/layouts/ClientPortalLayout.vue'),
+        meta: { requiresPublicAuth: true },
+        children: [
+            { path: '', redirect: { name: 'me.profile' } },
+            {
+                path: 'profile',
+                name: 'me.profile',
+                component: () => import('@/pages/public/PublicProfilePage.vue'),
+            },
+            {
+                path: 'scoring',
+                name: 'me.scoring',
+                component: () => import('@/pages/public/PublicScoringPage.vue'),
+            },
+            {
+                path: 'cases',
+                name: 'me.cases',
+                component: () => import('@/pages/public/PublicCasesPage.vue'),
+            },
+        ],
+    },
+
+    // Обратная совместимость — старый /scoring редиректит в новый кабинет
     {
         path: '/scoring',
-        name: 'public.scoring',
-        component: () => import('@/pages/public/PublicScoringPage.vue'),
-        meta: { public: true, requiresPublicAuth: true },
+        redirect: '/me/scoring',
+        meta: { requiresPublicAuth: true },
     },
 
     // Auth

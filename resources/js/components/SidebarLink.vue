@@ -1,9 +1,9 @@
 <template>
-  <RouterLink :to="to" v-slot="{ isActive }" custom>
+  <RouterLink :to="to" v-slot="{ isActive, isExactActive }" custom>
     <a @click="$router.push(to)"
       :class="[
         'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors cursor-pointer',
-        isActive
+        (exact ? isExactActive : isActive)
           ? 'bg-blue-600 text-white'
           : 'text-gray-300 hover:bg-gray-700/50 hover:text-white'
       ]"
@@ -26,5 +26,6 @@ defineProps({
   label:    { type: String, required: true },
   collapsed:{ type: Boolean, default: false },
   badge:    { type: Number, default: 0 },
+  exact:    { type: Boolean, default: false },
 });
 </script>

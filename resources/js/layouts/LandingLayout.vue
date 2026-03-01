@@ -14,35 +14,43 @@
                     </span>
                 </a>
 
-                <!-- Десктоп навигация -->
-                <nav class="hidden md:flex items-center gap-6 text-sm text-gray-500">
+                <!-- Десктоп навигация (скрываем если залогинен) -->
+                <nav v-if="!publicAuth.isLoggedIn" class="hidden md:flex items-center gap-6 text-sm text-gray-500">
                     <a href="#how"       class="hover:text-gray-900 transition-colors">Как работает</a>
                     <a href="#countries" class="hover:text-gray-900 transition-colors">Страны</a>
                     <a href="#agencies"  class="hover:text-gray-900 transition-colors">Агентства</a>
                 </nav>
 
-                <!-- Десктоп кнопки -->
-                <div class="hidden md:flex items-center gap-3">
-                    <template v-if="publicAuth.isLoggedIn">
-                        <router-link to="/scoring"
-                            class="text-sm font-medium text-[#0A1F44] hover:text-[#1BA97F] transition-colors">
-                            Мой скоринг
-                        </router-link>
-                        <button @click="publicAuth.logout()"
-                            class="text-sm text-gray-400 hover:text-gray-600 transition-colors">
-                            Выйти
-                        </button>
-                    </template>
-                    <template v-else>
-                        <a href="/login" class="text-sm text-gray-500 hover:text-gray-900 transition-colors">
-                            CRM
-                        </a>
-                        <button @click="$emit('open-auth')"
-                            class="px-4 py-2 bg-[#0A1F44] text-white text-sm font-semibold rounded-lg
-                                   hover:bg-[#0d2a5e] transition-colors">
-                            Войти
-                        </button>
-                    </template>
+                <!-- Если залогинен: имя + кнопка кабинета -->
+                <div v-if="publicAuth.isLoggedIn" class="hidden md:flex items-center ml-auto gap-3">
+                    <div class="text-right mr-1">
+                        <div class="text-sm font-semibold text-[#0A1F44] leading-tight">
+                            {{ publicAuth.user?.name || publicAuth.user?.phone }}
+                        </div>
+                        <div class="text-xs text-[#1BA97F] font-medium leading-tight">
+                            Профиль {{ publicAuth.profilePercent }}%
+                        </div>
+                    </div>
+                    <router-link to="/me/profile"
+                        class="px-4 py-2 bg-[#1BA97F] text-white text-sm font-semibold rounded-lg hover:bg-[#169B72] transition-colors">
+                        Мой кабинет
+                    </router-link>
+                    <button @click="publicAuth.logout()"
+                        class="text-sm text-gray-400 hover:text-red-500 transition-colors">
+                        Выйти
+                    </button>
+                </div>
+
+                <!-- Если не залогинен: кнопки входа -->
+                <div v-else class="hidden md:flex items-center gap-3">
+                    <a href="/login" class="text-sm text-gray-500 hover:text-gray-900 transition-colors">
+                        CRM
+                    </a>
+                    <button @click="$emit('open-auth')"
+                        class="px-4 py-2 bg-[#0A1F44] text-white text-sm font-semibold rounded-lg
+                               hover:bg-[#0d2a5e] transition-colors">
+                        Войти
+                    </button>
                 </div>
 
                 <!-- Мобильная кнопка -->
@@ -74,11 +82,15 @@
                 </a>
                 <div class="pt-2 flex flex-col gap-2">
                     <template v-if="publicAuth.isLoggedIn">
-                        <router-link to="/scoring" @click="mobileOpen=false"
-                            class="block py-3 px-4 bg-[#0A1F44] text-white text-sm font-semibold
+                        <router-link to="/me/profile" @click="mobileOpen=false"
+                            class="block py-3 px-4 bg-[#1BA97F] text-white text-sm font-semibold
                                    rounded-xl text-center">
-                            Мой скоринг
+                            Мой кабинет
                         </router-link>
+                        <button @click="publicAuth.logout(); mobileOpen=false"
+                            class="py-3 px-4 border border-gray-200 text-gray-600 text-sm font-semibold rounded-xl text-center w-full">
+                            Выйти
+                        </button>
                     </template>
                     <template v-else>
                         <button @click="mobileOpen=false; $emit('open-auth')"

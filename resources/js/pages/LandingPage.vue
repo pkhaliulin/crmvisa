@@ -383,7 +383,7 @@ function selectCountry(c) {
 
 function startScoring() {
     if (publicAuth.isLoggedIn) {
-        router.push({ name: 'public.scoring', query: { country: selectedCountry.value?.code } });
+        router.push({ name: 'me.scoring', query: { country: selectedCountry.value?.code } });
     } else {
         showAuth.value = true;
     }
@@ -391,7 +391,11 @@ function startScoring() {
 
 function onAuthSuccess() {
     showAuth.value = false;
-    router.push({ name: 'public.scoring', query: { country: selectedCountry.value?.code } });
+    // Новый пользователь → профиль, существующий → скоринг
+    const dest = selectedCountry.value?.code
+        ? { name: 'me.scoring', query: { country: selectedCountry.value.code } }
+        : { name: 'me.profile' };
+    router.push(dest);
 }
 </script>
 

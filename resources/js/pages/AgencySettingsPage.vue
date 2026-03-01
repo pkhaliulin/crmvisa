@@ -127,6 +127,7 @@ import { ref, onMounted } from 'vue';
 import api from '@/api/index';
 import AppInput from '@/components/AppInput.vue';
 import AppTextarea from '@/components/AppTextarea.vue';
+import { codeToFlag, countryName } from '@/utils/countries';
 
 const loading    = ref(true);
 const saving     = ref(false);
@@ -144,29 +145,34 @@ const form = ref({
 });
 
 const selectedCountries = ref([]);
-
-const allCountries = [
-  { code: 'DE', name: 'Германия',      flag: '🇩🇪' },
-  { code: 'FR', name: 'Франция',       flag: '🇫🇷' },
-  { code: 'IT', name: 'Италия',        flag: '🇮🇹' },
-  { code: 'ES', name: 'Испания',       flag: '🇪🇸' },
-  { code: 'GB', name: 'Великобритания',flag: '🇬🇧' },
-  { code: 'US', name: 'США',           flag: '🇺🇸' },
-  { code: 'CZ', name: 'Чехия',         flag: '🇨🇿' },
-  { code: 'PL', name: 'Польша',        flag: '🇵🇱' },
-  { code: 'TR', name: 'Турция',        flag: '🇹🇷' },
-  { code: 'AE', name: 'ОАЭ',           flag: '🇦🇪' },
-  { code: 'KZ', name: 'Казахстан',     flag: '🇰🇿' },
-  { code: 'RU', name: 'Россия',        flag: '🇷🇺' },
-  { code: 'CN', name: 'Китай',         flag: '🇨🇳' },
-  { code: 'KR', name: 'Южная Корея',   flag: '🇰🇷' },
-  { code: 'CA', name: 'Канада',        flag: '🇨🇦' },
-];
+const allCountries = ref([]);
 
 onMounted(async () => {
   try {
-    const res = await api.get('/agency/settings');
-    const data = res.data.data;
+    const [settingsRes, countriesRes] = await Promise.all([
+      api.get('/agency/settings'),
+      api.get('/countries').catch(() => null),
+    ]);
+
+    // Страны из API (portal_countries), или фолбэк на встроенный список
+    if (countriesRes?.data?.data?.length) {
+      allCountries.value = countriesRes.data.data.map(c => ({
+        code: c.code,
+        name: countryName(c.code) || c.name || c.code,
+        flag: codeToFlag(c.code),
+      })).sort((a, b) => a.name.localeCompare(b.name, 'ru'));
+    } else {
+      // Фолбэк: популярные направления
+      const codes = ['AT','AE','BE','BG','CA','CH','CN','CY','CZ','DE','DK',
+                     'EE','ES','FI','FR','GB','GR','HR','HU','IE','IS','IT',
+                     'JP','KR','KZ','LT','LU','LV','MT','NL','NO','PL','PT',
+                     'RO','RU','SE','SI','SK','TR','US'];
+      allCountries.value = codes.map(code => ({
+        code, flag: codeToFlag(code), name: countryName(code),
+      })).sort((a, b) => a.name.localeCompare(b.name, 'ru'));
+    }
+
+    const data = settingsRes.data.data;
     Object.keys(form.value).forEach(key => {
       if (data[key] !== undefined && data[key] !== null) form.value[key] = data[key];
     });

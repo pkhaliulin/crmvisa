@@ -31,9 +31,11 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100">
-            <tr v-for="c in cases" :key="c.id" class="hover:bg-gray-50 transition-colors">
+            <tr v-for="c in cases" :key="c.id"
+              class="hover:bg-blue-50 transition-colors cursor-pointer group"
+              @click="$router.push({ name: 'cases.show', params: { id: c.id } })">
               <td class="px-4 py-3">
-                <p class="font-medium text-gray-900">{{ c.client?.name }}</p>
+                <p class="font-semibold text-blue-700 group-hover:underline">{{ c.client?.name }}</p>
                 <p class="text-xs text-gray-400">{{ c.client?.phone }}</p>
               </td>
               <td class="px-4 py-3">
@@ -52,11 +54,6 @@
               </td>
               <td class="px-4 py-3 text-gray-500">
                 {{ c.assignee?.name ?? '—' }}
-              </td>
-              <td class="px-4 py-3 text-right">
-                <RouterLink :to="{ name: 'cases.show', params: { id: c.id } }" class="text-blue-600 hover:underline text-xs">
-                  Открыть
-                </RouterLink>
               </td>
             </tr>
           </tbody>
@@ -86,7 +83,7 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue';
-import { RouterLink } from 'vue-router';
+import { RouterLink, useRouter } from 'vue-router';
 import { casesApi } from '@/api/cases';
 import { useCountries } from '@/composables/useCountries';
 import AppInput from '@/components/AppInput.vue';
@@ -94,6 +91,7 @@ import AppSelect from '@/components/AppSelect.vue';
 import AppButton from '@/components/AppButton.vue';
 import AppBadge from '@/components/AppBadge.vue';
 
+const router = useRouter();
 const { countryName, countryFlag, visaTypeName } = useCountries();
 
 const cases   = ref([]);

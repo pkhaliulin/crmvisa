@@ -17,7 +17,7 @@
     <nav class="flex-1 py-4 space-y-1 px-2 overflow-y-auto">
       <SidebarLink v-for="item in navItems" :key="item.name"
         :to="item.to" :icon="item.icon" :label="item.label"
-        :collapsed="collapsed" :badge="item.badge"
+        :collapsed="collapsed" :badge="item.badge" :exact="item.exact ?? false"
       />
 
       <div class="pt-3 mt-3 border-t border-gray-700/50">
@@ -69,7 +69,7 @@ const userInitial = computed(() => user.value?.name?.[0]?.toUpperCase() ?? 'U');
 
 const navItems = computed(() => {
   const items = [
-    { to: { name: 'dashboard' }, icon: HomeIcon,                   label: 'Дашборд' },
+    { to: { name: 'dashboard' }, icon: HomeIcon,                   label: 'Дашборд', exact: true },
     { to: { name: 'kanban' },    icon: ViewColumnsIcon,             label: 'Канбан' },
     { to: { name: 'cases' },     icon: ClipboardDocumentListIcon,   label: 'Заявки' },
     { to: { name: 'clients' },   icon: UsersIcon,                   label: 'Клиенты' },

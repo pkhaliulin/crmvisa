@@ -23,24 +23,29 @@
               <th class="text-left px-4 py-3">Гражданство</th>
               <th class="text-left px-4 py-3">Паспорт действует</th>
               <th class="text-left px-4 py-3">Источник</th>
-              <th class="px-4 py-3"></th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100">
-            <tr v-for="c in clients" :key="c.id" class="hover:bg-gray-50 transition-colors">
-              <td class="px-4 py-3 font-medium text-gray-900">{{ c.name }}</td>
+            <tr v-for="c in clients" :key="c.id"
+              class="hover:bg-blue-50 transition-colors cursor-pointer group"
+              @click="$router.push({ name: 'clients.show', params: { id: c.id } })">
+              <td class="px-4 py-3">
+                <p class="font-semibold text-blue-700 group-hover:underline">{{ c.name }}</p>
+                <p class="text-xs text-gray-400">{{ c.email ?? '' }}</p>
+              </td>
               <td class="px-4 py-3 text-gray-500">{{ c.phone ?? '—' }}</td>
-              <td class="px-4 py-3">{{ c.nationality ?? '—' }}</td>
+              <td class="px-4 py-3">
+                <span v-if="c.nationality" class="flex items-center gap-1.5">
+                  <span>{{ codeToFlag(c.nationality?.slice(0,2) ?? '') }}</span>
+                  <span class="text-gray-700">{{ nationalityLabel(c.nationality) }}</span>
+                </span>
+                <span v-else class="text-gray-300">—</span>
+              </td>
               <td class="px-4 py-3" :class="passportClass(c.passport_expires_at)">
                 {{ c.passport_expires_at ? formatDate(c.passport_expires_at) : '—' }}
               </td>
               <td class="px-4 py-3">
                 <AppBadge :color="sourceColor(c.source)">{{ sourceLabel(c.source) }}</AppBadge>
-              </td>
-              <td class="px-4 py-3 text-right">
-                <RouterLink :to="{ name: 'clients.show', params: { id: c.id } }" class="text-blue-600 hover:underline text-xs">
-                  Открыть
-                </RouterLink>
               </td>
             </tr>
           </tbody>
@@ -57,12 +62,14 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { RouterLink } from 'vue-router';
+import { RouterLink, useRouter } from 'vue-router';
 import { clientsApi } from '@/api/clients';
+import { codeToFlag } from '@/utils/countries';
 import AppInput from '@/components/AppInput.vue';
 import AppButton from '@/components/AppButton.vue';
 import AppBadge from '@/components/AppBadge.vue';
 
+const router  = useRouter();
 const clients = ref([]);
 const search  = ref('');
 const loading = ref(false);
@@ -75,6 +82,26 @@ const sourceMap = {
 };
 const sourceLabel = (s) => sourceMap[s]?.label ?? s;
 const sourceColor = (s) => sourceMap[s]?.color ?? 'gray';
+
+// ISO Alpha-3 → название страны (гражданство клиента)
+const NATIONALITIES = {
+  UZB: 'Узбекистан', KAZ: 'Казахстан', KGZ: 'Кыргызстан', TJK: 'Таджикистан',
+  TKM: 'Туркменистан', RUS: 'Россия', UKR: 'Украина', GEO: 'Грузия',
+  AZE: 'Азербайджан', ARM: 'Армения', MDA: 'Молдова', BLR: 'Беларусь',
+  GBR: 'Великобритания', DEU: 'Германия', FRA: 'Франция', ITA: 'Италия',
+  USA: 'США', CAN: 'Канада', CHN: 'Китай', JPN: 'Япония',
+};
+const NATIONALITY_FLAGS = {
+  UZB: '🇺🇿', KAZ: '🇰🇿', KGZ: '🇰🇬', TJK: '🇹🇯', TKM: '🇹🇲',
+  RUS: '🇷🇺', UKR: '🇺🇦', GEO: '🇬🇪', AZE: '🇦🇿', ARM: '🇦🇲',
+  MDA: '🇲🇩', BLR: '🇧🇾', GBR: '🇬🇧', DEU: '🇩🇪', FRA: '🇫🇷',
+  ITA: '🇮🇹', USA: '🇺🇸', CAN: '🇨🇦', CHN: '🇨🇳', JPN: '🇯🇵',
+};
+
+function nationalityLabel(code) {
+  if (!code) return '—';
+  return (NATIONALITY_FLAGS[code] ?? '') + ' ' + (NATIONALITIES[code] ?? code);
+}
 
 function formatDate(d) {
   return new Date(d).toLocaleDateString('ru-RU');

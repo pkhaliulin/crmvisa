@@ -1,6 +1,5 @@
 <template>
-    <LandingLayout>
-        <div class="min-h-screen bg-slate-50 py-6 sm:py-12 px-4 sm:px-6">
+    <div class="min-h-0">
             <div class="max-w-4xl mx-auto">
 
                 <!-- Хедер страницы -->
@@ -174,7 +173,7 @@
                 </div>
             </div>
         </div>
-    </LandingLayout>
+    </div>
 </template>
 
 <script setup>
@@ -183,6 +182,7 @@ import { useRoute } from 'vue-router';
 import LandingLayout from '@/layouts/LandingLayout.vue';
 import { publicPortalApi } from '@/api/public';
 import { usePublicAuthStore } from '@/stores/publicAuth';
+import { countryName as getCountryName, codeToFlag } from '@/utils/countries';
 
 // Инлайн компонент формы профиля
 const ProfileForm = {
@@ -287,19 +287,8 @@ const profile = ref({
     had_overstay:       publicAuth.user?.had_overstay       ?? false,
 });
 
-const countryMap = {
-    DE: { name: 'Германия',       flag: '🇩🇪' },
-    ES: { name: 'Испания',         flag: '🇪🇸' },
-    FR: { name: 'Франция',         flag: '🇫🇷' },
-    IT: { name: 'Италия',          flag: '🇮🇹' },
-    PL: { name: 'Польша',          flag: '🇵🇱' },
-    CZ: { name: 'Чехия',           flag: '🇨🇿' },
-    GB: { name: 'Великобритания',  flag: '🇬🇧' },
-    US: { name: 'США',             flag: '🇺🇸' },
-    CA: { name: 'Канада',          flag: '🇨🇦' },
-    KR: { name: 'Южная Корея',     flag: '🇰🇷' },
-    AE: { name: 'ОАЭ',             flag: '🇦🇪' },
-};
+// Динамический маппинг: после загрузки стран из API заполняется automatически
+const countryMapDynamic = ref({});
 
 const breakdownLabels = {
     finance: 'Финансы',
@@ -308,8 +297,8 @@ const breakdownLabels = {
     profile: 'Профиль',
 };
 
-function countryName(code)   { return countryMap[code]?.name ?? code; }
-function countryFlag(code)   { return countryMap[code]?.flag ?? '🌍'; }
+function countryName(code)   { return countryMapDynamic.value[code]?.name ?? getCountryName(code) ?? code; }
+function countryFlag(code)   { return countryMapDynamic.value[code]?.flag ?? codeToFlag(code); }
 function breakdownLabel(key) { return breakdownLabels[key]   ?? key; }
 function scoreColor(score)   { return score >= 60 ? '#1BA97F' : score >= 40 ? '#f59e0b' : '#ef4444'; }
 
@@ -333,8 +322,19 @@ async function updateProfile() {
 async function loadScores() {
     scoringLoading.value = true;
     try {
-        const { data } = await publicPortalApi.scoreAll();
-        scores.value = data.data.scores;
+        const [scoresRes, countriesRes] = await Promise.all([
+            publicPortalApi.scoreAll(),
+            publicPortalApi.countries().catch(() => null),
+        ]);
+        // Заполняем маппинг стран из API
+        if (countriesRes?.data?.data) {
+            const map = {};
+            countriesRes.data.data.forEach(c => {
+                map[c.code] = { name: c.name, flag: c.flag ?? codeToFlag(c.code) };
+            });
+            countryMapDynamic.value = map;
+        }
+        scores.value = scoresRes.data.data.scores;
         const preselect = route.query.country?.toUpperCase();
         activeScore.value = scores.value.find(s => s.country_code === preselect) ?? scores.value[0];
     } finally {
