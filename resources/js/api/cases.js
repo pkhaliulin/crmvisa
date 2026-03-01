@@ -5,6 +5,7 @@ export const casesApi = {
     get:        (id)     => api.get(`/cases/${id}`),
     create:     (data)   => api.post('/cases', data),
     update:     (id, data) => api.put(`/cases/${id}`, data),
+    assign:     (id, assigned_to) => api.patch(`/cases/${id}`, { assigned_to }),
     remove:     (id)     => api.delete(`/cases/${id}`),
     moveStage:  (id, data) => api.post(`/cases/${id}/move-stage`, data),
     critical:   ()       => api.get('/cases/critical'),

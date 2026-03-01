@@ -41,7 +41,11 @@ class CaseController extends Controller
 
         // Фильтр по менеджеру
         if ($request->filled('assigned_to')) {
-            $query->where('assigned_to', $request->assigned_to);
+            if ($request->assigned_to === 'unassigned') {
+                $query->whereNull('cases.assigned_to');
+            } else {
+                $query->where('cases.assigned_to', $request->assigned_to);
+            }
         }
 
         // Фильтр по приоритету
