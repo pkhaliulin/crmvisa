@@ -116,9 +116,10 @@ Route::prefix('v1')->group(function () {
         Route::get('reports/sla-performance',  [ReportController::class, 'slaPerformance']);
     });
 
-    // Глобальный каталог услуг (все авторизованные)
+    // Глобальный каталог услуг + страны (все авторизованные)
     Route::middleware(['auth:api', 'role:owner,manager,superadmin', 'plan.active'])->group(function () {
-        Route::get('services', [ServiceCatalogController::class, 'index']);
+        Route::get('services',  [ServiceCatalogController::class, 'index']);
+        Route::get('countries', [OwnerController::class, 'countries']);
     });
 
     // -------------------------------------------------------------------------

@@ -4,7 +4,8 @@
       <h2 class="text-lg font-bold text-gray-900 mb-6">Новая заявка</h2>
 
       <form @submit.prevent="handleSubmit" class="space-y-4">
-        <!-- Client search -->
+
+        <!-- Клиент -->
         <div class="relative">
           <label class="text-sm font-medium text-gray-700 block mb-1">
             Клиент <span class="text-red-500">*</span>
@@ -22,13 +23,12 @@
                   : errors.client_id ? 'border-red-400' : 'border-gray-300 focus:border-blue-500'
               ]"
             />
-            <!-- Иконка очистки если клиент выбран -->
             <button v-if="form.client_id" type="button" @click="clearClient"
               class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 text-lg leading-none">
               ×
             </button>
           </div>
-          <!-- Дропдаун результатов -->
+          <!-- Дропдаун клиентов -->
           <div v-if="clientResults.length"
             class="absolute z-20 w-full mt-1 border border-gray-200 rounded-lg bg-white shadow-lg divide-y text-sm max-h-48 overflow-y-auto">
             <button v-for="c in clientResults" :key="c.id" type="button"
@@ -44,15 +44,54 @@
             </button>
           </div>
           <!-- Нет результатов -->
-          <div v-if="showNoResults"
+          <div v-if="showNoClientResults"
             class="absolute z-20 w-full mt-1 border border-gray-200 rounded-lg bg-white shadow-lg px-3 py-2.5 text-sm text-gray-400">
-            Клиент не найден. <RouterLink :to="{ name: 'clients.create' }" class="text-blue-600 hover:underline">Создать нового</RouterLink>
+            Клиент не найден.
+            <RouterLink :to="{ name: 'clients.create' }" class="text-blue-600 hover:underline">Создать нового</RouterLink>
           </div>
           <p v-if="errors.client_id" class="text-xs text-red-600 mt-1">{{ errors.client_id }}</p>
         </div>
 
+        <!-- Страна + Тип визы -->
         <div class="grid grid-cols-2 gap-4">
-          <AppInput v-model="form.country_code" label="Страна (ISO)" placeholder="DE" required :error="errors.country_code" />
+
+          <!-- Страна с автодроп-дауном -->
+          <div class="relative">
+            <label class="text-sm font-medium text-gray-700 block mb-1">
+              Страна <span class="text-red-500">*</span>
+            </label>
+            <div class="relative">
+              <input
+                v-model="countrySearch"
+                @input="onCountryInput"
+                @focus="onCountryFocus"
+                @blur="onCountryBlur"
+                placeholder="Испания, DE..."
+                :class="[
+                  'w-full border rounded-lg px-3 py-2 text-sm outline-none pr-7',
+                  form.country_code
+                    ? 'border-green-500 bg-green-50 text-green-800 font-medium'
+                    : errors.country_code ? 'border-red-400' : 'border-gray-300 focus:border-blue-500'
+                ]"
+              />
+              <button v-if="form.country_code" type="button" @click="clearCountry"
+                class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 text-lg leading-none">
+                ×
+              </button>
+            </div>
+            <!-- Дропдаун стран -->
+            <div v-if="countryDropdownVisible && filteredCountries.length"
+              class="absolute z-20 w-full mt-1 border border-gray-200 rounded-lg bg-white shadow-lg text-sm max-h-48 overflow-y-auto">
+              <button v-for="c in filteredCountries" :key="c.country_code" type="button"
+                class="w-full text-left px-3 py-2 hover:bg-blue-50 flex items-center gap-2"
+                @mousedown.prevent="selectCountry(c)">
+                <span class="font-mono text-xs text-gray-400 w-6">{{ c.country_code }}</span>
+                <span class="text-gray-900">{{ c.name }}</span>
+              </button>
+            </div>
+            <p v-if="errors.country_code" class="text-xs text-red-600 mt-1">{{ errors.country_code }}</p>
+          </div>
+
           <AppInput v-model="form.visa_type" label="Тип визы" placeholder="tourist" required :error="errors.visa_type" />
         </div>
 
@@ -75,10 +114,11 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, watch } from 'vue';
+import { ref, reactive, computed, onMounted } from 'vue';
 import { useRouter, RouterLink } from 'vue-router';
 import { casesApi } from '@/api/cases';
 import { clientsApi } from '@/api/clients';
+import { countriesApi } from '@/api/countries';
 import AppInput from '@/components/AppInput.vue';
 import AppSelect from '@/components/AppSelect.vue';
 import AppButton from '@/components/AppButton.vue';
@@ -88,50 +128,37 @@ const form   = reactive({
   client_id: '', country_code: '', visa_type: '', priority: 'normal',
   travel_date: '', critical_date: '', notes: '',
 });
-const errors = ref({});
+const errors   = ref({});
 const errorMsg = ref('');
 const loading  = ref(false);
+
+// ── Клиент ──────────────────────────────────────────────────────────────────
 const clientSearch  = ref('');
 const clientResults = ref([]);
-const searched      = ref(false);
+const clientSearched = ref(false);
 
-const showNoResults = computed(() =>
-  searched.value && !clientResults.value.length && clientSearch.value.length >= 2 && !form.client_id
+const showNoClientResults = computed(() =>
+  clientSearched.value && !clientResults.value.length && clientSearch.value.length >= 2 && !form.client_id
 );
 
-const priorityOptions = [
-  { value: 'low', label: 'Низкий' },
-  { value: 'normal', label: 'Обычный' },
-  { value: 'high', label: 'Высокий' },
-  { value: 'urgent', label: 'Срочный' },
-];
-
-// Автоматически uppercase + ограничить 2 символами
-watch(() => form.country_code, (val) => {
-  const u = val.toUpperCase().slice(0, 2);
-  if (u !== val) form.country_code = u;
-});
-
-let searchDebounce;
-
+let clientDebounce;
 function onClientInput() {
-  // Если пользователь редактирует поле — сбросить выбранного клиента
   if (form.client_id) {
     form.client_id = '';
     clientResults.value = [];
-    searched.value = false;
+    clientSearched.value = false;
     return;
   }
-  clearTimeout(searchDebounce);
+  clearTimeout(clientDebounce);
   if (clientSearch.value.length < 2) {
     clientResults.value = [];
-    searched.value = false;
+    clientSearched.value = false;
     return;
   }
-  searchDebounce = setTimeout(async () => {
+  clientDebounce = setTimeout(async () => {
     const { data } = await clientsApi.list({ q: clientSearch.value });
     clientResults.value = data.data?.data ?? data.data ?? [];
-    searched.value = true;
+    clientSearched.value = true;
   }, 300);
 }
 
@@ -142,35 +169,93 @@ function onClientFocus() {
 }
 
 function selectClient(c) {
-  form.client_id      = c.id;
-  clientSearch.value  = c.name;
-  clientResults.value = [];
-  searched.value      = false;
+  form.client_id       = c.id;
+  clientSearch.value   = `${c.name} — ${c.phone}`;
+  clientResults.value  = [];
+  clientSearched.value = false;
   if (errors.value.client_id) delete errors.value.client_id;
 }
 
 function clearClient() {
-  form.client_id      = '';
-  clientSearch.value  = '';
-  clientResults.value = [];
-  searched.value      = false;
+  form.client_id       = '';
+  clientSearch.value   = '';
+  clientResults.value  = [];
+  clientSearched.value = false;
 }
+
+// ── Страна ──────────────────────────────────────────────────────────────────
+const allCountries = ref([]);
+const countrySearch = ref('');
+const countryDropdownVisible = ref(false);
+
+onMounted(async () => {
+  try {
+    const { data } = await countriesApi.list();
+    allCountries.value = data.data ?? [];
+  } catch {
+    // fallback — страны недоступны
+  }
+});
+
+const filteredCountries = computed(() => {
+  const q = countrySearch.value.trim().toLowerCase();
+  if (!q) return allCountries.value;
+  return allCountries.value.filter(c =>
+    c.name.toLowerCase().includes(q) ||
+    c.country_code.toLowerCase().startsWith(q)
+  );
+});
+
+function onCountryInput() {
+  if (form.country_code) {
+    form.country_code = '';
+    if (errors.value.country_code) delete errors.value.country_code;
+  }
+  countryDropdownVisible.value = true;
+}
+
+function onCountryFocus() {
+  countryDropdownVisible.value = true;
+}
+
+function onCountryBlur() {
+  // Задержка чтобы mousedown на пункте списка успел сработать
+  setTimeout(() => { countryDropdownVisible.value = false; }, 150);
+}
+
+function selectCountry(c) {
+  form.country_code      = c.country_code;
+  countrySearch.value    = c.name;
+  countryDropdownVisible.value = false;
+  if (errors.value.country_code) delete errors.value.country_code;
+}
+
+function clearCountry() {
+  form.country_code      = '';
+  countrySearch.value    = '';
+  countryDropdownVisible.value = false;
+}
+
+// ── Форма ────────────────────────────────────────────────────────────────────
+const priorityOptions = [
+  { value: 'low',    label: 'Низкий' },
+  { value: 'normal', label: 'Обычный' },
+  { value: 'high',   label: 'Высокий' },
+  { value: 'urgent', label: 'Срочный' },
+];
 
 async function handleSubmit() {
   errors.value   = {};
   errorMsg.value = '';
 
-  // Клиентская валидация
   if (!form.client_id) {
     errors.value.client_id = 'Выберите клиента из списка';
     return;
   }
-  const cc = form.country_code.trim().toUpperCase();
-  if (!cc || cc.length !== 2) {
-    errors.value.country_code = 'Введите двухбуквенный код страны (например: DE, FR, US)';
+  if (!form.country_code) {
+    errors.value.country_code = 'Выберите страну из списка';
     return;
   }
-  form.country_code = cc;
 
   loading.value = true;
 
