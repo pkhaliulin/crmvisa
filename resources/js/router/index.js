@@ -7,7 +7,7 @@ const routes = [
     // Публичный лендинг (visabor.uz)
     // ----------------------------------------------------------------
     {
-        path: '/landing',
+        path: '/',
         name: 'landing',
         component: () => import('@/pages/LandingPage.vue'),
         meta: { public: true },
@@ -33,9 +33,9 @@ const routes = [
         meta: { guest: true },
     },
 
-    // App
+    // App (CRM)
     {
-        path: '/',
+        path: '/app',
         component: () => import('@/layouts/AppLayout.vue'),
         meta: { requiresAuth: true },
         children: [
@@ -89,7 +89,7 @@ const routes = [
     },
 
     // Fallback
-    { path: '/:pathMatch(.*)*', redirect: '/' },
+    { path: '/:pathMatch(.*)*', redirect: { name: 'landing' } },
 ];
 
 const router = createRouter({

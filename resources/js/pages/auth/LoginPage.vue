@@ -60,7 +60,7 @@ async function handleSubmit() {
 
   try {
     await auth.login(form.value);
-    router.push(route.query.redirect || { name: 'dashboard' });
+    router.push(route.query.redirect || { name: 'dashboard', replace: true });
   } catch (err) {
     const data = err.response?.data;
     if (data?.errors) {
