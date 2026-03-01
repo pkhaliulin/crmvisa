@@ -44,8 +44,8 @@
             </div>
             <p v-if="pkg.description" class="text-sm text-gray-500 mt-1">{{ pkg.description }}</p>
             <div class="flex gap-4 mt-2 text-xs text-gray-400">
-              <span v-if="pkg.country_code">{{ pkg.country_code }}</span>
-              <span v-if="pkg.visa_type">{{ pkg.visa_type }}</span>
+              <span v-if="pkg.country_code">{{ countryName(pkg.country_code) }}</span>
+              <span v-if="pkg.visa_type">{{ visaTypeName(pkg.visa_type) }}</span>
               <span v-if="pkg.price">{{ pkg.price }} {{ pkg.currency }}</span>
               <span v-if="pkg.processing_days">{{ pkg.processing_days }} дн.</span>
             </div>
@@ -82,28 +82,72 @@
         </div>
 
         <div class="p-5 space-y-4">
+          <!-- Название -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Название *</label>
             <input v-model="modalForm.name" type="text"
               class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
 
+          <!-- Страна + Тип визы -->
           <div class="grid grid-cols-2 gap-3">
+
+            <!-- Страна -->
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Страна (ISO)</label>
-              <input v-model="modalForm.country_code" type="text" maxlength="2" placeholder="DE"
-                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              <label class="block text-sm font-medium text-gray-700 mb-1">Страна</label>
+              <div class="relative">
+                <input
+                  v-model="countrySearch"
+                  @input="onCountryInput"
+                  @focus="countryDropdown = true"
+                  @blur="() => setTimeout(() => countryDropdown = false, 150)"
+                  placeholder="Испания, DE..."
+                  :class="[
+                    'w-full border rounded-lg px-3 py-2 text-sm outline-none pr-6',
+                    modalForm.country_code
+                      ? 'border-green-500 bg-green-50 text-green-800 font-medium'
+                      : 'border-gray-300 focus:border-blue-500'
+                  ]"
+                />
+                <button v-if="modalForm.country_code" type="button" @click="clearCountry"
+                  class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 text-sm leading-none">
+                  ×
+                </button>
+              </div>
+              <!-- Дроп-даун -->
+              <div v-if="countryDropdown && filteredCountries.length"
+                class="absolute z-30 w-56 mt-1 border border-gray-200 rounded-lg bg-white shadow-lg text-sm max-h-48 overflow-y-auto">
+                <button v-for="c in filteredCountries" :key="c.country_code" type="button"
+                  class="w-full text-left px-3 py-2 hover:bg-blue-50 flex items-center gap-2"
+                  @mousedown.prevent="selectCountry(c)">
+                  <span class="text-base">{{ c.flag_emoji }}</span>
+                  <span class="text-gray-900">{{ c.name }}</span>
+                  <span class="ml-auto text-xs text-gray-400 font-mono">{{ c.country_code }}</span>
+                </button>
+              </div>
             </div>
+
+            <!-- Тип визы — зависит от выбранной страны -->
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Тип визы</label>
-              <input v-model="modalForm.visa_type" type="text" placeholder="tourist"
-                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              <select v-model="modalForm.visa_type"
+                :disabled="!modalForm.country_code"
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-400">
+                <option value="">{{ modalForm.country_code ? '— выберите —' : '— сначала страну —' }}</option>
+                <option v-for="slug in selectedCountryVisaTypes" :key="slug" :value="slug">
+                  {{ visaTypeName(slug) }}
+                </option>
+              </select>
             </div>
+
+            <!-- Цена -->
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Цена</label>
               <input v-model.number="modalForm.price" type="number" min="0"
                 class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
             </div>
+
+            <!-- Срок -->
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Срок (дней)</label>
               <input v-model.number="modalForm.processing_days" type="number" min="1"
@@ -111,12 +155,14 @@
             </div>
           </div>
 
+          <!-- Описание -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Описание</label>
             <textarea v-model="modalForm.description" rows="2"
               class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
           </div>
 
+          <!-- Включённые услуги -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">Включённые услуги</label>
             <div class="max-h-48 overflow-y-auto space-y-1 border border-gray-200 rounded-lg p-2">
@@ -130,6 +176,7 @@
             </div>
           </div>
 
+          <!-- Активный -->
           <div class="flex items-center gap-2">
             <input type="checkbox" v-model="modalForm.is_active" id="pkg-active"
               class="w-4 h-4 text-blue-600 rounded border-gray-300" />
@@ -153,8 +200,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import api from '@/api/index';
+import { countriesApi } from '@/api/countries';
 
 const loadingPackages = ref(true);
 const loadingServices = ref(true);
@@ -164,48 +212,93 @@ const editingId = ref(null);
 
 const packages = ref([]);
 const globalServices = ref([]);
+const allCountries = ref([]);
+const allVisaTypes = ref([]);
 
 const defaultForm = () => ({
-  name: '',
-  country_code: '',
-  visa_type: '',
-  description: '',
-  price: null,
-  currency: 'USD',
-  processing_days: null,
-  is_active: true,
-  service_ids: [],
+  name: '', country_code: '', visa_type: '', description: '',
+  price: null, currency: 'USD', processing_days: null,
+  is_active: true, service_ids: [],
 });
 
 const modalForm = ref(defaultForm());
 
-const categoryLabels = {
-  consultation: 'Консультация',
-  documents: 'Документы',
-  translation: 'Перевод',
-  visa_center: 'Визовый центр',
-  financial: 'Финансы',
-  other: 'Прочее',
-};
+// ── Страна ──────────────────────────────────────────────────────────────────
+const countrySearch  = ref('');
+const countryDropdown = ref(false);
 
-function categoryLabel(cat) {
-  return categoryLabels[cat] || cat;
+const filteredCountries = computed(() => {
+  const q = countrySearch.value.trim().toLowerCase();
+  if (!q) return allCountries.value;
+  return allCountries.value.filter(c =>
+    c.name.toLowerCase().includes(q) || c.country_code.toLowerCase().startsWith(q)
+  );
+});
+
+const selectedCountryVisaTypes = computed(() => {
+  if (!modalForm.value.country_code) return [];
+  const c = allCountries.value.find(c => c.country_code === modalForm.value.country_code);
+  return c?.visa_types ?? ['tourist', 'student', 'business'];
+});
+
+function onCountryInput() {
+  if (modalForm.value.country_code) {
+    modalForm.value.country_code = '';
+    modalForm.value.visa_type = '';
+  }
+  countryDropdown.value = true;
 }
 
+function selectCountry(c) {
+  modalForm.value.country_code = c.country_code;
+  modalForm.value.visa_type = '';
+  countrySearch.value = c.name;
+  countryDropdown.value = false;
+}
+
+function clearCountry() {
+  modalForm.value.country_code = '';
+  modalForm.value.visa_type = '';
+  countrySearch.value = '';
+}
+
+// ── Хелперы ──────────────────────────────────────────────────────────────────
+function countryName(code) {
+  return allCountries.value.find(c => c.country_code === code)?.name ?? code;
+}
+
+function visaTypeName(slug) {
+  return allVisaTypes.value.find(t => t.slug === slug)?.name_ru ?? slug;
+}
+
+const categoryLabels = {
+  consultation: 'Консультация', documents: 'Документы',
+  translation: 'Перевод',       visa_center: 'Визовый центр',
+  financial: 'Финансы',         other: 'Прочее',
+};
+function categoryLabel(cat) { return categoryLabels[cat] || cat; }
+
+// ── Загрузка ─────────────────────────────────────────────────────────────────
 onMounted(async () => {
-  const [pkgRes, svcRes] = await Promise.all([
+  const [pkgRes, svcRes, cRes, vtRes] = await Promise.all([
     api.get('/agency/packages').catch(() => ({ data: { data: [] } })),
     api.get('/services').catch(() => ({ data: { data: [] } })),
+    countriesApi.list().catch(() => ({ data: { data: [] } })),
+    countriesApi.visaTypes().catch(() => ({ data: { data: [] } })),
   ]);
-  packages.value = pkgRes.data.data || [];
+  packages.value      = pkgRes.data.data || [];
   globalServices.value = svcRes.data.data || [];
+  allCountries.value   = cRes.data.data || [];
+  allVisaTypes.value   = vtRes.data.data || [];
   loadingPackages.value = false;
   loadingServices.value = false;
 });
 
+// ── CRUD пакетов ─────────────────────────────────────────────────────────────
 function openCreate() {
   editingId.value = null;
   modalForm.value = defaultForm();
+  countrySearch.value = '';
   showModal.value = true;
 }
 
@@ -222,6 +315,8 @@ function openEdit(pkg) {
     is_active: pkg.is_active,
     service_ids: (pkg.items || []).map(i => i.service_id),
   };
+  const c = allCountries.value.find(c => c.country_code === pkg.country_code);
+  countrySearch.value = c?.name ?? pkg.country_code ?? '';
   showModal.value = true;
 }
 
@@ -230,7 +325,7 @@ async function savePackage() {
   try {
     const payload = { ...modalForm.value };
     if (!payload.country_code) delete payload.country_code;
-    if (!payload.visa_type) delete payload.visa_type;
+    if (!payload.visa_type)    delete payload.visa_type;
 
     if (editingId.value) {
       const res = await api.patch(`/agency/packages/${editingId.value}`, payload);

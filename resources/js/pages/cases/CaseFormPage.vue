@@ -85,14 +85,33 @@
               <button v-for="c in filteredCountries" :key="c.country_code" type="button"
                 class="w-full text-left px-3 py-2 hover:bg-blue-50 flex items-center gap-2"
                 @mousedown.prevent="selectCountry(c)">
-                <span class="font-mono text-xs text-gray-400 w-6">{{ c.country_code }}</span>
+                <span class="text-base">{{ c.flag_emoji }}</span>
                 <span class="text-gray-900">{{ c.name }}</span>
+                <span class="ml-auto font-mono text-xs text-gray-400">{{ c.country_code }}</span>
               </button>
             </div>
             <p v-if="errors.country_code" class="text-xs text-red-600 mt-1">{{ errors.country_code }}</p>
           </div>
 
-          <AppInput v-model="form.visa_type" label="Тип визы" placeholder="tourist" required :error="errors.visa_type" />
+          <!-- Тип визы — зависит от выбранной страны -->
+          <div class="flex flex-col gap-1">
+            <label class="text-sm font-medium text-gray-700">
+              Тип визы <span class="text-red-500">*</span>
+            </label>
+            <select v-model="form.visa_type"
+              :disabled="!form.country_code"
+              :class="[
+                'w-full border rounded-lg px-3 py-2 text-sm outline-none',
+                errors.visa_type ? 'border-red-400' : 'border-gray-300 focus:border-blue-500',
+                !form.country_code ? 'bg-gray-50 text-gray-400' : '',
+              ]">
+              <option value="">{{ form.country_code ? '— выберите —' : '— сначала страну —' }}</option>
+              <option v-for="slug in selectedCountryVisaTypes" :key="slug" :value="slug">
+                {{ visaTypeName(slug) }}
+              </option>
+            </select>
+            <p v-if="errors.visa_type" class="text-xs text-red-600">{{ errors.visa_type }}</p>
+          </div>
         </div>
 
         <AppSelect v-model="form.priority" label="Приоритет" :options="priorityOptions" />
@@ -122,6 +141,12 @@ import { countriesApi } from '@/api/countries';
 import AppInput from '@/components/AppInput.vue';
 import AppSelect from '@/components/AppSelect.vue';
 import AppButton from '@/components/AppButton.vue';
+
+// Хелпер имени типа визы — доступен до onMounted
+const allVisaTypes = ref([]);
+function visaTypeName(slug) {
+  return allVisaTypes.value.find(t => t.slug === slug)?.name_ru ?? slug;
+}
 
 const router = useRouter();
 const form   = reactive({
@@ -188,12 +213,22 @@ const allCountries = ref([]);
 const countrySearch = ref('');
 const countryDropdownVisible = ref(false);
 
+const selectedCountryVisaTypes = computed(() => {
+  if (!form.country_code) return [];
+  const c = allCountries.value.find(c => c.country_code === form.country_code);
+  return c?.visa_types ?? ['tourist', 'student', 'business'];
+});
+
 onMounted(async () => {
   try {
-    const { data } = await countriesApi.list();
-    allCountries.value = data.data ?? [];
+    const [cRes, vtRes] = await Promise.all([
+      countriesApi.list(),
+      countriesApi.visaTypes(),
+    ]);
+    allCountries.value  = cRes.data.data ?? [];
+    allVisaTypes.value  = vtRes.data.data ?? [];
   } catch {
-    // fallback — страны недоступны
+    // fallback — справочники недоступны
   }
 });
 
@@ -225,6 +260,7 @@ function onCountryBlur() {
 
 function selectCountry(c) {
   form.country_code      = c.country_code;
+  form.visa_type         = '';
   countrySearch.value    = c.name;
   countryDropdownVisible.value = false;
   if (errors.value.country_code) delete errors.value.country_code;
@@ -232,6 +268,7 @@ function selectCountry(c) {
 
 function clearCountry() {
   form.country_code      = '';
+  form.visa_type         = '';
   countrySearch.value    = '';
   countryDropdownVisible.value = false;
 }
@@ -254,6 +291,10 @@ async function handleSubmit() {
   }
   if (!form.country_code) {
     errors.value.country_code = 'Выберите страну из списка';
+    return;
+  }
+  if (!form.visa_type) {
+    errors.value.visa_type = 'Выберите тип визы';
     return;
   }
 

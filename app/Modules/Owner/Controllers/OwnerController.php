@@ -238,6 +238,11 @@ class OwnerController extends Controller
     public function countries(): JsonResponse
     {
         $countries = DB::table('portal_countries')->orderBy('sort_order')->get();
+        // Декодировать visa_types из JSON-строки в массив
+        $countries = $countries->map(function ($c) {
+            $c->visa_types = is_string($c->visa_types) ? json_decode($c->visa_types, true) : ($c->visa_types ?? []);
+            return $c;
+        });
         return ApiResponse::success($countries);
     }
 
@@ -254,18 +259,23 @@ class OwnerController extends Controller
             'min_monthly_income_usd'  => 'sometimes|integer|min:0',
             'min_score'               => 'sometimes|integer|min:0|max:100',
             'sort_order'              => 'sometimes|integer|min:0',
+            'visa_types'              => 'sometimes|array',
+            'visa_types.*'            => 'string|max:50',
         ]);
+
+        if (isset($data['visa_types'])) {
+            $data['visa_types'] = json_encode($data['visa_types']);
+        }
 
         $data['updated_at'] = now();
         DB::table('portal_countries')->where('country_code', $code)->update($data);
 
-        // Сбросить кеш весов
         Cache::forget('portal_countries_weights');
         Cache::forget('portal_countries_codes');
 
-        return ApiResponse::success(
-            DB::table('portal_countries')->where('country_code', $code)->first()
-        );
+        $row = DB::table('portal_countries')->where('country_code', $code)->first();
+        $row->visa_types = is_string($row->visa_types) ? json_decode($row->visa_types, true) : [];
+        return ApiResponse::success($row);
     }
 
     public function countryStore(Request $request): JsonResponse
@@ -273,20 +283,31 @@ class OwnerController extends Controller
         $data = $request->validate([
             'country_code'            => 'required|string|size:2|uppercase',
             'name'                    => 'required|string|max:100',
-            'flag_emoji'              => 'required|string|max:10',
+            'flag_emoji'              => 'sometimes|string|max:10',
             'is_active'               => 'sometimes|boolean',
-            'weight_finance'          => 'required|numeric|min:0|max:1',
-            'weight_ties'             => 'required|numeric|min:0|max:1',
-            'weight_travel'           => 'required|numeric|min:0|max:1',
-            'weight_profile'          => 'required|numeric|min:0|max:1',
+            'weight_finance'          => 'sometimes|numeric|min:0|max:1',
+            'weight_ties'             => 'sometimes|numeric|min:0|max:1',
+            'weight_travel'           => 'sometimes|numeric|min:0|max:1',
+            'weight_profile'          => 'sometimes|numeric|min:0|max:1',
             'min_monthly_income_usd'  => 'sometimes|integer|min:0',
             'min_score'               => 'sometimes|integer|min:0|max:100',
+            'visa_types'              => 'sometimes|array',
+            'visa_types.*'            => 'string|max:50',
         ]);
 
         abort_if(DB::table('portal_countries')->where('country_code', $data['country_code'])->exists(), 422,
             'Страна уже существует');
 
-        DB::table('portal_countries')->insert(array_merge($data, [
+        $data['visa_types'] = json_encode($data['visa_types'] ?? ['tourist', 'student', 'business']);
+
+        DB::table('portal_countries')->insert(array_merge([
+            'weight_finance'         => 0.25,
+            'weight_ties'            => 0.25,
+            'weight_travel'          => 0.25,
+            'weight_profile'         => 0.25,
+            'min_monthly_income_usd' => 1000,
+            'min_score'              => 60,
+        ], $data, [
             'created_at' => now(),
             'updated_at' => now(),
         ]));
@@ -294,11 +315,62 @@ class OwnerController extends Controller
         Cache::forget('portal_countries_weights');
         Cache::forget('portal_countries_codes');
 
+        $row = DB::table('portal_countries')->where('country_code', $data['country_code'])->first();
+        $row->visa_types = json_decode($row->visa_types, true);
+        return ApiResponse::success($row, 'Страна добавлена', 201);
+    }
+
+    // =========================================================================
+    // Типы виз (portal_visa_types)
+    // =========================================================================
+
+    public function visaTypes(): JsonResponse
+    {
+        $types = DB::table('portal_visa_types')->orderBy('sort_order')->get();
+        return ApiResponse::success($types);
+    }
+
+    public function visaTypeStore(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'slug'       => 'required|string|max:50|regex:/^[a-z_]+$/|unique:portal_visa_types,slug',
+            'name_ru'    => 'required|string|max:100',
+            'sort_order' => 'sometimes|integer|min:0',
+        ]);
+
+        DB::table('portal_visa_types')->insert(array_merge($data, [
+            'is_active'  => true,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]));
+
         return ApiResponse::success(
-            DB::table('portal_countries')->where('country_code', $data['country_code'])->first(),
-            'Страна добавлена',
+            DB::table('portal_visa_types')->where('slug', $data['slug'])->first(),
+            'Тип визы добавлен',
             201
         );
+    }
+
+    public function visaTypeUpdate(Request $request, string $slug): JsonResponse
+    {
+        $data = $request->validate([
+            'name_ru'    => 'sometimes|string|max:100',
+            'sort_order' => 'sometimes|integer|min:0',
+            'is_active'  => 'sometimes|boolean',
+        ]);
+
+        $data['updated_at'] = now();
+        DB::table('portal_visa_types')->where('slug', $slug)->update($data);
+
+        return ApiResponse::success(
+            DB::table('portal_visa_types')->where('slug', $slug)->first()
+        );
+    }
+
+    public function visaTypeDestroy(string $slug): JsonResponse
+    {
+        DB::table('portal_visa_types')->where('slug', $slug)->delete();
+        return ApiResponse::success(null, 'Тип визы удалён');
     }
 
     // =========================================================================

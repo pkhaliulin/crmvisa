@@ -116,10 +116,11 @@ Route::prefix('v1')->group(function () {
         Route::get('reports/sla-performance',  [ReportController::class, 'slaPerformance']);
     });
 
-    // Глобальный каталог услуг + страны (все авторизованные)
+    // Глобальный каталог услуг + страны + типы виз (все авторизованные)
     Route::middleware(['auth:api', 'role:owner,manager,superadmin', 'plan.active'])->group(function () {
-        Route::get('services',  [ServiceCatalogController::class, 'index']);
-        Route::get('countries', [OwnerController::class, 'countries']);
+        Route::get('services',   [ServiceCatalogController::class, 'index']);
+        Route::get('countries',  [OwnerController::class, 'countries']);
+        Route::get('visa-types', [OwnerController::class, 'visaTypes']);
     });
 
     // -------------------------------------------------------------------------
@@ -221,6 +222,12 @@ Route::prefix('v1')->group(function () {
         Route::get('countries',            [OwnerController::class, 'countries']);
         Route::post('countries',           [OwnerController::class, 'countryStore']);
         Route::patch('countries/{code}',   [OwnerController::class, 'countryUpdate']);
+
+        // Типы виз
+        Route::get('visa-types',           [OwnerController::class, 'visaTypes']);
+        Route::post('visa-types',          [OwnerController::class, 'visaTypeStore']);
+        Route::patch('visa-types/{slug}',  [OwnerController::class, 'visaTypeUpdate']);
+        Route::delete('visa-types/{slug}', [OwnerController::class, 'visaTypeDestroy']);
 
         // Документы
         Route::get('documents', [OwnerController::class, 'documents']);
