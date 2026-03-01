@@ -4,8 +4,7 @@
         <!-- Header -->
         <header class="fixed top-0 inset-x-0 z-50 h-14 bg-white border-b border-gray-100 flex items-center gap-3 px-4 sm:px-6">
             <a href="/" class="flex items-center shrink-0">
-                <img src="/images/logo.png"
-                     srcset="/images/logo@1x.png 1x, /images/logo@2x.png 2x"
+                <img :src="logoUrl" :srcset="`${logoUrl} 1x, ${logoUrl2x} 2x`"
                      alt="VisaBor" class="h-7 w-auto">
             </a>
 
@@ -213,6 +212,8 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import logoUrl from '@/assets/logo.png';
+import logoUrl2x from '@/assets/logo@2x.png';
 import { usePublicAuthStore } from '@/stores/publicAuth';
 
 const router     = useRouter();

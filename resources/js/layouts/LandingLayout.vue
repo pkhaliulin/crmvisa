@@ -5,8 +5,7 @@
             <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
                 <!-- Логотип -->
                 <a href="/" class="flex items-center select-none shrink-0">
-                    <img src="/images/logo.png"
-                         srcset="/images/logo@1x.png 1x, /images/logo@2x.png 2x"
+                    <img :src="logoUrl" :srcset="`${logoUrl} 1x, ${logoUrl2x} 2x`"
                          alt="VisaBor" class="h-8 w-auto">
                 </a>
 
@@ -123,6 +122,8 @@
 <script setup>
 import { ref } from 'vue';
 import { usePublicAuthStore } from '@/stores/publicAuth';
+import logoUrl from '@/assets/logo.png';
+import logoUrl2x from '@/assets/logo@2x.png';
 defineEmits(['open-auth']);
 const publicAuth = usePublicAuthStore();
 const mobileOpen = ref(false);
