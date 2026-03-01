@@ -1,21 +1,27 @@
 <template>
-    <!-- Оверлей -->
-    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+    <!-- Оверлей: на мобильном снизу, на десктопе по центру -->
+    <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/40 backdrop-blur-sm"
          @click.self="$emit('close')">
 
-        <div class="w-full max-w-sm bg-white rounded-3xl shadow-2xl overflow-hidden">
+        <!-- Карточка: на мобильном — bottom sheet, на десктопе — обычный попап -->
+        <div class="w-full sm:max-w-sm bg-white sm:rounded-3xl rounded-t-3xl shadow-2xl overflow-hidden
+                    max-h-[92vh] overflow-y-auto">
             <!-- Шапка -->
-            <div class="px-8 pt-8 pb-4">
-                <div class="flex items-center justify-between mb-6">
+            <div class="px-6 sm:px-8 pt-5 sm:pt-8 pb-4">
+                <!-- Ручка на мобильном -->
+                <div class="w-12 h-1 bg-gray-200 rounded-full mx-auto mb-5 sm:hidden"></div>
+
+                <div class="flex items-center justify-between mb-5">
                     <div class="flex items-center gap-2">
-                        <svg width="24" height="24" viewBox="0 0 28 28" fill="none">
+                        <svg width="22" height="22" viewBox="0 0 28 28" fill="none">
                             <path d="M2 8L10 20L14 14L18 20L26 8" stroke="#1BA97F" stroke-width="3"
                                   stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
                         <span class="font-bold text-[#0A1F44]">VisaBor</span>
                     </div>
                     <button @click="$emit('close')"
-                        class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400">
+                        class="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100
+                               text-gray-400 active:bg-gray-200 transition-colors">
                         ✕
                     </button>
                 </div>
@@ -31,32 +37,34 @@
                     <template v-if="step === 'phone'">Введите номер телефона</template>
                     <template v-if="step === 'otp'">Отправили SMS на {{ phone }}</template>
                     <template v-if="step === 'pin'">Запомните его — это ваш ключ</template>
-                    <template v-if="step === 'login-pin'">Введите PIN для входа на {{ phone }}</template>
+                    <template v-if="step === 'login-pin'">Введите PIN для входа</template>
                 </p>
             </div>
 
             <!-- Форма -->
-            <div class="px-8 pb-8">
+            <div class="px-6 sm:px-8 pb-8">
                 <!-- ШАГ 1: Телефон -->
                 <template v-if="step === 'phone'">
                     <div class="mt-4">
                         <div class="flex items-center border border-gray-200 rounded-xl focus-within:border-[#1BA97F] transition-colors">
-                            <span class="pl-4 text-gray-400 select-none">+</span>
+                            <span class="pl-4 text-gray-400 select-none text-lg">+</span>
                             <input
                                 v-model="phone"
                                 type="tel"
                                 placeholder="998 90 123 45 67"
                                 maxlength="20"
                                 class="flex-1 px-3 py-4 text-[#0A1F44] font-medium placeholder-gray-300
-                                       outline-none bg-transparent"
+                                       outline-none bg-transparent text-base"
                                 @keydown.enter="sendOtp"
+                                autocomplete="tel"
                             />
                         </div>
                         <p v-if="error" class="mt-2 text-sm text-red-500">{{ error }}</p>
                     </div>
                     <button @click="sendOtp" :disabled="loading"
                         class="mt-4 w-full py-4 bg-[#0A1F44] text-white font-semibold rounded-xl
-                               hover:bg-[#0d2a5e] transition-colors disabled:opacity-60">
+                               hover:bg-[#0d2a5e] active:scale-[0.98] transition-all disabled:opacity-60
+                               text-base">
                         {{ loading ? 'Отправляем...' : 'Получить код' }}
                     </button>
                     <p class="mt-4 text-center text-sm text-gray-400">
@@ -69,7 +77,7 @@
 
                 <!-- ШАГ 2: OTP -->
                 <template v-if="step === 'otp'">
-                    <div class="mt-4 flex gap-2 justify-center">
+                    <div class="mt-4 flex gap-2 sm:gap-2 justify-center">
                         <input
                             v-for="(_, i) in otp"
                             :key="i"
@@ -77,7 +85,8 @@
                             v-model="otp[i]"
                             type="tel"
                             maxlength="1"
-                            class="w-12 h-14 text-center text-xl font-bold text-[#0A1F44]
+                            inputmode="numeric"
+                            class="w-11 h-14 sm:w-12 sm:h-14 text-center text-xl font-bold text-[#0A1F44]
                                    border border-gray-200 rounded-xl outline-none
                                    focus:border-[#1BA97F] transition-colors"
                             @input="onOtpInput(i)"
@@ -87,21 +96,22 @@
                     <p v-if="error" class="mt-2 text-sm text-red-500 text-center">{{ error }}</p>
                     <button @click="verifyOtp" :disabled="loading || otpCode.length < 6"
                         class="mt-6 w-full py-4 bg-[#0A1F44] text-white font-semibold rounded-xl
-                               hover:bg-[#0d2a5e] transition-colors disabled:opacity-60">
+                               hover:bg-[#0d2a5e] active:scale-[0.98] transition-all disabled:opacity-60
+                               text-base">
                         {{ loading ? 'Проверяем...' : 'Подтвердить' }}
                     </button>
                     <div class="mt-4 flex items-center justify-between text-sm">
-                        <button @click="step = 'phone'" class="text-gray-400 hover:text-gray-600">
+                        <button @click="step = 'phone'" class="text-gray-400 hover:text-gray-600 py-2">
                             Изменить номер
                         </button>
-                        <button v-if="canResend" @click="sendOtp" class="text-[#0A1F44] font-medium hover:underline">
+                        <button v-if="canResend" @click="sendOtp" class="text-[#0A1F44] font-medium hover:underline py-2">
                             Отправить снова
                         </button>
-                        <span v-else class="text-gray-400">Снова через {{ resendTimer }}с</span>
+                        <span v-else class="text-gray-400 py-2">Снова через {{ resendTimer }}с</span>
                     </div>
                 </template>
 
-                <!-- ШАГ 3: Установить PIN (только для новых) -->
+                <!-- ШАГ 3: Установить PIN -->
                 <template v-if="step === 'pin'">
                     <p class="mt-3 text-sm text-gray-500 mb-4">
                         Установите 4-значный PIN для быстрого входа в следующий раз.
@@ -109,16 +119,18 @@
                     <input
                         v-model="pin"
                         type="tel"
+                        inputmode="numeric"
                         maxlength="4"
-                        placeholder="Введите PIN (4 цифры)"
+                        placeholder="• • • •"
                         class="w-full px-4 py-4 border border-gray-200 rounded-xl text-center
-                               text-2xl tracking-[0.5em] font-bold text-[#0A1F44] outline-none
+                               text-3xl tracking-[0.6em] font-bold text-[#0A1F44] outline-none
                                focus:border-[#1BA97F] transition-colors"
                     />
                     <p v-if="error" class="mt-2 text-sm text-red-500">{{ error }}</p>
                     <button @click="setPin" :disabled="pin.length < 4 || loading"
                         class="mt-4 w-full py-4 bg-[#1BA97F] text-white font-semibold rounded-xl
-                               hover:bg-[#17956f] transition-colors disabled:opacity-60">
+                               hover:bg-[#17956f] active:scale-[0.98] transition-all disabled:opacity-60
+                               text-base">
                         {{ loading ? 'Сохраняем...' : 'Установить PIN и продолжить' }}
                     </button>
                     <button @click="finish" class="mt-2 w-full py-3 text-sm text-gray-400 hover:text-gray-600">
@@ -132,24 +144,27 @@
                         <input
                             v-model="phone"
                             type="tel"
+                            inputmode="tel"
                             placeholder="+998901234567"
                             class="w-full px-4 py-4 border border-gray-200 rounded-xl outline-none
-                                   focus:border-[#1BA97F] transition-colors text-[#0A1F44]"
+                                   focus:border-[#1BA97F] transition-colors text-[#0A1F44] text-base"
                         />
                         <input
                             v-model="pin"
                             type="tel"
+                            inputmode="numeric"
                             maxlength="4"
-                            placeholder="PIN-код"
+                            placeholder="• • • •"
                             class="w-full px-4 py-4 border border-gray-200 rounded-xl text-center
-                                   text-2xl tracking-[0.5em] font-bold text-[#0A1F44] outline-none
+                                   text-3xl tracking-[0.6em] font-bold text-[#0A1F44] outline-none
                                    focus:border-[#1BA97F] transition-colors"
                         />
                     </div>
                     <p v-if="error" class="mt-2 text-sm text-red-500">{{ error }}</p>
                     <button @click="loginPin" :disabled="loading"
                         class="mt-4 w-full py-4 bg-[#0A1F44] text-white font-semibold rounded-xl
-                               hover:bg-[#0d2a5e] transition-colors disabled:opacity-60">
+                               hover:bg-[#0d2a5e] active:scale-[0.98] transition-all disabled:opacity-60
+                               text-base">
                         {{ loading ? 'Входим...' : 'Войти' }}
                     </button>
                     <button @click="step = 'phone'" class="mt-2 w-full py-3 text-sm text-gray-400 hover:text-gray-600">
@@ -178,7 +193,6 @@ const pin     = ref('');
 const loading = ref(false);
 const error   = ref('');
 
-// OTP refs для фокуса
 const otpRefs    = ref([]);
 const otpCode    = computed(() => otp.value.join(''));
 const canResend  = ref(false);
@@ -255,7 +269,6 @@ async function setPin() {
         await publicPortalApi.setPin(pin.value);
         finish();
     } catch {
-        /* игнор, всё равно пропускаем */
         finish();
     } finally {
         loading.value = false;

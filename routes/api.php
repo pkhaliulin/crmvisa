@@ -17,6 +17,7 @@ use App\Modules\Document\Controllers\DocumentTemplateController;
 use App\Modules\Payment\Controllers\BillingController;
 use App\Modules\Payment\Controllers\MarketplaceController;
 use App\Modules\Scoring\Controllers\ScoringController;
+use App\Modules\TelegramBot\Controllers\TelegramBotController;
 use App\Modules\User\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -162,6 +163,12 @@ Route::prefix('v1')->group(function () {
         Route::get('agency/marketplace/leads',                [MarketplaceController::class, 'leads']);
         Route::patch('agency/marketplace/leads/{id}/status',  [MarketplaceController::class, 'updateLeadStatus']);
     });
+
+    // -------------------------------------------------------------------------
+    // Telegram Bot Webhook
+    // -------------------------------------------------------------------------
+
+    Route::post('telegram/webhook', [TelegramBotController::class, 'webhook']);
 
     // -------------------------------------------------------------------------
     // Публичный портал (лендинг visabor.uz)
