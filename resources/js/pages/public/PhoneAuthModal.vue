@@ -1,14 +1,13 @@
 <template>
-    <!-- Оверлей: на мобильном снизу, на десктопе по центру -->
+    <!-- Оверлей -->
     <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/40 backdrop-blur-sm"
          @click.self="$emit('close')">
 
-        <!-- Карточка: на мобильном — bottom sheet, на десктопе — обычный попап -->
+        <!-- Карточка -->
         <div class="w-full sm:max-w-sm bg-white sm:rounded-3xl rounded-t-3xl shadow-2xl overflow-hidden
                     max-h-[92vh] overflow-y-auto">
             <!-- Шапка -->
             <div class="px-6 sm:px-8 pt-5 sm:pt-8 pb-4">
-                <!-- Ручка на мобильном -->
                 <div class="w-12 h-1 bg-gray-200 rounded-full mx-auto mb-5 sm:hidden"></div>
 
                 <div class="flex items-center justify-between mb-5">
@@ -26,7 +25,6 @@
                     </button>
                 </div>
 
-                <!-- Заголовок по шагу -->
                 <h2 class="text-2xl font-bold text-[#0A1F44] mb-1">
                     <template v-if="step === 'phone'">Войти</template>
                     <template v-if="step === 'otp'">Введите код</template>
@@ -43,28 +41,43 @@
 
             <!-- Форма -->
             <div class="px-6 sm:px-8 pb-8">
+
                 <!-- ШАГ 1: Телефон -->
                 <template v-if="step === 'phone'">
                     <div class="mt-4">
-                        <div class="flex items-center border border-gray-200 rounded-xl focus-within:border-[#1BA97F] transition-colors">
-                            <span class="pl-4 text-gray-400 select-none text-lg">+</span>
+                        <!-- Поле с фиксированным +998 -->
+                        <div :class="[
+                            'flex items-center border rounded-xl transition-colors overflow-hidden',
+                            phoneFocused ? 'border-[#1BA97F] ring-2 ring-[#1BA97F]/20' : 'border-gray-200',
+                            error ? 'border-red-400' : '',
+                        ]">
+                            <span class="px-4 py-4 text-[#0A1F44] font-semibold bg-gray-50
+                                         border-r border-gray-200 select-none text-base shrink-0">
+                                +998
+                            </span>
                             <input
-                                v-model="phone"
-                                type="tel"
-                                placeholder="998 90 123 45 67"
-                                maxlength="20"
-                                class="flex-1 px-3 py-4 text-[#0A1F44] font-medium placeholder-gray-300
-                                       outline-none bg-transparent text-base"
+                                ref="phoneInputRef"
+                                :value="phoneDisplay"
+                                @input="onPhoneInput"
+                                @keydown="onPhoneKeydown"
+                                @focus="phoneFocused = true"
+                                @blur="phoneFocused = false"
                                 @keydown.enter="sendOtp"
-                                autocomplete="tel"
+                                type="tel"
+                                inputmode="numeric"
+                                placeholder="97 123 45 67"
+                                maxlength="12"
+                                class="flex-1 px-4 py-4 text-[#0A1F44] font-medium
+                                       outline-none bg-transparent text-base tracking-wider"
                             />
                         </div>
-                        <p v-if="error" class="mt-2 text-sm text-red-500">{{ error }}</p>
+                        <p class="mt-1.5 text-xs text-gray-400">Пример: +998 97 123 45 67</p>
+                        <p v-if="error" class="mt-1 text-sm text-red-500">{{ error }}</p>
                     </div>
-                    <button @click="sendOtp" :disabled="loading"
+                    <button @click="sendOtp" :disabled="loading || phoneDigits.length < 9"
                         class="mt-4 w-full py-4 bg-[#0A1F44] text-white font-semibold rounded-xl
-                               hover:bg-[#0d2a5e] active:scale-[0.98] transition-all disabled:opacity-60
-                               text-base">
+                               hover:bg-[#0d2a5e] active:scale-[0.98] transition-all
+                               disabled:opacity-40 disabled:cursor-not-allowed text-base">
                         {{ loading ? 'Отправляем...' : 'Получить код' }}
                     </button>
                     <p class="mt-4 text-center text-sm text-gray-400">
@@ -75,13 +88,12 @@
                     </p>
                 </template>
 
-                <!-- ШАГ 2: OTP -->
+                <!-- ШАГ 2: OTP (4 бокса) -->
                 <template v-if="step === 'otp'">
                     <p class="mt-3 text-sm text-gray-500 text-center">
-                        Мы отправили вам SMS с ПИН-кодом.<br>
-                        Это ваш ПИН-код для входа в личный кабинет.
+                        Мы отправили вам SMS с кодом подтверждения.
                     </p>
-                    <div class="mt-4 flex gap-3 justify-center">
+                    <div class="mt-5 flex gap-3 justify-center">
                         <input
                             v-for="(_, i) in otp"
                             :key="i"
@@ -90,18 +102,22 @@
                             type="tel"
                             maxlength="1"
                             inputmode="numeric"
-                            class="w-14 h-16 text-center text-2xl font-bold text-[#0A1F44]
-                                   border border-gray-200 rounded-xl outline-none
-                                   focus:border-[#1BA97F] transition-colors"
+                            :class="[
+                                'w-16 h-18 text-center text-2xl font-bold text-[#0A1F44]',
+                                'border-2 rounded-xl outline-none transition-colors',
+                                otp[i] ? 'border-[#1BA97F] bg-[#1BA97F]/5' : 'border-gray-200 focus:border-[#1BA97F]',
+                            ]"
+                            style="height: 4.5rem"
                             @input="onOtpInput(i)"
                             @keydown.backspace="onOtpBackspace(i)"
+                            @keydown="onOtpKeydown($event)"
                         />
                     </div>
-                    <p v-if="error" class="mt-2 text-sm text-red-500 text-center">{{ error }}</p>
+                    <p v-if="error" class="mt-3 text-sm text-red-500 text-center">{{ error }}</p>
                     <button @click="verifyOtp" :disabled="loading || otpCode.length < 4"
                         class="mt-6 w-full py-4 bg-[#0A1F44] text-white font-semibold rounded-xl
-                               hover:bg-[#0d2a5e] active:scale-[0.98] transition-all disabled:opacity-60
-                               text-base">
+                               hover:bg-[#0d2a5e] active:scale-[0.98] transition-all
+                               disabled:opacity-40 disabled:cursor-not-allowed text-base">
                         {{ loading ? 'Проверяем...' : 'Подтвердить' }}
                     </button>
                     <div class="mt-4 flex items-center justify-between text-sm">
@@ -126,15 +142,16 @@
                         inputmode="numeric"
                         maxlength="4"
                         placeholder="• • • •"
-                        class="w-full px-4 py-4 border border-gray-200 rounded-xl text-center
+                        class="w-full px-4 py-4 border-2 border-gray-200 rounded-xl text-center
                                text-3xl tracking-[0.6em] font-bold text-[#0A1F44] outline-none
                                focus:border-[#1BA97F] transition-colors"
+                        @input="pin = pin.replace(/\D/g, '').slice(0, 4)"
                     />
                     <p v-if="error" class="mt-2 text-sm text-red-500">{{ error }}</p>
                     <button @click="setPin" :disabled="pin.length < 4 || loading"
                         class="mt-4 w-full py-4 bg-[#1BA97F] text-white font-semibold rounded-xl
-                               hover:bg-[#17956f] active:scale-[0.98] transition-all disabled:opacity-60
-                               text-base">
+                               hover:bg-[#17956f] active:scale-[0.98] transition-all
+                               disabled:opacity-40 disabled:cursor-not-allowed text-base">
                         {{ loading ? 'Сохраняем...' : 'Установить PIN и продолжить' }}
                     </button>
                     <button @click="finish" class="mt-2 w-full py-3 text-sm text-gray-400 hover:text-gray-600">
@@ -145,30 +162,47 @@
                 <!-- ШАГ: Войти по PIN -->
                 <template v-if="step === 'login-pin'">
                     <div class="mt-4 space-y-3">
-                        <input
-                            v-model="phone"
-                            type="tel"
-                            inputmode="tel"
-                            placeholder="+998901234567"
-                            class="w-full px-4 py-4 border border-gray-200 rounded-xl outline-none
-                                   focus:border-[#1BA97F] transition-colors text-[#0A1F44] text-base"
-                        />
+                        <!-- Телефон с маской -->
+                        <div :class="[
+                            'flex items-center border rounded-xl transition-colors overflow-hidden',
+                            loginPhoneFocused ? 'border-[#1BA97F] ring-2 ring-[#1BA97F]/20' : 'border-gray-200',
+                        ]">
+                            <span class="px-4 py-4 text-[#0A1F44] font-semibold bg-gray-50
+                                         border-r border-gray-200 select-none text-base shrink-0">
+                                +998
+                            </span>
+                            <input
+                                :value="loginPhoneDisplay"
+                                @input="onLoginPhoneInput"
+                                @keydown="onPhoneKeydown"
+                                @focus="loginPhoneFocused = true"
+                                @blur="loginPhoneFocused = false"
+                                type="tel"
+                                inputmode="numeric"
+                                placeholder="97 123 45 67"
+                                maxlength="12"
+                                class="flex-1 px-4 py-4 text-[#0A1F44] font-medium
+                                       outline-none bg-transparent text-base tracking-wider"
+                            />
+                        </div>
+                        <!-- PIN -->
                         <input
                             v-model="pin"
                             type="tel"
                             inputmode="numeric"
                             maxlength="4"
                             placeholder="• • • •"
-                            class="w-full px-4 py-4 border border-gray-200 rounded-xl text-center
+                            class="w-full px-4 py-4 border-2 border-gray-200 rounded-xl text-center
                                    text-3xl tracking-[0.6em] font-bold text-[#0A1F44] outline-none
                                    focus:border-[#1BA97F] transition-colors"
+                            @input="pin = pin.replace(/\D/g, '').slice(0, 4)"
                         />
                     </div>
                     <p v-if="error" class="mt-2 text-sm text-red-500">{{ error }}</p>
-                    <button @click="loginPin" :disabled="loading"
+                    <button @click="loginPin" :disabled="loading || loginPhoneDigits.length < 9 || pin.length < 4"
                         class="mt-4 w-full py-4 bg-[#0A1F44] text-white font-semibold rounded-xl
-                               hover:bg-[#0d2a5e] active:scale-[0.98] transition-all disabled:opacity-60
-                               text-base">
+                               hover:bg-[#0d2a5e] active:scale-[0.98] transition-all
+                               disabled:opacity-40 disabled:cursor-not-allowed text-base">
                         {{ loading ? 'Входим...' : 'Войти' }}
                     </button>
                     <button @click="step = 'phone'" class="mt-2 w-full py-3 text-sm text-gray-400 hover:text-gray-600">
@@ -191,49 +225,68 @@ const emit  = defineEmits(['close', 'success']);
 const publicAuth = usePublicAuthStore();
 
 const step    = ref('phone');
-const phone   = ref('');
-const otp     = ref(['', '', '', '']);
-const pin     = ref('');
 const loading = ref(false);
 const error   = ref('');
 
-const otpRefs    = ref([]);
-const otpCode    = computed(() => otp.value.join(''));
-const canResend  = ref(false);
-const resendTimer = ref(60);
-let timerInterval = null;
+// ── Телефон (шаг 1) ───────────────────────────────────────────────────────────
+const phoneDigits    = ref('');   // 9 цифр после +998
+const phoneFocused   = ref(false);
+const phoneInputRef  = ref(null);
 
-function startResendTimer() {
-    canResend.value = false;
-    resendTimer.value = 60;
-    timerInterval = setInterval(() => {
-        resendTimer.value--;
-        if (resendTimer.value <= 0) {
-            canResend.value = true;
-            clearInterval(timerInterval);
-        }
-    }, 1000);
+// Форматируем 9 цифр → "XX XXX XX XX"
+function formatDigits(digits) {
+    const d = digits.slice(0, 9);
+    let r = '';
+    if (d.length > 0) r += d.slice(0, 2);
+    if (d.length > 2) r += ' ' + d.slice(2, 5);
+    if (d.length > 5) r += ' ' + d.slice(5, 7);
+    if (d.length > 7) r += ' ' + d.slice(7, 9);
+    return r;
 }
 
-onUnmounted(() => clearInterval(timerInterval));
+const phoneDisplay = computed(() => formatDigits(phoneDigits.value));
 
-async function sendOtp() {
-    if (!phone.value.trim()) { error.value = 'Введите номер телефона'; return; }
+// Полный номер для API: +998XXXXXXXXX
+const phone = computed(() => phoneDigits.value.length === 9 ? `+998${phoneDigits.value}` : `+998${phoneDigits.value}`);
+
+function onPhoneInput(e) {
+    const raw = e.target.value.replace(/\D/g, '').slice(0, 9);
+    phoneDigits.value = raw;
+    // Восстанавливаем форматированное значение
+    const formatted = formatDigits(raw);
+    e.target.value = formatted;
     error.value = '';
-    loading.value = true;
-    try {
-        await publicPortalApi.sendOtp(phone.value);
-        step.value = 'otp';
-        startResendTimer();
-        nextTick(() => otpRefs.value[0]?.focus());
-    } catch (e) {
-        error.value = e.response?.data?.message || 'Ошибка отправки SMS';
-    } finally {
-        loading.value = false;
-    }
 }
+
+function onPhoneKeydown(e) {
+    const allowed = ['Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'Enter'];
+    if (allowed.includes(e.key)) return;
+    if (e.key >= '0' && e.key <= '9') return;
+    e.preventDefault();
+}
+
+// ── Телефон (login-pin шаг) ───────────────────────────────────────────────────
+const loginPhoneDigits  = ref('');
+const loginPhoneFocused = ref(false);
+
+const loginPhoneDisplay = computed(() => formatDigits(loginPhoneDigits.value));
+const loginPhone = computed(() => `+998${loginPhoneDigits.value}`);
+
+function onLoginPhoneInput(e) {
+    const raw = e.target.value.replace(/\D/g, '').slice(0, 9);
+    loginPhoneDigits.value = raw;
+    e.target.value = formatDigits(raw);
+    error.value = '';
+}
+
+// ── OTP (4 бокса) ─────────────────────────────────────────────────────────────
+const otp     = ref(['', '', '', '']);
+const otpRefs = ref([]);
+const otpCode = computed(() => otp.value.join(''));
 
 function onOtpInput(i) {
+    // Оставляем только цифру
+    otp.value[i] = otp.value[i].replace(/\D/g, '').slice(-1);
     if (otp.value[i] && i < 3) {
         nextTick(() => otpRefs.value[i + 1]?.focus());
     }
@@ -247,19 +300,72 @@ function onOtpBackspace(i) {
     }
 }
 
+function onOtpKeydown(e) {
+    const allowed = ['Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight'];
+    if (allowed.includes(e.key)) return;
+    if (e.key >= '0' && e.key <= '9') return;
+    e.preventDefault();
+}
+
+// ── PIN ───────────────────────────────────────────────────────────────────────
+const pin = ref('');
+
+// ── Таймер повторной отправки ─────────────────────────────────────────────────
+const canResend   = ref(false);
+const resendTimer = ref(60);
+let timerInterval = null;
+
+function startResendTimer() {
+    canResend.value  = false;
+    resendTimer.value = 60;
+    timerInterval = setInterval(() => {
+        resendTimer.value--;
+        if (resendTimer.value <= 0) {
+            canResend.value = true;
+            clearInterval(timerInterval);
+        }
+    }, 1000);
+}
+
+onUnmounted(() => clearInterval(timerInterval));
+
+// ── API-вызовы ────────────────────────────────────────────────────────────────
+async function sendOtp() {
+    if (phoneDigits.value.length < 9) {
+        error.value = 'Введите полный номер: 9 цифр после +998';
+        return;
+    }
+    error.value  = '';
+    loading.value = true;
+    try {
+        await publicPortalApi.sendOtp(phone.value);
+        step.value = 'otp';
+        otp.value  = ['', '', '', ''];
+        startResendTimer();
+        nextTick(() => otpRefs.value[0]?.focus());
+    } catch (e) {
+        error.value = e.response?.data?.message || 'Ошибка отправки SMS';
+    } finally {
+        loading.value = false;
+    }
+}
+
 async function verifyOtp() {
     if (otpCode.value.length < 4) return;
-    error.value = '';
+    error.value  = '';
     loading.value = true;
     try {
         const { data } = await publicPortalApi.verifyOtp(phone.value, otpCode.value);
         const { user, token, is_new } = data.data;
         publicAuth.setSession(user, token);
-        step.value = is_new ? 'pin' : 'done';
-        if (!is_new) finish();
+        if (is_new) {
+            step.value = 'pin';
+        } else {
+            finish();
+        }
     } catch (e) {
         error.value = e.response?.data?.message || 'Неверный код';
-        otp.value = ['', '', '', ''];
+        otp.value   = ['', '', '', ''];
         nextTick(() => otpRefs.value[0]?.focus());
     } finally {
         loading.value = false;
@@ -271,23 +377,31 @@ async function setPin() {
     loading.value = true;
     try {
         await publicPortalApi.setPin(pin.value);
-        finish();
     } catch {
-        finish();
+        // даже при ошибке продолжаем
     } finally {
         loading.value = false;
+        finish();
     }
 }
 
 async function loginPin() {
-    error.value = '';
+    if (loginPhoneDigits.value.length < 9) {
+        error.value = 'Введите полный номер телефона';
+        return;
+    }
+    if (pin.value.length < 4) {
+        error.value = 'Введите 4-значный PIN';
+        return;
+    }
+    error.value  = '';
     loading.value = true;
     try {
-        const { data } = await publicPortalApi.loginPin(phone.value, pin.value);
+        const { data } = await publicPortalApi.loginPin(loginPhone.value, pin.value);
         publicAuth.setSession(data.data.user, data.data.token);
         finish();
     } catch (e) {
-        error.value = e.response?.data?.message || 'Неверный PIN';
+        error.value = e.response?.data?.message || 'Неверный номер или PIN';
     } finally {
         loading.value = false;
     }
