@@ -1,14 +1,17 @@
 <template>
-  <div class="max-w-xl space-y-4">
-    <button @click="$router.back()"
-        class="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 transition-colors">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
-      </svg>
-      Назад
-    </button>
+  <div class="max-w-xl">
     <div class="bg-white rounded-xl border border-gray-200 p-6">
-      <h2 class="text-lg font-bold text-gray-900 mb-6">Новая заявка</h2>
+
+      <!-- Header with back -->
+      <div class="flex items-center gap-3 mb-6">
+        <button @click="$router.back()"
+            class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors shrink-0">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+          </svg>
+        </button>
+        <h2 class="text-lg font-bold text-gray-900">Новая заявка</h2>
+      </div>
 
       <form @submit.prevent="handleSubmit" class="space-y-4">
 
@@ -148,7 +151,7 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue';
-import { useRouter, RouterLink } from 'vue-router';
+import { useRouter, useRoute, RouterLink } from 'vue-router';
 import { casesApi } from '@/api/cases';
 import { clientsApi } from '@/api/clients';
 import { countriesApi } from '@/api/countries';
@@ -163,6 +166,7 @@ function visaTypeName(slug) {
 }
 
 const router = useRouter();
+const route  = useRoute();
 const form   = reactive({
   client_id: '', country_code: '', visa_type: '', priority: 'normal',
   travel_date: '', critical_date: '', notes: '',
@@ -234,6 +238,12 @@ const selectedCountryVisaTypes = computed(() => {
 });
 
 onMounted(async () => {
+  // Предзаполнение клиента из query (переход из карточки клиента)
+  if (route.query.client_id) {
+    form.client_id     = route.query.client_id;
+    clientSearch.value = route.query.client_label ?? '';
+  }
+
   try {
     const [cRes, vtRes] = await Promise.all([
       countriesApi.list(),

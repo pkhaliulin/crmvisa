@@ -56,7 +56,7 @@
     <div class="bg-white rounded-xl border border-gray-200 p-6">
       <div class="flex items-center justify-between mb-4">
         <h3 class="font-semibold text-gray-800">Заявки ({{ client.cases?.length ?? 0 }})</h3>
-        <RouterLink :to="{ name: 'cases.create' }">
+        <RouterLink :to="{ name: 'cases.create', query: { client_id: client.id, client_label: `${client.name} — ${client.phone}` } }">
           <AppButton size="sm">+ Новая заявка</AppButton>
         </RouterLink>
       </div>
