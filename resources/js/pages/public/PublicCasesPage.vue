@@ -16,12 +16,14 @@
 
         <!-- Cases list -->
         <template v-else-if="cases.length">
-            <div v-for="c in cases" :key="c.id"
-                class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <button v-for="c in cases" :key="c.id"
+                @click="router.push({ name: 'me.cases.show', params: { id: c.id } })"
+                class="w-full text-left bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden
+                       hover:border-[#1BA97F]/30 hover:shadow-md active:scale-[0.99] transition-all cursor-pointer">
 
                 <!-- Card header -->
                 <div class="px-5 pt-4 pb-3 flex items-start justify-between gap-3">
-                    <div class="flex items-center gap-2.5 min-w-0">
+                    <div class="flex items-center gap-3 min-w-0">
                         <span class="text-2xl shrink-0">{{ codeToFlag(c.country_code) }}</span>
                         <div class="min-w-0">
                             <div class="font-bold text-[#0A1F44] text-sm leading-tight">
@@ -34,37 +36,59 @@
                         </div>
                     </div>
 
-                    <!-- Stage badge -->
-                    <span class="shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full"
-                        :class="stageBadge(c.stage)">
-                        {{ c.stage_label }}
-                    </span>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <!-- Stage badge -->
+                        <span class="text-xs font-semibold px-2.5 py-1 rounded-full"
+                            :class="stageBadge(c.stage)">
+                            {{ c.stage_label }}
+                        </span>
+                        <svg class="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                        </svg>
+                    </div>
                 </div>
 
                 <!-- Stage progress bar -->
                 <div class="px-5 pb-3">
-                    <div class="flex items-center gap-0.5">
+                    <div class="flex items-center gap-0.5 mb-1.5">
                         <div v-for="(s, i) in STAGES" :key="s.key"
                             class="flex-1 h-1.5 rounded-full transition-colors"
                             :class="i < stageOrder(c.stage) ? 'bg-[#1BA97F]' : i === stageOrder(c.stage) ? 'bg-[#1BA97F]/50' : 'bg-gray-100'">
                         </div>
                     </div>
-                    <p class="text-xs text-[#1BA97F] font-medium mt-1.5">{{ c.stage_msg }}</p>
+                    <p class="text-xs text-[#1BA97F] font-medium">{{ c.stage_msg }}</p>
                 </div>
 
-                <!-- Footer info -->
-                <div class="px-5 py-3 border-t border-gray-50 flex items-center justify-between gap-3 text-xs text-gray-400">
-                    <div class="flex items-center gap-3">
-                        <span v-if="c.assignee">
-                            Менеджер: <span class="text-gray-600 font-medium">{{ c.assignee.name }}</span>
-                        </span>
-                        <span v-if="c.critical_date" :class="deadlineClass(c.critical_date, c.stage)">
-                            Дедлайн: {{ formatDate(c.critical_date) }}
-                        </span>
-                    </div>
-                    <span>{{ formatDate(c.created_at) }}</span>
+                <!-- Footer stats -->
+                <div class="px-5 py-3 border-t border-gray-50 flex items-center gap-4 text-xs text-gray-400 flex-wrap">
+                    <!-- Менеджер -->
+                    <span v-if="c.assignee" class="flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                        </svg>
+                        <span class="text-gray-600 font-medium">{{ c.assignee.name }}</span>
+                    </span>
+
+                    <!-- Документы -->
+                    <span v-if="c.docs_total > 0" class="flex items-center gap-1.5"
+                        :class="c.docs_uploaded >= c.docs_total ? 'text-[#1BA97F]' : c.docs_uploaded > 0 ? 'text-amber-500' : 'text-gray-400'">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        Документы {{ c.docs_uploaded }}/{{ c.docs_total }}
+                    </span>
+
+                    <!-- Дедлайн -->
+                    <span v-if="c.critical_date" class="flex items-center gap-1.5 ml-auto"
+                        :class="deadlineClass(c.critical_date, c.stage)">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                        {{ formatDate(c.critical_date) }}
+                    </span>
+                    <span v-else class="ml-auto text-gray-300">{{ formatDate(c.created_at) }}</span>
                 </div>
-            </div>
+            </button>
         </template>
 
         <!-- Empty state -->
@@ -135,9 +159,12 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { usePublicAuthStore } from '@/stores/publicAuth';
 import { publicPortalApi } from '@/api/public';
 import { codeToFlag } from '@/utils/countries';
+
+const router = useRouter();
 
 const publicAuth = usePublicAuthStore();
 

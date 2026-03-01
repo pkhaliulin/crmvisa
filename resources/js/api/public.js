@@ -29,7 +29,8 @@ export const publicPortalApi = {
     },
 
     // Cases
-    cases: () => publicApi.get('/me/cases'),
+    cases:      ()   => publicApi.get('/me/cases'),
+    caseDetail: (id) => publicApi.get(`/me/cases/${id}`),
 
     // Agencies & Leads
     agencies:   (params) => publicApi.get('/agencies', { params }),

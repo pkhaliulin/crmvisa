@@ -4,6 +4,7 @@ namespace App\Modules\PublicPortal\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Case\Models\VisaCase;
+use App\Modules\Document\Models\CaseChecklist;
 use App\Support\Helpers\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -69,33 +70,110 @@ class PublicProfileController extends Controller
     public function cases(Request $request): JsonResponse
     {
         $publicUser = $request->get('_public_user');
-
-        $stages = config('stages');
+        $stages     = config('stages');
 
         $cases = VisaCase::whereHas('client', fn ($q) => $q->where('phone', $publicUser->phone))
             ->with(['agency:id,name,city', 'assignee:id,name'])
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function (VisaCase $case) use ($stages) {
-                $stageConfig = $stages[$case->stage] ?? null;
+                $stageConfig   = $stages[$case->stage] ?? null;
+                $totalDocs     = CaseChecklist::where('case_id', $case->id)->count();
+                $uploadedDocs  = CaseChecklist::where('case_id', $case->id)
+                    ->whereIn('status', ['uploaded', 'approved'])->count();
                 return [
-                    'id'           => $case->id,
-                    'country_code' => $case->country_code,
-                    'visa_type'    => $case->visa_type,
-                    'stage'        => $case->stage,
-                    'stage_label'  => $stageConfig['label'] ?? $case->stage,
-                    'stage_order'  => $stageConfig['order'] ?? 0,
-                    'stage_msg'    => $stageConfig['client_msg'] ?? $case->stage,
-                    'priority'     => $case->priority,
-                    'critical_date'=> $case->critical_date?->toDateString(),
-                    'travel_date'  => $case->travel_date?->toDateString(),
-                    'created_at'   => $case->created_at->toDateString(),
-                    'agency'       => $case->agency ? ['name' => $case->agency->name, 'city' => $case->agency->city] : null,
-                    'assignee'     => $case->assignee ? ['name' => $case->assignee->name] : null,
+                    'id'            => $case->id,
+                    'country_code'  => $case->country_code,
+                    'visa_type'     => $case->visa_type,
+                    'stage'         => $case->stage,
+                    'stage_label'   => $stageConfig['label'] ?? $case->stage,
+                    'stage_order'   => $stageConfig['order'] ?? 0,
+                    'stage_msg'     => $stageConfig['client_msg'] ?? $case->stage,
+                    'priority'      => $case->priority,
+                    'critical_date' => $case->critical_date?->toDateString(),
+                    'travel_date'   => $case->travel_date?->toDateString(),
+                    'created_at'    => $case->created_at->toDateString(),
+                    'agency'        => $case->agency ? ['name' => $case->agency->name, 'city' => $case->agency->city] : null,
+                    'assignee'      => $case->assignee ? ['name' => $case->assignee->name] : null,
+                    'docs_total'    => $totalDocs,
+                    'docs_uploaded' => $uploadedDocs,
                 ];
             });
 
         return ApiResponse::success($cases);
+    }
+
+    /**
+     * GET /public/me/cases/{id}
+     * Детальная информация по заявке + агентство + менеджер + чек-лист документов.
+     */
+    public function caseDetail(Request $request, string $id): JsonResponse
+    {
+        $publicUser = $request->get('_public_user');
+        $stages     = config('stages');
+
+        $case = VisaCase::whereHas('client', fn ($q) => $q->where('phone', $publicUser->phone))
+            ->with([
+                'agency:id,name,city,address,description,website_url,logo_url,phone,email,is_verified,rating,experience_years',
+                'assignee:id,name,email,phone',
+                'stageHistory',
+            ])
+            ->findOrFail($id);
+
+        $stageConfig = $stages[$case->stage] ?? null;
+
+        $checklist = CaseChecklist::where('case_id', $case->id)
+            ->orderBy('sort_order')
+            ->get()
+            ->map(fn ($item) => [
+                'id'          => $item->id,
+                'name'        => $item->name,
+                'description' => $item->description,
+                'is_required' => $item->is_required,
+                'status'      => $item->status,
+                'notes'       => $item->notes,
+            ]);
+
+        $stageTimeline = $case->stageHistory->map(fn ($s) => [
+            'stage'       => $s->stage,
+            'stage_label' => $stages[$s->stage]['label'] ?? $s->stage,
+            'entered_at'  => $s->entered_at?->toDateString(),
+        ]);
+
+        return ApiResponse::success([
+            'id'            => $case->id,
+            'country_code'  => $case->country_code,
+            'visa_type'     => $case->visa_type,
+            'stage'         => $case->stage,
+            'stage_label'   => $stageConfig['label']    ?? $case->stage,
+            'stage_msg'     => $stageConfig['client_msg'] ?? $case->stage,
+            'stage_order'   => $stageConfig['order']    ?? 0,
+            'priority'      => $case->priority,
+            'critical_date' => $case->critical_date?->toDateString(),
+            'travel_date'   => $case->travel_date?->toDateString(),
+            'notes'         => $case->notes,
+            'created_at'    => $case->created_at->toDateString(),
+            'agency'        => $case->agency ? [
+                'name'             => $case->agency->name,
+                'city'             => $case->agency->city,
+                'address'          => $case->agency->address,
+                'description'      => $case->agency->description,
+                'website_url'      => $case->agency->website_url,
+                'logo_url'         => $case->agency->logo_url,
+                'phone'            => $case->agency->phone,
+                'email'            => $case->agency->email,
+                'is_verified'      => $case->agency->is_verified,
+                'rating'           => $case->agency->rating,
+                'experience_years' => $case->agency->experience_years,
+            ] : null,
+            'assignee'      => $case->assignee ? [
+                'name'  => $case->assignee->name,
+                'email' => $case->assignee->email,
+                'phone' => $case->assignee->phone,
+            ] : null,
+            'checklist'     => $checklist,
+            'timeline'      => $stageTimeline,
+        ]);
     }
 
     /**

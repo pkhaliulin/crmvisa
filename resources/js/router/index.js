@@ -36,6 +36,11 @@ const routes = [
                 component: () => import('@/pages/public/PublicCasesPage.vue'),
             },
             {
+                path: 'cases/:id',
+                name: 'me.cases.show',
+                component: () => import('@/pages/public/PublicCaseDetailPage.vue'),
+            },
+            {
                 path: 'agencies',
                 name: 'me.agencies',
                 component: () => import('@/pages/public/PublicAgenciesPage.vue'),
