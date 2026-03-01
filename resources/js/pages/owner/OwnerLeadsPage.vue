@@ -87,7 +87,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import api from '@/api/axios';
+import api from '@/api/index';
 
 const leads        = ref([]);
 const loading      = ref(true);

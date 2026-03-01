@@ -72,7 +72,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import api from '@/api/axios';
+import api from '@/api/index';
 
 const stats   = ref({});
 const loading = ref(true);

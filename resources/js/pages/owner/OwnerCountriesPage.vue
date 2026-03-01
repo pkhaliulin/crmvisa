@@ -133,7 +133,7 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
-import api from '@/api/axios';
+import api from '@/api/index';
 
 const countries    = ref([]);
 const loading      = ref(true);
