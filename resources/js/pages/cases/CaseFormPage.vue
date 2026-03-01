@@ -125,6 +125,32 @@
         </div>
 
         <AppSelect v-model="form.priority" label="Приоритет" :options="priorityOptions" />
+
+        <!-- Менеджер -->
+        <div>
+          <label class="text-sm font-medium text-gray-700 block mb-1">Менеджер</label>
+          <template v-if="assignmentMode === 'manual'">
+            <select v-model="form.assigned_to"
+              class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+              <option v-for="o in managerOptions" :key="o.value" :value="o.value">{{ o.label }}</option>
+            </select>
+          </template>
+          <template v-else>
+            <div class="flex items-center gap-3 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg">
+              <svg class="w-4 h-4 text-blue-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+              </svg>
+              <span class="text-sm text-blue-700">Назначится автоматически {{ autoModeLabels[assignmentMode] }}</span>
+            </div>
+            <div class="mt-2">
+              <select v-model="form.assigned_to"
+                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none text-gray-600 focus:border-blue-500">
+                <option value="">Оставить авто-назначение</option>
+                <option v-for="u in managers" :key="u.id" :value="u.id">{{ u.name }} (вручную)</option>
+              </select>
+            </div>
+          </template>
+        </div>
         <AppInput v-model="form.travel_date" label="Дата поездки" type="date" :error="errors.travel_date" />
         <AppInput v-model="form.critical_date" label="Дедлайн (необязательно, рассчитается автоматически)" type="date" />
 
@@ -155,6 +181,8 @@ import { useRouter, useRoute, RouterLink } from 'vue-router';
 import { casesApi } from '@/api/cases';
 import { clientsApi } from '@/api/clients';
 import { countriesApi } from '@/api/countries';
+import { usersApi } from '@/api/users';
+import api from '@/api/index';
 import AppInput from '@/components/AppInput.vue';
 import AppTextarea from '@/components/AppTextarea.vue';
 import AppSelect from '@/components/AppSelect.vue';
@@ -169,8 +197,20 @@ const router = useRouter();
 const route  = useRoute();
 const form   = reactive({
   client_id: '', country_code: '', visa_type: '', priority: 'normal',
-  travel_date: '', critical_date: '', notes: '',
+  assigned_to: '', travel_date: '', critical_date: '', notes: '',
 });
+
+const managers          = ref([]);
+const assignmentMode    = ref('manual'); // manual | round_robin | by_workload | by_country
+const managerOptions    = computed(() => [
+  { value: '', label: '— не назначен —' },
+  ...managers.value.map(u => ({ value: u.id, label: u.name })),
+]);
+const autoModeLabels = {
+  round_robin: 'по очереди (round-robin)',
+  by_workload: 'по загруженности',
+  by_country:  'по стране назначения',
+};
 const errors   = ref({});
 const errorMsg = ref('');
 const loading  = ref(false);
@@ -245,12 +285,16 @@ onMounted(async () => {
   }
 
   try {
-    const [cRes, vtRes] = await Promise.all([
+    const [cRes, vtRes, uRes, sRes] = await Promise.all([
       countriesApi.list(),
       countriesApi.visaTypes(),
+      usersApi.list(),
+      api.get('/agency/settings'),
     ]);
-    allCountries.value = cRes.data.data ?? [];
-    allVisaTypes.value = vtRes.data.data ?? [];
+    allCountries.value  = cRes.data.data ?? [];
+    allVisaTypes.value  = vtRes.data.data ?? [];
+    managers.value      = (uRes.data.data ?? []).filter(u => ['manager','owner'].includes(u.role));
+    assignmentMode.value = sRes.data.data?.lead_assignment_mode ?? 'manual';
   } catch {
     // fallback
   }
@@ -327,6 +371,7 @@ async function handleSubmit() {
   if (!payload.critical_date) delete payload.critical_date;
   if (!payload.travel_date)   delete payload.travel_date;
   if (!payload.notes)         delete payload.notes;
+  if (!payload.assigned_to)   delete payload.assigned_to;
 
   try {
     const { data } = await casesApi.create(payload);

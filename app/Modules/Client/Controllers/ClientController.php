@@ -49,7 +49,7 @@ class ClientController extends Controller
     {
         $client = $this->service->findOrFail($id);
 
-        return ApiResponse::success($client->load('cases'));
+        return ApiResponse::success($client->load(['cases' => fn ($q) => $q->with('assignee:id,name')->orderBy('created_at', 'desc')]));
     }
 
     public function update(Request $request, string $id): JsonResponse
