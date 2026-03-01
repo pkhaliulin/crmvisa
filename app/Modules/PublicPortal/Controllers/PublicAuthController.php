@@ -40,7 +40,7 @@ class PublicAuthController extends Controller
     {
         $request->validate([
             'phone' => 'required|string',
-            'code'  => 'required|string|digits:6',
+            'code'  => 'required|string|digits:4',
         ]);
 
         try {
