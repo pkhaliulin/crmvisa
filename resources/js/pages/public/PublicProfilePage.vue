@@ -334,6 +334,7 @@ const checkboxItems = [
     { key: 'has_schengen_visa',label: 'Шенгенская виза' },
     { key: 'has_us_visa',      label: 'Виза США' },
     { key: 'had_visa_refusal', label: 'Был отказ в визе' },
+    { key: 'had_overstay',     label: 'Нарушал срок визы' },
 ];
 
 // Быстрый мастер — 4 шага

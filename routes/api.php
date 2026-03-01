@@ -276,6 +276,7 @@ Route::prefix('v1')->group(function () {
         Route::get('me',             [PublicProfileController::class, 'me']);
         Route::patch('me',           [PublicProfileController::class, 'update']);
         Route::post('me/passport',   [PublicProfileController::class, 'uploadPassport']);
+        Route::get('me/cases',       [PublicProfileController::class, 'cases']);
 
         Route::get('scoring',        [PublicScoringController::class, 'scoreAll']);
         Route::get('scoring/{cc}',   [PublicScoringController::class, 'scoreCountry']);

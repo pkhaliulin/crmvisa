@@ -3,6 +3,7 @@
 namespace App\Modules\PublicPortal\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Case\Models\VisaCase;
 use App\Support\Helpers\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -59,6 +60,42 @@ class PublicProfileController extends Controller
             'user'            => $user->fresh(),
             'profile_percent' => $user->fresh()->profileCompleteness(),
         ], 'Профиль обновлён');
+    }
+
+    /**
+     * GET /public/me/cases
+     * Заявки клиента, совпадающего по номеру телефона с публичным пользователем.
+     */
+    public function cases(Request $request): JsonResponse
+    {
+        $publicUser = $request->get('_public_user');
+
+        $stages = config('stages');
+
+        $cases = VisaCase::whereHas('client', fn ($q) => $q->where('phone', $publicUser->phone))
+            ->with(['agency:id,name,city', 'assignee:id,name'])
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function (VisaCase $case) use ($stages) {
+                $stageConfig = $stages[$case->stage] ?? null;
+                return [
+                    'id'           => $case->id,
+                    'country_code' => $case->country_code,
+                    'visa_type'    => $case->visa_type,
+                    'stage'        => $case->stage,
+                    'stage_label'  => $stageConfig['label'] ?? $case->stage,
+                    'stage_order'  => $stageConfig['order'] ?? 0,
+                    'stage_msg'    => $stageConfig['client_msg'] ?? $case->stage,
+                    'priority'     => $case->priority,
+                    'critical_date'=> $case->critical_date?->toDateString(),
+                    'travel_date'  => $case->travel_date?->toDateString(),
+                    'created_at'   => $case->created_at->toDateString(),
+                    'agency'       => $case->agency ? ['name' => $case->agency->name, 'city' => $case->agency->city] : null,
+                    'assignee'     => $case->assignee ? ['name' => $case->assignee->name] : null,
+                ];
+            });
+
+        return ApiResponse::success($cases);
     }
 
     /**
