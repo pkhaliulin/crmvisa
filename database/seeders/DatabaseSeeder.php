@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             SlaRulesSeeder::class,
             ScoringSeeder::class,
             BillingPlansSeeder::class,
+            DocumentRequirementsSeeder::class,
         ]);
     }
 }

@@ -1,10 +1,13 @@
 <?php
 
 use App\Modules\Auth\Controllers\AuthController;
+use App\Modules\Auth\Controllers\ClientAuthController;
 use App\Modules\Case\Controllers\CaseController;
 use App\Modules\Case\Controllers\DashboardController;
 use App\Modules\Case\Controllers\KanbanController;
 use App\Modules\Client\Controllers\ClientController;
+use App\Modules\Client\Controllers\ClientPortalController;
+use App\Modules\Document\Controllers\ChecklistController;
 use App\Modules\Document\Controllers\DocumentController;
 use App\Modules\Payment\Controllers\BillingController;
 use App\Modules\Payment\Controllers\MarketplaceController;
@@ -46,12 +49,21 @@ Route::prefix('v1')->group(function () {
         Route::post('cases/{id}/move-stage',  [CaseController::class, 'moveStage']);
         Route::apiResource('cases', CaseController::class);
 
-        // Документы (вложены в заявку)
+        // Документы (вложены в заявку) — legacy загрузка без чек-листа
         Route::prefix('cases/{caseId}/documents')->group(function () {
             Route::get('/',           [DocumentController::class, 'index']);
             Route::post('/',          [DocumentController::class, 'store']);
             Route::patch('/{docId}',  [DocumentController::class, 'updateStatus']);
             Route::delete('/{docId}', [DocumentController::class, 'destroy']);
+        });
+
+        // Чек-лист документов
+        Route::prefix('cases/{caseId}/checklist')->group(function () {
+            Route::get('/',                        [ChecklistController::class, 'index']);
+            Route::post('/',                       [ChecklistController::class, 'store']);
+            Route::post('/{itemId}/upload',        [ChecklistController::class, 'upload']);
+            Route::patch('/{itemId}/review',       [ChecklistController::class, 'review']);
+            Route::delete('/{itemId}',             [ChecklistController::class, 'destroy']);
         });
 
         // Скоринг
@@ -70,6 +82,27 @@ Route::prefix('v1')->group(function () {
         Route::post('users',         [UserController::class, 'store']);
         Route::patch('users/{id}',   [UserController::class, 'update']);
         Route::delete('users/{id}',  [UserController::class, 'destroy']);
+    });
+
+    // -------------------------------------------------------------------------
+    // Кабинет клиента
+    // -------------------------------------------------------------------------
+
+    // Авторизация клиента
+    Route::prefix('client/auth')->middleware('throttle:10,1')->group(function () {
+        Route::post('register', [ClientAuthController::class, 'register']);
+        Route::post('login',    [ClientAuthController::class, 'login']);
+    });
+    Route::post('client/auth/logout', [ClientAuthController::class, 'logout'])->middleware('auth:api');
+
+    // Личный кабинет (только role:client)
+    Route::middleware(['auth:api', 'role:client'])->prefix('client/me')->group(function () {
+        Route::get('/',                          [ClientPortalController::class, 'me']);
+        Route::get('/journey',                   [ClientPortalController::class, 'journey']);
+        Route::get('/case',                      [ClientPortalController::class, 'myCase']);
+        Route::get('/checklist',                 [ClientPortalController::class, 'myChecklist']);
+        Route::post('/checklist/{itemId}/upload', [ClientPortalController::class, 'uploadDocument']);
+        Route::get('/scoring',                   [ClientPortalController::class, 'myScoring']);
     });
 
     // -------------------------------------------------------------------------

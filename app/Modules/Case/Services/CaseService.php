@@ -6,6 +6,7 @@ use App\Modules\Agency\Models\Agency;
 use App\Modules\Case\Models\CaseStage;
 use App\Modules\Case\Models\VisaCase;
 use App\Modules\Case\Repositories\CaseRepository;
+use App\Modules\Document\Services\ChecklistService;
 use App\Modules\Notification\Notifications\CaseStageChangedNotification;
 use App\Modules\Workflow\Services\SlaService;
 use App\Support\Abstracts\BaseService;
@@ -19,6 +20,7 @@ class CaseService extends BaseService
     public function __construct(
         CaseRepository $repository,
         private SlaService $slaService,
+        private ChecklistService $checklistService,
     ) {
         parent::__construct($repository);
     }
@@ -72,6 +74,9 @@ class CaseService extends BaseService
                 'stage'      => $data['stage'],
                 'entered_at' => now(),
             ]);
+
+            // Авто-создание чек-листа документов на основе страны + типа визы
+            $this->checklistService->createForCase($case);
 
             return $case->load(['client', 'assignee']);
         });
