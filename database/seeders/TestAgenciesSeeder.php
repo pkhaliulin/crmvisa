@@ -229,8 +229,9 @@ class TestAgenciesSeeder extends Seeder
             foreach ($this->clients[$ai] as $ci => $clientData) {
                 $clientId = (string) Str::uuid();
 
-                DB::table('clients')->upsert([
-                    [
+                $existingClient = DB::table('clients')->where('phone', $clientData['phone'])->first();
+                if (! $existingClient) {
+                    DB::table('clients')->insert([
                         'id'          => $clientId,
                         'agency_id'   => $agencyId,
                         'name'        => $clientData['name'],
@@ -241,8 +242,10 @@ class TestAgenciesSeeder extends Seeder
                         'created_at'  => $now->copy()->subDays(rand(5, 60)),
                         'updated_at'  => $now,
                         'deleted_at'  => null,
-                    ],
-                ], ['phone'], ['name', 'agency_id', 'nationality', 'updated_at']);
+                    ]);
+                } else {
+                    $clientId = $existingClient->id;
+                }
 
                 $clientId = DB::table('clients')->where('phone', $clientData['phone'])->value('id');
 
