@@ -3,11 +3,45 @@
     <h2 class="text-xl font-bold text-gray-900 mb-6">Регистрация агентства</h2>
 
     <form @submit.prevent="handleSubmit" class="space-y-4">
-      <AppInput v-model="form.agency_name" label="Название агентства" placeholder="Визовый центр Ташкент" required :error="errors.agency_name" />
-      <AppInput v-model="form.name"        label="Ваше имя (руководитель)" placeholder="Ислом Каримов" required :error="errors.name" />
-      <AppInput v-model="form.email"       label="Email" type="email" placeholder="director@agency.com" required :error="errors.email" />
-      <AppInput v-model="form.phone"       label="Телефон" placeholder="+998 90 123 45 67" :error="errors.phone" />
-      <AppInput v-model="form.password"    label="Пароль" type="password" placeholder="Минимум 8 символов" required :error="errors.password" />
+      <AppInput
+        v-model="form.agency_name"
+        label="Название агентства"
+        placeholder="Визовый центр Ташкент"
+        required
+        :error="errors.agency_name"
+        :maxlength="100"
+      />
+      <AppInput
+        v-model="form.name"
+        label="Ваше имя (руководитель)"
+        placeholder="Ислом Каримов"
+        required
+        :error="errors.name"
+        :maxlength="80"
+      />
+      <AppInput
+        v-model="form.email"
+        label="Email"
+        type="email"
+        placeholder="director@agency.com"
+        required
+        :error="errors.email"
+        @blur="validateEmail"
+      />
+      <AppPhoneInput
+        v-model="form.phone"
+        label="Телефон"
+        :error="errors.phone"
+        @blur="validatePhone"
+      />
+      <AppInput
+        v-model="form.password"
+        label="Пароль"
+        type="password"
+        placeholder="Минимум 8 символов"
+        required
+        :error="errors.password"
+      />
 
       <p v-if="errorMsg" class="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{{ errorMsg }}</p>
 
@@ -33,6 +67,7 @@ import { useRouter, RouterLink } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import AuthLayout from '@/layouts/AuthLayout.vue';
 import AppInput from '@/components/AppInput.vue';
+import AppPhoneInput from '@/components/AppPhoneInput.vue';
 import AppButton from '@/components/AppButton.vue';
 
 const auth   = useAuthStore();
@@ -43,10 +78,45 @@ const errors   = ref({});
 const errorMsg = ref('');
 const loading  = ref(false);
 
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
+}
+
+function isValidPhone(phone) {
+  const digits = phone.replace(/\D/g, '');
+  return digits.startsWith('998') && digits.length === 12;
+}
+
+function validateEmail() {
+  if (form.value.email && !isValidEmail(form.value.email)) {
+    errors.value.email = 'Введите корректный email (например: name@domain.com)';
+  } else {
+    delete errors.value.email;
+  }
+}
+
+function validatePhone() {
+  if (form.value.phone && !isValidPhone(form.value.phone)) {
+    errors.value.phone = 'Введите полный номер: XX XXX XX XX';
+  } else {
+    delete errors.value.phone;
+  }
+}
+
 async function handleSubmit() {
   errors.value   = {};
   errorMsg.value = '';
-  loading.value  = true;
+
+  if (!isValidEmail(form.value.email)) {
+    errors.value.email = 'Введите корректный email';
+    return;
+  }
+  if (form.value.phone && !isValidPhone(form.value.phone)) {
+    errors.value.phone = 'Введите полный номер: XX XXX XX XX';
+    return;
+  }
+
+  loading.value = true;
   try {
     await auth.register(form.value);
     router.push({ name: 'dashboard' });

@@ -233,7 +233,9 @@ Route::prefix('v1')->group(function () {
         Route::get('documents', [OwnerController::class, 'documents']);
 
         // CRM-пользователи
-        Route::get('crm-users', [OwnerController::class, 'crmUsers']);
+        Route::get('crm-users',           [OwnerController::class, 'crmUsers']);
+        Route::post('crm-users',          [OwnerController::class, 'crmUserStore']);
+        Route::patch('crm-users/{id}',    [OwnerController::class, 'crmUserUpdate']);
 
         // Финансы
         Route::get('transactions', [OwnerController::class, 'transactions']);

@@ -17,10 +17,10 @@
               @focus="onClientFocus"
               placeholder="Начните вводить имя или телефон..."
               :class="[
-                'w-full border rounded-lg px-3 py-2 text-sm outline-none pr-8',
+                'w-full border rounded-lg px-3 py-2 text-sm outline-none pr-8 transition-colors',
                 form.client_id
                   ? 'border-green-500 bg-green-50 text-green-800 font-medium'
-                  : errors.client_id ? 'border-red-400' : 'border-gray-300 focus:border-blue-500'
+                  : errors.client_id ? 'border-red-400' : 'border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
               ]"
             />
             <button v-if="form.client_id" type="button" @click="clearClient"
@@ -68,10 +68,10 @@
                 @blur="onCountryBlur"
                 placeholder="Испания, DE..."
                 :class="[
-                  'w-full border rounded-lg px-3 py-2 text-sm outline-none pr-7',
+                  'w-full border rounded-lg px-3 py-2 text-sm outline-none pr-7 transition-colors',
                   form.country_code
                     ? 'border-green-500 bg-green-50 text-green-800 font-medium'
-                    : errors.country_code ? 'border-red-400' : 'border-gray-300 focus:border-blue-500'
+                    : errors.country_code ? 'border-red-400' : 'border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
                 ]"
               />
               <button v-if="form.country_code" type="button" @click="clearCountry"
@@ -93,7 +93,7 @@
             <p v-if="errors.country_code" class="text-xs text-red-600 mt-1">{{ errors.country_code }}</p>
           </div>
 
-          <!-- Тип визы — зависит от выбранной страны -->
+          <!-- Тип визы -->
           <div class="flex flex-col gap-1">
             <label class="text-sm font-medium text-gray-700">
               Тип визы <span class="text-red-500">*</span>
@@ -101,8 +101,8 @@
             <select v-model="form.visa_type"
               :disabled="!form.country_code"
               :class="[
-                'w-full border rounded-lg px-3 py-2 text-sm outline-none',
-                errors.visa_type ? 'border-red-400' : 'border-gray-300 focus:border-blue-500',
+                'w-full border rounded-lg px-3 py-2 text-sm outline-none transition-colors',
+                errors.visa_type ? 'border-red-400' : 'border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500',
                 !form.country_code ? 'bg-gray-50 text-gray-400' : '',
               ]">
               <option value="">{{ form.country_code ? '— выберите —' : '— сначала страну —' }}</option>
@@ -117,7 +117,14 @@
         <AppSelect v-model="form.priority" label="Приоритет" :options="priorityOptions" />
         <AppInput v-model="form.travel_date" label="Дата поездки" type="date" :error="errors.travel_date" />
         <AppInput v-model="form.critical_date" label="Дедлайн (необязательно, рассчитается автоматически)" type="date" />
-        <AppInput v-model="form.notes" label="Заметки" placeholder="Дополнительная информация..." />
+
+        <AppTextarea
+          v-model="form.notes"
+          label="Заметки"
+          placeholder="Дополнительная информация о заявке, особые пожелания клиента..."
+          :maxlength="1000"
+          :rows="3"
+        />
 
         <p v-if="errorMsg" class="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{{ errorMsg }}</p>
 
@@ -139,10 +146,10 @@ import { casesApi } from '@/api/cases';
 import { clientsApi } from '@/api/clients';
 import { countriesApi } from '@/api/countries';
 import AppInput from '@/components/AppInput.vue';
+import AppTextarea from '@/components/AppTextarea.vue';
 import AppSelect from '@/components/AppSelect.vue';
 import AppButton from '@/components/AppButton.vue';
 
-// Хелпер имени типа визы — доступен до onMounted
 const allVisaTypes = ref([]);
 function visaTypeName(slug) {
   return allVisaTypes.value.find(t => t.slug === slug)?.name_ru ?? slug;
@@ -158,8 +165,8 @@ const errorMsg = ref('');
 const loading  = ref(false);
 
 // ── Клиент ──────────────────────────────────────────────────────────────────
-const clientSearch  = ref('');
-const clientResults = ref([]);
+const clientSearch   = ref('');
+const clientResults  = ref([]);
 const clientSearched = ref(false);
 
 const showNoClientResults = computed(() =>
@@ -225,10 +232,10 @@ onMounted(async () => {
       countriesApi.list(),
       countriesApi.visaTypes(),
     ]);
-    allCountries.value  = cRes.data.data ?? [];
-    allVisaTypes.value  = vtRes.data.data ?? [];
+    allCountries.value = cRes.data.data ?? [];
+    allVisaTypes.value = vtRes.data.data ?? [];
   } catch {
-    // fallback — справочники недоступны
+    // fallback
   }
 });
 
@@ -254,22 +261,21 @@ function onCountryFocus() {
 }
 
 function onCountryBlur() {
-  // Задержка чтобы mousedown на пункте списка успел сработать
   setTimeout(() => { countryDropdownVisible.value = false; }, 150);
 }
 
 function selectCountry(c) {
-  form.country_code      = c.country_code;
-  form.visa_type         = '';
-  countrySearch.value    = c.name;
+  form.country_code    = c.country_code;
+  form.visa_type       = '';
+  countrySearch.value  = c.name;
   countryDropdownVisible.value = false;
   if (errors.value.country_code) delete errors.value.country_code;
 }
 
 function clearCountry() {
-  form.country_code      = '';
-  form.visa_type         = '';
-  countrySearch.value    = '';
+  form.country_code    = '';
+  form.visa_type       = '';
+  countrySearch.value  = '';
   countryDropdownVisible.value = false;
 }
 

@@ -126,7 +126,8 @@ class OwnerController extends Controller
         $data = $request->validate([
             'is_active'       => 'sometimes|boolean',
             'is_verified'     => 'sometimes|boolean',
-            'plan'            => 'sometimes|in:trial,starter,professional,premium',
+            'plan'            => 'sometimes|in:trial,starter,pro,enterprise',
+            'description'     => 'sometimes|nullable|string|max:1000',
             'plan_expires_at' => 'sometimes|nullable|date',
             'commission_rate' => 'sometimes|numeric|min:0|max:100',
             'block_reason'    => 'sometimes|nullable|string|max:500',
@@ -397,10 +398,56 @@ class OwnerController extends Controller
             ->when($request->search, fn ($q, $s) => $q->where('name', 'ilike', "%{$s}%")
                 ->orWhere('email', 'ilike', "%{$s}%"))
             ->when($request->role, fn ($q, $r) => $q->where('role', $r))
+            ->when($request->status === 'active',   fn ($q) => $q->where('is_active', true))
+            ->when($request->status === 'inactive', fn ($q) => $q->where('is_active', false))
             ->orderByDesc('created_at')
             ->paginate(30);
 
+        $users->getCollection()->transform(function ($u) {
+            $u->agency_name = $u->agency->name ?? null;
+            unset($u->agency);
+            return $u;
+        });
+
         return ApiResponse::success($users);
+    }
+
+    public function crmUserStore(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'name'      => 'required|string|max:80',
+            'email'     => 'required|email|unique:users,email',
+            'phone'     => 'nullable|string|max:20',
+            'role'      => 'required|in:manager,owner,superadmin,partner',
+            'password'  => 'required|string|min:8',
+            'agency_id' => 'nullable|uuid|exists:agencies,id',
+        ]);
+
+        $data['password']   = Hash::make($data['password']);
+        $data['is_active']  = true;
+
+        $user = User::create($data);
+
+        return ApiResponse::success($user->load('agency:id,name'), 'Пользователь создан', 201);
+    }
+
+    public function crmUserUpdate(Request $request, string $id): JsonResponse
+    {
+        $user = User::findOrFail($id);
+
+        $data = $request->validate([
+            'is_active' => 'sometimes|boolean',
+            'role'      => 'sometimes|in:manager,owner,superadmin,partner',
+            'password'  => 'sometimes|string|min:8',
+        ]);
+
+        if (isset($data['password'])) {
+            $data['password'] = Hash::make($data['password']);
+        }
+
+        $user->update($data);
+
+        return ApiResponse::success($user->fresh(), 'Пользователь обновлён');
     }
 
     // =========================================================================

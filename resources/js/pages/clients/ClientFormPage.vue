@@ -4,27 +4,100 @@
       <h2 class="text-lg font-bold text-gray-900 mb-6">{{ isEdit ? 'Редактировать клиента' : 'Новый клиент' }}</h2>
 
       <form @submit.prevent="handleSubmit" class="space-y-4">
-        <AppInput v-model="form.name" label="ФИО" placeholder="Ислом Каримов" required :error="errors.name" />
+
+        <AppInput
+          v-model="form.name"
+          label="ФИО"
+          placeholder="Ислом Каримов"
+          required
+          :error="errors.name"
+          :maxlength="120"
+        />
+
         <div class="grid grid-cols-2 gap-4">
-          <AppInput v-model="form.phone" label="Телефон" placeholder="+998901234567" :error="errors.phone" />
-          <AppInput v-model="form.email" label="Email" type="email" placeholder="client@mail.com" :error="errors.email" />
+          <AppPhoneInput
+            v-model="form.phone"
+            label="Телефон"
+            :error="errors.phone"
+            @blur="validatePhone"
+          />
+          <AppInput
+            v-model="form.email"
+            label="Email"
+            type="email"
+            placeholder="client@mail.com"
+            :error="errors.email"
+            @blur="validateEmail"
+          />
         </div>
-        <AppInput v-model="form.telegram_chat_id" label="Telegram Chat ID" placeholder="123456789" />
+
+        <AppInput
+          v-model="form.telegram_chat_id"
+          label="Telegram Chat ID"
+          placeholder="123456789"
+        />
+
         <div class="grid grid-cols-2 gap-4">
-          <AppInput v-model="form.nationality" label="Гражданство (ISO3)" placeholder="UZB" :error="errors.nationality" />
-          <AppInput v-model="form.date_of_birth" label="Дата рождения" type="date" />
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Гражданство</label>
+            <div class="relative">
+              <select v-model="form.nationality"
+                :class="[
+                  'w-full border rounded-lg px-3 py-2 text-sm outline-none transition-colors',
+                  errors.nationality ? 'border-red-300 focus:border-red-500' : 'border-gray-300 focus:border-blue-500',
+                ]">
+                <option value="">— не указано —</option>
+                <option value="UZB">Узбекистан (UZB)</option>
+                <option value="KAZ">Казахстан (KAZ)</option>
+                <option value="KGZ">Кыргызстан (KGZ)</option>
+                <option value="TJK">Таджикистан (TJK)</option>
+                <option value="TKM">Туркменистан (TKM)</option>
+                <option value="RUS">Россия (RUS)</option>
+                <option value="UKR">Украина (UKR)</option>
+                <option value="AZE">Азербайджан (AZE)</option>
+                <option value="GEO">Грузия (GEO)</option>
+                <option value="ARM">Армения (ARM)</option>
+              </select>
+            </div>
+            <p v-if="errors.nationality" class="text-xs text-red-600 mt-1">{{ errors.nationality }}</p>
+          </div>
+          <AppInput
+            v-model="form.date_of_birth"
+            label="Дата рождения"
+            type="date"
+          />
         </div>
+
         <div class="grid grid-cols-2 gap-4">
-          <AppInput v-model="form.passport_number" label="Номер паспорта" placeholder="AA1234567" />
-          <AppInput v-model="form.passport_expires_at" label="Срок действия паспорта" type="date" />
+          <AppInput
+            v-model="form.passport_number"
+            label="Номер паспорта"
+            placeholder="AA1234567"
+            :maxlength="20"
+          />
+          <AppInput
+            v-model="form.passport_expires_at"
+            label="Срок действия паспорта"
+            type="date"
+          />
         </div>
+
         <AppSelect v-model="form.source" label="Источник" :options="sourceOptions" />
-        <AppInput v-model="form.notes" label="Заметки" placeholder="Любая дополнительная информация..." />
+
+        <AppTextarea
+          v-model="form.notes"
+          label="Заметки"
+          placeholder="Любая дополнительная информация о клиенте..."
+          :maxlength="500"
+          :rows="3"
+        />
 
         <p v-if="errorMsg" class="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{{ errorMsg }}</p>
 
         <div class="flex gap-3 pt-2">
-          <AppButton type="submit" :loading="loading">{{ isEdit ? 'Сохранить' : 'Создать клиента' }}</AppButton>
+          <AppButton type="submit" :loading="loading">
+            {{ isEdit ? 'Сохранить' : 'Создать клиента' }}
+          </AppButton>
           <RouterLink :to="{ name: 'clients' }">
             <AppButton type="button" variant="outline">Отмена</AppButton>
           </RouterLink>
@@ -39,6 +112,8 @@ import { ref, reactive, onMounted, computed } from 'vue';
 import { useRouter, useRoute, RouterLink } from 'vue-router';
 import { clientsApi } from '@/api/clients';
 import AppInput from '@/components/AppInput.vue';
+import AppPhoneInput from '@/components/AppPhoneInput.vue';
+import AppTextarea from '@/components/AppTextarea.vue';
 import AppSelect from '@/components/AppSelect.vue';
 import AppButton from '@/components/AppButton.vue';
 
@@ -62,6 +137,31 @@ const sourceOptions = [
   { value: 'other',       label: 'Другое' },
 ];
 
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
+}
+
+function isValidPhone(phone) {
+  const digits = phone.replace(/\D/g, '');
+  return digits.startsWith('998') && digits.length === 12;
+}
+
+function validateEmail() {
+  if (form.email && !isValidEmail(form.email)) {
+    errors.value.email = 'Введите корректный email (например: name@domain.com)';
+  } else {
+    delete errors.value.email;
+  }
+}
+
+function validatePhone() {
+  if (form.phone && !isValidPhone(form.phone)) {
+    errors.value.phone = 'Введите полный номер: XX XXX XX XX';
+  } else {
+    delete errors.value.phone;
+  }
+}
+
 onMounted(async () => {
   if (isEdit.value) {
     const { data } = await clientsApi.get(route.params.id);
@@ -72,8 +172,17 @@ onMounted(async () => {
 async function handleSubmit() {
   errors.value   = {};
   errorMsg.value = '';
-  loading.value  = true;
 
+  if (form.email && !isValidEmail(form.email)) {
+    errors.value.email = 'Введите корректный email';
+    return;
+  }
+  if (form.phone && !isValidPhone(form.phone)) {
+    errors.value.phone = 'Введите полный номер: XX XXX XX XX';
+    return;
+  }
+
+  loading.value = true;
   try {
     if (isEdit.value) {
       await clientsApi.update(route.params.id, form);

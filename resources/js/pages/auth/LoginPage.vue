@@ -10,6 +10,7 @@
         placeholder="you@agency.com"
         required
         :error="errors.email"
+        @blur="validateEmail"
       />
       <AppInput
         v-model="form.password"
@@ -48,24 +49,41 @@ const auth    = useAuthStore();
 const router  = useRouter();
 const route   = useRoute();
 
-const form = ref({ email: '', password: '' });
+const form     = ref({ email: '', password: '' });
 const errors   = ref({});
 const errorMsg = ref('');
 const loading  = ref(false);
 
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
+}
+
+function validateEmail() {
+  if (form.value.email && !isValidEmail(form.value.email)) {
+    errors.value.email = 'Введите корректный email (например: name@domain.com)';
+  } else {
+    delete errors.value.email;
+  }
+}
+
 async function handleSubmit() {
   errors.value   = {};
   errorMsg.value = '';
-  loading.value  = true;
 
+  if (!isValidEmail(form.value.email)) {
+    errors.value.email = 'Введите корректный email';
+    return;
+  }
+
+  loading.value = true;
   try {
     await auth.login(form.value);
     if (route.query.redirect) {
-        router.push(route.query.redirect);
+      router.push(route.query.redirect);
     } else {
-        router.replace(auth.user?.role === 'superadmin'
-            ? { name: 'owner.dashboard' }
-            : { name: 'dashboard' });
+      router.replace(auth.user?.role === 'superadmin'
+        ? { name: 'owner.dashboard' }
+        : { name: 'dashboard' });
     }
   } catch (err) {
     const data = err.response?.data;
@@ -74,7 +92,7 @@ async function handleSubmit() {
         Object.entries(data.errors).map(([k, v]) => [k, Array.isArray(v) ? v[0] : v])
       );
     } else {
-      errorMsg.value = data?.message || 'Ошибка входа';
+      errorMsg.value = data?.message || 'Неверный email или пароль';
     }
   } finally {
     loading.value = false;

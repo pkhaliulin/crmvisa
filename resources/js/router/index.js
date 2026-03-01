@@ -81,6 +81,11 @@ const routes = [
                 name: 'owner.services',
                 component: () => import('@/pages/owner/OwnerServicesPage.vue'),
             },
+            {
+                path: 'crm-users',
+                name: 'owner.crm-users',
+                component: () => import('@/pages/owner/OwnerCrmUsersPage.vue'),
+            },
         ],
     },
 
