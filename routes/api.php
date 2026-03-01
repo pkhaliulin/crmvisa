@@ -7,6 +7,9 @@ use App\Modules\Case\Controllers\DashboardController;
 use App\Modules\Case\Controllers\KanbanController;
 use App\Modules\Client\Controllers\ClientController;
 use App\Modules\Client\Controllers\ClientPortalController;
+use App\Modules\PublicPortal\Controllers\PublicAuthController;
+use App\Modules\PublicPortal\Controllers\PublicProfileController;
+use App\Modules\PublicPortal\Controllers\PublicScoringController;
 use App\Modules\Document\Controllers\ChecklistController;
 use App\Modules\Document\Controllers\CountryRequirementController;
 use App\Modules\Document\Controllers\DocumentController;
@@ -158,6 +161,33 @@ Route::prefix('v1')->group(function () {
         Route::put('agency/marketplace/profile',              [MarketplaceController::class, 'updateProfile']);
         Route::get('agency/marketplace/leads',                [MarketplaceController::class, 'leads']);
         Route::patch('agency/marketplace/leads/{id}/status',  [MarketplaceController::class, 'updateLeadStatus']);
+    });
+
+    // -------------------------------------------------------------------------
+    // Публичный портал (лендинг visabor.uz)
+    // -------------------------------------------------------------------------
+
+    // Без авторизации
+    Route::prefix('public')->group(function () {
+        // Список стран для лендинга
+        Route::get('countries', [PublicScoringController::class, 'countries']);
+
+        // Phone auth
+        Route::post('auth/send-otp',  [PublicAuthController::class, 'sendOtp'])->middleware('throttle:5,1');
+        Route::post('auth/verify-otp',[PublicAuthController::class, 'verifyOtp'])->middleware('throttle:10,1');
+        Route::post('auth/login',     [PublicAuthController::class, 'loginWithPin'])->middleware('throttle:10,1');
+    });
+
+    // С токеном публичного пользователя
+    Route::prefix('public')->middleware('auth.public')->group(function () {
+        Route::post('auth/set-pin', [PublicAuthController::class, 'setPin']);
+
+        Route::get('me',             [PublicProfileController::class, 'me']);
+        Route::patch('me',           [PublicProfileController::class, 'update']);
+        Route::post('me/passport',   [PublicProfileController::class, 'uploadPassport']);
+
+        Route::get('scoring',        [PublicScoringController::class, 'scoreAll']);
+        Route::get('scoring/{cc}',   [PublicScoringController::class, 'scoreCountry']);
     });
 
 });

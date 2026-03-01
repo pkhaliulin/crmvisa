@@ -1,7 +1,24 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
+import { usePublicAuthStore } from '@/stores/publicAuth';
 
 const routes = [
+    // ----------------------------------------------------------------
+    // Публичный лендинг (visabor.uz)
+    // ----------------------------------------------------------------
+    {
+        path: '/landing',
+        name: 'landing',
+        component: () => import('@/pages/LandingPage.vue'),
+        meta: { public: true },
+    },
+    {
+        path: '/scoring',
+        name: 'public.scoring',
+        component: () => import('@/pages/public/PublicScoringPage.vue'),
+        meta: { public: true, requiresPublicAuth: true },
+    },
+
     // Auth
     {
         path: '/login',
@@ -82,8 +99,15 @@ const router = createRouter({
 });
 
 router.beforeEach((to) => {
-    const auth = useAuthStore();
+    const auth       = useAuthStore();
+    const publicAuth = usePublicAuthStore();
 
+    // Публичный портал — защита скоринга
+    if (to.meta.requiresPublicAuth && !publicAuth.isLoggedIn) {
+        return { name: 'landing' };
+    }
+
+    // CRM — требует JWT
     if (to.meta.requiresAuth && !auth.isLoggedIn) {
         return { name: 'login', query: { redirect: to.fullPath } };
     }

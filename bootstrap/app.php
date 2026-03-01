@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\CheckAgencyPlan;
 use App\Http\Middleware\CheckRole;
+use App\Modules\PublicPortal\Middleware\AuthPublicUser;
 use App\Support\Helpers\ApiResponse;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
@@ -20,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role'        => CheckRole::class,
             'plan.active' => CheckAgencyPlan::class,
+            'auth.public' => AuthPublicUser::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
