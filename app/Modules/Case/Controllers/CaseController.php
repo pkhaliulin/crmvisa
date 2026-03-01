@@ -19,7 +19,12 @@ class CaseController extends Controller
         $agencyId = $user->agency_id;
 
         $query = VisaCase::where('cases.agency_id', $agencyId)
-            ->with(['client:id,name,phone', 'assignee:id,name']);
+            ->with(['client:id,name,phone', 'assignee:id,name'])
+            ->selectRaw("
+                cases.*,
+                (SELECT COUNT(*) FROM case_checklist cc WHERE cc.case_id = cases.id AND cc.is_required = true) as docs_total,
+                (SELECT COUNT(*) FROM case_checklist cc WHERE cc.case_id = cases.id AND cc.is_required = true AND cc.status IN ('uploaded','approved')) as docs_uploaded
+            ");
 
         // Менеджеры видят только свои кейсы, если агентство не разрешило иное
         if ($user->role === 'manager') {
@@ -52,8 +57,7 @@ class CaseController extends Controller
         // Поиск по имени клиента
         if ($request->filled('q')) {
             $query->join('clients', 'clients.id', '=', 'cases.client_id')
-                  ->where('clients.name', 'ilike', '%' . $request->q . '%')
-                  ->select('cases.*');
+                  ->where('clients.name', 'ilike', '%' . $request->q . '%');
         }
 
         // Сортировка: сначала просроченные, потом горящие, остальные по дате
