@@ -7,7 +7,34 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Нормализация телефонов: добавляем + к номерам без него
+        // Шаг 1: Удалить дубли БЕЗ + если запись С + уже существует
+        // (public_users имеет unique constraint на phone)
+        DB::statement("
+            DELETE FROM public_users
+            WHERE phone NOT LIKE '+%'
+              AND phone ~ '^[0-9]'
+              AND EXISTS (
+                  SELECT 1 FROM public_users pu2
+                  WHERE pu2.phone = '+' || public_users.phone
+              )
+        ");
+
+        // Аналогично для clients (может не иметь unique, но на всякий случай)
+        DB::statement("
+            DELETE FROM clients
+            WHERE phone IS NOT NULL
+              AND phone NOT LIKE '+%'
+              AND phone ~ '^[0-9]'
+              AND deleted_at IS NOT NULL
+              AND EXISTS (
+                  SELECT 1 FROM clients c2
+                  WHERE c2.phone = '+' || clients.phone
+                    AND c2.agency_id = clients.agency_id
+                    AND c2.deleted_at IS NULL
+              )
+        ");
+
+        // Шаг 2: Нормализовать оставшиеся номера без +
         $tables = ['public_users', 'clients'];
 
         foreach ($tables as $table) {
@@ -17,18 +44,6 @@ return new class extends Migration
                 ->whereRaw("phone NOT LIKE '+%'")
                 ->whereRaw("phone ~ '^[0-9]'")
                 ->update(['phone' => DB::raw("'+' || phone")]);
-        }
-
-        // Удаляем дубли в public_users (без +), оставляя запись с + если есть обе
-        $duplicates = DB::select("
-            SELECT pu1.id as dup_id
-            FROM public_users pu1
-            JOIN public_users pu2 ON pu2.phone = '+' || pu1.phone
-            WHERE pu1.phone NOT LIKE '+%'
-        ");
-
-        foreach ($duplicates as $dup) {
-            DB::table('public_users')->where('id', $dup->dup_id)->delete();
         }
     }
 
