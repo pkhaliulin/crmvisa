@@ -41,8 +41,9 @@ export const publicPortalApi = {
     },
 
     // Cases
-    cases:      ()   => publicApi.get('/me/cases'),
-    caseDetail: (id) => publicApi.get(`/me/cases/${id}`),
+    cases:      ()     => publicApi.get('/me/cases'),
+    createCase: (data) => publicApi.post('/me/cases', data),
+    caseDetail: (id)   => publicApi.get(`/me/cases/${id}`),
     uploadChecklistItem: (caseId, itemId, formData) =>
         publicApi.post(`/me/cases/${caseId}/checklist/${itemId}/upload`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' },

@@ -108,7 +108,9 @@
 
             <!-- Main Content -->
             <main class="flex-1 md:ml-64 min-w-0 p-4 sm:p-6">
-                <router-view />
+                <div class="max-w-4xl mx-auto">
+                    <router-view />
+                </div>
             </main>
         </div>
 
@@ -150,57 +152,79 @@
         <!-- New Application Modal (bottom sheet on mobile, centered on desktop) -->
         <div v-if="showNewCase"
             class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center sm:p-4"
-            @click.self="showNewCase = false">
+            @click.self="closeNewCase">
             <div class="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl shadow-xl">
                 <div class="p-6">
                     <div class="flex items-center justify-between mb-1">
                         <h3 class="text-base font-bold text-[#0A1F44]">Новая заявка на визу</h3>
-                        <button @click="showNewCase = false" class="text-gray-400 hover:text-gray-600 transition-colors p-1">
+                        <button @click="closeNewCase" class="text-gray-400 hover:text-gray-600 transition-colors p-1">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
                             </svg>
                         </button>
                     </div>
-                    <p class="text-sm text-gray-500 mb-5">Заполните профиль и пройдите скоринг — подберём агентство по вашей стране.</p>
+                    <p class="text-sm text-gray-500 mb-5">Выберите страну и тип визы для новой заявки.</p>
 
-                    <div class="space-y-2.5">
-                        <router-link :to="{ name: 'me.profile' }" @click="showNewCase = false"
-                            class="flex items-center gap-3 p-4 rounded-xl border transition-colors"
-                            :class="publicAuth.profilePercent >= 60
-                                ? 'border-[#1BA97F]/30 bg-[#1BA97F]/5 hover:bg-[#1BA97F]/10'
-                                : 'border-gray-100 bg-gray-50 hover:bg-gray-100'">
-                            <div class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-                                 :class="publicAuth.profilePercent >= 60 ? 'bg-[#1BA97F]' : 'bg-gray-200'">
-                                <svg class="w-4 h-4" :class="publicAuth.profilePercent >= 60 ? 'text-white' : 'text-gray-500'"
-                                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                                </svg>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <div class="font-semibold text-[#0A1F44] text-sm">Шаг 1: Профиль</div>
-                                <div class="text-xs text-gray-400 mt-0.5">ФИО, паспорт, гражданство</div>
-                            </div>
-                            <span v-if="publicAuth.profilePercent >= 60" class="text-xs text-[#1BA97F] font-bold shrink-0">Готово</span>
-                            <svg v-else class="w-4 h-4 text-gray-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    <!-- Inline блок "заполните профиль" если < 60% -->
+                    <div v-if="publicAuth.profilePercent < 60" class="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
+                        <div class="flex items-start gap-3">
+                            <svg class="w-5 h-5 text-amber-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
                             </svg>
-                        </router-link>
+                            <div class="flex-1 min-w-0">
+                                <div class="font-semibold text-amber-700 text-sm">Заполните профиль</div>
+                                <div class="text-xs text-amber-600 mt-0.5">Для создания заявки нужно заполнить профиль хотя бы на 60% (сейчас {{ publicAuth.profilePercent }}%).</div>
+                                <router-link :to="{ name: 'me.profile' }" @click="closeNewCase"
+                                    class="inline-block mt-2 text-xs font-semibold text-amber-700 underline underline-offset-2">
+                                    Перейти к профилю
+                                </router-link>
+                            </div>
+                        </div>
+                    </div>
 
-                        <router-link :to="{ name: 'me.scoring' }" @click="showNewCase = false"
-                            class="flex items-center gap-3 p-4 rounded-xl border border-gray-100 bg-gray-50 hover:bg-gray-100 transition-colors">
-                            <div class="w-9 h-9 bg-blue-100 rounded-lg flex items-center justify-center shrink-0">
-                                <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-                                </svg>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <div class="font-semibold text-[#0A1F44] text-sm">Шаг 2: Скоринг</div>
-                                <div class="text-xs text-gray-400 mt-0.5">Узнайте шансы — займёт 2 минуты</div>
-                            </div>
-                            <svg class="w-4 h-4 text-gray-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    <!-- Форма создания заявки -->
+                    <div v-else class="space-y-3">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Страна назначения</label>
+                            <select v-model="newCaseForm.country_code"
+                                class="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-[#0A1F44] focus:outline-none focus:border-[#1BA97F] transition-colors bg-white">
+                                <option value="">Выберите страну</option>
+                                <option value="DE">Германия</option>
+                                <option value="ES">Испания</option>
+                                <option value="FR">Франция</option>
+                                <option value="IT">Италия</option>
+                                <option value="PL">Польша</option>
+                                <option value="CZ">Чехия</option>
+                                <option value="GB">Великобритания</option>
+                                <option value="US">США</option>
+                                <option value="CA">Канада</option>
+                                <option value="KR">Южная Корея</option>
+                                <option value="AE">ОАЭ</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Тип визы</label>
+                            <select v-model="newCaseForm.visa_type"
+                                class="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-[#0A1F44] focus:outline-none focus:border-[#1BA97F] transition-colors bg-white">
+                                <option value="">Выберите тип</option>
+                                <option value="tourist">Туристическая</option>
+                                <option value="business">Бизнес</option>
+                                <option value="student">Студенческая</option>
+                                <option value="work">Рабочая</option>
+                                <option value="transit">Транзитная</option>
+                            </select>
+                        </div>
+                        <div v-if="newCaseError" class="text-xs text-red-500">{{ newCaseError }}</div>
+                        <button @click="createDraftCase"
+                            :disabled="newCaseSubmitting || !newCaseForm.country_code || !newCaseForm.visa_type"
+                            class="w-full py-3 bg-[#0A1F44] hover:bg-[#0d2a5e] text-white text-sm font-semibold rounded-xl
+                                   transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+                            <svg v-if="newCaseSubmitting" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
                             </svg>
-                        </router-link>
+                            {{ newCaseSubmitting ? 'Создаём...' : 'Создать заявку' }}
+                        </button>
                     </div>
                 </div>
             </div>
@@ -215,11 +239,45 @@ import { useRouter, useRoute } from 'vue-router';
 import logoUrl from '@/assets/logo.png';
 import logoUrl2x from '@/assets/logo@2x.png';
 import { usePublicAuthStore } from '@/stores/publicAuth';
+import { publicPortalApi } from '@/api/public';
 
 const router     = useRouter();
 const route      = useRoute();
 const publicAuth = usePublicAuthStore();
 const showNewCase = ref(false);
+
+const newCaseForm = ref({ country_code: '', visa_type: '' });
+const newCaseSubmitting = ref(false);
+const newCaseError = ref('');
+
+function closeNewCase() {
+    showNewCase.value = false;
+    newCaseError.value = '';
+}
+
+async function createDraftCase() {
+    if (!newCaseForm.value.country_code || !newCaseForm.value.visa_type) return;
+    newCaseSubmitting.value = true;
+    newCaseError.value = '';
+    try {
+        const res = await publicPortalApi.createCase({
+            country_code: newCaseForm.value.country_code,
+            visa_type:    newCaseForm.value.visa_type,
+        });
+        const caseId = res.data?.data?.id ?? res.data?.data?.case_id;
+        closeNewCase();
+        newCaseForm.value = { country_code: '', visa_type: '' };
+        if (caseId) {
+            router.push({ name: 'me.cases.show', params: { id: caseId } });
+        } else {
+            router.push({ name: 'me.cases' });
+        }
+    } catch (e) {
+        newCaseError.value = e?.response?.data?.message ?? 'Ошибка создания заявки. Попробуйте снова.';
+    } finally {
+        newCaseSubmitting.value = false;
+    }
+}
 
 const initials = computed(() => {
     const name = publicAuth.user?.name;
@@ -233,16 +291,6 @@ const displayName = computed(() =>
 
 const navItems = [
     {
-        name: 'me.profile',
-        label: 'Профиль',
-        iconPath: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z',
-    },
-    {
-        name: 'me.scoring',
-        label: 'Скоринг',
-        iconPath: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z',
-    },
-    {
         name: 'me.cases',
         label: 'Заявки',
         iconPath: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
@@ -252,9 +300,19 @@ const navItems = [
         label: 'Агентства',
         iconPath: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4',
     },
+    {
+        name: 'me.scoring',
+        label: 'Скоринг',
+        iconPath: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z',
+    },
+    {
+        name: 'me.profile',
+        label: 'Профиль',
+        iconPath: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z',
+    },
 ];
 
-const TITLES = { 'me.profile': 'Профиль', 'me.scoring': 'Скоринг', 'me.cases': 'Заявки', 'me.agencies': 'Агентства' };
+const TITLES = { 'me.cases': 'Заявки', 'me.agencies': 'Агентства', 'me.scoring': 'Скоринг', 'me.profile': 'Профиль' };
 const currentTitle = computed(() => TITLES[route.name] ?? 'Кабинет');
 
 function logout() {

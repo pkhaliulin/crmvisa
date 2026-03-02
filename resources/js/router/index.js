@@ -19,7 +19,7 @@ const routes = [
         component: () => import('@/layouts/ClientPortalLayout.vue'),
         meta: { requiresPublicAuth: true },
         children: [
-            { path: '', redirect: { name: 'me.profile' } },
+            { path: '', redirect: { name: 'me.cases' } },
             {
                 path: 'profile',
                 name: 'me.profile',

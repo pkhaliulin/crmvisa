@@ -41,8 +41,9 @@ class PublicScoringController extends Controller
      */
     public function scoreCountry(Request $request, string $country): JsonResponse
     {
-        $user   = $request->get('_public_user');
-        $result = $this->scoring->score($user, strtoupper($country));
+        $user     = $request->get('_public_user');
+        $visaType = $request->query('visa_type', 'tourist');
+        $result   = $this->scoring->score($user, strtoupper($country), $visaType);
 
         return ApiResponse::success($result);
     }
@@ -53,8 +54,9 @@ class PublicScoringController extends Controller
      */
     public function scoreAll(Request $request): JsonResponse
     {
-        $user    = $request->get('_public_user');
-        $results = $this->scoring->scoreAll($user);
+        $user     = $request->get('_public_user');
+        $visaType = $request->query('visa_type', 'tourist');
+        $results  = $this->scoring->scoreAll($user, $visaType);
 
         return ApiResponse::success([
             'scores'          => $results,

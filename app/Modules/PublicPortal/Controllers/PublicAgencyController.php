@@ -79,6 +79,7 @@ class PublicAgencyController extends Controller
             'country_code' => ['required', 'string', 'size:2'],
             'visa_type'    => ['required', 'string', 'max:50'],
             'package_id'   => ['nullable', 'uuid', 'exists:agency_service_packages,id'],
+            'case_id'      => ['nullable', 'uuid', 'exists:cases,id'],
         ]);
 
         $cc       = strtoupper($data['country_code']);
@@ -116,23 +117,49 @@ class PublicAgencyController extends Controller
                 $client->update(['name' => $publicUser->name]);
             }
 
-            // 2. Создать заявку
+            // 2. Создать или обновить заявку
             $packageNote = $data['package_id']
                 ? 'Выбранный пакет: ' . \DB::table('agency_service_packages')->where('id', $data['package_id'])->value('name')
                 : null;
 
-            $case = VisaCase::create([
-                'agency_id'    => $agency->id,
-                'client_id'    => $client->id,
-                'country_code' => $cc,
-                'visa_type'    => $data['visa_type'],
-                'stage'        => 'lead',
-                'priority'     => 'normal',
-                'notes'        => implode("\n", array_filter([
-                    'Лид с портала VisaBor.',
-                    $packageNote,
-                ])),
-            ]);
+            // Если передан case_id — обновляем существующий DRAFT
+            if (!empty($data['case_id'])) {
+                $case = VisaCase::whereHas('client', fn ($q) => $q->where('phone', $publicUser->phone))
+                    ->where('public_status', 'draft')
+                    ->find($data['case_id']);
+
+                if ($case) {
+                    $case->update([
+                        'agency_id'     => $agency->id,
+                        'client_id'     => $client->id,
+                        'public_status' => 'submitted',
+                        'notes'         => implode("\n", array_filter([
+                            'Лид с портала VisaBor.',
+                            $packageNote,
+                        ])),
+                    ]);
+                } else {
+                    $case = null;
+                }
+            } else {
+                $case = null;
+            }
+
+            if (! $case) {
+                $case = VisaCase::create([
+                    'agency_id'     => $agency->id,
+                    'client_id'     => $client->id,
+                    'country_code'  => $cc,
+                    'visa_type'     => $data['visa_type'],
+                    'stage'         => 'lead',
+                    'public_status' => 'submitted',
+                    'priority'      => 'normal',
+                    'notes'         => implode("\n", array_filter([
+                        'Лид с портала VisaBor.',
+                        $packageNote,
+                    ])),
+                ]);
+            }
 
             // 3. Получить скор по стране из кеша
             $score = (int) \DB::table('public_score_cache')

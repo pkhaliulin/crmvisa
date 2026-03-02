@@ -278,6 +278,7 @@ Route::prefix('v1')->group(function () {
         Route::patch('me',           [PublicProfileController::class, 'update']);
         Route::post('me/passport',   [PublicProfileController::class, 'uploadPassport']);
         Route::get('me/cases',                                    [PublicProfileController::class, 'cases']);
+        Route::post('me/cases',                                   [PublicProfileController::class, 'createDraftCase']);
         Route::get('me/cases/{id}',                               [PublicProfileController::class, 'caseDetail']);
         Route::post('me/cases/{caseId}/checklist/{itemId}/upload',[PublicProfileController::class, 'uploadChecklistItem']);
 

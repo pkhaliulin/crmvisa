@@ -22,6 +22,7 @@ class CaseChecklist extends BaseModel
         'name',
         'description',
         'is_required',
+        'responsibility',
         'requirement_level',
         'metadata',
         'document_id',

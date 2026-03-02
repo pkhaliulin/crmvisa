@@ -160,7 +160,7 @@
                                 </div>
                                 <div class="shrink-0 text-right">
                                     <div class="font-bold text-[#0A1F44] text-base">
-                                        {{ pkg.price ? `$${Number(pkg.price).toLocaleString()}` : 'По запросу' }}
+                                        {{ pkg.price ? `${Number(pkg.price).toLocaleString()} сум` : 'По запросу' }}
                                     </div>
                                     <button @click="openConfirm(agency, pkg)"
                                         class="mt-2 px-4 py-2 bg-[#1BA97F] hover:bg-[#17956f] active:scale-[0.97]
@@ -209,7 +209,7 @@
                         </div>
                         <div v-if="confirm.pkg?.price" class="flex items-start justify-between gap-3">
                             <span class="text-gray-400 shrink-0">Стоимость</span>
-                            <span class="font-bold text-[#0A1F44]">${{ Number(confirm.pkg.price).toLocaleString() }}</span>
+                            <span class="font-bold text-[#0A1F44]">{{ Number(confirm.pkg.price).toLocaleString() }} сум</span>
                         </div>
                     </div>
 

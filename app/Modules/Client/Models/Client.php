@@ -4,12 +4,13 @@ namespace App\Modules\Client\Models;
 
 use App\Support\Abstracts\BaseModel;
 use App\Support\Traits\HasTenant;
+use App\Support\Traits\NormalizesPhone;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Notifications\Notifiable;
 
 class Client extends BaseModel
 {
-    use HasTenant, Notifiable;
+    use HasTenant, Notifiable, NormalizesPhone;
 
     protected $fillable = [
         'agency_id',
@@ -33,6 +34,11 @@ class Client extends BaseModel
     public function cases(): HasMany
     {
         return $this->hasMany(\App\Modules\Case\Models\VisaCase::class, 'client_id');
+    }
+
+    public function setEmailAttribute(?string $value): void
+    {
+        $this->attributes['email'] = $value !== null ? strtolower(trim($value)) : null;
     }
 
     public function isPassportExpiringSoon(int $days = 90): bool

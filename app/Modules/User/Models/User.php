@@ -5,6 +5,7 @@ namespace App\Modules\User\Models;
 use App\Modules\Agency\Models\Agency;
 use App\Modules\Case\Models\VisaCase;
 use App\Support\Traits\HasUuid;
+use App\Support\Traits\NormalizesPhone;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -14,7 +15,7 @@ use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
 
 class User extends Authenticatable implements JWTSubject
 {
-    use HasUuid, SoftDeletes, Notifiable;
+    use HasUuid, SoftDeletes, Notifiable, NormalizesPhone;
 
     protected $keyType = 'string';
     public $incrementing = false;
@@ -24,6 +25,7 @@ class User extends Authenticatable implements JWTSubject
         'name',
         'email',
         'phone',
+        'telegram_username',
         'password',
         'role',
         'is_active',
@@ -70,6 +72,15 @@ class User extends Authenticatable implements JWTSubject
     public function cases(): HasMany
     {
         return $this->hasMany(VisaCase::class, 'assigned_to');
+    }
+
+    // -------------------------------------------------------------------------
+    // Mutators
+    // -------------------------------------------------------------------------
+
+    public function setEmailAttribute(?string $value): void
+    {
+        $this->attributes['email'] = $value !== null ? strtolower(trim($value)) : null;
     }
 
     // -------------------------------------------------------------------------

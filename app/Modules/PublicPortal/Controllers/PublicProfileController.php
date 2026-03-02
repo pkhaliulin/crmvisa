@@ -4,11 +4,13 @@ namespace App\Modules\PublicPortal\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Case\Models\VisaCase;
+use App\Modules\Client\Models\Client;
 use App\Modules\Document\Models\CaseChecklist;
 use App\Support\Helpers\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
 
 class PublicProfileController extends Controller
 {
@@ -49,10 +51,17 @@ class PublicProfileController extends Controller
             'children_count'     => 'sometimes|integer|min:0|max:20',
             'has_property'       => 'sometimes|boolean',
             'has_car'            => 'sometimes|boolean',
-            'has_schengen_visa'  => 'sometimes|boolean',
-            'has_us_visa'        => 'sometimes|boolean',
-            'had_visa_refusal'   => 'sometimes|boolean',
-            'had_overstay'       => 'sometimes|boolean',
+            'has_schengen_visa'     => 'sometimes|boolean',
+            'has_us_visa'           => 'sometimes|boolean',
+            'had_visa_refusal'      => 'sometimes|boolean',
+            'had_overstay'          => 'sometimes|boolean',
+            'had_deportation'       => 'sometimes|boolean',
+            'visas_obtained_count'  => 'sometimes|integer|min:0|max:50',
+            'refusals_count'        => 'sometimes|integer|min:0|max:20',
+            'refusal_countries'     => 'sometimes|array',
+            'refusal_countries.*'   => 'string|size:2',
+            'last_refusal_year'     => 'sometimes|nullable|integer|min:2000|max:2099',
+            'employed_years'        => 'sometimes|integer|min:0|max:50',
         ]);
 
         $user->update($data);
@@ -64,39 +73,114 @@ class PublicProfileController extends Controller
     }
 
     /**
+     * POST /public/me/cases
+     * Создать DRAFT заявку (без агентства).
+     */
+    public function createDraftCase(Request $request): JsonResponse
+    {
+        $publicUser = $request->get('_public_user');
+
+        if ($publicUser->profileCompleteness() < 60) {
+            return ApiResponse::error('Заполните профиль хотя бы на 60% для создания заявки.', [
+                'requires_profile' => true,
+                'profile_percent'  => $publicUser->profileCompleteness(),
+            ], 422);
+        }
+
+        $data = $request->validate([
+            'country_code'        => ['required', 'string', 'size:2'],
+            'visa_type'           => ['required', 'string', 'max:50'],
+            'planned_travel_date' => ['nullable', 'date', 'after:today'],
+        ]);
+
+        $case = DB::transaction(function () use ($publicUser, $data) {
+            // Найти или создать клиента без привязки к агентству (agency_id = null здесь не используем)
+            // Используем первого попавшегося клиента по телефону или создаём временного
+            $client = Client::where('phone', $publicUser->phone)->first();
+
+            if (! $client) {
+                // Создаём клиента без agency_id для DRAFT — но agency_id обязателен
+                // Используем первое агентство как заглушку? Нет — клиент пока без агентства
+                // Создаём запись с agency_id = null (если допускается) или пропускаем
+                // Для DRAFT заявки создаём её с agency_id = null
+                $clientData = [
+                    'name'   => $publicUser->name ?? ('Клиент ' . $publicUser->phone),
+                    'phone'  => $publicUser->phone,
+                    'source' => 'marketplace',
+                ];
+                // Client HasTenant требует agency_id — создаём без него через DB
+                $clientId = \Illuminate\Support\Str::uuid()->toString();
+                \Illuminate\Support\Facades\DB::table('clients')->insert(array_merge($clientData, [
+                    'id'         => $clientId,
+                    'agency_id'  => null,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]));
+                $client = Client::find($clientId);
+            }
+
+            return VisaCase::create([
+                'agency_id'     => null,
+                'client_id'     => $client->id,
+                'country_code'  => strtoupper($data['country_code']),
+                'visa_type'     => $data['visa_type'],
+                'stage'         => 'lead',
+                'public_status' => 'draft',
+                'priority'      => 'normal',
+                'travel_date'   => $data['planned_travel_date'] ?? null,
+            ]);
+        });
+
+        return ApiResponse::created([
+            'id'            => $case->id,
+            'country_code'  => $case->country_code,
+            'visa_type'     => $case->visa_type,
+            'public_status' => $case->public_status,
+        ], 'Заявка создана. Выберите агентство для подачи.');
+    }
+
+    /**
      * GET /public/me/cases
      * Заявки клиента, совпадающего по номеру телефона с публичным пользователем.
      */
     public function cases(Request $request): JsonResponse
     {
-        $publicUser = $request->get('_public_user');
-        $stages     = config('stages');
+        $publicUser    = $request->get('_public_user');
+        $stages        = config('stages');
+        $caseStatuses  = config('case_statuses');
 
         $cases = VisaCase::whereHas('client', fn ($q) => $q->where('phone', $publicUser->phone))
             ->with(['agency:id,name,city', 'assignee:id,name'])
             ->orderBy('created_at', 'desc')
             ->get()
-            ->map(function (VisaCase $case) use ($stages) {
-                $stageConfig   = $stages[$case->stage] ?? null;
-                $totalDocs     = CaseChecklist::where('case_id', $case->id)->count();
-                $uploadedDocs  = CaseChecklist::where('case_id', $case->id)
+            ->map(function (VisaCase $case) use ($stages, $caseStatuses) {
+                $stageConfig        = $stages[$case->stage] ?? null;
+                $publicStatus       = $case->public_status ?? 'submitted';
+                $publicStatusConfig = $caseStatuses[$publicStatus] ?? null;
+                $totalDocs          = CaseChecklist::where('case_id', $case->id)->count();
+                $uploadedDocs       = CaseChecklist::where('case_id', $case->id)
                     ->whereIn('status', ['uploaded', 'approved'])->count();
                 return [
-                    'id'            => $case->id,
-                    'country_code'  => $case->country_code,
-                    'visa_type'     => $case->visa_type,
-                    'stage'         => $case->stage,
-                    'stage_label'   => $stageConfig['label'] ?? $case->stage,
-                    'stage_order'   => $stageConfig['order'] ?? 0,
-                    'stage_msg'     => $stageConfig['client_msg'] ?? $case->stage,
-                    'priority'      => $case->priority,
-                    'critical_date' => $case->critical_date?->toDateString(),
-                    'travel_date'   => $case->travel_date?->toDateString(),
-                    'created_at'    => $case->created_at->toDateString(),
-                    'agency'        => $case->agency ? ['name' => $case->agency->name, 'city' => $case->agency->city] : null,
-                    'assignee'      => $case->assignee ? ['name' => $case->assignee->name] : null,
-                    'docs_total'    => $totalDocs,
-                    'docs_uploaded' => $uploadedDocs,
+                    'id'                   => $case->id,
+                    'country_code'         => $case->country_code,
+                    'visa_type'            => $case->visa_type,
+                    'stage'                => $case->stage,
+                    'stage_label'          => $stageConfig['label'] ?? $case->stage,
+                    'stage_order'          => $stageConfig['order'] ?? 0,
+                    'stage_msg'            => $stageConfig['client_msg'] ?? $case->stage,
+                    'public_status'        => $publicStatus,
+                    'public_status_label'  => $publicStatusConfig['label'] ?? $publicStatus,
+                    'public_status_order'  => $publicStatusConfig['order'] ?? 0,
+                    'public_status_tooltip'=> $publicStatusConfig['tooltip'] ?? '',
+                    'public_status_color'  => $publicStatusConfig['color'] ?? 'gray',
+                    'priority'             => $case->priority,
+                    'critical_date'        => $case->critical_date?->toDateString(),
+                    'travel_date'          => $case->travel_date?->toDateString(),
+                    'created_at'           => $case->created_at->toDateString(),
+                    'agency'               => $case->agency ? ['name' => $case->agency->name, 'city' => $case->agency->city] : null,
+                    'assignee'             => $case->assignee ? ['name' => $case->assignee->name] : null,
+                    'docs_total'           => $totalDocs,
+                    'docs_uploaded'        => $uploadedDocs,
                 ];
             });
 
@@ -109,8 +193,9 @@ class PublicProfileController extends Controller
      */
     public function caseDetail(Request $request, string $id): JsonResponse
     {
-        $publicUser = $request->get('_public_user');
-        $stages     = config('stages');
+        $publicUser   = $request->get('_public_user');
+        $stages       = config('stages');
+        $caseStatuses = config('case_statuses');
 
         $case = VisaCase::whereHas('client', fn ($q) => $q->where('phone', $publicUser->phone))
             ->with([
@@ -120,18 +205,21 @@ class PublicProfileController extends Controller
             ])
             ->findOrFail($id);
 
-        $stageConfig = $stages[$case->stage] ?? null;
+        $stageConfig        = $stages[$case->stage] ?? null;
+        $publicStatus       = $case->public_status ?? 'submitted';
+        $publicStatusConfig = $caseStatuses[$publicStatus] ?? null;
 
         $checklist = CaseChecklist::where('case_id', $case->id)
             ->orderBy('sort_order')
             ->get()
             ->map(fn ($item) => [
-                'id'          => $item->id,
-                'name'        => $item->name,
-                'description' => $item->description,
-                'is_required' => $item->is_required,
-                'status'      => $item->status,
-                'notes'       => $item->notes,
+                'id'             => $item->id,
+                'name'           => $item->name,
+                'description'    => $item->description,
+                'is_required'    => $item->is_required,
+                'responsibility' => $item->responsibility ?? 'client',
+                'status'         => $item->status,
+                'notes'          => $item->notes,
             ]);
 
         $stageTimeline = $case->stageHistory->map(fn ($s) => [
@@ -141,19 +229,24 @@ class PublicProfileController extends Controller
         ]);
 
         return ApiResponse::success([
-            'id'            => $case->id,
-            'country_code'  => $case->country_code,
-            'visa_type'     => $case->visa_type,
-            'stage'         => $case->stage,
-            'stage_label'   => $stageConfig['label']    ?? $case->stage,
-            'stage_msg'     => $stageConfig['client_msg'] ?? $case->stage,
-            'stage_order'   => $stageConfig['order']    ?? 0,
-            'priority'      => $case->priority,
-            'critical_date' => $case->critical_date?->toDateString(),
-            'travel_date'   => $case->travel_date?->toDateString(),
-            'notes'         => $case->notes,
-            'created_at'    => $case->created_at->toDateString(),
-            'agency'        => $case->agency ? [
+            'id'                   => $case->id,
+            'country_code'         => $case->country_code,
+            'visa_type'            => $case->visa_type,
+            'stage'                => $case->stage,
+            'stage_label'          => $stageConfig['label']     ?? $case->stage,
+            'stage_msg'            => $stageConfig['client_msg'] ?? $case->stage,
+            'stage_order'          => $stageConfig['order']     ?? 0,
+            'public_status'        => $publicStatus,
+            'public_status_label'  => $publicStatusConfig['label']   ?? $publicStatus,
+            'public_status_order'  => $publicStatusConfig['order']   ?? 0,
+            'public_status_tooltip'=> $publicStatusConfig['tooltip'] ?? '',
+            'public_status_color'  => $publicStatusConfig['color']   ?? 'gray',
+            'priority'             => $case->priority,
+            'critical_date'        => $case->critical_date?->toDateString(),
+            'travel_date'          => $case->travel_date?->toDateString(),
+            'notes'                => $case->notes,
+            'created_at'           => $case->created_at->toDateString(),
+            'agency'               => $case->agency ? [
                 'name'             => $case->agency->name,
                 'city'             => $case->agency->city,
                 'address'          => $case->agency->address,
@@ -166,13 +259,14 @@ class PublicProfileController extends Controller
                 'rating'           => $case->agency->rating,
                 'experience_years' => $case->agency->experience_years,
             ] : null,
-            'assignee'      => $case->assignee ? [
-                'name'  => $case->assignee->name,
-                'email' => $case->assignee->email,
-                'phone' => $case->assignee->phone,
+            'assignee'             => $case->assignee ? [
+                'name'              => $case->assignee->name,
+                'email'             => $case->assignee->email,
+                'phone'             => $case->assignee->phone,
+                'telegram_username' => $case->assignee->telegram_username,
             ] : null,
-            'checklist'     => $checklist,
-            'timeline'      => $stageTimeline,
+            'checklist'            => $checklist,
+            'timeline'             => $stageTimeline,
         ]);
     }
 

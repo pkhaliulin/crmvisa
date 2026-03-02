@@ -18,6 +18,8 @@ class DocumentTemplate extends BaseModel
         'category',
         'description',
         'type',
+        'is_required',
+        'default_responsibility',
         'is_repeatable',
         'metadata_schema',
         'is_active',

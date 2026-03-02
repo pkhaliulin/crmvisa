@@ -16,7 +16,7 @@ class UserController extends Controller
     public function index(Request $request): JsonResponse
     {
         $users = User::where('agency_id', $request->user()->agency_id)
-            ->get(['id', 'name', 'email', 'phone', 'role', 'is_active', 'created_at']);
+            ->get(['id', 'name', 'email', 'phone', 'telegram_username', 'role', 'is_active', 'created_at']);
 
         return ApiResponse::success($users);
     }
@@ -38,21 +38,23 @@ class UserController extends Controller
         }
 
         $data = $request->validate([
-            'name'     => ['required', 'string', 'max:255'],
-            'email'    => ['required', 'email', Rule::unique('users', 'email')],
-            'phone'    => ['nullable', 'string', 'max:30'],
-            'role'     => ['required', 'in:manager,partner'],
-            'password' => ['required', 'string', 'min:8'],
+            'name'              => ['required', 'string', 'max:255'],
+            'email'             => ['required', 'email', Rule::unique('users', 'email')],
+            'phone'             => ['nullable', 'string', 'regex:/^\+?[0-9]{7,15}$/'],
+            'telegram_username' => ['nullable', 'string', 'regex:/^[a-zA-Z0-9_]{3,32}$/'],
+            'role'              => ['required', 'in:manager,partner'],
+            'password'          => ['required', 'string', 'min:8'],
         ]);
 
         $user = User::create([
-            'agency_id' => $agencyId,
-            'name'      => $data['name'],
-            'email'     => $data['email'],
-            'phone'     => $data['phone'] ?? null,
-            'role'      => $data['role'],
-            'password'  => Hash::make($data['password']),
-            'is_active' => true,
+            'agency_id'         => $agencyId,
+            'name'              => $data['name'],
+            'email'             => $data['email'],
+            'phone'             => $data['phone'] ?? null,
+            'telegram_username' => $data['telegram_username'] ?? null,
+            'role'              => $data['role'],
+            'password'          => Hash::make($data['password']),
+            'is_active'         => true,
         ]);
 
         return ApiResponse::created($user->only(['id', 'name', 'email', 'role', 'agency_id']));
@@ -65,10 +67,11 @@ class UserController extends Controller
             ->firstOrFail();
 
         $data = $request->validate([
-            'name'      => ['sometimes', 'string', 'max:255'],
-            'phone'     => ['sometimes', 'nullable', 'string', 'max:30'],
-            'role'      => ['sometimes', 'in:manager,partner'],
-            'is_active' => ['sometimes', 'boolean'],
+            'name'              => ['sometimes', 'string', 'max:255'],
+            'phone'             => ['sometimes', 'nullable', 'string', 'regex:/^\+?[0-9]{7,15}$/'],
+            'telegram_username' => ['sometimes', 'nullable', 'string', 'regex:/^[a-zA-Z0-9_]{3,32}$/'],
+            'role'              => ['sometimes', 'in:manager,partner'],
+            'is_active'         => ['sometimes', 'boolean'],
         ]);
 
         $user->update($data);

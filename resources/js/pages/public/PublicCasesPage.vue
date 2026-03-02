@@ -33,14 +33,16 @@
                             <div class="text-xs text-gray-400 mt-0.5" v-if="c.agency">
                                 {{ c.agency.name }}<span v-if="c.agency.city">, {{ c.agency.city }}</span>
                             </div>
+                            <div v-else class="text-xs text-gray-400 mt-0.5">Агентство не выбрано</div>
                         </div>
                     </div>
 
                     <div class="flex items-center gap-2 shrink-0">
-                        <!-- Stage badge -->
+                        <!-- Public status badge with tooltip -->
                         <span class="text-xs font-semibold px-2.5 py-1 rounded-full"
-                            :class="stageBadge(c.stage)">
-                            {{ c.stage_label }}
+                            :class="publicStatusBadge(c.public_status)"
+                            :title="c.public_status_tooltip">
+                            {{ c.public_status_label }}
                         </span>
                         <svg class="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
@@ -48,15 +50,17 @@
                     </div>
                 </div>
 
-                <!-- Stage progress bar -->
+                <!-- Public status progress bar (8 steps) -->
                 <div class="px-5 pb-3">
                     <div class="flex items-center gap-0.5 mb-1.5">
-                        <div v-for="(s, i) in STAGES" :key="s.key"
+                        <div v-for="(s, i) in PUBLIC_STATUSES" :key="s.key"
                             class="flex-1 h-1.5 rounded-full transition-colors"
-                            :class="i < stageOrder(c.stage) ? 'bg-[#1BA97F]' : i === stageOrder(c.stage) ? 'bg-[#1BA97F]/50' : 'bg-gray-100'">
+                            :class="getProgressColor(i, c.public_status, c.public_status_order)">
                         </div>
                     </div>
-                    <p class="text-xs text-[#1BA97F] font-medium">{{ c.stage_msg }}</p>
+                    <p class="text-xs font-medium" :class="statusTextColor(c.public_status)">
+                        {{ c.public_status_tooltip || c.public_status_label }}
+                    </p>
                 </div>
 
                 <!-- Footer stats -->
@@ -80,7 +84,7 @@
 
                     <!-- Дедлайн -->
                     <span v-if="c.critical_date" class="flex items-center gap-1.5 ml-auto"
-                        :class="deadlineClass(c.critical_date, c.stage)">
+                        :class="deadlineClass(c.critical_date, c.public_status)">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                         </svg>
@@ -122,7 +126,7 @@
                 </div>
                 <h3 class="font-bold text-[#0A1F44] text-base mb-2">Заявок пока нет</h3>
                 <p class="text-sm text-gray-500 mb-6 max-w-sm mx-auto">
-                    Пройдите скоринг — и мы подберём агентство под вашу страну назначения. Всё общение и документы будут здесь.
+                    Заполните профиль и выберите агентство — подадим заявку на визу вместе.
                 </p>
 
                 <!-- Steps -->
@@ -165,55 +169,60 @@ import { publicPortalApi } from '@/api/public';
 import { codeToFlag } from '@/utils/countries';
 
 const router = useRouter();
-
 const publicAuth = usePublicAuthStore();
-
 const loading = ref(true);
 const cases   = ref([]);
 
-// Этапы в порядке прогресса (для progress bar)
-const STAGES = [
-    { key: 'lead' },
-    { key: 'qualification' },
-    { key: 'documents' },
-    { key: 'translation' },
-    { key: 'appointment' },
-    { key: 'review' },
-    { key: 'result' },
+// 8 клиентских статусов для прогресс-бара
+const PUBLIC_STATUSES = [
+    { key: 'draft',                 order: 0 },
+    { key: 'submitted',             order: 1 },
+    { key: 'manager_assigned',      order: 2 },
+    { key: 'document_collection',   order: 3 },
+    { key: 'submitted_to_embassy',  order: 4 },
+    { key: 'decision_pending',      order: 5 },
+    { key: 'completed',             order: 6 },
+    { key: 'rejected',              order: 7 },
 ];
 
 const COUNTRY_NAMES = {
-    DE: 'Германия',       FR: 'Франция',          IT: 'Италия',
-    ES: 'Испания',        GB: 'Великобритания',    US: 'США',
-    CA: 'Канада',         AU: 'Австралия',         JP: 'Япония',
-    KR: 'Южная Корея',    CN: 'Китай',             AE: 'ОАЭ',
-    TR: 'Турция',         PL: 'Польша',            CZ: 'Чехия',
-    HU: 'Венгрия',        AT: 'Австрия',           CH: 'Швейцария',
-    NL: 'Нидерланды',     PT: 'Португалия',        GR: 'Греция',
-    SA: 'Саудовская Аравия', IN: 'Индия',           TH: 'Таиланд',
-    MY: 'Малайзия',       SG: 'Сингапур',          ID: 'Индонезия',
+    DE: 'Германия', FR: 'Франция', IT: 'Италия', ES: 'Испания',
+    GB: 'Великобритания', US: 'США', CA: 'Канада', AU: 'Австралия',
+    JP: 'Япония', KR: 'Южная Корея', CN: 'Китай', AE: 'ОАЭ',
+    TR: 'Турция', PL: 'Польша', CZ: 'Чехия', HU: 'Венгрия',
+    AT: 'Австрия', CH: 'Швейцария', NL: 'Нидерланды', PT: 'Португалия',
+    GR: 'Греция', SA: 'Саудовская Аравия', IN: 'Индия', TH: 'Таиланд',
+    MY: 'Малайзия', SG: 'Сингапур', ID: 'Индонезия',
 };
 
-function countryName(code) {
-    return COUNTRY_NAMES[code] || code;
-}
+function countryName(code) { return COUNTRY_NAMES[code] || code; }
 
-function stageOrder(stage) {
-    const idx = STAGES.findIndex(s => s.key === stage);
-    return idx >= 0 ? idx : 0;
-}
-
-function stageBadge(stage) {
+function publicStatusBadge(status) {
     const map = {
-        lead:          'bg-gray-100 text-gray-600',
-        qualification: 'bg-blue-50 text-blue-600',
-        documents:     'bg-amber-50 text-amber-700',
-        translation:   'bg-purple-50 text-purple-700',
-        appointment:   'bg-indigo-50 text-indigo-700',
-        review:        'bg-orange-50 text-orange-700',
-        result:        'bg-green-50 text-green-700',
+        draft:                 'bg-gray-100 text-gray-600',
+        submitted:             'bg-blue-50 text-blue-600',
+        manager_assigned:      'bg-indigo-50 text-indigo-700',
+        document_collection:   'bg-amber-50 text-amber-700',
+        submitted_to_embassy:  'bg-orange-50 text-orange-700',
+        decision_pending:      'bg-purple-50 text-purple-700',
+        completed:             'bg-green-50 text-green-700',
+        rejected:              'bg-red-50 text-red-700',
     };
-    return map[stage] || 'bg-gray-100 text-gray-600';
+    return map[status] || 'bg-gray-100 text-gray-600';
+}
+
+function statusTextColor(status) {
+    if (status === 'completed') return 'text-[#1BA97F]';
+    if (status === 'rejected')  return 'text-red-500';
+    return 'text-gray-500';
+}
+
+function getProgressColor(index, status, order) {
+    if (status === 'rejected') {
+        return index < order ? 'bg-red-300' : index === order ? 'bg-red-500' : 'bg-gray-100';
+    }
+    if (status === 'completed') return 'bg-[#1BA97F]';
+    return index < order ? 'bg-[#1BA97F]' : index === order ? 'bg-[#1BA97F]/50' : 'bg-gray-100';
 }
 
 function formatDate(dateStr) {
@@ -222,8 +231,8 @@ function formatDate(dateStr) {
     return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-function deadlineClass(dateStr, stage) {
-    if (!dateStr || stage === 'result') return 'text-gray-400';
+function deadlineClass(dateStr, status) {
+    if (!dateStr || status === 'completed' || status === 'rejected') return 'text-gray-400';
     const days = Math.floor((new Date(dateStr) - new Date()) / 86400000);
     if (days < 0)  return 'text-red-600 font-semibold';
     if (days <= 5) return 'text-amber-600 font-medium';
@@ -242,24 +251,24 @@ const steps = computed(() => [
     },
     {
         num: 2,
-        title: 'Пройдите скоринг',
-        desc: 'Оценка шансов по 10+ странам за 2 минуты',
+        title: 'Создайте заявку',
+        desc: 'Выберите страну и тип визы',
         done: false,
     },
     {
         num: 3,
-        title: 'Агентство возьмёт вас',
-        desc: 'Специалист свяжется и откроет заявку',
+        title: 'Выберите агентство',
+        desc: 'Специалист свяжется и возьмёт заявку',
         done: false,
     },
 ]);
 
 const nextStepRoute = computed(() =>
-    profileDone.value ? { name: 'me.scoring' } : { name: 'me.profile' }
+    profileDone.value ? { name: 'me.agencies' } : { name: 'me.profile' }
 );
 
 const nextStepLabel = computed(() =>
-    profileDone.value ? 'Пройти скоринг' : 'Заполнить профиль'
+    profileDone.value ? 'Выбрать агентство' : 'Заполнить профиль'
 );
 
 onMounted(async () => {

@@ -48,20 +48,23 @@
                         </div>
                     </div>
                     <span class="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full"
-                        :class="stageBadge(caseData.stage)">
-                        {{ caseData.stage_label }}
+                        :class="publicStatusBadge(caseData.public_status)"
+                        :title="caseData.public_status_tooltip">
+                        {{ caseData.public_status_label }}
                     </span>
                 </div>
 
-                <!-- Прогресс -->
+                <!-- Прогресс по public_status (8 шагов) -->
                 <div class="mb-3">
                     <div class="flex items-center gap-0.5 mb-2">
-                        <div v-for="(s, i) in STAGES" :key="s.key"
+                        <div v-for="(s, i) in PUBLIC_STATUSES" :key="s.key"
                             class="flex-1 h-2 rounded-full transition-colors"
-                            :class="i < caseData.stage_order ? 'bg-[#1BA97F]' : i === caseData.stage_order ? 'bg-[#1BA97F]/50' : 'bg-gray-100'">
+                            :class="getProgressColor(i, caseData.public_status, caseData.public_status_order)">
                         </div>
                     </div>
-                    <p class="text-sm text-[#1BA97F] font-medium">{{ caseData.stage_msg }}</p>
+                    <p class="text-sm font-medium" :class="statusTextColor(caseData.public_status)">
+                        {{ caseData.public_status_tooltip || caseData.public_status_label }}
+                    </p>
                 </div>
 
                 <!-- Даты -->
@@ -164,8 +167,8 @@
                                 {{ statusLabel(item.status, item.is_required) }}
                             </div>
 
-                            <!-- Кнопка загрузки файла (не показываем для одобренных) -->
-                            <label v-if="item.status !== 'approved'"
+                            <!-- Кнопка загрузки: только для responsibility=client и не approved -->
+                            <label v-if="item.responsibility !== 'agency' && item.status !== 'approved'"
                                 class="inline-flex items-center gap-1.5 text-xs text-[#1BA97F] font-medium
                                        cursor-pointer hover:text-[#169B72] mt-1.5 select-none"
                                 :class="{ 'opacity-50 pointer-events-none': uploading[item.id] }">
@@ -181,6 +184,11 @@
                                     accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
                                     @change="(e) => uploadDoc(item.id, e)"/>
                             </label>
+                            <!-- Для agency responsibility — только статус -->
+                            <div v-else-if="item.responsibility === 'agency' && item.status !== 'approved'"
+                                class="mt-1 text-xs text-gray-400 italic">
+                                {{ item.status === 'done' ? 'Выполнено агентством' : 'Ожидает агентства' }}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -331,7 +339,15 @@
                             </svg>
                             <span class="text-sm text-gray-700">{{ caseData.assignee.email }}</span>
                         </a>
-                        <div v-if="!caseData.assignee.phone && !caseData.assignee.email"
+                        <a v-if="caseData.assignee.telegram_username"
+                            :href="`https://t.me/${caseData.assignee.telegram_username}`" target="_blank" rel="noopener"
+                            class="flex items-center gap-3 p-3 rounded-xl bg-[#229ED9]/5 hover:bg-[#229ED9]/10 border border-[#229ED9]/20 transition-colors">
+                            <svg class="w-4 h-4 text-[#229ED9] shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-2.018 9.51c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L6.51 14.617 3.56 13.7c-.657-.204-.671-.657.137-.972l10.905-4.205c.548-.194 1.027.126.96.725z"/>
+                            </svg>
+                            <span class="text-sm font-semibold text-[#229ED9]">@{{ caseData.assignee.telegram_username }}</span>
+                        </a>
+                        <div v-if="!caseData.assignee.phone && !caseData.assignee.email && !caseData.assignee.telegram_username"
                             class="text-sm text-gray-400 p-3">
                             Менеджер скоро свяжется с вами
                         </div>
@@ -404,9 +420,15 @@ async function uploadDoc(itemId, event) {
     }
 }
 
-const STAGES = [
-    { key: 'lead' }, { key: 'qualification' }, { key: 'documents' },
-    { key: 'translation' }, { key: 'appointment' }, { key: 'review' }, { key: 'result' },
+const PUBLIC_STATUSES = [
+    { key: 'draft' },
+    { key: 'submitted' },
+    { key: 'manager_assigned' },
+    { key: 'document_collection' },
+    { key: 'submitted_to_embassy' },
+    { key: 'decision_pending' },
+    { key: 'completed' },
+    { key: 'rejected' },
 ];
 
 const COUNTRY_NAMES = {
@@ -434,17 +456,32 @@ function countryName(code)    { return COUNTRY_NAMES[code] || code; }
 function codeToFlagLocal(code){ return codeToFlag(code); }
 function visaTypeLabel(type)  { return VISA_TYPE_LABELS[type] || type; }
 
-function stageBadge(stage) {
+function publicStatusBadge(status) {
     const map = {
-        lead:          'bg-gray-100 text-gray-600',
-        qualification: 'bg-blue-50 text-blue-600',
-        documents:     'bg-amber-50 text-amber-700',
-        translation:   'bg-purple-50 text-purple-700',
-        appointment:   'bg-indigo-50 text-indigo-700',
-        review:        'bg-orange-50 text-orange-700',
-        result:        'bg-green-50 text-green-700',
+        draft:                 'bg-gray-100 text-gray-600',
+        submitted:             'bg-blue-50 text-blue-600',
+        manager_assigned:      'bg-indigo-50 text-indigo-700',
+        document_collection:   'bg-amber-50 text-amber-700',
+        submitted_to_embassy:  'bg-orange-50 text-orange-700',
+        decision_pending:      'bg-purple-50 text-purple-700',
+        completed:             'bg-green-50 text-green-700',
+        rejected:              'bg-red-50 text-red-700',
     };
-    return map[stage] || 'bg-gray-100 text-gray-600';
+    return map[status] || 'bg-gray-100 text-gray-600';
+}
+
+function statusTextColor(status) {
+    if (status === 'completed') return 'text-[#1BA97F]';
+    if (status === 'rejected')  return 'text-red-500';
+    return 'text-gray-500';
+}
+
+function getProgressColor(index, status, order) {
+    if (status === 'rejected') {
+        return index < order ? 'bg-red-300' : index === order ? 'bg-red-500' : 'bg-gray-100';
+    }
+    if (status === 'completed') return 'bg-[#1BA97F]';
+    return index < order ? 'bg-[#1BA97F]' : index === order ? 'bg-[#1BA97F]/50' : 'bg-gray-100';
 }
 
 function statusLabel(status, required) {

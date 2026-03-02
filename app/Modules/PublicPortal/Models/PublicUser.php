@@ -3,13 +3,14 @@
 namespace App\Modules\PublicPortal\Models;
 
 use App\Support\Traits\HasUuid;
+use App\Support\Traits\NormalizesPhone;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Hash;
 
 class PublicUser extends Model
 {
-    use HasUuid;
+    use HasUuid, NormalizesPhone;
 
     protected $table = 'public_users';
 
@@ -36,6 +37,12 @@ class PublicUser extends Model
         'has_us_visa',
         'had_visa_refusal',
         'had_overstay',
+        'had_deportation',
+        'visas_obtained_count',
+        'refusals_count',
+        'refusal_countries',
+        'last_refusal_year',
+        'employed_years',
         'last_login_at',
     ];
 
@@ -51,10 +58,16 @@ class PublicUser extends Model
         'has_car'             => 'boolean',
         'has_schengen_visa'   => 'boolean',
         'has_us_visa'         => 'boolean',
-        'had_visa_refusal'    => 'boolean',
-        'had_overstay'        => 'boolean',
-        'children_count'      => 'integer',
-        'monthly_income_usd'  => 'integer',
+        'had_visa_refusal'      => 'boolean',
+        'had_overstay'          => 'boolean',
+        'had_deportation'       => 'boolean',
+        'children_count'        => 'integer',
+        'monthly_income_usd'    => 'integer',
+        'visas_obtained_count'  => 'integer',
+        'refusals_count'        => 'integer',
+        'last_refusal_year'     => 'integer',
+        'employed_years'        => 'integer',
+        'refusal_countries'     => 'array',
     ];
 
     // -------------------------------------------------------------------------
