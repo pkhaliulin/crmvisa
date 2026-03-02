@@ -36,7 +36,7 @@ class PublicAgencyController extends Controller
                 $q->where('is_active', true);
                 if ($cc)       $q->where('country_code', $cc);
                 if ($visaType) $q->where('visa_type', $visaType);
-                $q->with(['items.service:id,name_ru,name_en,category']);
+                $q->with(['items.service:id,name,category']);
             }])
             ->select([
                 'id', 'name', 'city', 'address', 'latitude', 'longitude',
@@ -56,7 +56,7 @@ class PublicAgencyController extends Controller
                     'currency'        => $pkg->currency ?? 'USD',
                     'processing_days' => $pkg->processing_days,
                     'services'        => $pkg->items->map(fn ($item) => [
-                        'name'     => $item->service?->name_ru ?? $item->service?->name_en ?? '',
+                        'name'     => $item->service?->name ?? '',
                         'category' => $item->service?->category ?? '',
                     ])->filter(fn ($s) => $s['name'])->values(),
                 ]),
