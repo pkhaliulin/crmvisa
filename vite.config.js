@@ -16,7 +16,13 @@ export default defineConfig({
     resolve: {
         alias: {
             '@': resolve(__dirname, 'resources/js'),
+            'vue-i18n': 'vue-i18n/dist/vue-i18n.esm-bundler.js',
         },
+    },
+    define: {
+        __VUE_I18N_FULL_INSTALL__: true,
+        __VUE_I18N_LEGACY_API__: false,
+        __INTLIFY_PROD_DEVTOOLS__: false,
     },
     server: {
         watch: {
