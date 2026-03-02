@@ -150,7 +150,8 @@ class PublicAgencyController extends Controller
 
             // Если передан case_id — обновляем существующий DRAFT
             if (!empty($data['case_id'])) {
-                $case = VisaCase::whereHas('client', fn ($q) => $q->where('phone', $publicUser->phone))
+                $phoneDigits = ltrim($publicUser->phone, '+');
+                $case = VisaCase::whereHas('client', fn ($q) => $q->whereRaw("REPLACE(phone, '+', '') = ?", [$phoneDigits]))
                     ->where('public_status', 'draft')
                     ->find($data['case_id']);
 

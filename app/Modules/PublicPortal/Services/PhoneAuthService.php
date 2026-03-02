@@ -3,6 +3,7 @@
 namespace App\Modules\PublicPortal\Services;
 
 use App\Modules\PublicPortal\Models\PublicUser;
+use App\Support\Traits\NormalizesPhone;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -17,6 +18,7 @@ class PhoneAuthService
 
     public function sendOtp(string $phone): bool
     {
+        $phone = NormalizesPhone::normalizePhone($phone);
         $stubPin = config('services.sms_stub.pin');
         $code    = $stubPin ?? str_pad((string) random_int(1000, 9999), 4, '0', STR_PAD_LEFT);
 
@@ -46,6 +48,7 @@ class PhoneAuthService
 
     public function verifyOtp(string $phone, string $code): array
     {
+        $phone   = NormalizesPhone::normalizePhone($phone);
         $stubPin = config('services.sms_stub.pin');
 
         $otp = DB::table('public_otp_codes')
@@ -79,6 +82,7 @@ class PhoneAuthService
 
     public function loginWithPin(string $phone, string $pin): array
     {
+        $phone   = NormalizesPhone::normalizePhone($phone);
         $stubPin = config('services.sms_stub.pin');
         $user    = PublicUser::where('phone', $phone)->first();
 

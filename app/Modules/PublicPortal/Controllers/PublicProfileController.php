@@ -94,9 +94,11 @@ class PublicProfileController extends Controller
         ]);
 
         $case = DB::transaction(function () use ($publicUser, $data) {
-            // Найти или создать клиента без привязки к агентству (agency_id = null здесь не используем)
-            // Используем первого попавшегося клиента по телефону или создаём временного
-            $client = Client::where('phone', $publicUser->phone)->first();
+            // Найти клиента по нормализованному телефону
+            $phoneDigits = ltrim($publicUser->phone, '+');
+            $client = Client::withoutTenant()
+                ->whereRaw("REPLACE(phone, '+', '') = ?", [$phoneDigits])
+                ->first();
 
             if (! $client) {
                 // Создаём клиента без agency_id для DRAFT — но agency_id обязателен
@@ -149,7 +151,10 @@ class PublicProfileController extends Controller
         $stages        = config('stages');
         $caseStatuses  = config('case_statuses');
 
-        $cases = VisaCase::whereHas('client', fn ($q) => $q->where('phone', $publicUser->phone))
+        // Поиск по нормализованному телефону (без +, чтобы найти оба формата)
+        $phoneDigits = ltrim($publicUser->phone, '+');
+
+        $cases = VisaCase::whereHas('client', fn ($q) => $q->whereRaw("REPLACE(phone, '+', '') = ?", [$phoneDigits]))
             ->with(['agency:id,name,city', 'assignee:id,name'])
             ->orderBy('created_at', 'desc')
             ->get()
@@ -197,7 +202,9 @@ class PublicProfileController extends Controller
         $stages       = config('stages');
         $caseStatuses = config('case_statuses');
 
-        $case = VisaCase::whereHas('client', fn ($q) => $q->where('phone', $publicUser->phone))
+        $phoneDigits = ltrim($publicUser->phone, '+');
+
+        $case = VisaCase::whereHas('client', fn ($q) => $q->whereRaw("REPLACE(phone, '+', '') = ?", [$phoneDigits]))
             ->with([
                 'agency:id,name,city,address,description,website_url,logo_url,phone,email,is_verified,rating,experience_years',
                 'assignee:id,name,email,phone',
@@ -283,7 +290,8 @@ class PublicProfileController extends Controller
         ]);
 
         // Проверяем что кейс принадлежит пользователю
-        $case = VisaCase::whereHas('client', fn ($q) => $q->where('phone', $publicUser->phone))
+        $phoneDigits = ltrim($publicUser->phone, '+');
+        $case = VisaCase::whereHas('client', fn ($q) => $q->whereRaw("REPLACE(phone, '+', '') = ?", [$phoneDigits]))
             ->findOrFail($caseId);
 
         $item = CaseChecklist::where('case_id', $case->id)->findOrFail($itemId);
