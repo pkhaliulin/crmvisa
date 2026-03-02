@@ -47,12 +47,11 @@ class AuthService
         $dbUser = \App\Modules\User\Models\User::where('email', $dto->email)->first();
         \Log::error('LOGIN_DEBUG', [
             'user_found'    => $dbUser ? true : false,
-            'is_active'     => $dbUser?->is_active,
-            'deleted_at'    => $dbUser?->deleted_at,
             'hash_prefix'   => $dbUser ? substr($dbUser->password, 0, 15) : null,
+            'hash_strlen'   => $dbUser ? strlen($dbUser->password) : null,
+            'hash_hex_end'  => $dbUser ? bin2hex(substr($dbUser->password, -3)) : null,
             'native_verify' => $dbUser ? password_verify($dto->password, $dbUser->password) : null,
-            'pw_hex'        => bin2hex(substr($dto->password, 0, 5)),
-            'pw_strlen'     => strlen($dto->password),
+            'hardcoded_verify' => $dbUser ? password_verify('Owner@2026!', '$2y$12$KB3ofgnJR5Ht.0DVnIVh6uJuLykuHr6DRop4WyeRvj6fCyIQ2ETe2') : null,
         ]);
 
         $token = JWTAuth::attempt([
