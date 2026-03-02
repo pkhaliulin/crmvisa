@@ -42,6 +42,7 @@ class Agency extends BaseModel
         'city',
         'rating',
         'reviews_count',
+        'top_criterion',
     ];
 
     protected $casts = [

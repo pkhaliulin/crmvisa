@@ -18,15 +18,26 @@ class AgencyReview extends Model
     protected $fillable = [
         'agency_id',
         'public_user_id',
+        'case_id',
         'client_name',
         'rating',
+        'punctuality',
+        'quality',
+        'communication',
+        'professionalism',
+        'price_quality',
         'comment',
         'is_published',
     ];
 
     protected $casts = [
-        'rating'       => 'integer',
-        'is_published' => 'boolean',
+        'rating'          => 'integer',
+        'punctuality'     => 'integer',
+        'quality'         => 'integer',
+        'communication'   => 'integer',
+        'professionalism' => 'integer',
+        'price_quality'   => 'integer',
+        'is_published'    => 'boolean',
     ];
 
     public function agency(): BelongsTo

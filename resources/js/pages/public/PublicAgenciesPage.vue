@@ -202,6 +202,15 @@
                         {{ agency.description }}
                     </p>
 
+                    <!-- Highlight лучшего критерия -->
+                    <div v-if="agency.top_criterion && agency.reviews_count >= 1"
+                        class="mt-2 flex items-center gap-1.5 text-xs text-[#1BA97F] font-medium">
+                        <svg class="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                        </svg>
+                        {{ topCriterionMessage(agency.top_criterion) }}
+                    </div>
+
                     <!-- Страны + минимальная цена из пакетов -->
                     <div v-if="countryPrices(agency).length" class="mt-3 flex flex-wrap gap-1.5">
                         <span v-for="cp in countryPrices(agency)" :key="cp.code"
@@ -220,7 +229,7 @@
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
                             </svg>
-                            {{ agency.packages.length }} {{ plu(agency.packages.length, 'пакет', 'пакета', 'пакетов') }}
+                            {{ plu(agency.packages.length, 'пакет', 'пакета', 'пакетов') }}
                         </span>
                         <span v-if="agency.phone" class="flex items-center gap-1">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -427,50 +436,6 @@
                             </button>
                         </div>
 
-                        <!-- Форма отзыва -->
-                        <div v-if="canReviewMap[agency.id]?.can_review" class="border-t border-gray-100 pt-4">
-                            <h4 class="text-sm font-semibold text-[#0A1F44] mb-3">Оставить отзыв</h4>
-                            <div class="mb-3">
-                                <label class="text-xs text-gray-500 mb-1.5 block">Оценка <span class="text-red-500">*</span></label>
-                                <div class="flex gap-1.5">
-                                    <button v-for="n in 5" :key="n"
-                                        @click="reviewForms[agency.id].rating = n"
-                                        class="w-8 h-8 flex items-center justify-center rounded-lg transition-all"
-                                        :class="(reviewForms[agency.id]?.rating ?? 0) >= n
-                                            ? 'text-amber-400 bg-amber-50'
-                                            : 'text-gray-300 bg-gray-50 hover:text-amber-300'">
-                                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
-                                        </svg>
-                                    </button>
-                                    <span class="text-xs text-gray-400 self-center ml-1">
-                                        {{ ratingLabels[reviewForms[agency.id]?.rating] ?? 'Выберите оценку' }}
-                                    </span>
-                                </div>
-                            </div>
-                            <textarea v-model="reviewForms[agency.id].comment"
-                                placeholder="Расскажите о своём опыте работы с агентством..."
-                                rows="3"
-                                class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] resize-none transition-colors mb-3">
-                            </textarea>
-                            <button @click="submitReview(agency.id)"
-                                :disabled="!reviewForms[agency.id]?.rating || reviewsSubmitting[agency.id]"
-                                class="w-full py-2.5 bg-[#1BA97F] hover:bg-[#17956f] text-white text-sm font-semibold rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
-                                <svg v-if="reviewsSubmitting[agency.id]" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                                </svg>
-                                {{ reviewsSubmitting[agency.id] ? 'Отправляем...' : 'Опубликовать отзыв' }}
-                            </button>
-                        </div>
-                        <div v-else-if="canReviewMap[agency.id]?.has_review"
-                            class="border-t border-gray-100 pt-3 text-xs text-gray-400 text-center">
-                            Вы уже оставили отзыв для этого агентства
-                        </div>
-                        <div v-else-if="canReviewMap[agency.id]?.has_case === false"
-                            class="border-t border-gray-100 pt-3 text-xs text-gray-400 text-center">
-                            Отзыв можно оставить только после оформления заявки
-                        </div>
                     </div>
                 </div>
 
@@ -482,7 +447,7 @@
             <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                 <div class="px-5 py-4 border-b border-gray-50">
                     <h2 class="font-bold text-[#0A1F44] text-sm">Агентства на карте</h2>
-                    <p class="text-xs text-gray-400 mt-0.5">{{ agenciesWithCoords.length }} {{ plu(agenciesWithCoords.length, 'агентство', 'агентства', 'агентств') }} с указанным адресом</p>
+                    <p class="text-xs text-gray-400 mt-0.5">{{ plu(agenciesWithCoords.length, 'агентство', 'агентства', 'агентств') }} с указанным адресом</p>
                 </div>
                 <div class="relative" style="height: 420px;">
                     <iframe
@@ -655,12 +620,9 @@ const expandedPackages = reactive({});
 const expandedDetails  = reactive({});
 
 // Отзывы
-const reviewsData       = reactive({});
-const reviewsLoading    = reactive({});
-const reviewSort        = reactive({});
-const reviewForms       = reactive({});
-const reviewsSubmitting = reactive({});
-const canReviewMap      = reactive({});
+const reviewsData    = reactive({});
+const reviewsLoading = reactive({});
+const reviewSort     = reactive({});
 
 const visaTypes = [
     { value: '',          label: 'Все типы' },
@@ -677,14 +639,15 @@ const reviewTabs = [
     { value: 'negative', label: 'Критические' },
 ];
 
-const ratingLabels = {
-    1: 'Очень плохо',
-    2: 'Плохо',
-    3: 'Нормально',
-    4: 'Хорошо',
-    5: 'Отлично',
+const CRITERIA_MESSAGES = {
+    quality:         'Клиенты высоко оценили качество услуг',
+    punctuality:     'Клиенты отмечают высокую пунктуальность',
+    communication:   'Клиенты ценят хорошую коммуникацию',
+    professionalism: 'Клиенты высоко оценили профессионализм',
+    price_quality:   'Клиенты довольны соотношением цены и качества',
 };
 
+function topCriterionMessage(key) { return CRITERIA_MESSAGES[key] ?? ''; }
 function countryName(code) { return getCountryName(code) ?? code; }
 function countryFlag(code) { return codeToFlag(code); }
 
@@ -840,7 +803,6 @@ async function toggleDetails(agency) {
     expandedDetails[id] = !expandedDetails[id];
     if (expandedDetails[id] && !reviewsData[id]) {
         await loadReviews(id);
-        await loadCanReview(id);
     }
 }
 
@@ -861,40 +823,9 @@ async function loadReviewsPage(agencyId, page) {
     await loadReviews(agencyId, page);
 }
 
-async function loadCanReview(agencyId) {
-    try {
-        const res = await publicPortalApi.canReview(agencyId);
-        canReviewMap[agencyId] = res.data.data;
-        if (!reviewForms[agencyId]) {
-            reviewForms[agencyId] = { rating: 0, comment: '' };
-        }
-    } catch { /* ignore */ }
-}
-
 async function setReviewSort(agencyId, sort) {
     reviewSort[agencyId] = sort;
     await loadReviews(agencyId, 1);
-}
-
-async function submitReview(agencyId) {
-    const form = reviewForms[agencyId];
-    if (!form?.rating) return;
-    reviewsSubmitting[agencyId] = true;
-    try {
-        await publicPortalApi.submitReview(agencyId, {
-            rating:  form.rating,
-            comment: form.comment || null,
-        });
-        // Обновляем список отзывов и статус
-        await loadReviews(agencyId, 1);
-        canReviewMap[agencyId] = { ...canReviewMap[agencyId], can_review: false, has_review: true };
-        showToast('Отзыв опубликован', 'Спасибо за вашу оценку!');
-    } catch (e) {
-        const msg = e?.response?.data?.message ?? 'Ошибка отправки отзыва';
-        showToast('Ошибка', msg);
-    } finally {
-        reviewsSubmitting[agencyId] = false;
-    }
 }
 
 function openConfirm(agency, pkg) {

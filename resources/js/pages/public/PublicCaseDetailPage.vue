@@ -370,6 +370,73 @@
                 </div>
             </div>
 
+            <!-- === Отзыв об агентстве === -->
+            <div v-if="caseData.agency?.id && reviewState.loaded"
+                class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+
+                <!-- Форма -->
+                <template v-if="reviewState.can_review">
+                    <div class="px-5 py-4 border-b border-gray-50">
+                        <h2 class="font-bold text-[#0A1F44] text-sm">Ваш отзыв об агентстве</h2>
+                        <p class="text-xs text-gray-400 mt-0.5">Оцените работу по 5 критериям — поможете другим выбрать агентство</p>
+                    </div>
+                    <div class="p-5 space-y-5">
+                        <!-- 5 критериев -->
+                        <div v-for="crit in REVIEW_CRITERIA" :key="crit.key"
+                            class="flex items-center justify-between gap-3">
+                            <span class="text-sm text-gray-700 min-w-0 leading-tight">{{ crit.label }}</span>
+                            <div class="flex gap-0.5 shrink-0">
+                                <button v-for="n in 5" :key="n"
+                                    @click="reviewState.form[crit.key] = n"
+                                    class="w-8 h-8 flex items-center justify-center transition-colors rounded-lg"
+                                    :class="(reviewState.form[crit.key] ?? 0) >= n
+                                        ? 'text-amber-400 bg-amber-50'
+                                        : 'text-gray-200 bg-gray-50 hover:text-amber-300'">
+                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <!-- Комментарий -->
+                        <div>
+                            <label class="text-xs text-gray-400 mb-1.5 block">Комментарий (необязательно)</label>
+                            <textarea v-model="reviewState.form.comment"
+                                placeholder="Расскажите о своём опыте работы с агентством..."
+                                rows="3"
+                                class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] resize-none transition-colors">
+                            </textarea>
+                        </div>
+                        <!-- Кнопка -->
+                        <button @click="submitCaseReview"
+                            :disabled="!reviewAllFilled || reviewState.submitting"
+                            class="w-full py-3 bg-[#1BA97F] hover:bg-[#17956f] text-white text-sm font-semibold rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+                            <svg v-if="reviewState.submitting" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                            </svg>
+                            {{ reviewState.submitting ? 'Отправляем...' : 'Опубликовать отзыв' }}
+                        </button>
+                        <p v-if="!reviewAllFilled" class="text-xs text-gray-400 text-center">
+                            Оцените все 5 критериев
+                        </p>
+                    </div>
+                </template>
+
+                <!-- Уже оставил отзыв -->
+                <div v-else-if="reviewState.has_review" class="p-5 flex items-center gap-3">
+                    <div class="w-10 h-10 bg-[#1BA97F]/10 rounded-xl flex items-center justify-center shrink-0">
+                        <svg class="w-5 h-5 text-[#1BA97F]" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="text-sm font-semibold text-[#0A1F44]">Отзыв опубликован</div>
+                        <p class="text-xs text-gray-400 mt-0.5">Спасибо, что помогаете другим выбрать агентство</p>
+                    </div>
+                </div>
+            </div>
+
         </template>
 
         <!-- Ошибка / не найдено -->
@@ -386,7 +453,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, reactive, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { publicPortalApi } from '@/api/public';
 import { codeToFlag } from '@/utils/countries';
@@ -398,6 +465,69 @@ const loading     = ref(true);
 const caseData    = ref(null);
 const uploading   = ref({});
 const uploadToast = ref('');
+
+// Критерии оценки агентства
+const REVIEW_CRITERIA = [
+    { key: 'punctuality',     label: 'Пунктуальность' },
+    { key: 'quality',         label: 'Качество услуг' },
+    { key: 'communication',   label: 'Коммуникация' },
+    { key: 'professionalism', label: 'Профессионализм' },
+    { key: 'price_quality',   label: 'Цена / качество' },
+];
+
+const reviewState = reactive({
+    loaded:      false,
+    can_review:  false,
+    has_review:  false,
+    submitting:  false,
+    form: {
+        punctuality:     0,
+        quality:         0,
+        communication:   0,
+        professionalism: 0,
+        price_quality:   0,
+        comment:         '',
+    },
+});
+
+const reviewAllFilled = computed(() =>
+    REVIEW_CRITERIA.every(c => (reviewState.form[c.key] ?? 0) > 0)
+);
+
+async function loadCanReview(agencyId) {
+    try {
+        const res = await publicPortalApi.canReview(agencyId);
+        const d   = res.data.data;
+        reviewState.can_review = d.can_review;
+        reviewState.has_review = d.has_review;
+    } catch { /* ignore */ } finally {
+        reviewState.loaded = true;
+    }
+}
+
+async function submitCaseReview() {
+    if (!reviewAllFilled.value || reviewState.submitting) return;
+    reviewState.submitting = true;
+    try {
+        await publicPortalApi.submitReview(caseData.value.agency.id, {
+            punctuality:     reviewState.form.punctuality,
+            quality:         reviewState.form.quality,
+            communication:   reviewState.form.communication,
+            professionalism: reviewState.form.professionalism,
+            price_quality:   reviewState.form.price_quality,
+            comment:         reviewState.form.comment || null,
+            case_id:         route.params.id,
+        });
+        reviewState.can_review = false;
+        reviewState.has_review = true;
+        uploadToast.value = 'Отзыв опубликован. Спасибо!';
+        setTimeout(() => { uploadToast.value = ''; }, 3000);
+    } catch (e) {
+        alert(e?.response?.data?.message ?? 'Ошибка отправки отзыва');
+    } finally {
+        reviewState.submitting = false;
+    }
+}
 
 async function uploadDoc(itemId, event) {
     const file = event.target.files[0];
@@ -507,6 +637,10 @@ onMounted(async () => {
     try {
         const { data } = await publicPortalApi.caseDetail(route.params.id);
         caseData.value = data.data;
+        // Загружаем статус отзыва для агентства
+        if (caseData.value?.agency?.id) {
+            await loadCanReview(caseData.value.agency.id);
+        }
     } catch {
         caseData.value = null;
     } finally {

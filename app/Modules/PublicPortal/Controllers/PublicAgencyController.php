@@ -40,7 +40,7 @@ class PublicAgencyController extends Controller
             }])
             ->select([
                 'id', 'name', 'city', 'address', 'latitude', 'longitude',
-                'rating', 'reviews_count', 'description',
+                'rating', 'reviews_count', 'top_criterion', 'description',
                 'experience_years', 'website_url', 'logo_url', 'is_verified',
                 'phone', 'email',
             ])

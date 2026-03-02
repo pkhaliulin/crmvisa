@@ -9,9 +9,21 @@ use App\Modules\Case\Models\VisaCase;
 use App\Support\Helpers\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class PublicReviewController extends Controller
 {
+    /** Названия критериев для API */
+    const CRITERIA = ['punctuality', 'quality', 'communication', 'professionalism', 'price_quality'];
+
+    const CRITERIA_LABELS = [
+        'punctuality'     => 'пунктуальность',
+        'quality'         => 'качество услуг',
+        'communication'   => 'коммуникацию',
+        'professionalism' => 'профессионализм',
+        'price_quality'   => 'соотношение цены и качества',
+    ];
+
     /**
      * GET /public/agencies/{id}/reviews?sort=latest|positive|negative
      */
@@ -31,7 +43,7 @@ class PublicReviewController extends Controller
         $reviews = $query->paginate(8);
 
         // Статистика
-        $all      = AgencyReview::where('agency_id', $agencyId)->where('is_published', true);
+        $all       = AgencyReview::where('agency_id', $agencyId)->where('is_published', true);
         $avgRating = $all->avg('rating');
         $total     = $all->count();
 
@@ -43,13 +55,28 @@ class PublicReviewController extends Controller
                 ->count();
         }
 
+        // Средние по критериям
+        $criteriaAvg = [];
+        foreach (self::CRITERIA as $c) {
+            $avg = AgencyReview::where('agency_id', $agencyId)
+                ->where('is_published', true)
+                ->whereNotNull($c)
+                ->avg($c);
+            if ($avg) $criteriaAvg[$c] = round((float) $avg, 1);
+        }
+
         return ApiResponse::success([
             'reviews' => collect($reviews->items())->map(fn ($r) => [
-                'id'          => $r->id,
-                'client_name' => $r->client_name,
-                'rating'      => $r->rating,
-                'comment'     => $r->comment,
-                'created_at'  => $r->created_at?->toDateString(),
+                'id'              => $r->id,
+                'client_name'     => $r->client_name,
+                'rating'          => $r->rating,
+                'punctuality'     => $r->punctuality,
+                'quality'         => $r->quality,
+                'communication'   => $r->communication,
+                'professionalism' => $r->professionalism,
+                'price_quality'   => $r->price_quality,
+                'comment'         => $r->comment,
+                'created_at'      => $r->created_at?->toDateString(),
             ]),
             'pagination' => [
                 'current_page' => $reviews->currentPage(),
@@ -60,13 +87,14 @@ class PublicReviewController extends Controller
                 'avg_rating'   => $avgRating ? round($avgRating, 1) : null,
                 'total'        => $total,
                 'distribution' => $distribution,
+                'criteria_avg' => $criteriaAvg,
             ],
         ]);
     }
 
     /**
      * POST /public/agencies/{id}/reviews
-     * Оставить отзыв. Требуется хотя бы одна заявка с этим агентством.
+     * Принимает 5 критериев + комментарий. Требуется заявка с этим агентством.
      */
     public function store(Request $request, string $agencyId): JsonResponse
     {
@@ -96,36 +124,53 @@ class PublicReviewController extends Controller
         }
 
         $data = $request->validate([
-            'rating'  => ['required', 'integer', 'min:1', 'max:5'],
-            'comment' => ['nullable', 'string', 'max:1000'],
+            'punctuality'     => ['required', 'integer', 'min:1', 'max:5'],
+            'quality'         => ['required', 'integer', 'min:1', 'max:5'],
+            'communication'   => ['required', 'integer', 'min:1', 'max:5'],
+            'professionalism' => ['required', 'integer', 'min:1', 'max:5'],
+            'price_quality'   => ['required', 'integer', 'min:1', 'max:5'],
+            'comment'         => ['nullable', 'string', 'max:1000'],
+            'case_id'         => ['nullable', 'uuid'],
         ]);
+
+        // Итоговый рейтинг — среднее из 5 критериев
+        $criteriaValues = [
+            $data['punctuality'],
+            $data['quality'],
+            $data['communication'],
+            $data['professionalism'],
+            $data['price_quality'],
+        ];
+        $overallRating = round(array_sum($criteriaValues) / count($criteriaValues), 1);
 
         $review = AgencyReview::create([
-            'agency_id'      => $agencyId,
-            'public_user_id' => $publicUser->id,
-            'client_name'    => $publicUser->name ?? 'Клиент',
-            'rating'         => $data['rating'],
-            'comment'        => $data['comment'] ?? null,
-            'is_published'   => true,
+            'agency_id'       => $agencyId,
+            'public_user_id'  => $publicUser->id,
+            'case_id'         => $data['case_id'] ?? null,
+            'client_name'     => $publicUser->name ?? 'Клиент',
+            'rating'          => $overallRating,
+            'punctuality'     => $data['punctuality'],
+            'quality'         => $data['quality'],
+            'communication'   => $data['communication'],
+            'professionalism' => $data['professionalism'],
+            'price_quality'   => $data['price_quality'],
+            'comment'         => $data['comment'] ?? null,
+            'is_published'    => true,
         ]);
 
-        // Обновляем кешированный рейтинг агентства
-        $avg   = AgencyReview::where('agency_id', $agencyId)->where('is_published', true)->avg('rating');
-        $count = AgencyReview::where('agency_id', $agencyId)->where('is_published', true)->count();
-        $agency->update(['rating' => round((float) $avg, 2), 'reviews_count' => $count]);
+        // Обновляем кешированный рейтинг + лучший критерий
+        $this->refreshAgencyStats($agency);
 
         return ApiResponse::created([
             'id'          => $review->id,
             'client_name' => $review->client_name,
             'rating'      => $review->rating,
-            'comment'     => $review->comment,
             'created_at'  => $review->created_at?->toDateString(),
         ], 'Отзыв успешно опубликован');
     }
 
     /**
      * GET /public/me/can-review/{agencyId}
-     * Может ли текущий пользователь оставить отзыв.
      */
     public function canReview(Request $request, string $agencyId): JsonResponse
     {
@@ -143,6 +188,46 @@ class PublicReviewController extends Controller
             'can_review' => $hasCase && ! $hasReview,
             'has_review' => $hasReview,
             'has_case'   => $hasCase,
+        ]);
+    }
+
+    /**
+     * Пересчитать и сохранить рейтинг + top_criterion для агентства.
+     */
+    private function refreshAgencyStats(Agency $agency): void
+    {
+        $reviews = AgencyReview::where('agency_id', $agency->id)
+            ->where('is_published', true)
+            ->get();
+
+        $count = $reviews->count();
+        $avg   = $count > 0 ? round($reviews->avg('rating'), 2) : null;
+
+        // Определить лучший критерий
+        $topCriterion = null;
+        if ($count > 0) {
+            $criteriaAvg = [];
+            foreach (self::CRITERIA as $c) {
+                $vals = $reviews->pluck($c)->filter()->map(fn ($v) => (float) $v);
+                if ($vals->count() > 0) {
+                    $criteriaAvg[$c] = $vals->average();
+                }
+            }
+            if (! empty($criteriaAvg)) {
+                $topCriterion = array_key_first(
+                    array_filter($criteriaAvg, fn ($v) => $v === max($criteriaAvg))
+                );
+                // Если несколько одинаковых — берём первый по порядку критериев
+                if ($topCriterion === null) {
+                    $topCriterion = (string) array_key_first($criteriaAvg);
+                }
+            }
+        }
+
+        $agency->update([
+            'rating'        => $avg,
+            'reviews_count' => $count,
+            'top_criterion' => $topCriterion,
         ]);
     }
 }
