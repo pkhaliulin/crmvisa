@@ -82,10 +82,16 @@
         </div>
 
         <div class="p-5 space-y-4">
-          <!-- Название -->
+          <!-- Название RU -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Название *</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Название (RU) *</label>
             <input v-model="modalForm.name" type="text"
+              class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          </div>
+          <!-- Название UZ -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Nomi (UZ)</label>
+            <input v-model="modalForm.name_uz" type="text"
               class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
 
@@ -155,10 +161,16 @@
             </div>
           </div>
 
-          <!-- Описание -->
+          <!-- Описание RU -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Описание</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Описание (RU)</label>
             <textarea v-model="modalForm.description" rows="2"
+              class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+          </div>
+          <!-- Описание UZ -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Tavsif (UZ)</label>
+            <textarea v-model="modalForm.description_uz" rows="2"
               class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
           </div>
 
@@ -216,7 +228,8 @@ const allCountries = ref([]);
 const allVisaTypes = ref([]);
 
 const defaultForm = () => ({
-  name: '', country_code: '', visa_type: '', description: '',
+  name: '', name_uz: '', country_code: '', visa_type: '',
+  description: '', description_uz: '',
   price: null, currency: 'USD', processing_days: null,
   is_active: true, service_ids: [],
 });
@@ -306,9 +319,11 @@ function openEdit(pkg) {
   editingId.value = pkg.id;
   modalForm.value = {
     name: pkg.name || '',
+    name_uz: pkg.name_uz || '',
     country_code: pkg.country_code || '',
     visa_type: pkg.visa_type || '',
     description: pkg.description || '',
+    description_uz: pkg.description_uz || '',
     price: pkg.price,
     currency: pkg.currency || 'USD',
     processing_days: pkg.processing_days,

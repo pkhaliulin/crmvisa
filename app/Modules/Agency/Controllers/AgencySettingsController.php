@@ -42,6 +42,7 @@ class AgencySettingsController extends Controller
             'lead_assignment_mode'   => ['sometimes', 'in:manual,round_robin,by_workload,by_country'],
             'name'                   => ['sometimes', 'nullable', 'string', 'max:255'],
             'description'            => ['sometimes', 'nullable', 'string', 'max:2000'],
+            'description_uz'         => ['sometimes', 'nullable', 'string', 'max:2000'],
             'experience_years'       => ['sometimes', 'nullable', 'integer', 'min:0', 'max:100'],
             'website_url'            => ['sometimes', 'nullable', 'regex:/^https?:\/\/[a-zA-Z0-9][a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,}/i', 'max:255'],
             'address'                => ['sometimes', 'nullable', 'string', 'max:500'],

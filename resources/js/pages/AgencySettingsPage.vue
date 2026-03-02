@@ -14,11 +14,19 @@
 
         <AppTextarea
           v-model="form.description"
-          label="Описание агентства"
+          label="Описание агентства (RU)"
           placeholder="Расскажите о вашем агентстве: специализация, опыт, ключевые направления..."
           :maxlength="1000"
           :rows="4"
-          hint="Описание будет отображаться в профиле агентства на маркетплейсе"
+          hint="Описание на русском языке — отображается в профиле на маркетплейсе"
+        />
+        <AppTextarea
+          v-model="form.description_uz"
+          label="Agentlik haqida (UZ)"
+          placeholder="Agentligingiz haqida aytib bering: ixtisoslashuv, tajriba, asosiy yo'nalishlar..."
+          :maxlength="1000"
+          :rows="4"
+          hint="O'zbek tilidagi tavsif — foydalanuvchi UZ tilini tanlasa ko'rinadi"
         />
 
         <div class="grid grid-cols-2 gap-4">
@@ -173,6 +181,7 @@ const errorMsg   = ref('');
 
 const form = ref({
   description: '',
+  description_uz: '',
   website_url: '',
   city: '',
   experience_years: null,

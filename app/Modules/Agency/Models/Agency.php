@@ -36,6 +36,7 @@ class Agency extends BaseModel
         'managers_see_all_cases',
         'lead_assignment_mode',
         'description',
+        'description_uz',
         'experience_years',
         'website_url',
         'address',

@@ -9,6 +9,8 @@ const publicApi = axios.create({
 publicApi.interceptors.request.use((config) => {
     const token = localStorage.getItem('public_token');
     if (token) config.headers.Authorization = `Bearer ${token}`;
+    const locale = localStorage.getItem('locale') || 'ru';
+    config.headers['X-Locale'] = locale;
     return config;
 });
 

@@ -22,6 +22,7 @@ class PublicAgencyController extends Controller
     {
         $cc       = strtoupper($request->input('country_code', ''));
         $visaType = $request->input('visa_type', '');
+        $locale   = $this->detectLocale($request);
 
         $agencies = Agency::where('is_active', true)
             ->whereNull('blocked_at')
@@ -40,20 +41,27 @@ class PublicAgencyController extends Controller
             }])
             ->select([
                 'id', 'name', 'city', 'address', 'latitude', 'longitude',
-                'rating', 'reviews_count', 'top_criterion', 'description',
+                'rating', 'reviews_count', 'top_criterion',
+                'description', 'description_uz',
                 'experience_years', 'website_url', 'logo_url', 'is_verified',
                 'phone', 'email',
             ])
             ->orderByDesc('rating')
             ->get()
             ->filter(fn ($a) => $a->packages->isNotEmpty())
-            ->map(fn ($a) => array_merge($a->toArray(), [
+            ->map(fn ($a) => array_merge($a->only([
+                'id', 'name', 'city', 'address', 'latitude', 'longitude',
+                'rating', 'reviews_count', 'top_criterion',
+                'experience_years', 'website_url', 'logo_url', 'is_verified',
+                'phone', 'email',
+            ]), [
+                'description' => $this->localized($a, 'description', $locale),
                 'packages' => $a->packages->map(fn ($pkg) => [
                     'id'              => $pkg->id,
-                    'name'            => $pkg->name,
+                    'name'            => $this->localized($pkg, 'name', $locale),
                     'country_code'    => $pkg->country_code,
                     'visa_type'       => $pkg->visa_type,
-                    'description'     => $pkg->description,
+                    'description'     => $this->localized($pkg, 'description', $locale),
                     'price'           => $pkg->price,
                     'currency'        => $pkg->currency ?? 'USD',
                     'processing_days' => $pkg->processing_days,
@@ -66,6 +74,21 @@ class PublicAgencyController extends Controller
             ->values();
 
         return ApiResponse::success(['agencies' => $agencies]);
+    }
+
+    private function detectLocale(Request $request): string
+    {
+        $lang = $request->input('lang') ?? $request->header('X-Locale');
+        return in_array($lang, ['uz', 'ru']) ? $lang : 'ru';
+    }
+
+    private function localized($model, string $field, string $locale): ?string
+    {
+        if ($locale === 'uz') {
+            $uzValue = $model->{$field . '_uz'};
+            if ($uzValue) return $uzValue;
+        }
+        return $model->{$field};
     }
 
     /**
@@ -96,7 +119,7 @@ class PublicAgencyController extends Controller
 
         if ($existing) {
             return response()->json([
-                'message' => 'Вы уже отправили заявку в это агентство по данному направлению.',
+                'message' => __('public.lead_duplicate'),
                 'lead_id' => $existing->id,
                 'case_id' => $existing->case_id,
             ], 409);
@@ -186,7 +209,7 @@ class PublicAgencyController extends Controller
             return ApiResponse::created([
                 'lead_id' => $lead->id,
                 'case_id' => $case->id,
-            ], 'Заявка отправлена в агентство ' . $agency->name);
+            ], __('public.lead_sent', ['name' => $agency->name]));
         });
     }
 }

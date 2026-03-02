@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\CheckAgencyPlan;
 use App\Http\Middleware\CheckRole;
+use App\Http\Middleware\SetLocale;
 use App\Modules\PublicPortal\Middleware\AuthPublicUser;
 use App\Support\Helpers\ApiResponse;
 use Illuminate\Auth\AuthenticationException;
@@ -22,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role'        => CheckRole::class,
             'plan.active' => CheckAgencyPlan::class,
             'auth.public' => AuthPublicUser::class,
+            'locale'      => SetLocale::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

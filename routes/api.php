@@ -262,7 +262,7 @@ Route::prefix('v1')->group(function () {
     // -------------------------------------------------------------------------
 
     // Без авторизации
-    Route::prefix('public')->group(function () {
+    Route::prefix('public')->middleware('locale')->group(function () {
         // Список стран для лендинга
         Route::get('countries', [PublicScoringController::class, 'countries']);
 
@@ -273,7 +273,7 @@ Route::prefix('v1')->group(function () {
     });
 
     // С токеном публичного пользователя
-    Route::prefix('public')->middleware('auth.public')->group(function () {
+    Route::prefix('public')->middleware(['locale', 'auth.public'])->group(function () {
         Route::post('auth/set-pin', [PublicAuthController::class, 'setPin']);
 
         Route::get('me',             [PublicProfileController::class, 'me']);
