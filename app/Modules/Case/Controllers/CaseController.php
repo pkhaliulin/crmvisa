@@ -119,7 +119,7 @@ class CaseController extends Controller
             'notes'        => ['sometimes', 'nullable', 'string'],
         ]);
 
-        $case = $this->service->update($id, $data);
+        $case = $this->service->updateCase($id, $data);
 
         return ApiResponse::success($case);
     }

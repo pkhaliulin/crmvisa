@@ -11,6 +11,31 @@ use Illuminate\Support\Collection;
 class SlaService
 {
     /**
+     * Рассчитать critical_date на основе даты вылета и данных посольства.
+     * critical_date = travel_date − (processing_days_standard + appointment_wait_days + buffer_days_recommended)
+     */
+    public function calculateCriticalDateFromTravel(string $countryCode, Carbon $travelDate): ?Carbon
+    {
+        $country = \Illuminate\Support\Facades\DB::table('portal_countries')
+            ->where('country_code', strtoupper($countryCode))
+            ->first(['processing_days_standard', 'appointment_wait_days', 'buffer_days_recommended']);
+
+        if (! $country) {
+            return null;
+        }
+
+        $totalDays = (int) ($country->processing_days_standard ?? 0)
+                   + (int) ($country->appointment_wait_days    ?? 0)
+                   + (int) ($country->buffer_days_recommended  ?? 14);
+
+        if ($totalDays <= 0) {
+            return null;
+        }
+
+        return $travelDate->copy()->subDays($totalDays);
+    }
+
+    /**
      * Рассчитать critical_date для заявки по правилу SLA.
      * Возвращает null если правило не найдено.
      */

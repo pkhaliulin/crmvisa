@@ -151,7 +151,16 @@
             </div>
           </template>
         </div>
-        <AppInput v-model="form.travel_date" label="Дата поездки" type="date" :error="errors.travel_date" />
+        <div>
+          <AppInput v-model="form.travel_date" label="Дата поездки" type="date" :error="errors.travel_date" />
+          <p v-if="suggestedDeadline" class="mt-1 text-xs text-blue-600 flex items-center gap-1">
+            <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            Рекомендуемый дедлайн: <strong>{{ suggestedDeadline }}</strong>
+            (обработка {{ selectedCountryDays }} дн.)
+          </p>
+        </div>
         <AppInput v-model="form.critical_date" label="Дедлайн (необязательно, рассчитается автоматически)" type="date" />
 
         <AppTextarea
@@ -298,6 +307,20 @@ onMounted(async () => {
   } catch {
     // fallback
   }
+});
+
+// Подсказка: рекомендуемый дедлайн на основе данных посольства
+const selectedCountryDays = computed(() => {
+  if (!form.country_code) return 0;
+  const c = allCountries.value.find(c => c.country_code === form.country_code);
+  return (c?.processing_days_standard ?? 0) + (c?.appointment_wait_days ?? 0) + (c?.buffer_days_recommended ?? 0);
+});
+
+const suggestedDeadline = computed(() => {
+  if (!form.travel_date || !form.country_code || !selectedCountryDays.value) return null;
+  const d = new Date(form.travel_date);
+  d.setDate(d.getDate() - selectedCountryDays.value);
+  return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
 });
 
 const filteredCountries = computed(() => {

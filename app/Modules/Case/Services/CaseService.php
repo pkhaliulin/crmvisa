@@ -56,10 +56,18 @@ class CaseService extends BaseService
             $data['assigned_to'] = $user->id;
         }
 
-        // Автоматический расчёт critical_date через SLA-движок
-        if (empty($data['critical_date']) && isset($data['country_code'], $data['visa_type'])) {
-            $criticalDate = $this->slaService->calculateCriticalDate($data['country_code'], $data['visa_type']);
-            if ($criticalDate) {
+        // Автоматический расчёт critical_date
+        if (empty($data['critical_date']) && isset($data['country_code'])) {
+            // Приоритет 1: travel_date − (processing + appointment_wait + buffer) из portal_countries
+            if (!empty($data['travel_date'])) {
+                $travelDate   = \Illuminate\Support\Carbon::parse($data['travel_date']);
+                $criticalDate = $this->slaService->calculateCriticalDateFromTravel($data['country_code'], $travelDate);
+            }
+            // Приоритет 2: SLA-правило (now + max_days)
+            if (empty($criticalDate) && isset($data['visa_type'])) {
+                $criticalDate = $this->slaService->calculateCriticalDate($data['country_code'], $data['visa_type']);
+            }
+            if (!empty($criticalDate)) {
                 $data['critical_date'] = $criticalDate;
             }
         }
@@ -80,6 +88,27 @@ class CaseService extends BaseService
 
             return $case->load(['client', 'assignee']);
         });
+    }
+
+    /**
+     * Обновить заявку. Если travel_date изменилась и critical_date не передан явно —
+     * пересчитываем critical_date на основе данных посольства.
+     */
+    public function updateCase(string $id, array $data): VisaCase
+    {
+        /** @var VisaCase $case */
+        $case = $this->repository->findOrFail($id);
+
+        // Авторасчёт critical_date при изменении travel_date
+        if (isset($data['travel_date']) && !array_key_exists('critical_date', $data)) {
+            $travelDate   = \Illuminate\Support\Carbon::parse($data['travel_date']);
+            $criticalDate = $this->slaService->calculateCriticalDateFromTravel($case->country_code, $travelDate);
+            if ($criticalDate) {
+                $data['critical_date'] = $criticalDate;
+            }
+        }
+
+        return $this->repository->update($id, $data);
     }
 
     public function moveToStage(VisaCase $case, string $newStage, ?string $notes = null): VisaCase
