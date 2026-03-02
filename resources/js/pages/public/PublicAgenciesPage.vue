@@ -10,16 +10,64 @@
             <p class="text-gray-500 text-sm mt-0.5">Выберите агентство, ознакомьтесь с отзывами и отправьте заявку</p>
         </div>
 
-        <!-- Фильтр по стране -->
-        <div v-if="allCountries.length > 1" class="mb-4">
-            <div class="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-                <button v-for="c in allCountries" :key="c.code"
+        <!-- Фильтр по стране — autocomplete -->
+        <div v-if="allCountries.length > 1" class="mb-4 relative" ref="countryPickerRef">
+            <!-- Поле ввода -->
+            <div class="flex items-center gap-2 bg-white border rounded-xl px-3 py-2.5 shadow-sm transition-colors"
+                :class="countryDropOpen ? 'border-[#0A1F44]' : 'border-gray-200'">
+                <!-- Иконка поиска -->
+                <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z"/>
+                </svg>
+                <!-- Если выбрана страна — показываем бейдж и крест, иначе поле ввода -->
+                <template v-if="selectedCountryCode && !countryDropOpen">
+                    <span class="flex items-center gap-1.5 flex-1 text-sm font-medium text-[#0A1F44]">
+                        <span>{{ allCountries.find(c => c.code === selectedCountryCode)?.flag }}</span>
+                        {{ allCountries.find(c => c.code === selectedCountryCode)?.label }}
+                    </span>
+                    <button @click.stop="clearCountry"
+                        class="text-gray-400 hover:text-red-500 transition-colors p-0.5 shrink-0">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </template>
+                <input v-else
+                    ref="countryInputRef"
+                    v-model="countryQuery"
+                    @focus="countryDropOpen = true"
+                    @input="countryDropOpen = true"
+                    @keydown.escape="countryDropOpen = false"
+                    @keydown.enter.prevent="pickFirstSuggestion"
+                    @keydown.arrow-down.prevent="moveSuggestion(1)"
+                    @keydown.arrow-up.prevent="moveSuggestion(-1)"
+                    placeholder="Страна назначения..."
+                    class="flex-1 text-sm outline-none bg-transparent placeholder-gray-400 text-[#0A1F44]"
+                    autocomplete="off"
+                />
+                <!-- Стрелка -->
+                <svg class="w-4 h-4 text-gray-400 shrink-0 transition-transform"
+                    :class="countryDropOpen ? 'rotate-180' : ''"
+                    fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"
+                    @click="toggleCountryDrop">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+            </div>
+
+            <!-- Дропдаун -->
+            <div v-show="countryDropOpen && countrySuggestions.length"
+                class="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-30 max-h-56 overflow-y-auto">
+                <button v-for="(c, idx) in countrySuggestions" :key="c.code"
                     @click="selectCountry(c.code)"
-                    class="flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-medium border transition-colors"
-                    :class="selectedCountryCode === c.code
-                        ? 'bg-[#0A1F44] text-white border-[#0A1F44]'
-                        : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'">
-                    <span v-if="c.flag" class="mr-1">{{ c.flag }}</span>{{ c.label }}
+                    class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-left transition-colors"
+                    :class="idx === highlightedIdx
+                        ? 'bg-[#0A1F44] text-white'
+                        : 'text-gray-700 hover:bg-gray-50'">
+                    <span class="text-base w-5 shrink-0">{{ c.flag }}</span>
+                    <span class="flex-1">{{ c.label }}</span>
+                    <svg v-if="c.code === selectedCountryCode" class="w-4 h-4 text-[#1BA97F] shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                    </svg>
                 </button>
             </div>
         </div>
@@ -473,7 +521,7 @@
 </template>
 
 <script setup>
-import { ref, computed, reactive, watch, onMounted } from 'vue';
+import { ref, computed, reactive, watch, onMounted, onUnmounted, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { publicPortalApi } from '@/api/public';
 import { countryName as getCountryName, codeToFlag } from '@/utils/countries';
@@ -493,6 +541,65 @@ const toastTitle = ref('');
 
 const confirm = ref({ show: false, agency: null, pkg: null });
 const allCountries = ref([]);
+
+// ── Autocomplete для стран ────────────────────────────────────────────────────
+const countryQuery    = ref('');
+const countryDropOpen = ref(false);
+const highlightedIdx  = ref(-1);
+const countryInputRef = ref(null);
+const countryPickerRef = ref(null);
+
+// Подсказки: если нет поиска — все страны (кроме "Все страны"); если есть — фильтруем
+const countrySuggestions = computed(() => {
+    const q = countryQuery.value.trim().toLowerCase();
+    const list = allCountries.value.filter(c => c.code !== ''); // без "Все страны"
+    if (!q) return list;
+    return list.filter(c =>
+        c.label.toLowerCase().includes(q) ||
+        c.code.toLowerCase().startsWith(q)
+    );
+});
+
+function toggleCountryDrop() {
+    if (countryDropOpen.value) {
+        countryDropOpen.value = false;
+    } else {
+        countryDropOpen.value = true;
+        countryQuery.value = '';
+        highlightedIdx.value = -1;
+        nextTick(() => countryInputRef.value?.focus());
+    }
+}
+
+function clearCountry() {
+    selectedCountryCode.value = '';
+    countryQuery.value = '';
+    countryDropOpen.value = false;
+    router.replace({ query: { ...route.query, country_code: undefined } });
+    loadAgencies();
+}
+
+function moveSuggestion(dir) {
+    const max = countrySuggestions.value.length - 1;
+    if (max < 0) return;
+    highlightedIdx.value = Math.max(0, Math.min(max, highlightedIdx.value + dir));
+}
+
+function pickFirstSuggestion() {
+    const idx = highlightedIdx.value >= 0 ? highlightedIdx.value : 0;
+    const c   = countrySuggestions.value[idx];
+    if (c) selectCountry(c.code);
+}
+
+// Закрыть дропдаун при клике за пределами
+function onClickOutside(e) {
+    if (countryPickerRef.value && !countryPickerRef.value.contains(e.target)) {
+        countryDropOpen.value = false;
+    }
+}
+
+onMounted(() => document.addEventListener('mousedown', onClickOutside));
+onUnmounted(() => document.removeEventListener('mousedown', onClickOutside));
 
 // Раскрытие карточек
 const expandedPackages = reactive({});
@@ -574,6 +681,9 @@ async function loadCountries() {
 
 function selectCountry(code) {
     selectedCountryCode.value = code;
+    countryQuery.value    = '';
+    countryDropOpen.value = false;
+    highlightedIdx.value  = -1;
     router.replace({ query: { ...route.query, country_code: code || undefined } });
     loadAgencies();
 }
