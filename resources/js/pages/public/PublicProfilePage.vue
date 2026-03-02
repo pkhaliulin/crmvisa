@@ -98,8 +98,46 @@
             <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-xs font-medium text-gray-600 mb-1">Серия и номер паспорта</label>
-                    <input v-model="form.passport_number" placeholder="AB1234567" maxlength="20"
-                        class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] font-mono transition-colors"/>
+                    <!-- Раздельный ввод: [AA] — [1234567] -->
+                    <div class="flex items-stretch rounded-xl border transition-colors overflow-hidden"
+                         :class="passportValid ? 'border-[#1BA97F]' : 'border-gray-200 focus-within:border-[#1BA97F]'">
+                        <!-- Серия: 2 латинских буквы -->
+                        <input
+                            ref="passportSeriesInput"
+                            :value="passportSeries"
+                            @input="handleSeriesInput"
+                            placeholder="AA"
+                            maxlength="2"
+                            autocomplete="off"
+                            spellcheck="false"
+                            class="w-14 py-2.5 text-center text-sm font-mono uppercase outline-none
+                                   bg-gray-50 border-r border-gray-200 tracking-[0.3em] text-[#0A1F44] font-bold"
+                        />
+                        <!-- Разделитель -->
+                        <div class="flex items-center px-2.5 text-gray-300 text-sm select-none font-light">—</div>
+                        <!-- Номер: 7 цифр -->
+                        <input
+                            ref="passportNumberInput"
+                            :value="passportDigits"
+                            @input="handleDigitsInput"
+                            @keydown="handleDigitsKeydown"
+                            placeholder="1234567"
+                            maxlength="7"
+                            inputmode="numeric"
+                            autocomplete="off"
+                            class="flex-1 px-1 py-2.5 text-sm font-mono outline-none tracking-[0.2em] text-[#0A1F44]"
+                        />
+                        <!-- Галочка если формат верный -->
+                        <div class="flex items-center pr-3 shrink-0">
+                            <div v-if="passportValid"
+                                 class="w-4 h-4 rounded-full bg-[#1BA97F] flex items-center justify-center">
+                                <svg class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-[11px] text-gray-400 mt-1">2 буквы серии + 7 цифр номера — например, FA1234567</p>
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-gray-600 mb-1">Паспорт действителен до</label>
@@ -452,7 +490,7 @@
 </template>
 
 <script setup>
-import { ref, computed, reactive, onMounted } from 'vue';
+import { ref, computed, reactive, onMounted, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { publicPortalApi } from '@/api/public';
 import { usePublicAuthStore } from '@/stores/publicAuth';
@@ -512,6 +550,41 @@ const passportExpiringSoon = computed(() => {
     const days = Math.floor((new Date(form.passport_expires_at) - new Date()) / 86400000);
     return days < 180;
 });
+
+// Паспорт — раздельный ввод серии и номера
+const passportSeriesInput = ref(null);
+const passportNumberInput = ref(null);
+const passportSeries = ref('');
+const passportDigits = ref('');
+
+const passportValid = computed(() => /^[A-Z]{2}[0-9]{7}$/.test(form.passport_number || ''));
+
+function initPassportFields(pn) {
+    const clean = (pn || '').toUpperCase();
+    passportSeries.value = clean.slice(0, 2);
+    passportDigits.value = clean.slice(2, 9);
+}
+
+function handleSeriesInput(e) {
+    const clean = e.target.value.replace(/[^a-zA-Z]/g, '').toUpperCase().slice(0, 2);
+    passportSeries.value = clean;
+    e.target.value = clean;
+    form.passport_number = clean + passportDigits.value;
+    if (clean.length === 2) nextTick(() => passportNumberInput.value?.focus());
+}
+
+function handleDigitsInput(e) {
+    const clean = e.target.value.replace(/[^0-9]/g, '').slice(0, 7);
+    passportDigits.value = clean;
+    e.target.value = clean;
+    form.passport_number = passportSeries.value + clean;
+}
+
+function handleDigitsKeydown(e) {
+    if (e.key === 'Backspace' && passportDigits.value === '') {
+        nextTick(() => passportSeriesInput.value?.focus());
+    }
+}
 
 const visasObtainedOptions = [
     { value: 0,  label: 'Нет' },
@@ -647,8 +720,10 @@ async function uploadPassport(e) {
     }
 }
 
+// Инициализация серии/номера из формы при старте
+initPassportFields(form.passport_number);
+
 onMounted(async () => {
-    // Обновляем данные профиля из API
     try {
         await publicAuth.fetchMe();
         Object.keys(form).forEach(key => {
@@ -657,6 +732,7 @@ onMounted(async () => {
                 form[key] = (key === 'passport_expires_at' || key === 'dob') ? val?.slice(0, 10) ?? '' : val;
             }
         });
+        initPassportFields(form.passport_number);
         ocrStatus.value = publicAuth.user?.ocr_status ?? null;
     } catch { /* ignore */ }
 });

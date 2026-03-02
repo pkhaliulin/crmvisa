@@ -42,7 +42,7 @@ class PublicProfileController extends Controller
             'dob'                => 'sometimes|date|before:today',
             'citizenship'        => 'sometimes|string|size:2',
             'gender'             => ['sometimes', Rule::in(['M', 'F'])],
-            'passport_number'    => 'sometimes|string|max:50',
+            'passport_number'    => ['sometimes', 'nullable', 'string', 'regex:/^[A-Z]{2}[0-9]{7}$/'],
             'passport_expires_at'=> 'sometimes|date|after:today',
             'employment_type'    => ['sometimes', Rule::in(['employed','self_employed','business_owner','student','retired','unemployed'])],
             'monthly_income_usd' => 'sometimes|integer|min:0',
