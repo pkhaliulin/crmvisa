@@ -29,8 +29,12 @@ class AgencySettingsController extends Controller
         }
 
         // Нормализуем URL — добавляем https:// если протокол не указан
-        if ($request->filled('website_url') && ! preg_match('#^https?://#', $request->input('website_url'))) {
-            $request->merge(['website_url' => 'https://' . $request->input('website_url')]);
+        if ($request->filled('website_url')) {
+            $url = trim($request->input('website_url'));
+            if (! preg_match('#^https?://#i', $url)) {
+                $url = 'https://' . $url;
+            }
+            $request->merge(['website_url' => $url]);
         }
 
         $data = $request->validate([
@@ -39,7 +43,7 @@ class AgencySettingsController extends Controller
             'name'                   => ['sometimes', 'nullable', 'string', 'max:255'],
             'description'            => ['sometimes', 'nullable', 'string', 'max:2000'],
             'experience_years'       => ['sometimes', 'nullable', 'integer', 'min:0', 'max:100'],
-            'website_url'            => ['sometimes', 'nullable', 'url:http,https', 'max:255'],
+            'website_url'            => ['sometimes', 'nullable', 'regex:/^https?:\/\/[a-zA-Z0-9][a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,}/i', 'max:255'],
             'address'                => ['sometimes', 'nullable', 'string', 'max:500'],
             'city'                   => ['sometimes', 'nullable', 'string', 'max:100'],
             'phone'                  => ['sometimes', 'nullable', 'string', 'max:30'],
