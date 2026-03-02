@@ -31,7 +31,7 @@ class AgencyReview extends Model
     ];
 
     protected $casts = [
-        'rating'          => 'integer',
+        'rating'          => 'float',
         'punctuality'     => 'integer',
         'quality'         => 'integer',
         'communication'   => 'integer',
