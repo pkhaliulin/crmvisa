@@ -1,6 +1,6 @@
 <template>
     <!-- Оверлей -->
-    <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/40 backdrop-blur-sm"
+    <div class="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center sm:p-4 bg-black/40 backdrop-blur-sm"
          @click.self="$emit('close')">
 
         <!-- Карточка -->
