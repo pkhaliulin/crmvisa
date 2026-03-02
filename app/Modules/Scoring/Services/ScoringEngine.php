@@ -18,13 +18,14 @@ use Illuminate\Support\Facades\DB;
 class ScoringEngine
 {
     public function __construct(
-        private FinancialBlock    $financial,
-        private EmploymentBlock   $employment,
-        private FamilyBlock       $family,
-        private AssetsBlock       $assets,
-        private TravelHistoryBlock $travelHistory,
-        private PersonalBlock     $personal,
-        private TravelPurposeBlock $travelPurpose,
+        private FinancialBlock      $financial,
+        private EmploymentBlock     $employment,
+        private FamilyBlock         $family,
+        private AssetsBlock         $assets,
+        private TravelHistoryBlock  $travelHistory,
+        private PersonalBlock       $personal,
+        private TravelPurposeBlock  $travelPurpose,
+        private RecommendationEngine $recommendationEngine,
     ) {}
 
     /**
@@ -68,17 +69,31 @@ class ScoringEngine
             $A['recommendations'], $T['recommendations'], $P['recommendations'], $G['recommendations']
         );
 
+        // Умные рекомендации от RecommendationEngine
+        $smartRecs = $this->recommendationEngine->generate($profile, $countryCode, $blockScores);
+
         return ClientScore::updateOrCreate(
             ['client_id' => $profile->client_id, 'country_code' => $countryCode],
             [
                 'score'           => $totalScore,
                 'block_scores'    => $blockScores,
                 'flags'           => array_values(array_unique($allFlags)),
-                'recommendations' => array_values(array_unique($allRecs)),
+                'recommendations' => $smartRecs['recommendations'],
+                'weak_blocks'     => $smartRecs['weak_blocks'],
                 'is_blocked'      => $isBlocked,
                 'calculated_at'   => now(),
             ]
         );
+    }
+
+    /**
+     * Глобальные рекомендации по всем странам.
+     */
+    public function recommendations(ClientProfile $profile): array
+    {
+        $scores = ClientScore::where('client_id', $profile->client_id)->get();
+
+        return $this->recommendationEngine->generateGlobal($profile, $scores);
     }
 
     /**

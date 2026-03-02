@@ -3,8 +3,9 @@
     <div class="w-full max-w-md">
       <!-- Logo -->
       <div class="text-center mb-8">
-        <img :src="logoUrl" :srcset="`${logoUrl} 1x, ${logoUrl2x} 2x`"
-             alt="VisaBor" class="h-10 w-auto mx-auto mb-3">
+        <div class="text-2xl font-extrabold tracking-tight mx-auto mb-3">
+          <span class="text-[#0A1F44]">Visa</span><span class="text-[#1BA97F]">CRM</span>
+        </div>
         <p class="text-gray-500 text-sm">Система управления визовыми заявками</p>
       </div>
 

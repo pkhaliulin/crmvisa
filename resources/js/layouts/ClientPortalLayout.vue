@@ -4,8 +4,9 @@
         <!-- Header -->
         <header class="fixed top-0 inset-x-0 z-50 h-14 bg-white border-b border-gray-100 flex items-center gap-3 px-4 sm:px-6">
             <a href="/" class="flex items-center shrink-0">
-                <img :src="logoUrl" :srcset="`${logoUrl} 1x, ${logoUrl2x} 2x`"
-                     alt="VisaBor" class="h-7 w-auto">
+                <span class="text-lg font-extrabold tracking-tight">
+                    <span class="text-[#0A1F44]">Visa</span><span class="text-[#1BA97F]">CRM</span>
+                </span>
             </a>
 
             <!-- Mobile page title -->

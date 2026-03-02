@@ -235,7 +235,11 @@ async function save() {
   successMsg.value = '';
   errorMsg.value = '';
   try {
-    await api.patch('/agency/settings', form.value);
+    // Конвертируем пустые строки в null для корректной валидации
+    const payload = Object.fromEntries(
+      Object.entries(form.value).map(([k, v]) => [k, v === '' ? null : v])
+    );
+    await api.patch('/agency/settings', payload);
 
     const currentRes = await api.get('/agency/work-countries');
     const current = (currentRes.data.data || []).map(c => c.country_code);

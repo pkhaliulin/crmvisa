@@ -82,12 +82,13 @@ Route::prefix('v1')->group(function () {
         });
 
         // Скоринг
-        Route::get('scoring/countries',                   [ScoringController::class, 'countries']);
-        Route::get('clients/{id}/profile',                [ScoringController::class, 'getProfile']);
-        Route::post('clients/{id}/profile',               [ScoringController::class, 'saveProfile']);
-        Route::get('clients/{id}/scoring',                [ScoringController::class, 'scores']);
-        Route::post('clients/{id}/scoring/recalculate',   [ScoringController::class, 'recalculate']);
-        Route::get('clients/{id}/scoring/{country}',      [ScoringController::class, 'scoreByCountry']);
+        Route::get('scoring/countries',                        [ScoringController::class, 'countries']);
+        Route::get('clients/{id}/profile',                     [ScoringController::class, 'getProfile']);
+        Route::post('clients/{id}/profile',                    [ScoringController::class, 'saveProfile']);
+        Route::get('clients/{id}/scoring',                     [ScoringController::class, 'scores']);
+        Route::get('clients/{id}/scoring/recommendations',     [ScoringController::class, 'recommendations']);
+        Route::post('clients/{id}/scoring/recalculate',        [ScoringController::class, 'recalculate']);
+        Route::get('clients/{id}/scoring/{country}',           [ScoringController::class, 'scoreByCountry']);
 
     });
 

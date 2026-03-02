@@ -5,8 +5,9 @@
             <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
                 <!-- Логотип -->
                 <a href="/" class="flex items-center select-none shrink-0">
-                    <img :src="logoUrl" :srcset="`${logoUrl} 1x, ${logoUrl2x} 2x`"
-                         alt="VisaBor" class="h-8 w-auto">
+                    <span class="text-xl font-extrabold tracking-tight">
+                        <span class="text-[#0A1F44]">Visa</span><span class="text-[#1BA97F]">CRM</span>
+                    </span>
                 </a>
 
                 <!-- Десктоп навигация (скрываем если залогинен) -->
@@ -111,9 +112,9 @@
         <footer class="bg-[#0A1F44] text-white/60 text-sm">
             <div class="max-w-6xl mx-auto px-4 sm:px-6 py-8
                         flex flex-col sm:flex-row items-center justify-between gap-3">
-                <span class="text-white font-bold text-base">VisaBor.uz</span>
+                <span class="text-white font-bold text-base">VisaCRM</span>
                 <span class="text-center">Visa-платформа для Центральной Азии</span>
-                <span>© 2026 VisaBor</span>
+                <span>© 2026 VisaCRM</span>
             </div>
         </footer>
     </div>

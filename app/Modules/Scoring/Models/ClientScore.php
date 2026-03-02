@@ -16,7 +16,7 @@ class ClientScore extends Model
     protected $fillable = [
         'client_id', 'country_code', 'score',
         'block_scores', 'flags', 'recommendations',
-        'is_blocked', 'calculated_at',
+        'weak_blocks', 'is_blocked', 'calculated_at',
     ];
 
     protected $casts = [
@@ -24,6 +24,7 @@ class ClientScore extends Model
         'block_scores'    => 'array',
         'flags'           => 'array',
         'recommendations' => 'array',
+        'weak_blocks'     => 'array',
         'is_blocked'      => 'boolean',
         'calculated_at'   => 'datetime',
     ];

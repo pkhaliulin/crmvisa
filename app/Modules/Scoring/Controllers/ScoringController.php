@@ -126,6 +126,19 @@ class ScoringController extends Controller
     }
 
     /**
+     * GET /clients/{id}/scoring/recommendations — умные рекомендации по всем странам
+     */
+    public function recommendations(Request $request, string $clientId): JsonResponse
+    {
+        $client  = $this->resolveClient($request, $clientId);
+        $profile = ClientProfile::firstOrCreate(['client_id' => $client->id]);
+
+        $recs = $this->engine->recommendations($profile);
+
+        return ApiResponse::success($recs);
+    }
+
+    /**
      * POST /clients/{id}/scoring/recalculate — немедленный синхронный пересчёт
      */
     public function recalculate(Request $request, string $clientId): JsonResponse

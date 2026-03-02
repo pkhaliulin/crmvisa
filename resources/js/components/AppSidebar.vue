@@ -12,7 +12,7 @@
         <path d="M2 5L10 21L13 14L16 21L24 5" stroke="#1BA97F" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
       <!-- Текст — только в развёрнутом виде -->
-      <span v-if="!collapsed" class="ml-2 font-bold text-sm text-white truncate">VisaBor</span>
+      <span v-if="!collapsed" class="ml-2 font-bold text-sm text-white truncate">VisaCRM</span>
     </div>
 
     <!-- Navigation -->
