@@ -12,6 +12,18 @@ publicApi.interceptors.request.use((config) => {
     return config;
 });
 
+publicApi.interceptors.response.use(
+    response => response,
+    error => {
+        if (error.response?.status === 401) {
+            localStorage.removeItem('public_token');
+            localStorage.removeItem('public_user');
+            window.location.href = '/';
+        }
+        return Promise.reject(error);
+    }
+);
+
 export const publicPortalApi = {
     // Auth
     sendOtp:   (phone)       => publicApi.post('/auth/send-otp', { phone }),
