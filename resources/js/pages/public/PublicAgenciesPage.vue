@@ -95,15 +95,27 @@
                     <path stroke-linecap="round" stroke-linejoin="round" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"/>
                 </svg>
                 <span v-if="priceSort === 'none'">По цене</span>
-                <span v-else-if="priceSort === 'asc'">Сначала дешевле</span>
-                <span v-else>Сначала дороже</span>
-                <!-- Иконка состояния -->
+                <span v-else-if="priceSort === 'asc'">Дешевле</span>
+                <span v-else>Дороже</span>
                 <svg v-if="priceSort === 'asc'" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
                 </svg>
                 <svg v-else-if="priceSort === 'desc'" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7"/>
                 </svg>
+            </button>
+            <!-- Сортировка по отзывам -->
+            <button @click="cycleReviewsSort"
+                class="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border transition-colors"
+                :class="reviewsSort !== 'none'
+                    ? 'bg-[#0A1F44] text-white border-[#0A1F44]'
+                    : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'">
+                <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                </svg>
+                <span v-if="reviewsSort === 'none'">По отзывам</span>
+                <span v-else-if="reviewsSort === 'count'">Больше отзывов</span>
+                <span v-else>Лучший рейтинг</span>
             </button>
         </div>
 
@@ -189,6 +201,18 @@
                     <p v-if="agency.description" class="text-sm text-gray-500 leading-relaxed mt-3 line-clamp-2">
                         {{ agency.description }}
                     </p>
+
+                    <!-- Страны + минимальная цена из пакетов -->
+                    <div v-if="countryPrices(agency).length" class="mt-3 flex flex-wrap gap-1.5">
+                        <span v-for="cp in countryPrices(agency)" :key="cp.code"
+                            class="inline-flex items-center gap-1 text-xs bg-blue-50 text-blue-700 border border-blue-100 px-2.5 py-1 rounded-full font-medium">
+                            <span>{{ cp.flag }}</span>
+                            <span>{{ cp.name }}</span>
+                            <span class="text-blue-400 mx-0.5">—</span>
+                            <span v-if="cp.minPrice" class="text-blue-600 font-semibold">от {{ formatPrice(cp.minPrice) }}</span>
+                            <span v-else class="text-blue-400 font-normal">по запросу</span>
+                        </span>
+                    </div>
 
                     <!-- Статс-строка -->
                     <div class="flex items-center gap-4 mt-3 text-xs text-gray-400">
@@ -555,11 +579,12 @@ const router = useRouter();
 const selectedCountryCode = ref((route.query.country_code ?? '').toUpperCase());
 const countryCode = computed(() => selectedCountryCode.value);
 
-const agencies  = ref([]);
-const loading   = ref(false);
+const agencies     = ref([]);
+const loading      = ref(false);
 const selectedVisaType = ref('');
-const priceSort = ref('none'); // 'none' | 'asc' | 'desc'
-const submitting = ref(false);
+const priceSort   = ref('none'); // 'none' | 'asc' | 'desc'
+const reviewsSort = ref('none'); // 'none' | 'count' | 'rating'
+const submitting  = ref(false);
 const toast      = ref('');
 const toastTitle = ref('');
 
@@ -680,21 +705,74 @@ function minPrice(agency) {
     return prices.length ? Math.min(...prices) : null;
 }
 
-// Сортировка агентств по цене
+// Сортировка агентств
 const sortedAgencies = computed(() => {
-    if (priceSort.value === 'none') return agencies.value;
-    return [...agencies.value].sort((a, b) => {
-        const pa = minPrice(a) ?? (priceSort.value === 'asc' ? Infinity : -Infinity);
-        const pb = minPrice(b) ?? (priceSort.value === 'asc' ? Infinity : -Infinity);
-        return priceSort.value === 'asc' ? pa - pb : pb - pa;
-    });
+    let list = agencies.value;
+    // Сортировка по отзывам
+    if (reviewsSort.value === 'count') {
+        list = [...list].sort((a, b) => (b.reviews_count ?? 0) - (a.reviews_count ?? 0));
+    } else if (reviewsSort.value === 'rating') {
+        list = [...list].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
+    }
+    // Сортировка по цене (если активна)
+    if (priceSort.value !== 'none') {
+        list = [...list].sort((a, b) => {
+            const pa = minPrice(a) ?? (priceSort.value === 'asc' ? Infinity : -Infinity);
+            const pb = minPrice(b) ?? (priceSort.value === 'asc' ? Infinity : -Infinity);
+            return priceSort.value === 'asc' ? pa - pb : pb - pa;
+        });
+    }
+    return list;
 });
 
-// Переключение: none → asc → desc → none
+// Переключение цены: none → asc → desc → none (сбрасывает reviewsSort)
 function cyclePriceSort() {
+    reviewsSort.value = 'none';
     priceSort.value = priceSort.value === 'none' ? 'asc'
         : priceSort.value === 'asc'  ? 'desc'
         : 'none';
+}
+
+// Переключение отзывов: none → count → rating → none (сбрасывает priceSort)
+function cycleReviewsSort() {
+    priceSort.value = 'none';
+    reviewsSort.value = reviewsSort.value === 'none'  ? 'count'
+        : reviewsSort.value === 'count' ? 'rating'
+        : 'none';
+}
+
+// Страны + минимальные цены из пакетов агентства
+function countryPrices(agency) {
+    const pkgs = agency.packages ?? [];
+    const map  = {};
+    for (const pkg of pkgs) {
+        const code = (pkg.country_code ?? '').toUpperCase();
+        if (!code) continue;
+        const price = pkg.price ? Number(pkg.price) : null;
+        if (!map[code]) {
+            map[code] = {
+                code,
+                name:     getCountryName(code) ?? code,
+                flag:     codeToFlag(code) ?? '',
+                minPrice: price,
+            };
+        } else if (price !== null && (map[code].minPrice === null || price < map[code].minPrice)) {
+            map[code].minPrice = price;
+        }
+    }
+    return Object.values(map);
+}
+
+// Форматирование цены: 1 500 000 → "1,5 млн сум"; < 1 млн → "500 000 сум"
+function formatPrice(price) {
+    if (!price) return '';
+    const n = Number(price);
+    if (n >= 1_000_000) {
+        const millions = n / 1_000_000;
+        const formatted = millions % 1 === 0 ? millions.toFixed(0) : millions.toFixed(1);
+        return `${formatted} млн сум`;
+    }
+    return `${n.toLocaleString('ru-RU')} сум`;
 }
 
 // Агентства с координатами для карты
