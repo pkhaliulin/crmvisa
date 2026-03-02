@@ -225,9 +225,38 @@ const routes = [
     { path: '/:pathMatch(.*)*', redirect: { name: 'landing' } },
 ];
 
+// Обёртка для lazy import — при ошибке загрузки chunk (после деплоя) перезагружает страницу
+function lazyLoad(importFn) {
+    return () => importFn().catch((err) => {
+        // Уже пробовали reload — не зацикливаемся
+        const key = '__chunk_reload__';
+        if (!sessionStorage.getItem(key)) {
+            sessionStorage.setItem(key, '1');
+            window.location.reload();
+            return;
+        }
+        sessionStorage.removeItem(key);
+        throw err;
+    });
+}
+
+// Применяем lazyLoad ко всем lazy-компонентам
+function wrapRoutes(routeList) {
+    return routeList.map((route) => {
+        const wrapped = { ...route };
+        if (typeof wrapped.component === 'function') {
+            wrapped.component = lazyLoad(wrapped.component);
+        }
+        if (wrapped.children) {
+            wrapped.children = wrapRoutes(wrapped.children);
+        }
+        return wrapped;
+    });
+}
+
 const router = createRouter({
     history: createWebHistory(),
-    routes,
+    routes: wrapRoutes(routes),
     scrollBehavior: () => ({ top: 0 }),
 });
 
