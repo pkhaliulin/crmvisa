@@ -163,7 +163,7 @@ class CountryDetailController extends Controller
     public function requirements(string $code): JsonResponse
     {
         $requirements = DB::table('country_visa_requirements')
-            ->leftJoin('document_templates', 'country_visa_requirements.template_id', '=', 'document_templates.id')
+            ->leftJoin('document_templates', 'country_visa_requirements.document_template_id', '=', 'document_templates.id')
             ->where('country_visa_requirements.country_code', strtoupper($code))
             ->select(
                 'country_visa_requirements.*',

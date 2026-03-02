@@ -10,7 +10,13 @@ class CheckAgencyPlan
 {
     public function handle(Request $request, Closure $next): mixed
     {
-        $user   = $request->user();
+        $user = $request->user();
+
+        // Superadmin не привязан к агентству — пропускаем проверку плана
+        if ($user?->role === 'superadmin') {
+            return $next($request);
+        }
+
         $agency = $user?->agency;
 
         if (! $agency || ! $agency->isPlanActive()) {
