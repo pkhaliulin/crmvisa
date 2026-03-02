@@ -4,67 +4,67 @@
         <!-- Приветственный баннер для новых пользователей -->
         <div v-if="!publicAuth.user?.name"
             class="bg-gradient-to-r from-[#0A1F44] to-[#1a3a6e] rounded-2xl p-5 sm:p-6 text-white">
-            <h2 class="text-lg font-bold mb-1">Добро пожаловать!</h2>
-            <p class="text-sm text-white/70 mb-4">Расскажите немного о себе — займёт 2 минуты. Это поможет рассчитать шансы на визу.</p>
+            <h2 class="text-lg font-bold mb-1">{{ $t('profile.welcomeTitle') }}</h2>
+            <p class="text-sm text-white/70 mb-4">{{ $t('profile.welcomeDesc') }}</p>
             <button @click="showWizard = true"
                 class="inline-flex items-center gap-2 bg-[#1BA97F] hover:bg-[#169B72] text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
                 </svg>
-                Быстрое заполнение (2 мин)
+                {{ $t('profile.quickFill') }}
             </button>
         </div>
 
         <!-- Основные данные (паспорт) -->
         <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             <div class="px-5 py-4 border-b border-gray-50">
-                <h3 class="font-bold text-[#0A1F44] text-sm">Личные данные</h3>
-                <p class="text-xs text-gray-400 mt-0.5">ФИО, дата рождения, гражданство</p>
+                <h3 class="font-bold text-[#0A1F44] text-sm">{{ $t('profile.personalData') }}</h3>
+                <p class="text-xs text-gray-400 mt-0.5">{{ $t('profile.personalDataHint') }}</p>
             </div>
 
             <div class="p-5 space-y-4">
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div class="sm:col-span-2">
-                        <label class="block text-xs font-medium text-gray-600 mb-1">ФИО <span class="text-red-500">*</span></label>
-                        <input v-model="form.name" placeholder="Иванов Иван Иванович"
+                        <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.fullName') }} <span class="text-red-500">*</span></label>
+                        <input v-model="form.name" :placeholder="$t('profile.fullNamePlaceholder')"
                             class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] transition-colors"/>
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-gray-600 mb-1">Дата рождения <span class="text-red-500">*</span></label>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.dob') }} <span class="text-red-500">*</span></label>
                         <input v-model="form.dob" type="date" :max="maxDob"
                             class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] transition-colors"/>
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-gray-600 mb-1">Гражданство <span class="text-red-500">*</span></label>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.citizenship') }} <span class="text-red-500">*</span></label>
                         <select v-model="form.citizenship"
                             class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] transition-colors">
-                            <option value="">Выберите страну</option>
-                            <option value="UZ">🇺🇿 Узбекистан</option>
-                            <option value="KZ">🇰🇿 Казахстан</option>
-                            <option value="KG">🇰🇬 Кыргызстан</option>
-                            <option value="TJ">🇹🇯 Таджикистан</option>
-                            <option value="TM">🇹🇲 Туркменистан</option>
-                            <option value="RU">🇷🇺 Россия</option>
-                            <option value="UA">🇺🇦 Украина</option>
-                            <option value="GE">🇬🇪 Грузия</option>
-                            <option value="AZ">🇦🇿 Азербайджан</option>
-                            <option value="AM">🇦🇲 Армения</option>
-                            <option value="MD">🇲🇩 Молдова</option>
-                            <option value="BY">🇧🇾 Беларусь</option>
+                            <option value="">{{ $t('profile.selectCountry') }}</option>
+                            <option value="UZ">🇺🇿 {{ $t('countries.UZ') }}</option>
+                            <option value="KZ">🇰🇿 {{ $t('countries.KZ') }}</option>
+                            <option value="KG">🇰🇬 {{ $t('countries.KG') }}</option>
+                            <option value="TJ">🇹🇯 {{ $t('countries.TJ') }}</option>
+                            <option value="TM">🇹🇲 {{ $t('countries.TM') }}</option>
+                            <option value="RU">🇷🇺 {{ $t('countries.RU') }}</option>
+                            <option value="UA">🇺🇦 {{ $t('countries.UA') }}</option>
+                            <option value="GE">🇬🇪 {{ $t('countries.GE') }}</option>
+                            <option value="AZ">🇦🇿 {{ $t('countries.AZ') }}</option>
+                            <option value="AM">🇦🇲 {{ $t('countries.AM') }}</option>
+                            <option value="MD">🇲🇩 {{ $t('countries.MD') }}</option>
+                            <option value="BY">🇧🇾 {{ $t('countries.BY') }}</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-gray-600 mb-1">Пол</label>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.gender') }}</label>
                         <div class="flex gap-2">
                             <button type="button" @click="form.gender = 'M'"
                                 :class="form.gender === 'M' ? 'bg-[#0A1F44] text-white border-[#0A1F44]' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'"
                                 class="flex-1 px-3 py-2.5 rounded-xl text-sm border transition-colors font-medium">
-                                Мужской
+                                {{ $t('profile.male') }}
                             </button>
                             <button type="button" @click="form.gender = 'F'"
                                 :class="form.gender === 'F' ? 'bg-[#0A1F44] text-white border-[#0A1F44]' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'"
                                 class="flex-1 px-3 py-2.5 rounded-xl text-sm border transition-colors font-medium">
-                                Женский
+                                {{ $t('profile.female') }}
                             </button>
                         </div>
                     </div>
@@ -75,12 +75,12 @@
         <!-- Паспорт -->
         <div class="bg-white rounded-2xl border border-gray-100 shadow-sm">
             <div class="px-5 py-4 border-b border-gray-50">
-                <h3 class="font-bold text-[#0A1F44] text-sm">Данные паспорта</h3>
-                <p class="text-xs text-gray-400 mt-0.5">Загрузите первую страницу паспорта или заполните вручную</p>
+                <h3 class="font-bold text-[#0A1F44] text-sm">{{ $t('profile.passportData') }}</h3>
+                <p class="text-xs text-gray-400 mt-0.5">{{ $t('profile.passportHint') }}</p>
             </div>
             <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-1">Серия и номер паспорта</label>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.passportNumber') }}</label>
                     <!-- Раздельный ввод: [AA] — [1234567] -->
                     <div class="flex items-stretch rounded-xl border transition-colors overflow-hidden"
                          :class="passportValid ? 'border-[#1BA97F]' : 'border-gray-200 focus-within:border-[#1BA97F]'">
@@ -120,14 +120,14 @@
                             </div>
                         </div>
                     </div>
-                    <p class="text-[11px] text-gray-400 mt-1">2 буквы серии + 7 цифр номера — например, FA1234567</p>
+                    <p class="text-[11px] text-gray-400 mt-1">{{ $t('profile.passportFormat') }}</p>
                 </div>
                 <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-1">Паспорт действителен до</label>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.passportExpiry') }}</label>
                     <input v-model="form.passport_expires_at" type="date" :min="minPassportExpiry"
                         class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] transition-colors"/>
                     <p v-if="passportExpiringSoon" class="text-xs text-amber-600 mt-1">
-                        Паспорт скоро истекает. Большинство стран требуют срок действия 6+ месяцев.
+                        {{ $t('profile.passportExpiring') }}
                     </p>
                 </div>
             </div>
@@ -136,54 +136,54 @@
         <!-- Занятость и доходы -->
         <div class="bg-white rounded-2xl border border-gray-100 shadow-sm">
             <div class="px-5 py-4 border-b border-gray-50">
-                <h3 class="font-bold text-[#0A1F44] text-sm">Занятость и доходы</h3>
-                <p class="text-xs text-gray-400 mt-0.5">Консульство оценивает стабильность занятости и финансовую состоятельность</p>
+                <h3 class="font-bold text-[#0A1F44] text-sm">{{ $t('profile.employment') }}</h3>
+                <p class="text-xs text-gray-400 mt-0.5">{{ $t('profile.employmentHint') }}</p>
             </div>
             <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-1">Статус занятости <span class="text-red-500">*</span></label>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.employmentStatus') }} <span class="text-red-500">*</span></label>
                     <select v-model="form.employment_type"
                         class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] transition-colors">
-                        <option value="">Не указано</option>
-                        <option value="employed">Наёмный работник</option>
-                        <option value="business_owner">Владелец бизнеса</option>
-                        <option value="self_employed">Самозанятый / ИП</option>
-                        <option value="retired">Пенсионер</option>
-                        <option value="student">Студент</option>
-                        <option value="unemployed">Безработный / без работы</option>
+                        <option value="">{{ $t('common.notSpecified') }}</option>
+                        <option value="employed">{{ $t('profile.employed') }}</option>
+                        <option value="business_owner">{{ $t('profile.businessOwner') }}</option>
+                        <option value="self_employed">{{ $t('profile.selfEmployed') }}</option>
+                        <option value="retired">{{ $t('profile.retired') }}</option>
+                        <option value="student">{{ $t('profile.student') }}</option>
+                        <option value="unemployed">{{ $t('profile.unemployed') }}</option>
                     </select>
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-gray-600 mb-1">
-                        Стаж на текущем месте работы
-                        <span class="text-gray-400 font-normal">(повышает скоринг)</span>
+                        {{ $t('profile.tenure') }}
+                        <span class="text-gray-400 font-normal">({{ $t('profile.tenureBoost') }})</span>
                     </label>
                     <select v-model="form.employed_years"
                         class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] transition-colors"
                         :disabled="form.employment_type === 'unemployed' || form.employment_type === 'student'">
-                        <option value="">Не указано</option>
-                        <option :value="0">Менее 1 года</option>
-                        <option :value="1">1–2 года</option>
-                        <option :value="3">2–5 лет</option>
-                        <option :value="5">5–10 лет</option>
-                        <option :value="10">Более 10 лет</option>
+                        <option value="">{{ $t('common.notSpecified') }}</option>
+                        <option :value="0">{{ $t('profile.lessThan1') }}</option>
+                        <option :value="1">{{ $t('profile.years12') }}</option>
+                        <option :value="3">{{ $t('profile.years25') }}</option>
+                        <option :value="5">{{ $t('profile.years510') }}</option>
+                        <option :value="10">{{ $t('profile.yearsOver10') }}</option>
                     </select>
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-gray-600 mb-1">
-                        Ежемесячный доход <span class="text-red-500">*</span>
-                        <span class="text-gray-400 font-normal">(самый важный параметр)</span>
+                        {{ $t('profile.income') }} <span class="text-red-500">*</span>
+                        <span class="text-gray-400 font-normal">({{ $t('profile.incomeImportant') }})</span>
                     </label>
                     <select v-model="form.monthly_income_usd"
                         class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] transition-colors">
-                        <option value="">Не указано</option>
-                        <option :value="300">До $500 (до 6 млн сум)</option>
-                        <option :value="800">$500–1 000 (6–12 млн сум)</option>
-                        <option :value="1500">$1 000–2 000 (12–25 млн сум)</option>
-                        <option :value="3000">$2 000–4 000 (25–50 млн сум)</option>
-                        <option :value="5000">Более $4 000 (от 50 млн сум)</option>
+                        <option value="">{{ $t('common.notSpecified') }}</option>
+                        <option :value="300">{{ $t('profile.incomeTo500') }}</option>
+                        <option :value="800">{{ $t('profile.income5001000') }}</option>
+                        <option :value="1500">{{ $t('profile.income10002000') }}</option>
+                        <option :value="3000">{{ $t('profile.income20004000') }}</option>
+                        <option :value="5000">{{ $t('profile.incomeOver4000') }}</option>
                     </select>
-                    <p class="text-[11px] text-gray-400 mt-1">Совокупный доход семьи, включая аренду, дивиденды и т.д.</p>
+                    <p class="text-[11px] text-gray-400 mt-1">{{ $t('profile.incomeHint') }}</p>
                 </div>
             </div>
         </div>
@@ -191,48 +191,48 @@
         <!-- Семья и привязанность к стране -->
         <div class="bg-white rounded-2xl border border-gray-100 shadow-sm">
             <div class="px-5 py-4 border-b border-gray-50">
-                <h3 class="font-bold text-[#0A1F44] text-sm">Семья и привязанность к стране</h3>
-                <p class="text-xs text-gray-400 mt-0.5">Семья, имущество и корни в стране убеждают консульство, что вы вернётесь</p>
+                <h3 class="font-bold text-[#0A1F44] text-sm">{{ $t('profile.familyTitle') }}</h3>
+                <p class="text-xs text-gray-400 mt-0.5">{{ $t('profile.familyHint') }}</p>
             </div>
             <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-1">Семейное положение <span class="text-red-500">*</span></label>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.maritalStatus') }} <span class="text-red-500">*</span></label>
                     <select v-model="form.marital_status"
                         class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] transition-colors">
-                        <option value="">Не указано</option>
-                        <option value="single">Холост / не замужем</option>
-                        <option value="married">Женат / замужем</option>
-                        <option value="divorced">Разведён / разведена</option>
-                        <option value="widowed">Вдовец / вдова</option>
+                        <option value="">{{ $t('common.notSpecified') }}</option>
+                        <option value="single">{{ $t('profile.single') }}</option>
+                        <option value="married">{{ $t('profile.married') }}</option>
+                        <option value="divorced">{{ $t('profile.divorced') }}</option>
+                        <option value="widowed">{{ $t('profile.widowed') }}</option>
                     </select>
                 </div>
                 <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-1">Дети</label>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.children') }}</label>
                     <div class="flex gap-2">
                         <button type="button" @click="form.has_children = false; form.children_count = 0"
                             :class="!form.has_children ? 'bg-[#0A1F44] text-white border-[#0A1F44]' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'"
                             class="flex-1 px-3 py-2.5 rounded-xl text-sm border transition-colors font-medium">
-                            Нет детей
+                            {{ $t('profile.noChildren') }}
                         </button>
                         <button type="button" @click="form.has_children = true; if (!form.children_count) form.children_count = 1"
                             :class="form.has_children ? 'bg-[#0A1F44] text-white border-[#0A1F44]' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'"
                             class="flex-1 px-3 py-2.5 rounded-xl text-sm border transition-colors font-medium">
-                            Есть дети
+                            {{ $t('profile.hasChildren') }}
                         </button>
                     </div>
                 </div>
                 <div v-if="form.has_children">
-                    <label class="block text-xs font-medium text-gray-600 mb-1">Количество детей</label>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.childrenCount') }}</label>
                     <select v-model="form.children_count"
                         class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] transition-colors">
-                        <option :value="1">1 ребёнок</option>
-                        <option :value="2">2 ребёнка</option>
-                        <option :value="3">3 ребёнка</option>
-                        <option :value="4">4 и более</option>
+                        <option :value="1">{{ $t('profile.child1') }}</option>
+                        <option :value="2">{{ $t('profile.children2') }}</option>
+                        <option :value="3">{{ $t('profile.children3') }}</option>
+                        <option :value="4">{{ $t('profile.children4plus') }}</option>
                     </select>
                 </div>
                 <div class="sm:col-span-2">
-                    <label class="block text-xs font-medium text-gray-600 mb-2">Имущество в стране проживания</label>
+                    <label class="block text-xs font-medium text-gray-600 mb-2">{{ $t('profile.propertyTitle') }}</label>
                     <div class="grid grid-cols-2 gap-3">
                         <label class="flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer transition-colors"
                             :class="form.has_property ? 'border-[#1BA97F]/40 bg-[#1BA97F]/5' : 'border-gray-100 bg-gray-50 hover:bg-gray-100'">
@@ -244,8 +244,8 @@
                                 </svg>
                             </div>
                             <div>
-                                <span class="text-sm font-medium" :class="form.has_property ? 'text-[#0A1F44]' : 'text-gray-600'">Недвижимость</span>
-                                <p class="text-[11px] text-gray-400">Квартира, дом, земля</p>
+                                <span class="text-sm font-medium" :class="form.has_property ? 'text-[#0A1F44]' : 'text-gray-600'">{{ $t('profile.realEstate') }}</span>
+                                <p class="text-[11px] text-gray-400">{{ $t('profile.realEstateHint') }}</p>
                             </div>
                         </label>
                         <label class="flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer transition-colors"
@@ -258,8 +258,8 @@
                                 </svg>
                             </div>
                             <div>
-                                <span class="text-sm font-medium" :class="form.has_car ? 'text-[#0A1F44]' : 'text-gray-600'">Автомобиль</span>
-                                <p class="text-[11px] text-gray-400">Зарегистрирован на вас</p>
+                                <span class="text-sm font-medium" :class="form.has_car ? 'text-[#0A1F44]' : 'text-gray-600'">{{ $t('profile.car') }}</span>
+                                <p class="text-[11px] text-gray-400">{{ $t('profile.carHint') }}</p>
                             </div>
                         </label>
                     </div>
@@ -270,13 +270,13 @@
         <!-- Визовая история -->
         <div class="bg-white rounded-2xl border border-gray-100 shadow-sm">
             <div class="px-5 py-4 border-b border-gray-50">
-                <h3 class="font-bold text-[#0A1F44] text-sm">Визовая история</h3>
-                <p class="text-xs text-gray-400 mt-0.5">Прошлые визы — сильнейший положительный фактор. Отказы снижают скоринг.</p>
+                <h3 class="font-bold text-[#0A1F44] text-sm">{{ $t('profile.visaHistory') }}</h3>
+                <p class="text-xs text-gray-400 mt-0.5">{{ $t('profile.visaHistoryHint') }}</p>
             </div>
             <div class="p-5 space-y-4">
                 <!-- Количество полученных виз -->
                 <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-2">Сколько виз вы уже получали?</label>
+                    <label class="block text-xs font-medium text-gray-600 mb-2">{{ $t('profile.visasObtained') }}</label>
                     <div class="grid grid-cols-4 gap-2">
                         <button v-for="opt in visasObtainedOptions" :key="opt.value" type="button"
                             @click="form.visas_obtained_count = opt.value"
@@ -291,7 +291,7 @@
 
                 <!-- Сильные визы -->
                 <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-2">Наличие ключевых виз <span class="text-gray-400 font-normal">(значительно повышают скоринг)</span></label>
+                    <label class="block text-xs font-medium text-gray-600 mb-2">{{ $t('profile.keyVisas') }} <span class="text-gray-400 font-normal">({{ $t('profile.keyVisasHint') }})</span></label>
                     <div class="grid grid-cols-2 gap-3">
                         <label class="flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer transition-colors"
                             :class="form.has_schengen_visa ? 'border-[#1BA97F]/40 bg-[#1BA97F]/5' : 'border-gray-100 bg-gray-50 hover:bg-gray-100'">
@@ -303,8 +303,8 @@
                                 </svg>
                             </div>
                             <div>
-                                <span class="text-sm font-medium" :class="form.has_schengen_visa ? 'text-[#0A1F44]' : 'text-gray-600'">Шенгенская виза</span>
-                                <p class="text-[11px] text-gray-400">Действующая или была ранее</p>
+                                <span class="text-sm font-medium" :class="form.has_schengen_visa ? 'text-[#0A1F44]' : 'text-gray-600'">{{ $t('profile.schengenVisa') }}</span>
+                                <p class="text-[11px] text-gray-400">{{ $t('profile.schengenVisaHint') }}</p>
                             </div>
                         </label>
                         <label class="flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer transition-colors"
@@ -317,8 +317,8 @@
                                 </svg>
                             </div>
                             <div>
-                                <span class="text-sm font-medium" :class="form.has_us_visa ? 'text-[#0A1F44]' : 'text-gray-600'">Виза США</span>
-                                <p class="text-[11px] text-gray-400">Действующая или была ранее</p>
+                                <span class="text-sm font-medium" :class="form.has_us_visa ? 'text-[#0A1F44]' : 'text-gray-600'">{{ $t('profile.usVisa') }}</span>
+                                <p class="text-[11px] text-gray-400">{{ $t('profile.usVisaHint') }}</p>
                             </div>
                         </label>
                     </div>
@@ -327,8 +327,8 @@
                 <!-- Отказы -->
                 <div>
                     <label class="block text-xs font-medium text-gray-600 mb-2">
-                        Отказы в визе за последние 5 лет
-                        <span class="text-red-500 font-normal">(снижают скоринг)</span>
+                        {{ $t('profile.refusals') }}
+                        <span class="text-red-500 font-normal">({{ $t('profile.refusalsWarning') }})</span>
                     </label>
                     <div class="grid grid-cols-4 gap-2">
                         <button v-for="opt in refusalsOptions" :key="opt.value" type="button"
@@ -344,18 +344,18 @@
 
                 <!-- Год последнего отказа (показывается если есть отказы) -->
                 <div v-if="form.refusals_count > 0">
-                    <label class="block text-xs font-medium text-gray-600 mb-1">Год последнего отказа</label>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.lastRefusalYear') }}</label>
                     <select v-model="form.last_refusal_year"
                         class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-red-400 transition-colors">
-                        <option :value="null">Не указано</option>
+                        <option :value="null">{{ $t('common.notSpecified') }}</option>
                         <option v-for="y in recentYears" :key="y" :value="y">{{ y }}</option>
                     </select>
-                    <p class="text-[11px] text-amber-600 mt-1">Отказ 3+ года назад учитывается слабее, чем недавний</p>
+                    <p class="text-[11px] text-amber-600 mt-1">{{ $t('profile.refusalYearHint') }}</p>
                 </div>
 
                 <!-- Нарушения -->
                 <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-2">Нарушения визового режима</label>
+                    <label class="block text-xs font-medium text-gray-600 mb-2">{{ $t('profile.violations') }}</label>
                     <div class="space-y-2">
                         <label class="flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors"
                             :class="form.had_overstay ? 'border-amber-300 bg-amber-50' : 'border-gray-100 bg-gray-50 hover:bg-gray-100'">
@@ -367,8 +367,8 @@
                                 </svg>
                             </div>
                             <div>
-                                <span class="text-sm font-medium" :class="form.had_overstay ? 'text-amber-800' : 'text-gray-600'">Задерживался сверх срока визы</span>
-                                <p class="text-[11px]" :class="form.had_overstay ? 'text-amber-600' : 'text-gray-400'">Остался в стране дольше разрешённого срока</p>
+                                <span class="text-sm font-medium" :class="form.had_overstay ? 'text-amber-800' : 'text-gray-600'">{{ $t('profile.overstay') }}</span>
+                                <p class="text-[11px]" :class="form.had_overstay ? 'text-amber-600' : 'text-gray-400'">{{ $t('profile.overstayHint') }}</p>
                             </div>
                         </label>
                         <label class="flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors"
@@ -381,8 +381,8 @@
                                 </svg>
                             </div>
                             <div>
-                                <span class="text-sm font-medium" :class="form.had_deportation ? 'text-red-700' : 'text-gray-600'">Был депортирован</span>
-                                <p class="text-[11px]" :class="form.had_deportation ? 'text-red-500' : 'text-gray-400'">Принудительно выдворен из страны — серьёзный фактор</p>
+                                <span class="text-sm font-medium" :class="form.had_deportation ? 'text-red-700' : 'text-gray-600'">{{ $t('profile.deportation') }}</span>
+                                <p class="text-[11px]" :class="form.had_deportation ? 'text-red-500' : 'text-gray-400'">{{ $t('profile.deportationHint') }}</p>
                             </div>
                         </label>
                     </div>
@@ -401,7 +401,7 @@
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
                 </svg>
-                {{ saving ? 'Сохраняем...' : 'Сохранить профиль' }}
+                {{ saving ? $t('profile.savingProfile') : $t('profile.saveProfile') }}
             </button>
         </div>
     </div>
@@ -450,7 +450,7 @@
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
                         </svg>
-                        Назад
+                        {{ $t('common.back') }}
                     </button>
                     <div v-else></div>
 
@@ -458,13 +458,13 @@
                         @click="wizardStep++"
                         :disabled="!wizardAnswers[currentWizardStep.field]"
                         class="text-sm bg-[#0A1F44] text-white px-4 py-2 rounded-xl font-medium disabled:opacity-40 hover:bg-[#0d2a5e] transition-colors">
-                        Далее
+                        {{ $t('common.next') }}
                     </button>
                     <button v-else
                         @click="finishWizard"
                         :disabled="!wizardAnswers[currentWizardStep.field]"
                         class="text-sm bg-[#1BA97F] text-white px-4 py-2 rounded-xl font-semibold disabled:opacity-40 hover:bg-[#169B72] transition-colors">
-                        Готово — показать скоринг
+                        {{ $t('profile.wizardDone') }}
                     </button>
                 </div>
             </div>
@@ -475,9 +475,11 @@
 <script setup>
 import { ref, computed, reactive, onMounted, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { publicPortalApi } from '@/api/public';
 import { usePublicAuthStore } from '@/stores/publicAuth';
 
+const { t } = useI18n();
 const router     = useRouter();
 const publicAuth = usePublicAuthStore();
 
@@ -568,91 +570,91 @@ function handleDigitsKeydown(e) {
     }
 }
 
-const visasObtainedOptions = [
-    { value: 0,  label: 'Нет' },
-    { value: 1,  label: '1–2' },
-    { value: 3,  label: '3–5' },
+const visasObtainedOptions = computed(() => [
+    { value: 0,  label: t('common.no') },
+    { value: 1,  label: '1\u20132' },
+    { value: 3,  label: '3\u20135' },
     { value: 6,  label: '6+' },
-];
+]);
 
-const refusalsOptions = [
-    { value: 0,  label: 'Нет' },
+const refusalsOptions = computed(() => [
+    { value: 0,  label: t('common.no') },
     { value: 1,  label: '1' },
     { value: 2,  label: '2' },
     { value: 3,  label: '3+' },
-];
+]);
 
 const recentYears = Array.from({ length: 8 }, (_, i) => new Date().getFullYear() - i);
 
 // Быстрый мастер — 5 шагов
-const wizardSteps = [
+const wizardSteps = computed(() => [
     {
         field: 'employment_type',
-        question: 'Ваша занятость?',
-        hint: 'Стабильность занятости — ключевой фактор доверия консульства',
+        question: t('profile.wizardEmployment'),
+        hint: t('profile.wizardEmploymentHint'),
         options: [
-            { value: 'employed',       icon: '💼', label: 'Работаю по найму' },
-            { value: 'business_owner', icon: '🏢', label: 'Владелец бизнеса' },
-            { value: 'self_employed',  icon: '🛠', label: 'Самозанятый / ИП' },
-            { value: 'student',        icon: '🎓', label: 'Студент' },
-            { value: 'retired',        icon: '🏖', label: 'Пенсионер' },
-            { value: 'unemployed',     icon: '🔍', label: 'Не работаю' },
+            { value: 'employed',       icon: '\uD83D\uDCBC', label: t('profile.employed') },
+            { value: 'business_owner', icon: '\uD83C\uDFE2', label: t('profile.businessOwner') },
+            { value: 'self_employed',  icon: '\uD83D\uDEE0', label: t('profile.selfEmployed') },
+            { value: 'student',        icon: '\uD83C\uDF93', label: t('profile.student') },
+            { value: 'retired',        icon: '\uD83C\uDFD6', label: t('profile.retired') },
+            { value: 'unemployed',     icon: '\uD83D\uDD0D', label: t('profile.unemployed') },
         ],
     },
     {
         field: 'employed_years',
-        question: 'Стаж на текущем месте?',
-        hint: 'Долгий стаж означает стабильность — консульства это ценят',
+        question: t('profile.wizardTenure'),
+        hint: t('profile.wizardTenureHint'),
         options: [
-            { value: 0,  icon: '🆕', label: 'Менее 1 года' },
-            { value: 1,  icon: '📅', label: '1–2 года' },
-            { value: 3,  icon: '📈', label: '2–5 лет' },
-            { value: 5,  icon: '🏆', label: '5–10 лет' },
-            { value: 10, icon: '🥇', label: 'Более 10 лет' },
+            { value: 0,  icon: '\uD83C\uDD95', label: t('profile.lessThan1') },
+            { value: 1,  icon: '\uD83D\uDCC5', label: t('profile.years12') },
+            { value: 3,  icon: '\uD83D\uDCC8', label: t('profile.years25') },
+            { value: 5,  icon: '\uD83C\uDFC6', label: t('profile.years510') },
+            { value: 10, icon: '\uD83E\uDD47', label: t('profile.yearsOver10') },
         ],
     },
     {
         field: 'monthly_income_usd',
-        question: 'Ваш доход в месяц?',
-        hint: 'Совокупный доход — самый важный финансовый параметр',
+        question: t('profile.wizardIncome'),
+        hint: t('profile.wizardIncomeHint'),
         options: [
-            { value: 300,  icon: '💵', label: 'До $500' },
-            { value: 800,  icon: '💵', label: '$500 – $1 000' },
-            { value: 1500, icon: '💰', label: '$1 000 – $2 000' },
-            { value: 3000, icon: '💰', label: '$2 000 – $4 000' },
-            { value: 5000, icon: '💎', label: 'Более $4 000' },
+            { value: 300,  icon: '\uD83D\uDCB5', label: t('profile.incomeTo500') },
+            { value: 800,  icon: '\uD83D\uDCB5', label: t('profile.income5001000') },
+            { value: 1500, icon: '\uD83D\uDCB0', label: t('profile.income10002000') },
+            { value: 3000, icon: '\uD83D\uDCB0', label: t('profile.income20004000') },
+            { value: 5000, icon: '\uD83D\uDC8E', label: t('profile.incomeOver4000') },
         ],
     },
     {
         field: 'marital_status',
-        question: 'Семейное положение?',
-        hint: 'Семья в стране — доказательство намерения вернуться',
+        question: t('profile.wizardFamily'),
+        hint: t('profile.wizardFamilyHint'),
         options: [
-            { value: 'single',   icon: '👤', label: 'Холост / не замужем' },
-            { value: 'married',  icon: '👫', label: 'Женат / замужем' },
-            { value: 'divorced', icon: '📄', label: 'Разведён / разведена' },
-            { value: 'widowed',  icon: '🕊', label: 'Вдовец / вдова' },
+            { value: 'single',   icon: '\uD83D\uDC64', label: t('profile.single') },
+            { value: 'married',  icon: '\uD83D\uDC6B', label: t('profile.married') },
+            { value: 'divorced', icon: '\uD83D\uDCC4', label: t('profile.divorced') },
+            { value: 'widowed',  icon: '\uD83D\uDD4A', label: t('profile.widowed') },
         ],
     },
     {
         field: 'visaHistory',
-        question: 'Шенген или виза США?',
-        hint: 'Наличие этих виз резко повышает шансы во всех консульствах',
+        question: t('profile.wizardVisa'),
+        hint: t('profile.wizardVisaHint'),
         options: [
-            { value: 'none',    icon: '🆕', label: 'Ещё не было' },
-            { value: 'schengen',icon: '🇪🇺', label: 'Есть шенгенская' },
-            { value: 'us',      icon: '🇺🇸', label: 'Есть виза США' },
-            { value: 'both',    icon: '✈️',  label: 'Обе визы' },
+            { value: 'none',    icon: '\uD83C\uDD95', label: t('profile.wizardNoVisa') },
+            { value: 'schengen',icon: '\uD83C\uDDEA\uD83C\uDDFA', label: t('profile.wizardSchengen') },
+            { value: 'us',      icon: '\uD83C\uDDFA\uD83C\uDDF8', label: t('profile.wizardUs') },
+            { value: 'both',    icon: '\u2708\uFE0F',  label: t('profile.wizardBoth') },
         ],
     },
-];
+]);
 
-const currentWizardStep = computed(() => wizardSteps[wizardStep.value]);
+const currentWizardStep = computed(() => wizardSteps.value[wizardStep.value]);
 
 function selectWizardAnswer(value) {
     wizardAnswers[currentWizardStep.value.field] = value;
     // Автопереход на следующий шаг через небольшую задержку
-    if (wizardStep.value < wizardSteps.length - 1) {
+    if (wizardStep.value < wizardSteps.value.length - 1) {
         setTimeout(() => { wizardStep.value++; }, 250);
     }
 }
@@ -681,11 +683,11 @@ async function save() {
         const { data } = await publicPortalApi.updateProfile(payload);
         publicAuth.user = data.data.user;
         localStorage.setItem('public_user', JSON.stringify(data.data.user));
-        saveMsg.value = 'Профиль сохранён';
+        saveMsg.value = t('profile.profileSaved');
         setTimeout(() => { saveMsg.value = ''; }, 3000);
     } catch (e) {
         saveError.value = true;
-        saveMsg.value = e.response?.data?.message ?? 'Ошибка при сохранении';
+        saveMsg.value = e.response?.data?.message ?? t('profile.saveError');
     } finally {
         saving.value = false;
     }

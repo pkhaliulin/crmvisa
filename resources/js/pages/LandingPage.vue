@@ -10,19 +10,18 @@
                 <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#1BA97F]/10
                             text-[#1BA97F] text-xs sm:text-sm font-medium mb-6 sm:mb-8">
                     <span class="w-2 h-2 bg-[#1BA97F] rounded-full animate-pulse shrink-0"></span>
-                    Проверьте шансы бесплатно — займёт 3 минуты
+                    {{ $t('landing.badgeFree') }}
                 </div>
 
                 <h1 class="text-3xl sm:text-5xl md:text-6xl font-bold text-[#0A1F44]
                            leading-tight mb-4 sm:mb-6">
-                    Получите визу<br class="hidden sm:block">
-                    <span class="text-[#1BA97F]"> быстрее и увереннее</span>
+                    {{ $t('landing.heroTitle1') }}<br class="hidden sm:block">
+                    <span class="text-[#1BA97F]"> {{ $t('landing.heroTitle2') }}</span>
                 </h1>
 
                 <p class="text-base sm:text-xl text-gray-500 max-w-xl mx-auto
                           mb-8 sm:mb-10 leading-relaxed px-2">
-                    Автоматическая проверка шансов на одобрение,
-                    OCR-распознавание паспорта и сопровождение агентства.
+                    {{ $t('landing.heroDesc') }}
                 </p>
 
                 <div class="flex flex-col sm:flex-row gap-3 justify-center px-4 sm:px-0">
@@ -31,13 +30,13 @@
                                font-semibold rounded-xl text-base sm:text-lg
                                hover:bg-[#0d2a5e] transition-all shadow-lg shadow-[#0A1F44]/20
                                active:scale-95">
-                        Проверить шансы на визу
+                        {{ $t('landing.checkChances') }}
                     </button>
                     <a href="#countries"
                         class="w-full sm:w-auto px-6 sm:px-8 py-4 bg-white text-[#0A1F44]
                                font-semibold rounded-xl text-base sm:text-lg border border-gray-200
                                hover:border-gray-300 transition-all text-center active:scale-95">
-                        Выбрать страну
+                        {{ $t('landing.chooseCountry') }}
                     </a>
                 </div>
 
@@ -49,7 +48,7 @@
                         <svg class="w-5 h-5 text-[#229ED9]" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-2.018 9.51c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L6.51 14.617 3.56 13.7c-.657-.204-.671-.657.137-.972l10.905-4.205c.548-.194 1.027.126.96.725z"/>
                         </svg>
-                        Или напишите нам в Telegram-бот
+                        {{ $t('landing.telegramOr') }}
                     </a>
                 </div>
 
@@ -57,15 +56,15 @@
                 <div class="mt-12 sm:mt-16 grid grid-cols-3 gap-4 sm:gap-8 max-w-sm sm:max-w-lg mx-auto">
                     <div>
                         <div class="text-2xl sm:text-3xl font-bold text-[#0A1F44]">10+</div>
-                        <div class="text-xs sm:text-sm text-gray-400 mt-1">стран</div>
+                        <div class="text-xs sm:text-sm text-gray-400 mt-1">{{ $t('landing.statsCountries') }}</div>
                     </div>
                     <div>
                         <div class="text-2xl sm:text-3xl font-bold text-[#0A1F44]">95%</div>
-                        <div class="text-xs sm:text-sm text-gray-400 mt-1">точность</div>
+                        <div class="text-xs sm:text-sm text-gray-400 mt-1">{{ $t('landing.statsAccuracy') }}</div>
                     </div>
                     <div>
                         <div class="text-2xl sm:text-3xl font-bold text-[#0A1F44]">3 мин</div>
-                        <div class="text-xs sm:text-sm text-gray-400 mt-1">до результата</div>
+                        <div class="text-xs sm:text-sm text-gray-400 mt-1">{{ $t('landing.statsTime') }}</div>
                     </div>
                 </div>
             </div>
@@ -78,10 +77,10 @@
             <div class="max-w-5xl mx-auto">
                 <div class="text-center mb-10 sm:mb-16">
                     <h2 class="text-2xl sm:text-3xl font-bold text-[#0A1F44] mb-3">
-                        Как это работает
+                        {{ $t('landing.howTitle') }}
                     </h2>
                     <p class="text-gray-500 text-base sm:text-lg">
-                        Три шага от регистрации до результата
+                        {{ $t('landing.howSubtitle') }}
                     </p>
                 </div>
 
@@ -112,10 +111,10 @@
             <div class="max-w-5xl mx-auto">
                 <div class="text-center mb-10 sm:mb-16">
                     <h2 class="text-2xl sm:text-3xl font-bold text-[#0A1F44] mb-3">
-                        Популярные направления
+                        {{ $t('landing.countriesTitle') }}
                     </h2>
                     <p class="text-gray-500 text-base sm:text-lg">
-                        Страны, где для граждан Узбекистана требуется виза
+                        {{ $t('landing.countriesSubtitle') }}
                     </p>
                 </div>
 
@@ -139,7 +138,7 @@
                         </div>
                         <div class="text-xs text-[#1BA97F] mt-1 opacity-0 group-hover:opacity-100
                                     transition-opacity hidden sm:block">
-                            Проверить →
+                            {{ $t('landing.checkHint') }}
                         </div>
                     </button>
                 </div>
@@ -155,14 +154,14 @@
                                 {{ selectedCountry.flag }} {{ selectedCountry.name }}
                             </div>
                             <div class="text-gray-500 text-sm mt-0.5">
-                                Узнайте вероятность одобрения за 3 минуты
+                                {{ $t('landing.learnChances') }}
                             </div>
                         </div>
                         <button @click="startScoring"
                             class="w-full sm:w-auto px-6 py-3 bg-[#1BA97F] text-white font-semibold
                                    rounded-xl hover:bg-[#17956f] transition-colors
                                    whitespace-nowrap active:scale-95">
-                            Проверить шанс
+                            {{ $t('landing.checkChance') }}
                         </button>
                     </div>
                 </transition>
@@ -177,12 +176,10 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-10 sm:gap-16 items-center">
                     <div>
                         <h2 class="text-2xl sm:text-3xl font-bold text-[#0A1F44] mb-4 sm:mb-6">
-                            Умный скоринг — знайте шансы заранее
+                            {{ $t('landing.scoringTitle') }}
                         </h2>
                         <p class="text-gray-500 leading-relaxed mb-6 sm:mb-8 text-sm sm:text-base">
-                            Алгоритм анализирует 7 факторов: финансы, занятость, семейный статус,
-                            имущество, историю поездок и цель визита. Результат — оценка 0–100
-                            с конкретными советами.
+                            {{ $t('landing.scoringDesc') }}
                         </p>
                         <ul class="space-y-3 sm:space-y-4">
                             <li v-for="f in features" :key="f"
@@ -195,14 +192,14 @@
                             class="mt-6 sm:mt-8 w-full sm:w-auto px-6 py-3 bg-[#0A1F44] text-white
                                    font-semibold rounded-xl hover:bg-[#0d2a5e] transition-colors
                                    active:scale-95">
-                            Начать бесплатно
+                            {{ $t('landing.startFree') }}
                         </button>
                     </div>
 
                     <!-- Мок-скоринг карточка -->
                     <div class="bg-white rounded-3xl border border-gray-100 shadow-xl p-6 sm:p-8">
                         <div class="text-center mb-5">
-                            <div class="text-sm text-gray-400 mb-2">Вероятность одобрения</div>
+                            <div class="text-sm text-gray-400 mb-2">{{ $t('landing.approvalChance') }}</div>
                             <div class="relative inline-flex items-center justify-center">
                                 <svg class="w-32 h-32 sm:w-40 sm:h-40 -rotate-90" viewBox="0 0 120 120">
                                     <circle cx="60" cy="60" r="50" fill="none"
@@ -219,7 +216,7 @@
                                             {{ mockScore }}%
                                         </div>
                                         <div class="text-xs text-[#1BA97F] font-medium text-center">
-                                            Высокий
+                                            {{ $t('landing.high') }}
                                         </div>
                                     </div>
                                 </div>
@@ -243,7 +240,7 @@
                         </div>
 
                         <div class="p-3 bg-amber-50 rounded-xl text-xs text-amber-700 leading-relaxed">
-                            Добавьте справку о доходах, чтобы повысить скоринг до 85%
+                            {{ $t('landing.scoreTip') }}
                         </div>
                     </div>
                 </div>
@@ -266,11 +263,10 @@
                     </div>
                     <div class="flex-1 text-center sm:text-left">
                         <h3 class="text-xl sm:text-2xl font-bold text-[#0A1F44] mb-2">
-                            Telegram-бот VisaBor
+                            {{ $t('landing.telegramBotTitle') }}
                         </h3>
                         <p class="text-gray-500 text-sm sm:text-base mb-4">
-                            Проверьте шансы на визу прямо в Telegram. Ответьте на 4 вопроса
-                            и получите результат с рекомендациями — без регистрации.
+                            {{ $t('landing.telegramBotDesc') }}
                         </p>
                         <a href="https://t.me/visaborbot" target="_blank"
                             class="inline-flex items-center gap-2 px-5 py-3 bg-[#229ED9] text-white
@@ -279,7 +275,7 @@
                             <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-2.018 9.51c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L6.51 14.617 3.56 13.7c-.657-.204-.671-.657.137-.972l10.905-4.205c.548-.194 1.027.126.96.725z"/>
                             </svg>
-                            Открыть бот
+                            {{ $t('landing.openBot') }}
                         </a>
                     </div>
                 </div>
@@ -292,8 +288,8 @@
         <section id="agencies" class="py-16 sm:py-20 px-4 sm:px-6 bg-gray-50">
             <div class="max-w-6xl mx-auto">
                 <div class="text-center mb-10">
-                    <h2 class="text-2xl sm:text-3xl font-bold text-[#0A1F44] mb-3">Агентства на карте</h2>
-                    <p class="text-gray-500">Найдите ближайшее визовое агентство в вашем городе</p>
+                    <h2 class="text-2xl sm:text-3xl font-bold text-[#0A1F44] mb-3">{{ $t('landing.agenciesMapTitle') }}</h2>
+                    <p class="text-gray-500">{{ $t('landing.agenciesMapSubtitle') }}</p>
                 </div>
 
                 <!-- Карточки агентств -->
@@ -322,7 +318,7 @@
                         <button @click="goToAgencies"
                             class="mt-4 w-full text-center text-xs font-semibold text-[#1BA97F]
                                    hover:text-[#17956f] transition-colors py-1">
-                            Подать заявку
+                            {{ $t('landing.submitApplication') }}
                         </button>
                     </div>
                 </div>
@@ -335,7 +331,7 @@
                         class="w-full sm:w-auto px-8 py-4 bg-[#0A1F44] text-white font-semibold
                                rounded-xl text-base sm:text-lg hover:bg-[#0d2a5e] transition-colors
                                active:scale-95">
-                        Найти агентство
+                        {{ $t('landing.findAgency') }}
                     </button>
                 </div>
             </div>
@@ -352,12 +348,15 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import LandingLayout from '@/layouts/LandingLayout.vue';
 import PhoneAuthModal from '@/pages/public/PhoneAuthModal.vue';
 import { publicPortalApi } from '@/api/public';
 import { usePublicAuthStore } from '@/stores/publicAuth';
+
+const { t } = useI18n();
 
 const router     = useRouter();
 const publicAuth = usePublicAuthStore();
@@ -412,31 +411,31 @@ onMounted(async () => {
     initMap();
 });
 
-const steps = [
-    { num: '01', icon: '📱', bg: 'bg-blue-50',   title: 'Войдите через телефон',   desc: 'Одно SMS — и вы в системе. Без паролей и лишней регистрации.' },
-    { num: '02', icon: '🛂', bg: 'bg-green-50',  title: 'Заполните профиль',        desc: 'OCR считает данные паспорта автоматически. Или введите за 2 минуты.' },
-    { num: '03', icon: '🎯', bg: 'bg-purple-50', title: 'Получите результат',        desc: 'Скоринг 0–100 с рекомендациями. Выберите агентство и подавайте.' },
-];
+const steps = computed(() => [
+    { num: '01', icon: '📱', bg: 'bg-blue-50',   title: t('landing.step1title'),   desc: t('landing.step1desc') },
+    { num: '02', icon: '🛂', bg: 'bg-green-50',  title: t('landing.step2title'),   desc: t('landing.step2desc') },
+    { num: '03', icon: '🎯', bg: 'bg-purple-50', title: t('landing.step3title'),   desc: t('landing.step3desc') },
+]);
 
-const features = [
-    'Бесплатная проверка для 10+ стран',
-    'Персональные рекомендации по улучшению профиля',
-    'OCR-распознавание паспорта — автозаполнение',
-    'Подключение к агентству по результатам',
-];
+const features = computed(() => [
+    t('landing.feature1'),
+    t('landing.feature2'),
+    t('landing.feature3'),
+    t('landing.feature4'),
+]);
 
-const mockBreakdown = [
-    { label: 'Финансы',     val: 78 },
-    { label: 'Привязанность', val: 85 },
-    { label: 'История',     val: 55 },
-    { label: 'Профиль',     val: 90 },
-];
+const mockBreakdown = computed(() => [
+    { label: t('landing.mockFinances'),  val: 78 },
+    { label: t('landing.mockTies'),      val: 85 },
+    { label: t('landing.mockHistory'),   val: 55 },
+    { label: t('landing.mockProfile'),   val: 90 },
+]);
 
-const agencyBenefits = [
-    { icon: '⭐', title: 'Рейтинг и отзывы',  desc: 'Только верифицированные агентства с реальными отзывами' },
-    { icon: '📍', title: 'Трекинг заявки',    desc: 'Статус документов в реальном времени' },
-    { icon: '💬', title: 'Прямая связь',      desc: 'Чат с менеджером без посредников' },
-];
+const agencyBenefits = computed(() => [
+    { icon: '⭐', title: t('landing.agencyRatingTitle'),   desc: t('landing.agencyRatingDesc') },
+    { icon: '📍', title: t('landing.agencyTrackingTitle'), desc: t('landing.agencyTrackingDesc') },
+    { icon: '💬', title: t('landing.agencyChatTitle'),     desc: t('landing.agencyChatDesc') },
+]);
 
 function selectCountry(c) {
     selectedCountry.value = selectedCountry.value?.code === c.code ? null : c;

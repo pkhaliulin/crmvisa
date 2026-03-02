@@ -7,7 +7,7 @@
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
                 </svg>
-                Назад к агентствам
+                {{ $t('agencies.backToAgencies') }}
             </button>
 
             <!-- Загрузка -->
@@ -29,11 +29,11 @@
             <div v-else-if="!agency"
                 class="bg-white rounded-2xl border border-gray-100 shadow-sm p-10 text-center">
                 <div class="text-4xl mb-3">🏢</div>
-                <div class="font-semibold text-[#0A1F44] mb-1">Агентство не найдено</div>
-                <p class="text-sm text-gray-500">Возможно, оно было удалено или недоступно.</p>
+                <div class="font-semibold text-[#0A1F44] mb-1">{{ $t('agencies.notFound') }}</div>
+                <p class="text-sm text-gray-500">{{ $t('agencies.notFoundDesc') }}</p>
                 <button @click="router.push({ name: 'me.agencies' })"
                     class="mt-4 px-5 py-2.5 bg-[#0A1F44] text-white text-sm font-semibold rounded-xl hover:bg-[#0d2a5e] transition-colors">
-                    Все агентства
+                    {{ $t('agencies.allAgencies') }}
                 </button>
             </div>
 
@@ -58,12 +58,12 @@
                                     <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
                                     </svg>
-                                    Верифицировано
+                                    {{ $t('cases.verified') }}
                                 </span>
                             </div>
                             <div class="flex items-center gap-3 text-sm text-gray-400 flex-wrap">
                                 <span v-if="agency.city">{{ agency.city }}</span>
-                                <span v-if="agency.experience_years">{{ agency.experience_years }} лет опыта</span>
+                                <span v-if="agency.experience_years">{{ $t('agencies.experience', { years: agency.experience_years }) }}</span>
                                 <span v-if="agency.rating" class="flex items-center gap-1">
                                     <svg class="w-3.5 h-3.5 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
                                         <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
@@ -108,7 +108,7 @@
                             <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
                             </svg>
-                            Сайт агентства
+                            {{ $t('agencies.websiteLink') }}
                         </a>
                     </div>
                 </div>
@@ -116,16 +116,16 @@
                 <!-- Пакеты услуг -->
                 <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-4">
                     <div class="px-6 py-4 border-b border-gray-50">
-                        <h2 class="font-bold text-[#0A1F44] text-base">Пакеты услуг</h2>
+                        <h2 class="font-bold text-[#0A1F44] text-base">{{ $t('agencies.packages') }}</h2>
                     </div>
 
                     <!-- Нет пакетов -->
                     <div v-if="!agency.packages?.length" class="px-6 py-8 text-center">
-                        <div class="text-sm text-gray-500 mb-1">Агентство принимает заявки.</div>
-                        <div class="text-xs text-gray-400">Подробности уточняйте напрямую.</div>
+                        <div class="text-sm text-gray-500 mb-1">{{ $t('agencies.noPackages') }}</div>
+                        <div class="text-xs text-gray-400">{{ $t('agencies.noPackagesHint') }}</div>
                         <button @click="openConfirm(agency, null)"
                             class="mt-4 px-5 py-2.5 bg-[#1BA97F] hover:bg-[#17956f] text-white text-sm font-semibold rounded-xl transition-colors">
-                            Отправить заявку
+                            {{ $t('agencies.sendApplication') }}
                         </button>
                     </div>
 
@@ -147,7 +147,7 @@
                                         </span>
                                         <span v-if="pkg.processing_days"
                                             class="text-xs bg-gray-50 text-gray-500 px-2 py-0.5 rounded-full">
-                                            {{ pkg.processing_days }} дней
+                                            {{ pkg.processing_days }} {{ $t('common.days') }}
                                         </span>
                                     </div>
                                     <p v-if="pkg.description" class="text-xs text-gray-400 leading-relaxed mb-2">
@@ -163,12 +163,12 @@
                                 </div>
                                 <div class="shrink-0 text-right">
                                     <div class="font-bold text-[#0A1F44] text-lg">
-                                        {{ pkg.price ? `$${Number(pkg.price).toLocaleString()}` : 'По запросу' }}
+                                        {{ pkg.price ? `$${Number(pkg.price).toLocaleString()}` : $t('common.byRequest') }}
                                     </div>
                                     <button @click="openConfirm(agency, pkg)"
                                         class="mt-2 px-4 py-2 bg-[#1BA97F] hover:bg-[#17956f] active:scale-[0.97]
                                                text-white text-xs font-semibold rounded-lg transition-all">
-                                        Выбрать
+                                        {{ $t('agencies.select') }}
                                     </button>
                                 </div>
                             </div>
@@ -185,7 +185,7 @@
             <div class="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl shadow-xl">
                 <div class="p-6">
                     <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-base font-bold text-[#0A1F44]">Подтверждение заявки</h3>
+                        <h3 class="text-base font-bold text-[#0A1F44]">{{ $t('agencies.confirmTitle') }}</h3>
                         <button @click="confirm.show = false"
                             class="text-gray-400 hover:text-gray-600 transition-colors p-1">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -196,29 +196,28 @@
 
                     <div class="bg-gray-50 rounded-xl p-4 mb-4 space-y-2.5 text-sm">
                         <div class="flex items-start justify-between gap-3">
-                            <span class="text-gray-400 shrink-0">Агентство</span>
+                            <span class="text-gray-400 shrink-0">{{ $t('agencies.confirmAgency') }}</span>
                             <span class="font-semibold text-[#0A1F44] text-right">{{ confirm.agency?.name }}</span>
                         </div>
                         <div v-if="confirm.pkg" class="flex items-start justify-between gap-3">
-                            <span class="text-gray-400 shrink-0">Пакет</span>
+                            <span class="text-gray-400 shrink-0">{{ $t('agencies.confirmPackage') }}</span>
                             <span class="font-semibold text-[#0A1F44] text-right">{{ confirm.pkg.name }}</span>
                         </div>
                         <div v-if="confirm.pkg?.price" class="flex items-start justify-between gap-3">
-                            <span class="text-gray-400 shrink-0">Стоимость</span>
+                            <span class="text-gray-400 shrink-0">{{ $t('agencies.confirmPrice') }}</span>
                             <span class="font-bold text-[#0A1F44]">${{ Number(confirm.pkg.price).toLocaleString() }}</span>
                         </div>
                     </div>
 
                     <p class="text-xs text-gray-400 mb-5 leading-relaxed">
-                        Агентство получит вашу контактную информацию и свяжется с вами.
-                        Заявка появится в разделе «Мои заявки».
+                        {{ $t('agencies.confirmDesc') }}
                     </p>
 
                     <div class="flex gap-3">
                         <button @click="confirm.show = false"
                             class="flex-1 py-3 border border-gray-200 text-gray-600 text-sm font-semibold rounded-xl
                                    hover:bg-gray-50 transition-colors">
-                            Отмена
+                            {{ $t('common.cancel') }}
                         </button>
                         <button @click="submitLead"
                             :disabled="submitting"
@@ -228,7 +227,7 @@
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
                             </svg>
-                            {{ submitting ? 'Отправляем...' : 'Отправить заявку' }}
+                            {{ submitting ? $t('agencies.sending') : $t('agencies.send') }}
                         </button>
                     </div>
                 </div>
@@ -242,7 +241,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
             </svg>
             <div>
-                <div class="font-semibold text-sm">Заявка отправлена!</div>
+                <div class="font-semibold text-sm">{{ $t('agencies.sent') }}</div>
                 <div class="text-xs text-white/80 mt-0.5">{{ toast }}</div>
             </div>
         </div>
@@ -252,8 +251,10 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { publicPortalApi } from '@/api/public';
 
+const { t } = useI18n();
 const route  = useRoute();
 const router = useRouter();
 
@@ -294,7 +295,7 @@ async function submitLead() {
             package_id:   confirm.value.pkg?.id ?? null,
         });
         confirm.value.show = false;
-        toast.value = `Агентство ${confirm.value.agency?.name ?? ''} получило вашу заявку`;
+        toast.value = t('agencies.sentDesc', { name: confirm.value.agency?.name ?? '' });
         setTimeout(() => {
             toast.value = '';
             router.push({ name: 'me.cases' });
@@ -302,11 +303,11 @@ async function submitLead() {
     } catch (e) {
         const msg = e?.response?.data?.message;
         if (e?.response?.status === 409) {
-            toast.value = 'Заявка в это агентство уже отправлена';
+            toast.value = t('agencies.alreadySentDesc');
             confirm.value.show = false;
             setTimeout(() => { toast.value = ''; }, 3000);
         } else {
-            alert(msg ?? 'Ошибка отправки. Попробуйте ещё раз.');
+            alert(msg ?? t('agencies.sendError'));
         }
     } finally {
         submitting.value = false;

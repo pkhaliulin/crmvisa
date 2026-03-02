@@ -5,12 +5,12 @@
             <div class="mb-6 sm:mb-8">
                 <div class="flex items-start justify-between gap-4">
                     <div>
-                        <h1 class="text-xl sm:text-2xl font-bold text-[#0A1F44]">Ваш скоринг</h1>
-                        <p class="text-gray-500 text-sm mt-0.5">Вероятность одобрения визы по странам</p>
+                        <h1 class="text-xl sm:text-2xl font-bold text-[#0A1F44]">{{ $t('scoring.title') }}</h1>
+                        <p class="text-gray-500 text-sm mt-0.5">{{ $t('scoring.subtitle') }}</p>
                     </div>
                     <!-- Прогресс профиля -->
                     <div class="text-right shrink-0">
-                        <div class="text-xs text-gray-400 mb-1">Профиль</div>
+                        <div class="text-xs text-gray-400 mb-1">{{ $t('common.profile') }}</div>
                         <div class="flex items-center gap-2">
                             <div class="w-20 sm:w-32 bg-gray-200 rounded-full h-2">
                                 <div class="h-2 rounded-full bg-[#1BA97F] transition-all duration-500"
@@ -32,7 +32,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
                             </svg>
                         </div>
-                        <span class="font-semibold text-[#0A1F44] text-sm">Как рассчитывается вероятность?</span>
+                        <span class="font-semibold text-[#0A1F44] text-sm">{{ $t('scoring.howCalculated') }}</span>
                     </div>
                     <svg class="w-5 h-5 text-gray-400 transition-transform duration-200"
                          :class="howOpen ? 'rotate-180' : ''"
@@ -41,7 +41,7 @@
                     </svg>
                 </button>
                 <div v-if="howOpen" class="px-5 pb-5 border-t border-gray-50">
-                    <p class="text-sm text-gray-500 mt-3 mb-4">Скоринг рассчитывается по 5 блокам с учётом красных флагов (блокирующих факторов).</p>
+                    <p class="text-sm text-gray-500 mt-3 mb-4">{{ $t('scoring.howDesc') }}</p>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div v-for="block in HOW_BLOCKS" :key="block.key"
                             class="flex items-start gap-3 p-3 rounded-xl bg-gray-50">
@@ -56,11 +56,11 @@
                         </div>
                     </div>
                     <div class="mt-4 p-3 bg-red-50 rounded-xl">
-                        <div class="text-xs font-semibold text-red-700 mb-1">Красные флаги (снижают итог):</div>
+                        <div class="text-xs font-semibold text-red-700 mb-1">{{ $t('scoring.redFlagsTitle') }}</div>
                         <ul class="text-xs text-red-600 space-y-0.5">
-                            <li>• Более 2 отказов за 3 года → итог &times; 0.6</li>
-                            <li>• Нарушение визового режима → итог &times; 0.7</li>
-                            <li>• Депортация → итог &times; 0.5</li>
+                            <li>{{ $t('scoring.redFlag1') }}</li>
+                            <li>{{ $t('scoring.redFlag2') }}</li>
+                            <li>{{ $t('scoring.redFlag3') }}</li>
                         </ul>
                     </div>
                     <div class="mt-3 grid grid-cols-4 gap-2 text-center">
@@ -80,7 +80,7 @@
                     <div v-if="activeScore" class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sm:p-6">
                         <div class="flex items-center justify-between mb-5 sm:mb-6">
                             <div>
-                                <div class="text-xs text-gray-400 mb-1">Выбрана страна</div>
+                                <div class="text-xs text-gray-400 mb-1">{{ $t('scoring.selectedCountry') }}</div>
                                 <div class="font-bold text-[#0A1F44] text-lg">
                                     {{ countryFlag(activeScore.country_code) }}
                                     {{ countryName(activeScore.country_code) }}
@@ -111,9 +111,9 @@
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
                                 </svg>
-                                Красные флаги (×{{ activeScore.red_flag_multiplier?.toFixed(1) }})
+                                {{ $t('scoring.redFlags') }} (&times;{{ activeScore.red_flag_multiplier?.toFixed(1) }})
                             </div>
-                            <div v-for="flag in activeScore.red_flags" :key="flag" class="text-xs text-red-600">• {{ flag }}</div>
+                            <div v-for="flag in activeScore.red_flags" :key="flag" class="text-xs text-red-600">{{ flag }}</div>
                         </div>
 
                         <!-- Разбивка по 5 блокам -->
@@ -135,10 +135,10 @@
                         <!-- Рекомендации -->
                         <div v-if="activeScore.recommendations?.length"
                             class="p-4 bg-amber-50 rounded-xl space-y-2">
-                            <div class="text-xs font-semibold text-amber-700 mb-2">Чтобы повысить шансы:</div>
+                            <div class="text-xs font-semibold text-amber-700 mb-2">{{ $t('scoring.improveTips') }}</div>
                             <div v-for="rec in activeScore.recommendations" :key="rec"
                                 class="flex items-start gap-2 text-sm text-amber-800">
-                                <span class="shrink-0 mt-px">→</span>
+                                <span class="shrink-0 mt-px">&rarr;</span>
                                 <span>{{ rec }}</span>
                             </div>
                         </div>
@@ -147,15 +147,15 @@
                         <button @click="goToAgencies(activeScore)"
                             class="mt-4 w-full py-3.5 bg-[#1BA97F] text-white font-semibold rounded-xl
                                   hover:bg-[#17956f] active:scale-[0.98] transition-all">
-                            Найти агентство для {{ countryName(activeScore.country_code) }}
+                            {{ $t('scoring.findAgencyFor', { country: countryName(activeScore.country_code) }) }}
                         </button>
                     </div>
 
                     <!-- Список всех стран -->
                     <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                         <div class="px-5 sm:px-6 py-4 border-b border-gray-50 flex items-center justify-between">
-                            <h3 class="font-bold text-[#0A1F44]">Все страны</h3>
-                            <span class="text-xs text-gray-400">{{ scores.length }} стран</span>
+                            <h3 class="font-bold text-[#0A1F44]">{{ $t('scoring.allCountries') }}</h3>
+                            <span class="text-xs text-gray-400">{{ $t('scoring.countryCount', { count: scores.length }) }}</span>
                         </div>
 
                         <div v-if="scoringLoading" class="p-5 sm:p-6 space-y-3">
@@ -189,7 +189,7 @@
                                         {{ s.score }}%
                                     </span>
                                 </div>
-                                <span class="text-gray-300 text-sm hidden sm:block">›</span>
+                                <span class="text-gray-300 text-sm hidden sm:block">&rsaquo;</span>
                             </button>
                         </div>
                     </div>
@@ -200,9 +200,12 @@
 <script setup>
 import { ref, onMounted, computed, defineComponent, h } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { publicPortalApi } from '@/api/public';
 import { usePublicAuthStore } from '@/stores/publicAuth';
 import { countryName as getCountryName, codeToFlag } from '@/utils/countries';
+
+const { t } = useI18n();
 
 const route          = useRoute();
 const router         = useRouter();
@@ -215,21 +218,21 @@ const howOpen        = ref(false);
 
 const profilePercent = computed(() => publicAuth.profilePercent);
 
-// 5 блоков скоринга
-const HOW_BLOCKS = [
-    { key: 'finances',     label: 'Финансы',       weight: '25%', color: '#1BA97F', desc: 'Доход, тип занятости, стабильность' },
-    { key: 'visa_history', label: 'История виз',   weight: '30%', color: '#3B82F6', desc: 'Полученные визы, отказы (снижают!), страны' },
-    { key: 'social_ties',  label: 'Привязанность', weight: '20%', color: '#8B5CF6', desc: 'Семья, дети, имущество, стаж работы' },
-    { key: 'destination',  label: 'Страна',        weight: '15%', color: '#F59E0B', desc: 'Уровень риска страны назначения' },
-    { key: 'visa_type',    label: 'Тип визы',      weight: '10%', color: '#EF4444', desc: 'Туризм/бизнес/учёба/работа' },
-];
+// 5 блоков скоринга (computed для реактивности i18n)
+const HOW_BLOCKS = computed(() => [
+    { key: 'finances',     label: t('scoring.finances'),          weight: '25%', color: '#1BA97F', desc: t('scoring.financesDesc') },
+    { key: 'visa_history', label: t('scoring.visaHistoryBlock'),   weight: '30%', color: '#3B82F6', desc: t('scoring.visaHistoryDesc') },
+    { key: 'social_ties',  label: t('scoring.socialTies'),        weight: '20%', color: '#8B5CF6', desc: t('scoring.socialTiesDesc') },
+    { key: 'destination',  label: t('scoring.destination'),       weight: '15%', color: '#F59E0B', desc: t('scoring.destinationDesc') },
+    { key: 'visa_type',    label: t('scoring.visaType'),          weight: '10%', color: '#EF4444', desc: t('scoring.visaTypeDesc') },
+]);
 
-const LEVELS = [
-    { range: '80–100%', label: 'Высокая',  color: '#1BA97F', bg: '#f0fdf4' },
-    { range: '60–79%',  label: 'Средняя',  color: '#3B82F6', bg: '#eff6ff' },
-    { range: '40–59%',  label: 'Низкая',   color: '#F59E0B', bg: '#fffbeb' },
-    { range: '<40%',    label: 'Высокий риск', color: '#EF4444', bg: '#fef2f2' },
-];
+const LEVELS = computed(() => [
+    { range: '80\u2013100%', label: t('scoring.levelHigh'),   color: '#1BA97F', bg: '#f0fdf4' },
+    { range: '60\u201379%',  label: t('scoring.levelMedium'), color: '#3B82F6', bg: '#eff6ff' },
+    { range: '40\u201359%',  label: t('scoring.levelLow'),    color: '#F59E0B', bg: '#fffbeb' },
+    { range: '<40%',         label: t('scoring.levelRisk'),   color: '#EF4444', bg: '#fef2f2' },
+]);
 
 const profile = ref({
     employment_type:       publicAuth.user?.employment_type       ?? '',
@@ -327,84 +330,84 @@ const ProfileFormInline = {
     template: `
         <div class="space-y-3">
             <div>
-                <label class="text-xs text-gray-400 mb-1 block">Занятость</label>
+                <label class="text-xs text-gray-400 mb-1 block">{{ $t('scoring.employmentLabel') }}</label>
                 <select :value="profile.employment_type"
                     @change="set('employment_type', $event.target.value)"
                     class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm text-[#0A1F44] outline-none focus:border-[#1BA97F]">
-                    <option value="">Не указано</option>
-                    <option value="employed">Наёмный сотрудник</option>
-                    <option value="business_owner">Владелец бизнеса</option>
-                    <option value="self_employed">Самозанятый / ИП</option>
-                    <option value="retired">Пенсионер</option>
-                    <option value="student">Студент</option>
-                    <option value="unemployed">Безработный</option>
+                    <option value="">{{ $t('common.notSpecified') }}</option>
+                    <option value="employed">{{ $t('scoring.employedShort') }}</option>
+                    <option value="business_owner">{{ $t('scoring.businessOwnerShort') }}</option>
+                    <option value="self_employed">{{ $t('scoring.selfEmployedShort') }}</option>
+                    <option value="retired">{{ $t('scoring.retiredShort') }}</option>
+                    <option value="student">{{ $t('scoring.studentShort') }}</option>
+                    <option value="unemployed">{{ $t('scoring.unemployedShort') }}</option>
                 </select>
             </div>
             <div>
-                <label class="text-xs text-gray-400 mb-1 block">Стаж работы (лет)</label>
+                <label class="text-xs text-gray-400 mb-1 block">{{ $t('scoring.tenureLabel') }}</label>
                 <select :value="profile.employed_years"
                     @change="set('employed_years', Number($event.target.value) || 0)"
                     class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm text-[#0A1F44] outline-none focus:border-[#1BA97F]">
-                    <option :value="0">Менее 1 года</option>
-                    <option :value="1">1–2 года</option>
-                    <option :value="2">2–5 лет</option>
-                    <option :value="5">5–10 лет</option>
-                    <option :value="10">Более 10 лет</option>
+                    <option :value="0">{{ $t('scoring.lessThan1Year') }}</option>
+                    <option :value="1">{{ $t('scoring.tenure1to2') }}</option>
+                    <option :value="2">{{ $t('scoring.tenure2to5') }}</option>
+                    <option :value="5">{{ $t('scoring.tenure5to10') }}</option>
+                    <option :value="10">{{ $t('scoring.tenureOver10') }}</option>
                 </select>
             </div>
             <div>
-                <label class="text-xs text-gray-400 mb-1 block">Доход в месяц ($)</label>
+                <label class="text-xs text-gray-400 mb-1 block">{{ $t('scoring.incomeLabel') }}</label>
                 <select :value="profile.monthly_income_usd"
                     @change="set('monthly_income_usd', Number($event.target.value) || '')"
                     class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm text-[#0A1F44] outline-none focus:border-[#1BA97F]">
-                    <option value="">Не указано</option>
-                    <option :value="300">До $500</option>
-                    <option :value="800">$500–1 000</option>
-                    <option :value="1500">$1 000–2 000</option>
-                    <option :value="3000">$2 000–4 000</option>
-                    <option :value="5000">Более $4 000</option>
+                    <option value="">{{ $t('common.notSpecified') }}</option>
+                    <option :value="300">{{ $t('scoring.incomeTo500') }}</option>
+                    <option :value="800">{{ $t('scoring.income500to1000') }}</option>
+                    <option :value="1500">{{ $t('scoring.income1000to2000') }}</option>
+                    <option :value="3000">{{ $t('scoring.income2000to4000') }}</option>
+                    <option :value="5000">{{ $t('scoring.incomeOver4000') }}</option>
                 </select>
             </div>
             <div>
-                <label class="text-xs text-gray-400 mb-1 block">Семейное положение</label>
+                <label class="text-xs text-gray-400 mb-1 block">{{ $t('scoring.familyLabel') }}</label>
                 <select :value="profile.marital_status"
                     @change="set('marital_status', $event.target.value)"
                     class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm text-[#0A1F44] outline-none focus:border-[#1BA97F]">
-                    <option value="">Не указано</option>
-                    <option value="married">Женат / замужем</option>
-                    <option value="single">Холост / незамужем</option>
-                    <option value="divorced">Разведён/а</option>
-                    <option value="widowed">Вдовец/вдова</option>
+                    <option value="">{{ $t('common.notSpecified') }}</option>
+                    <option value="married">{{ $t('scoring.marriedShort') }}</option>
+                    <option value="single">{{ $t('scoring.singleShort') }}</option>
+                    <option value="divorced">{{ $t('scoring.divorcedShort') }}</option>
+                    <option value="widowed">{{ $t('scoring.widowedShort') }}</option>
                 </select>
             </div>
             <div>
-                <label class="text-xs text-gray-400 mb-1 block">Получено виз ранее</label>
+                <label class="text-xs text-gray-400 mb-1 block">{{ $t('scoring.visasLabel') }}</label>
                 <select :value="profile.visas_obtained_count"
                     @change="set('visas_obtained_count', Number($event.target.value))"
                     class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm text-[#0A1F44] outline-none focus:border-[#1BA97F]">
-                    <option :value="0">Не было</option>
-                    <option :value="1">1 виза</option>
-                    <option :value="2">2–4 визы</option>
-                    <option :value="5">5 и более</option>
+                    <option :value="0">{{ $t('scoring.noVisas') }}</option>
+                    <option :value="1">{{ $t('scoring.oneVisa') }}</option>
+                    <option :value="2">{{ $t('scoring.twoFourVisas') }}</option>
+                    <option :value="5">{{ $t('scoring.fivePlusVisas') }}</option>
                 </select>
             </div>
             <div>
-                <label class="text-xs text-gray-400 mb-1 block">Количество отказов <span class="text-red-500 font-medium">(снижают скоринг!)</span></label>
+                <label class="text-xs text-gray-400 mb-1 block">{{ $t('scoring.refusalsLabel') }} <span class="text-red-500 font-medium">({{ $t('scoring.reducesScoring') }})</span></label>
                 <select :value="profile.refusals_count"
                     @change="set('refusals_count', Number($event.target.value))"
                     class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm text-[#0A1F44] outline-none focus:border-[#1BA97F]">
-                    <option :value="0">Не было</option>
-                    <option :value="1">1 отказ</option>
-                    <option :value="2">2 отказа</option>
-                    <option :value="3">3 и более</option>
+                    <option :value="0">{{ $t('scoring.noRefusals') }}</option>
+                    <option :value="1">{{ $t('scoring.oneRefusal') }}</option>
+                    <option :value="2">{{ $t('scoring.twoRefusals') }}</option>
+                    <option :value="3">{{ $t('scoring.threePlusRefusals') }}</option>
                 </select>
             </div>
             <div v-if="profile.refusals_count > 0">
-                <label class="text-xs text-gray-400 mb-1 block">Год последнего отказа</label>
+                <label class="text-xs text-gray-400 mb-1 block">{{ $t('scoring.refusalYearLabel') }}</label>
                 <select :value="profile.last_refusal_year"
                     @change="set('last_refusal_year', $event.target.value ? Number($event.target.value) : null)"
                     class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm text-[#0A1F44] outline-none focus:border-[#1BA97F]">
-                    <option value="">Не помню</option>
+                    <option value="">{{ $t('scoring.dontRemember') }}</option>
                     <option v-for="y in refusalYears" :key="y" :value="y">{{ y }}</option>
                 </select>
             </div>
@@ -418,7 +421,7 @@ const ProfileFormInline = {
                         <div class="w-5 h-5 border-2 border-gray-300 rounded peer-checked:bg-[#1BA97F]
                                     peer-checked:border-[#1BA97F] transition-colors"></div>
                         <div class="absolute inset-0 flex items-center justify-center
-                                    text-white text-xs font-bold opacity-0 peer-checked:opacity-100">✓</div>
+                                    text-white text-xs font-bold opacity-0 peer-checked:opacity-100">\u2713</div>
                     </div>
                     <span class="text-sm text-gray-600 group-hover:text-gray-900 leading-tight"
                           :class="cb.danger ? 'text-red-600' : ''">{{ cb.label }}</span>
@@ -427,20 +430,20 @@ const ProfileFormInline = {
             <button @click="$emit('recalculate')" :disabled="loading"
                 class="mt-3 w-full py-3 bg-[#0A1F44] text-white text-sm font-semibold
                        rounded-xl hover:bg-[#0d2a5e] active:scale-[0.98] transition-all disabled:opacity-60">
-                {{ loading ? 'Считаем...' : 'Пересчитать' }}
+                {{ loading ? $t('scoring.calculating') : $t('scoring.recalculate') }}
             </button>
         </div>
     `,
     computed: {
         checkboxes() {
             return [
-                { key: 'has_children',      label: 'Есть дети (живут дома)' },
-                { key: 'has_property',      label: 'Есть недвижимость' },
-                { key: 'has_car',           label: 'Есть автомобиль' },
-                { key: 'has_schengen_visa', label: 'Шенгенская виза (действующая)' },
-                { key: 'has_us_visa',       label: 'Виза США (действующая)' },
-                { key: 'had_overstay',      label: 'Нарушал/а режим пребывания', danger: true },
-                { key: 'had_deportation',   label: 'Был/а депортация', danger: true },
+                { key: 'has_children',      label: this.$t('scoring.hasChildrenLabel') },
+                { key: 'has_property',      label: this.$t('scoring.hasPropertyLabel') },
+                { key: 'has_car',           label: this.$t('scoring.hasCarLabel') },
+                { key: 'has_schengen_visa', label: this.$t('scoring.hasSchengenLabel') },
+                { key: 'has_us_visa',       label: this.$t('scoring.hasUsLabel') },
+                { key: 'had_overstay',      label: this.$t('scoring.hadOverstayLabel'), danger: true },
+                { key: 'had_deportation',   label: this.$t('scoring.hadDeportationLabel'), danger: true },
             ];
         },
         refusalYears() {

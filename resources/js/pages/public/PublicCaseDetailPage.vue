@@ -21,7 +21,7 @@
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
             </svg>
-            Мои заявки
+            {{ $t('cases.myCases') }}
         </button>
 
         <!-- Скелетон загрузки -->
@@ -70,24 +70,24 @@
                 <!-- Даты -->
                 <div class="grid grid-cols-2 gap-3 mt-4">
                     <div v-if="caseData.critical_date" class="p-3 rounded-xl bg-gray-50">
-                        <div class="text-xs text-gray-400 mb-0.5">Дедлайн</div>
+                        <div class="text-xs text-gray-400 mb-0.5">{{ $t('cases.deadline') }}</div>
                         <div class="text-sm font-semibold" :class="deadlineClass(caseData.critical_date)">
                             {{ formatDate(caseData.critical_date) }}
                         </div>
                     </div>
                     <div v-if="caseData.travel_date" class="p-3 rounded-xl bg-gray-50">
-                        <div class="text-xs text-gray-400 mb-0.5">Дата поездки</div>
+                        <div class="text-xs text-gray-400 mb-0.5">{{ $t('cases.travelDate') }}</div>
                         <div class="text-sm font-semibold text-[#0A1F44]">{{ formatDate(caseData.travel_date) }}</div>
                     </div>
                     <div class="p-3 rounded-xl bg-gray-50">
-                        <div class="text-xs text-gray-400 mb-0.5">Создана</div>
+                        <div class="text-xs text-gray-400 mb-0.5">{{ $t('cases.created') }}</div>
                         <div class="text-sm font-semibold text-[#0A1F44]">{{ formatDate(caseData.created_at) }}</div>
                     </div>
                 </div>
 
                 <!-- Заметки от агентства -->
                 <div v-if="caseData.notes" class="mt-4 p-3 bg-blue-50 rounded-xl">
-                    <div class="text-xs font-semibold text-blue-700 mb-1">Комментарий агентства</div>
+                    <div class="text-xs font-semibold text-blue-700 mb-1">{{ $t('cases.agencyComment') }}</div>
                     <p class="text-sm text-blue-800 leading-relaxed whitespace-pre-line">{{ caseData.notes }}</p>
                 </div>
             </div>
@@ -96,15 +96,15 @@
             <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                 <div class="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
                     <div>
-                        <h2 class="font-bold text-[#0A1F44] text-sm">Документы</h2>
-                        <p class="text-xs text-gray-400 mt-0.5">Что нужно подготовить для визы</p>
+                        <h2 class="font-bold text-[#0A1F44] text-sm">{{ $t('cases.documentsTitle') }}</h2>
+                        <p class="text-xs text-gray-400 mt-0.5">{{ $t('cases.documentsHint') }}</p>
                     </div>
                     <div v-if="checklist.length" class="text-right">
                         <div class="text-lg font-bold"
                             :class="docsUploaded >= checklist.length ? 'text-[#1BA97F]' : 'text-[#0A1F44]'">
                             {{ docsUploaded }}/{{ checklist.length }}
                         </div>
-                        <div class="text-xs text-gray-400">загружено</div>
+                        <div class="text-xs text-gray-400">{{ $t('cases.uploaded') }}</div>
                     </div>
                 </div>
 
@@ -150,7 +150,7 @@
                                 <span class="text-sm font-medium text-[#0A1F44]">{{ item.name }}</span>
                                 <span v-if="item.is_required"
                                     class="text-[10px] font-semibold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-full shrink-0">
-                                    Обязательно
+                                    {{ $t('common.required') }}
                                 </span>
                             </div>
                             <p v-if="item.description" class="text-xs text-gray-400 mt-0.5 leading-relaxed">{{ item.description }}</p>
@@ -179,7 +179,7 @@
                                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
                                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
                                 </svg>
-                                <span>{{ uploading[item.id] ? 'Загрузка...' : (item.status === 'uploaded' ? 'Заменить файл' : 'Загрузить') }}</span>
+                                <span>{{ uploading[item.id] ? $t('cases.uploading') : (item.status === 'uploaded' ? $t('cases.replaceFile') : $t('cases.upload')) }}</span>
                                 <input type="file" class="hidden"
                                     accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
                                     @change="(e) => uploadDoc(item.id, e)"/>
@@ -187,7 +187,7 @@
                             <!-- Для agency responsibility — только статус -->
                             <div v-else-if="item.responsibility === 'agency' && item.status !== 'approved'"
                                 class="mt-1 text-xs text-gray-400 italic">
-                                {{ item.status === 'done' ? 'Выполнено агентством' : 'Ожидает агентства' }}
+                                {{ item.status === 'done' ? $t('cases.doneByAgency') : $t('cases.waitingAgency') }}
                             </div>
                         </div>
                     </div>
@@ -195,14 +195,14 @@
 
                 <!-- Нет документов -->
                 <div v-else class="px-5 py-6 text-center">
-                    <div class="text-sm text-gray-400">Список документов формируется агентством</div>
+                    <div class="text-sm text-gray-400">{{ $t('cases.noDocsList') }}</div>
                 </div>
             </div>
 
             <!-- === Агентство === -->
             <div v-if="caseData.agency" class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                 <div class="px-5 py-4 border-b border-gray-50">
-                    <h2 class="font-bold text-[#0A1F44] text-sm">Агентство</h2>
+                    <h2 class="font-bold text-[#0A1F44] text-sm">{{ $t('cases.agencyTitle') }}</h2>
                 </div>
                 <div class="p-5">
                     <div class="flex items-start gap-4 mb-4">
@@ -222,12 +222,12 @@
                                     <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
                                     </svg>
-                                    Верифицировано
+                                    {{ $t('cases.verified') }}
                                 </span>
                             </div>
                             <div class="flex items-center gap-3 mt-1 text-xs text-gray-400 flex-wrap">
                                 <span v-if="caseData.agency.city">{{ caseData.agency.city }}</span>
-                                <span v-if="caseData.agency.experience_years">{{ caseData.agency.experience_years }} лет</span>
+                                <span v-if="caseData.agency.experience_years">{{ caseData.agency.experience_years }} {{ $t('common.years') }}</span>
                                 <span v-if="caseData.agency.rating" class="flex items-center gap-1">
                                     <svg class="w-3 h-3 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
                                         <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
@@ -253,7 +253,7 @@
                                 </svg>
                             </div>
                             <div>
-                                <div class="text-xs text-gray-400">Телефон</div>
+                                <div class="text-xs text-gray-400">{{ $t('cases.phone') }}</div>
                                 <div class="text-sm font-semibold text-[#0A1F44]">{{ caseData.agency.phone }}</div>
                             </div>
                         </a>
@@ -267,7 +267,7 @@
                                 </svg>
                             </div>
                             <div>
-                                <div class="text-xs text-gray-400">Email</div>
+                                <div class="text-xs text-gray-400">{{ $t('cases.email') }}</div>
                                 <div class="text-sm font-semibold text-[#0A1F44]">{{ caseData.agency.email }}</div>
                             </div>
                         </a>
@@ -281,7 +281,7 @@
                                 </svg>
                             </div>
                             <div>
-                                <div class="text-xs text-gray-400">Адрес</div>
+                                <div class="text-xs text-gray-400">{{ $t('cases.address') }}</div>
                                 <div class="text-sm font-semibold text-[#0A1F44]">{{ caseData.agency.address }}</div>
                             </div>
                         </div>
@@ -295,7 +295,7 @@
                                 </svg>
                             </div>
                             <div class="flex-1 min-w-0">
-                                <div class="text-xs text-gray-400">Сайт</div>
+                                <div class="text-xs text-gray-400">{{ $t('cases.website') }}</div>
                                 <div class="text-sm font-semibold text-[#0A1F44] truncate">{{ caseData.agency.website_url }}</div>
                             </div>
                             <svg class="w-4 h-4 text-gray-300 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -309,8 +309,8 @@
             <!-- === Менеджер === -->
             <div v-if="caseData.assignee" class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                 <div class="px-5 py-4 border-b border-gray-50">
-                    <h2 class="font-bold text-[#0A1F44] text-sm">Ваш менеджер</h2>
-                    <p class="text-xs text-gray-400 mt-0.5">Специалист, который ведёт вашу заявку</p>
+                    <h2 class="font-bold text-[#0A1F44] text-sm">{{ $t('cases.managerTitle') }}</h2>
+                    <p class="text-xs text-gray-400 mt-0.5">{{ $t('cases.managerHint') }}</p>
                 </div>
                 <div class="p-5">
                     <div class="flex items-center gap-4 mb-4">
@@ -319,7 +319,7 @@
                         </div>
                         <div>
                             <div class="font-bold text-[#0A1F44]">{{ caseData.assignee.name }}</div>
-                            <div class="text-xs text-gray-400 mt-0.5">Визовый специалист</div>
+                            <div class="text-xs text-gray-400 mt-0.5">{{ $t('cases.visaSpecialist') }}</div>
                         </div>
                     </div>
                     <div class="space-y-2">
@@ -349,7 +349,7 @@
                         </a>
                         <div v-if="!caseData.assignee.phone && !caseData.assignee.email && !caseData.assignee.telegram_username"
                             class="text-sm text-gray-400 p-3">
-                            Менеджер скоро свяжется с вами
+                            {{ $t('cases.managerWillContact') }}
                         </div>
                     </div>
                 </div>
@@ -364,8 +364,8 @@
                         </svg>
                     </div>
                     <div>
-                        <div class="text-sm font-semibold text-[#0A1F44]">Менеджер ещё не назначен</div>
-                        <p class="text-xs text-gray-400 mt-0.5">Агентство назначит специалиста в ближайшее время</p>
+                        <div class="text-sm font-semibold text-[#0A1F44]">{{ $t('cases.noManager') }}</div>
+                        <p class="text-xs text-gray-400 mt-0.5">{{ $t('cases.noManagerHint') }}</p>
                     </div>
                 </div>
             </div>
@@ -377,8 +377,8 @@
                 <!-- Форма -->
                 <template v-if="reviewState.can_review">
                     <div class="px-5 py-4 border-b border-gray-50">
-                        <h2 class="font-bold text-[#0A1F44] text-sm">Ваш отзыв об агентстве</h2>
-                        <p class="text-xs text-gray-400 mt-0.5">Оцените работу по 5 критериям — поможете другим выбрать агентство</p>
+                        <h2 class="font-bold text-[#0A1F44] text-sm">{{ $t('cases.reviewTitle') }}</h2>
+                        <p class="text-xs text-gray-400 mt-0.5">{{ $t('cases.reviewHint') }}</p>
                     </div>
                     <div class="p-5 space-y-5">
                         <!-- 5 критериев -->
@@ -400,9 +400,9 @@
                         </div>
                         <!-- Комментарий -->
                         <div>
-                            <label class="text-xs text-gray-400 mb-1.5 block">Комментарий (необязательно)</label>
+                            <label class="text-xs text-gray-400 mb-1.5 block">{{ $t('cases.commentOptional') }}</label>
                             <textarea v-model="reviewState.form.comment"
-                                placeholder="Расскажите о своём опыте работы с агентством..."
+                                :placeholder="$t('cases.commentPlaceholder')"
                                 rows="3"
                                 class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] resize-none transition-colors">
                             </textarea>
@@ -415,10 +415,10 @@
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
                             </svg>
-                            {{ reviewState.submitting ? 'Отправляем...' : 'Опубликовать отзыв' }}
+                            {{ reviewState.submitting ? $t('cases.submittingReview') : $t('cases.publishReview') }}
                         </button>
                         <p v-if="!reviewAllFilled" class="text-xs text-gray-400 text-center">
-                            Оцените все 5 критериев
+                            {{ $t('cases.rateAll5') }}
                         </p>
                     </div>
                 </template>
@@ -431,8 +431,8 @@
                         </svg>
                     </div>
                     <div>
-                        <div class="text-sm font-semibold text-[#0A1F44]">Отзыв опубликован</div>
-                        <p class="text-xs text-gray-400 mt-0.5">Спасибо, что помогаете другим выбрать агентство</p>
+                        <div class="text-sm font-semibold text-[#0A1F44]">{{ $t('cases.reviewPublished') }}</div>
+                        <p class="text-xs text-gray-400 mt-0.5">{{ $t('cases.reviewThanks') }}</p>
                     </div>
                 </div>
             </div>
@@ -442,10 +442,10 @@
         <!-- Ошибка / не найдено -->
         <div v-else-if="!loading" class="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center">
             <div class="text-3xl mb-3">404</div>
-            <div class="font-semibold text-[#0A1F44]">Заявка не найдена</div>
+            <div class="font-semibold text-[#0A1F44]">{{ $t('cases.notFound') }}</div>
             <button @click="router.push({ name: 'me.cases' })"
                 class="mt-4 px-4 py-2 bg-[#0A1F44] text-white text-sm font-semibold rounded-xl hover:bg-[#0d2a5e] transition-colors">
-                Вернуться к списку
+                {{ $t('cases.backToList') }}
             </button>
         </div>
 
@@ -455,9 +455,12 @@
 <script setup>
 import { ref, computed, reactive, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { publicPortalApi } from '@/api/public';
 import { codeToFlag } from '@/utils/countries';
+import i18n from '@/i18n';
 
+const { t } = useI18n();
 const route  = useRoute();
 const router = useRouter();
 
@@ -467,13 +470,13 @@ const uploading   = ref({});
 const uploadToast = ref('');
 
 // Критерии оценки агентства
-const REVIEW_CRITERIA = [
-    { key: 'punctuality',     label: 'Пунктуальность' },
-    { key: 'quality',         label: 'Качество услуг' },
-    { key: 'communication',   label: 'Коммуникация' },
-    { key: 'professionalism', label: 'Профессионализм' },
-    { key: 'price_quality',   label: 'Цена / качество' },
-];
+const REVIEW_CRITERIA = computed(() => [
+    { key: 'punctuality',     label: t('cases.punctuality') },
+    { key: 'quality',         label: t('cases.quality') },
+    { key: 'communication',   label: t('cases.communication') },
+    { key: 'professionalism', label: t('cases.professionalism') },
+    { key: 'price_quality',   label: t('cases.priceQuality') },
+]);
 
 const reviewState = reactive({
     loaded:      false,
@@ -491,7 +494,7 @@ const reviewState = reactive({
 });
 
 const reviewAllFilled = computed(() =>
-    REVIEW_CRITERIA.every(c => (reviewState.form[c.key] ?? 0) > 0)
+    REVIEW_CRITERIA.value.every(c => (reviewState.form[c.key] ?? 0) > 0)
 );
 
 async function loadCanReview(agencyId) {
@@ -520,10 +523,10 @@ async function submitCaseReview() {
         });
         reviewState.can_review = false;
         reviewState.has_review = true;
-        uploadToast.value = 'Отзыв опубликован. Спасибо!';
+        uploadToast.value = t('cases.reviewPublishedToast');
         setTimeout(() => { uploadToast.value = ''; }, 3000);
     } catch (e) {
-        alert(e?.response?.data?.message ?? 'Ошибка отправки отзыва');
+        alert(e?.response?.data?.message ?? t('cases.reviewError'));
     } finally {
         reviewState.submitting = false;
     }
@@ -540,10 +543,10 @@ async function uploadDoc(itemId, event) {
         // Обновляем статус локально
         const item = caseData.value?.checklist?.find(i => i.id === itemId);
         if (item) item.status = 'uploaded';
-        uploadToast.value = 'Документ загружен и отправлен на проверку';
+        uploadToast.value = t('cases.docUploaded');
         setTimeout(() => { uploadToast.value = ''; }, 3000);
     } catch (e) {
-        alert(e?.response?.data?.message ?? 'Ошибка загрузки файла');
+        alert(e?.response?.data?.message ?? t('cases.uploadError'));
     } finally {
         uploading.value[itemId] = false;
         event.target.value = '';
@@ -561,30 +564,20 @@ const PUBLIC_STATUSES = [
     { key: 'rejected' },
 ];
 
-const COUNTRY_NAMES = {
-    DE: 'Германия', FR: 'Франция', IT: 'Италия', ES: 'Испания',
-    GB: 'Великобритания', US: 'США', CA: 'Канада', AU: 'Австралия',
-    JP: 'Япония', KR: 'Южная Корея', CN: 'Китай', AE: 'ОАЭ',
-    TR: 'Турция', PL: 'Польша', CZ: 'Чехия', HU: 'Венгрия',
-    AT: 'Австрия', CH: 'Швейцария', NL: 'Нидерланды', PT: 'Португалия',
-    GR: 'Греция', SA: 'Саудовская Аравия', IN: 'Индия', TH: 'Таиланд',
-    MY: 'Малайзия', SG: 'Сингапур', ID: 'Индонезия',
-};
-
-const VISA_TYPE_LABELS = {
-    tourist: 'Туристическая виза', business: 'Бизнес-виза',
-    student: 'Студенческая виза', work: 'Рабочая виза',
-    transit: 'Транзитная виза', immigrant: 'Иммиграционная виза',
-};
+const VISA_TYPE_LABELS = computed(() => ({
+    tourist: t('portal.touristVisa'), business: t('portal.businessVisa'),
+    student: t('portal.studentVisaFull'), work: t('portal.workVisa'),
+    transit: t('portal.transitVisa'), immigrant: t('portal.immigrantVisa'),
+}));
 
 const checklist = computed(() => caseData.value?.checklist ?? []);
 const docsUploaded = computed(() =>
     checklist.value.filter(i => i.status === 'uploaded' || i.status === 'approved').length
 );
 
-function countryName(code)    { return COUNTRY_NAMES[code] || code; }
+function countryName(code) { return t(`countries.${code}`) !== `countries.${code}` ? t(`countries.${code}`) : code; }
 function codeToFlagLocal(code){ return codeToFlag(code); }
-function visaTypeLabel(type)  { return VISA_TYPE_LABELS[type] || type; }
+function visaTypeLabel(type)  { return VISA_TYPE_LABELS.value[type] || type; }
 
 function publicStatusBadge(status) {
     const map = {
@@ -615,9 +608,9 @@ function getProgressColor(index, status, order) {
 }
 
 function statusLabel(status, required) {
-    if (status === 'approved') return 'Одобрено';
-    if (status === 'uploaded') return 'Загружено — на проверке';
-    return required ? 'Необходимо загрузить' : 'По желанию';
+    if (status === 'approved') return t('cases.approved');
+    if (status === 'uploaded') return t('cases.uploadedReview');
+    return required ? t('cases.needUpload') : t('common.optional');
 }
 
 function deadlineClass(dateStr) {
@@ -630,7 +623,8 @@ function deadlineClass(dateStr) {
 
 function formatDate(dateStr) {
     if (!dateStr) return '';
-    return new Date(dateStr).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+    const locale = i18n.global.locale.value === 'uz' ? 'uz-UZ' : 'ru-RU';
+    return new Date(dateStr).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
 onMounted(async () => {

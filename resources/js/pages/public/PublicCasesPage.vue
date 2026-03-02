@@ -4,8 +4,8 @@
         <!-- Header -->
         <div class="flex items-center justify-between">
             <div>
-                <h2 class="text-xl font-bold text-[#0A1F44]">Мои заявки</h2>
-                <p class="text-sm text-gray-400 mt-0.5">История обращений в агентства</p>
+                <h2 class="text-xl font-bold text-[#0A1F44]">{{ $t('cases.title') }}</h2>
+                <p class="text-sm text-gray-400 mt-0.5">{{ $t('cases.subtitle') }}</p>
             </div>
         </div>
 
@@ -33,7 +33,7 @@
                             <div class="text-xs text-gray-400 mt-0.5" v-if="c.agency">
                                 {{ c.agency.name }}<span v-if="c.agency.city">, {{ c.agency.city }}</span>
                             </div>
-                            <div v-else class="text-xs text-gray-400 mt-0.5">Агентство не выбрано</div>
+                            <div v-else class="text-xs text-gray-400 mt-0.5">{{ $t('cases.noAgency') }}</div>
                         </div>
                     </div>
 
@@ -79,7 +79,7 @@
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                         </svg>
-                        Документы {{ c.docs_uploaded }}/{{ c.docs_total }}
+                        {{ $t('cases.docs', { uploaded: c.docs_uploaded, total: c.docs_total }) }}
                     </span>
 
                     <!-- Дедлайн -->
@@ -106,11 +106,11 @@
                     </svg>
                 </div>
                 <div class="flex-1">
-                    <div class="font-semibold text-amber-800 text-sm">Заполните профиль для подачи заявки</div>
-                    <p class="text-xs text-amber-700 mt-0.5 mb-3">Агентство должно знать ваши данные для правильного оформления документов.</p>
+                    <div class="font-semibold text-amber-800 text-sm">{{ $t('cases.fillProfileWarning') }}</div>
+                    <p class="text-xs text-amber-700 mt-0.5 mb-3">{{ $t('cases.fillProfileWarningDesc') }}</p>
                     <router-link :to="{ name: 'me.profile' }"
                         class="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-amber-100 hover:bg-amber-200 px-3 py-1.5 rounded-lg transition-colors">
-                        Заполнить профиль
+                        {{ $t('cases.fillProfileBtn') }}
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
                         </svg>
@@ -124,9 +124,9 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                     </svg>
                 </div>
-                <h3 class="font-bold text-[#0A1F44] text-base mb-2">Заявок пока нет</h3>
+                <h3 class="font-bold text-[#0A1F44] text-base mb-2">{{ $t('cases.emptyTitle') }}</h3>
                 <p class="text-sm text-gray-500 mb-6 max-w-sm mx-auto">
-                    Заполните профиль и выберите агентство — подадим заявку на визу вместе.
+                    {{ $t('cases.emptyDesc') }}
                 </p>
 
                 <!-- Steps -->
@@ -164,10 +164,13 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { usePublicAuthStore } from '@/stores/publicAuth';
 import { publicPortalApi } from '@/api/public';
 import { codeToFlag } from '@/utils/countries';
+import i18n from '@/i18n';
 
+const { t } = useI18n();
 const router = useRouter();
 const publicAuth = usePublicAuthStore();
 const loading = ref(true);
@@ -185,17 +188,7 @@ const PUBLIC_STATUSES = [
     { key: 'rejected',              order: 7 },
 ];
 
-const COUNTRY_NAMES = {
-    DE: 'Германия', FR: 'Франция', IT: 'Италия', ES: 'Испания',
-    GB: 'Великобритания', US: 'США', CA: 'Канада', AU: 'Австралия',
-    JP: 'Япония', KR: 'Южная Корея', CN: 'Китай', AE: 'ОАЭ',
-    TR: 'Турция', PL: 'Польша', CZ: 'Чехия', HU: 'Венгрия',
-    AT: 'Австрия', CH: 'Швейцария', NL: 'Нидерланды', PT: 'Португалия',
-    GR: 'Греция', SA: 'Саудовская Аравия', IN: 'Индия', TH: 'Таиланд',
-    MY: 'Малайзия', SG: 'Сингапур', ID: 'Индонезия',
-};
-
-function countryName(code) { return COUNTRY_NAMES[code] || code; }
+function countryName(code) { return t(`countries.${code}`) !== `countries.${code}` ? t(`countries.${code}`) : code; }
 
 function publicStatusBadge(status) {
     const map = {
@@ -228,7 +221,8 @@ function getProgressColor(index, status, order) {
 function formatDate(dateStr) {
     if (!dateStr) return '';
     const d = new Date(dateStr);
-    return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' });
+    const locale = i18n.global.locale.value === 'uz' ? 'uz-UZ' : 'ru-RU';
+    return d.toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 function deadlineClass(dateStr, status) {
@@ -245,20 +239,20 @@ const profileDone = computed(() => publicAuth.profilePercent >= 60);
 const steps = computed(() => [
     {
         num: 1,
-        title: 'Заполните профиль',
-        desc: 'ФИО, дата рождения, гражданство',
+        title: t('cases.fillProfile'),
+        desc: t('cases.fillProfileDesc'),
         done: profileDone.value,
     },
     {
         num: 2,
-        title: 'Создайте заявку',
-        desc: 'Выберите страну и тип визы',
+        title: t('cases.createCase'),
+        desc: t('cases.createCaseDesc'),
         done: false,
     },
     {
         num: 3,
-        title: 'Выберите агентство',
-        desc: 'Специалист свяжется и возьмёт заявку',
+        title: t('cases.chooseAgency'),
+        desc: t('cases.chooseAgencyDesc'),
         done: false,
     },
 ]);
@@ -268,7 +262,7 @@ const nextStepRoute = computed(() =>
 );
 
 const nextStepLabel = computed(() =>
-    profileDone.value ? 'Выбрать агентство' : 'Заполнить профиль'
+    profileDone.value ? t('cases.selectAgency') : t('cases.fillProfileBtn')
 );
 
 onMounted(async () => {

@@ -26,16 +26,16 @@
                 </div>
 
                 <h2 class="text-2xl font-bold text-[#0A1F44] mb-1">
-                    <template v-if="step === 'phone'">Войти</template>
-                    <template v-if="step === 'otp'">Введите код</template>
-                    <template v-if="step === 'pin'">Ваш PIN-код</template>
-                    <template v-if="step === 'login-pin'">Войти по PIN</template>
+                    <template v-if="step === 'phone'">{{ $t('auth.loginTitle') }}</template>
+                    <template v-if="step === 'otp'">{{ $t('auth.enterCode') }}</template>
+                    <template v-if="step === 'pin'">{{ $t('auth.yourPin') }}</template>
+                    <template v-if="step === 'login-pin'">{{ $t('auth.loginByPin') }}</template>
                 </h2>
                 <p class="text-gray-400 text-sm">
-                    <template v-if="step === 'phone'">Введите номер телефона</template>
-                    <template v-if="step === 'otp'">Отправили SMS на {{ phone }}</template>
-                    <template v-if="step === 'pin'">Запомните его — это ваш ключ</template>
-                    <template v-if="step === 'login-pin'">Введите PIN для входа</template>
+                    <template v-if="step === 'phone'">{{ $t('auth.enterPhone') }}</template>
+                    <template v-if="step === 'otp'">{{ $t('auth.smsSentTo', { phone }) }}</template>
+                    <template v-if="step === 'pin'">{{ $t('auth.rememberPin') }}</template>
+                    <template v-if="step === 'login-pin'">{{ $t('auth.enterPinLogin') }}</template>
                 </p>
             </div>
 
@@ -71,19 +71,19 @@
                                        outline-none bg-transparent text-base tracking-wider"
                             />
                         </div>
-                        <p class="mt-1.5 text-xs text-gray-400">Пример: +998 97 123 45 67</p>
+                        <p class="mt-1.5 text-xs text-gray-400">{{ $t('auth.phoneExample') }}</p>
                         <p v-if="error" class="mt-1 text-sm text-red-500">{{ error }}</p>
                     </div>
                     <button @click="sendOtp" :disabled="loading || phoneDigits.length < 9"
                         class="mt-4 w-full py-4 bg-[#0A1F44] text-white font-semibold rounded-xl
                                hover:bg-[#0d2a5e] active:scale-[0.98] transition-all
                                disabled:opacity-40 disabled:cursor-not-allowed text-base">
-                        {{ loading ? 'Отправляем...' : 'Получить код' }}
+                        {{ loading ? $t('auth.sending') : $t('auth.getCode') }}
                     </button>
                     <p class="mt-4 text-center text-sm text-gray-400">
-                        Уже есть PIN?
+                        {{ $t('auth.havePin') }}
                         <button @click="step = 'login-pin'" class="text-[#0A1F44] font-medium hover:underline">
-                            Войти
+                            {{ $t('common.login') }}
                         </button>
                     </p>
                 </template>
@@ -91,7 +91,7 @@
                 <!-- ШАГ 2: OTP (4 бокса) -->
                 <template v-if="step === 'otp'">
                     <p class="mt-3 text-sm text-gray-500 text-center">
-                        Мы отправили вам SMS с кодом подтверждения.
+                        {{ $t('auth.smsSentConfirm') }}
                     </p>
                     <div class="mt-5 flex gap-3 justify-center">
                         <input
@@ -118,23 +118,23 @@
                         class="mt-6 w-full py-4 bg-[#0A1F44] text-white font-semibold rounded-xl
                                hover:bg-[#0d2a5e] active:scale-[0.98] transition-all
                                disabled:opacity-40 disabled:cursor-not-allowed text-base">
-                        {{ loading ? 'Проверяем...' : 'Подтвердить' }}
+                        {{ loading ? $t('auth.checking') : $t('auth.confirm') }}
                     </button>
                     <div class="mt-4 flex items-center justify-between text-sm">
                         <button @click="step = 'phone'" class="text-gray-400 hover:text-gray-600 py-2">
-                            Изменить номер
+                            {{ $t('auth.changeNumber') }}
                         </button>
                         <button v-if="canResend" @click="sendOtp" class="text-[#0A1F44] font-medium hover:underline py-2">
-                            Отправить снова
+                            {{ $t('auth.resend') }}
                         </button>
-                        <span v-else class="text-gray-400 py-2">Снова через {{ resendTimer }}с</span>
+                        <span v-else class="text-gray-400 py-2">{{ $t('auth.resendIn', { seconds: resendTimer }) }}</span>
                     </div>
                 </template>
 
                 <!-- ШАГ 3: Установить PIN -->
                 <template v-if="step === 'pin'">
                     <p class="mt-3 text-sm text-gray-500 mb-4">
-                        Установите 4-значный PIN для быстрого входа в следующий раз.
+                        {{ $t('auth.setPinDesc') }}
                     </p>
                     <input
                         v-model="pin"
@@ -152,10 +152,10 @@
                         class="mt-4 w-full py-4 bg-[#1BA97F] text-white font-semibold rounded-xl
                                hover:bg-[#17956f] active:scale-[0.98] transition-all
                                disabled:opacity-40 disabled:cursor-not-allowed text-base">
-                        {{ loading ? 'Сохраняем...' : 'Установить PIN и продолжить' }}
+                        {{ loading ? $t('auth.saving') : $t('auth.setPinBtn') }}
                     </button>
                     <button @click="finish" class="mt-2 w-full py-3 text-sm text-gray-400 hover:text-gray-600">
-                        Пропустить
+                        {{ $t('auth.skip') }}
                     </button>
                 </template>
 
@@ -203,10 +203,10 @@
                         class="mt-4 w-full py-4 bg-[#0A1F44] text-white font-semibold rounded-xl
                                hover:bg-[#0d2a5e] active:scale-[0.98] transition-all
                                disabled:opacity-40 disabled:cursor-not-allowed text-base">
-                        {{ loading ? 'Входим...' : 'Войти' }}
+                        {{ loading ? $t('auth.entering') : $t('common.login') }}
                     </button>
                     <button @click="step = 'phone'" class="mt-2 w-full py-3 text-sm text-gray-400 hover:text-gray-600">
-                        Войти через SMS
+                        {{ $t('auth.loginViaSms') }}
                     </button>
                 </template>
             </div>
@@ -216,8 +216,11 @@
 
 <script setup>
 import { ref, computed, nextTick, onUnmounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { publicPortalApi } from '@/api/public';
 import { usePublicAuthStore } from '@/stores/publicAuth';
+
+const { t } = useI18n();
 
 const props = defineProps({ preselectedCountry: String });
 const emit  = defineEmits(['close', 'success']);
@@ -332,7 +335,7 @@ onUnmounted(() => clearInterval(timerInterval));
 // ── API-вызовы ────────────────────────────────────────────────────────────────
 async function sendOtp() {
     if (phoneDigits.value.length < 9) {
-        error.value = 'Введите полный номер: 9 цифр после +998';
+        error.value = t('auth.fullNumber');
         return;
     }
     error.value  = '';
@@ -344,7 +347,7 @@ async function sendOtp() {
         startResendTimer();
         nextTick(() => otpRefs.value[0]?.focus());
     } catch (e) {
-        error.value = e.response?.data?.message || 'Ошибка отправки SMS';
+        error.value = e.response?.data?.message || t('auth.smsError');
     } finally {
         loading.value = false;
     }
@@ -364,7 +367,7 @@ async function verifyOtp() {
             finish();
         }
     } catch (e) {
-        error.value = e.response?.data?.message || 'Неверный код';
+        error.value = e.response?.data?.message || t('auth.wrongCode');
         otp.value   = ['', '', '', ''];
         nextTick(() => otpRefs.value[0]?.focus());
     } finally {
@@ -387,11 +390,11 @@ async function setPin() {
 
 async function loginPin() {
     if (loginPhoneDigits.value.length < 9) {
-        error.value = 'Введите полный номер телефона';
+        error.value = t('auth.enterFullPhone');
         return;
     }
     if (pin.value.length < 4) {
-        error.value = 'Введите 4-значный PIN';
+        error.value = t('auth.enter4pin');
         return;
     }
     error.value  = '';
@@ -401,7 +404,7 @@ async function loginPin() {
         publicAuth.setSession(data.data.user, data.data.token);
         finish();
     } catch (e) {
-        error.value = e.response?.data?.message || 'Неверный номер или PIN';
+        error.value = e.response?.data?.message || t('auth.wrongPhoneOrPin');
     } finally {
         loading.value = false;
     }
