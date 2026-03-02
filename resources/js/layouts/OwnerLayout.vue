@@ -10,7 +10,7 @@
             <path d="M2 5L10 21L13 14L16 21L24 5" stroke="#1BA97F" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
           <div>
-            <div class="font-bold text-sm leading-none text-white">VisaCRM</div>
+            <div class="font-bold text-sm leading-none text-white">VisaBor</div>
             <div class="text-[10px] text-white/40 mt-0.5 uppercase tracking-wider">Owner Panel</div>
           </div>
         </div>

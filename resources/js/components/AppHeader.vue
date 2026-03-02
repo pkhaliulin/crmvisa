@@ -46,5 +46,5 @@ const titles = {
   'clients.show': 'Клиент',
   users:          'Сотрудники',
 };
-const pageTitle = computed(() => titles[route.name] ?? 'VisaCRM');
+const pageTitle = computed(() => titles[route.name] ?? 'VisaBor CRM');
 </script>

@@ -266,7 +266,7 @@
                     </div>
                     <div class="flex-1 text-center sm:text-left">
                         <h3 class="text-xl sm:text-2xl font-bold text-[#0A1F44] mb-2">
-                            Telegram-бот VisaCRM
+                            Telegram-бот VisaBor
                         </h3>
                         <p class="text-gray-500 text-sm sm:text-base mb-4">
                             Проверьте шансы на визу прямо в Telegram. Ответьте на 4 вопроса

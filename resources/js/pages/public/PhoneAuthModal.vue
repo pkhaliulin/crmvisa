@@ -16,7 +16,7 @@
                             <path d="M2 8L10 20L14 14L18 20L26 8" stroke="#1BA97F" stroke-width="3"
                                   stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
-                        <span class="font-bold text-[#0A1F44]">VisaCRM</span>
+                        <span class="font-bold text-[#0A1F44]">VisaBor</span>
                     </div>
                     <button @click="$emit('close')"
                         class="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100
