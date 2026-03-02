@@ -118,8 +118,9 @@ class PublicAgencyController extends Controller
             }
 
             // 2. Создать или обновить заявку
-            $packageNote = $data['package_id']
-                ? 'Выбранный пакет: ' . \DB::table('agency_service_packages')->where('id', $data['package_id'])->value('name')
+            $packageId   = $data['package_id'] ?? null;
+            $packageNote = $packageId
+                ? 'Выбранный пакет: ' . \DB::table('agency_service_packages')->where('id', $packageId)->value('name')
                 : null;
 
             // Если передан case_id — обновляем существующий DRAFT
