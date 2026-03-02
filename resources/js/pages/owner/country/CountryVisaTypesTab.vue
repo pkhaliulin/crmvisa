@@ -101,6 +101,48 @@
             </div>
           </div>
 
+          <!-- Documents -->
+          <div class="mt-5 pt-4 border-t border-gray-100">
+            <div class="flex items-center justify-between mb-3">
+              <h5 class="text-xs font-semibold text-gray-500 uppercase">{{ $t('countryDetail.requiredDocs') }}</h5>
+              <button @click="openDocAdd(s.visa_type)"
+                class="text-xs px-2.5 py-1 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 font-medium">
+                + {{ $t('countryDetail.addDoc') }}
+              </button>
+            </div>
+
+            <div v-if="getDocsForVisa(s.visa_type).length" class="space-y-2">
+              <div v-for="doc in getDocsForVisa(s.visa_type)" :key="doc.id"
+                class="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2">
+                <div class="flex items-center gap-2.5">
+                  <span class="w-2 h-2 rounded-full flex-shrink-0"
+                    :class="{
+                      'bg-red-500': doc.requirement_level === 'required',
+                      'bg-yellow-500': doc.requirement_level === 'recommended',
+                      'bg-gray-400': doc.requirement_level === 'confirmation_only',
+                    }"></span>
+                  <span class="text-sm text-gray-800">{{ doc.template_name || doc.document_template_id }}</span>
+                  <span class="text-[10px] px-1.5 py-0.5 rounded bg-gray-200 text-gray-500">{{ doc.template_category }}</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <select :value="doc.requirement_level"
+                    @change="updateReqLevel(doc.id, $event.target.value)"
+                    class="text-xs border border-gray-200 rounded px-1.5 py-0.5 outline-none">
+                    <option value="required">{{ $t('countryDetail.levelRequired') }}</option>
+                    <option value="recommended">{{ $t('countryDetail.levelRecommended') }}</option>
+                    <option value="confirmation_only">{{ $t('countryDetail.levelConfirmation') }}</option>
+                  </select>
+                  <button @click="removeDoc(doc.id)" class="text-red-400 hover:text-red-600 text-xs p-1">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <p v-else class="text-xs text-gray-400">{{ $t('countryDetail.noDocs') }}</p>
+          </div>
+
           <!-- Actions -->
           <div class="flex gap-2 mt-4 pt-3 border-t border-gray-100">
             <button @click="startEdit(s)"
@@ -118,6 +160,50 @@
 
     <div v-else class="bg-white rounded-xl border border-gray-100 p-8 text-center text-gray-400 text-sm">
       {{ $t('countryDetail.noVisaSettings') }}
+    </div>
+
+    <!-- Modal: Add Document -->
+    <div v-if="docAddVisa" class="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+        <h3 class="font-bold text-[#0A1F44] text-lg mb-4">
+          {{ $t('countryDetail.addDocTitle') }} — {{ docAddVisa }}
+        </h3>
+        <div class="space-y-3">
+          <div>
+            <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.docTemplate') }}</label>
+            <select v-model="docForm.document_template_id"
+              class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]">
+              <option value="">{{ $t('countryDetail.selectDoc') }}</option>
+              <option v-for="t in availableTemplates" :key="t.id" :value="t.id">
+                {{ t.name }} ({{ t.category }})
+              </option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.requirementLevel') }}</label>
+            <select v-model="docForm.requirement_level"
+              class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]">
+              <option value="required">{{ $t('countryDetail.levelRequired') }}</option>
+              <option value="recommended">{{ $t('countryDetail.levelRecommended') }}</option>
+              <option value="confirmation_only">{{ $t('countryDetail.levelConfirmation') }}</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.docNotes') }}</label>
+            <input v-model="docForm.notes" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]" />
+          </div>
+        </div>
+        <div class="flex gap-3 mt-4">
+          <button @click="saveDoc" :disabled="!docForm.document_template_id || docSaving"
+            class="flex-1 py-2.5 bg-[#0A1F44] text-white font-semibold rounded-xl hover:bg-[#0d2a5e] disabled:opacity-60">
+            {{ docSaving ? $t('common.loading') : $t('common.add') }}
+          </button>
+          <button @click="docAddVisa = null"
+            class="px-5 py-2.5 border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50">
+            {{ $t('common.cancel') }}
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- Modal: Add / Edit -->
@@ -203,7 +289,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { ownerCountriesApi } from '@/api/countries';
 
@@ -217,6 +303,13 @@ const saving         = ref(false);
 const expanded       = ref(null);
 const openAdd        = ref(false);
 const editingSetting = ref(null);
+
+// Documents
+const requirements   = ref([]);
+const templates      = ref([]);
+const docAddVisa     = ref(null);
+const docSaving      = ref(false);
+const docForm        = reactive({ document_template_id: '', requirement_level: 'required', notes: '' });
 
 const defaultForm = {
   visa_type: '', preparation_days: 7, appointment_wait_days: 10,
@@ -258,11 +351,75 @@ function startEdit(s) {
 async function loadSettings() {
   loading.value = true;
   try {
-    const { data } = await ownerCountriesApi.visaSettings(props.countryCode);
-    settings.value = data.data;
+    const [settingsRes, reqRes] = await Promise.all([
+      ownerCountriesApi.visaSettings(props.countryCode),
+      ownerCountriesApi.requirements(props.countryCode),
+    ]);
+    settings.value = settingsRes.data.data;
+    requirements.value = reqRes.data.data ?? [];
   } finally {
     loading.value = false;
   }
+}
+
+async function loadTemplates() {
+  try {
+    const { data } = await ownerCountriesApi.documentTemplates();
+    templates.value = data.data ?? [];
+  } catch { /* ignore */ }
+}
+
+function getDocsForVisa(visaType) {
+  return requirements.value.filter(r => r.visa_type === visaType);
+}
+
+const availableTemplates = computed(() => {
+  if (!docAddVisa.value) return templates.value;
+  const existing = getDocsForVisa(docAddVisa.value).map(r => r.document_template_id);
+  return templates.value.filter(t => t.is_active && !existing.includes(t.id));
+});
+
+function openDocAdd(visaType) {
+  docAddVisa.value = visaType;
+  docForm.document_template_id = '';
+  docForm.requirement_level = 'required';
+  docForm.notes = '';
+  if (!templates.value.length) loadTemplates();
+}
+
+async function saveDoc() {
+  docSaving.value = true;
+  try {
+    await ownerCountriesApi.requirementStore({
+      country_code: props.countryCode,
+      visa_type: docAddVisa.value,
+      document_template_id: docForm.document_template_id,
+      requirement_level: docForm.requirement_level,
+      notes: docForm.notes || null,
+      is_active: true,
+    });
+    docAddVisa.value = null;
+    await loadSettings();
+    emit('updated');
+  } finally {
+    docSaving.value = false;
+  }
+}
+
+async function updateReqLevel(reqId, level) {
+  try {
+    await ownerCountriesApi.requirementUpdate(reqId, { requirement_level: level });
+    const req = requirements.value.find(r => r.id === reqId);
+    if (req) req.requirement_level = level;
+  } catch { /* ignore */ }
+}
+
+async function removeDoc(reqId) {
+  try {
+    await ownerCountriesApi.requirementDestroy(reqId);
+    requirements.value = requirements.value.filter(r => r.id !== reqId);
+    emit('updated');
+  } catch { /* ignore */ }
 }
 
 async function saveForm() {

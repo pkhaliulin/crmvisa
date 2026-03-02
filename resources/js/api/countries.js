@@ -24,8 +24,14 @@ export const ownerCountriesApi = {
     visaSettingUpdate:   (code, id, data) => api.patch(`/owner/countries/${code}/visa-settings/${id}`, data),
     visaSettingDestroy:  (code, id) => api.delete(`/owner/countries/${code}/visa-settings/${id}`),
 
-    // Requirements
+    // Requirements (documents per country+visa_type)
     requirements: (code) => api.get(`/owner/countries/${code}/requirements`),
+    requirementStore:   (data) => api.post('/admin/country-requirements', data),
+    requirementUpdate:  (id, data) => api.patch(`/admin/country-requirements/${id}`, data),
+    requirementDestroy: (id) => api.delete(`/admin/country-requirements/${id}`),
+
+    // Document templates (for dropdown)
+    documentTemplates: () => api.get('/admin/document-templates'),
 
     // Scoring
     scoring:       (code) => api.get(`/owner/countries/${code}/scoring`),
