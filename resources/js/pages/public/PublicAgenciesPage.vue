@@ -720,10 +720,10 @@ async function loadCountries() {
         const list = res.data.data ?? [];
         allCountries.value = [
             { code: '', label: 'Все страны', flag: '' },
-            ...list.filter(c => c.is_active).map(c => ({
-                code:  c.country_code,
-                label: c.name ?? c.country_code,
-                flag:  c.flag_emoji ?? '',
+            ...list.map(c => ({
+                code:  c.code ?? c.country_code,
+                label: c.name ?? c.code ?? c.country_code,
+                flag:  c.flag ?? c.flag_emoji ?? '',
             })),
         ];
     } catch { /* ignore */ }
