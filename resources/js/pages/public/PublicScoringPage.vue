@@ -74,11 +74,8 @@
                 </div>
             </div>
 
-            <!-- На мобильном — вертикально; на md+ — сетка 1/3 + 2/3 -->
-            <div class="flex flex-col md:grid md:grid-cols-3 gap-5 sm:gap-6">
-
-                <!-- Список стран + детальный скоринг (правая колонка на md+) -->
-                <div class="md:col-span-2 md:order-2 space-y-4">
+            <!-- Список стран + детальный скоринг -->
+            <div class="space-y-4">
 
                     <!-- Детальный скоринг выбранной страны -->
                     <div v-if="activeScore" class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sm:p-6">
@@ -196,43 +193,6 @@
                                 <span class="text-gray-300 text-sm hidden sm:block">›</span>
                             </button>
                         </div>
-                    </div>
-                </div>
-
-                <!-- Профиль (левая колонка на md+, аккордеон на мобильном) -->
-                <div class="md:col-span-1 md:order-1">
-                    <!-- Мобильный аккордеон -->
-                    <div class="md:hidden">
-                        <button @click="profileOpen = !profileOpen"
-                            class="w-full bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4
-                                   flex items-center justify-between text-left">
-                            <span class="font-bold text-[#0A1F44] text-sm">Настроить профиль</span>
-                            <svg class="w-5 h-5 text-gray-400 transition-transform duration-200"
-                                 :class="profileOpen ? 'rotate-180' : ''"
-                                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                            </svg>
-                        </button>
-                        <div v-if="profileOpen"
-                            class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mt-2">
-                            <ProfileFormInline
-                                v-model:profile="profile"
-                                :loading="scoringLoading"
-                                @update="updateProfile"
-                                @recalculate="loadScores"
-                            />
-                        </div>
-                    </div>
-
-                    <!-- Десктоп — sticky -->
-                    <div class="hidden md:block bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sticky top-24">
-                        <h2 class="font-bold text-[#0A1F44] mb-4">Ваш профиль</h2>
-                        <ProfileFormInline
-                            v-model:profile="profile"
-                            :loading="scoringLoading"
-                            @update="updateProfile"
-                            @recalculate="loadScores"
-                        />
                     </div>
                 </div>
             </div>
