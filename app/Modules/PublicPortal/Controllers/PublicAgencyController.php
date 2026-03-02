@@ -51,6 +51,7 @@ class PublicAgencyController extends Controller
                 'packages' => $a->packages->map(fn ($pkg) => [
                     'id'              => $pkg->id,
                     'name'            => $pkg->name,
+                    'country_code'    => $pkg->country_code,
                     'visa_type'       => $pkg->visa_type,
                     'description'     => $pkg->description,
                     'price'           => $pkg->price,
