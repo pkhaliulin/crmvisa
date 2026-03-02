@@ -44,13 +44,13 @@ class AuthController extends Controller
         ]);
 
         try {
-            \Log::info('LOGIN_ATTEMPT', ['email' => $data['email'], 'pw_len' => strlen($data['password'])]);
+            \Log::error('LOGIN_ATTEMPT', ['email' => $data['email'], 'pw_len' => strlen($data['password'])]);
             $result = $this->authService->login(LoginDTO::fromArray($data));
-            \Log::info('LOGIN_SUCCESS', ['email' => $data['email']]);
+            \Log::error('LOGIN_SUCCESS', ['email' => $data['email']]);
 
             return ApiResponse::success($result, 'Login successful.');
         } catch (ValidationException $e) {
-            \Log::warning('LOGIN_FAIL', ['email' => $data['email'], 'errors' => $e->errors()]);
+            \Log::error('LOGIN_FAIL', ['email' => $data['email'], 'errors' => $e->errors()]);
             return ApiResponse::validationError($e->errors(), 'Authentication failed.');
         }
     }
