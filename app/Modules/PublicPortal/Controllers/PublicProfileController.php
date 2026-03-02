@@ -204,6 +204,7 @@ class PublicProfileController extends Controller
         $doc = \App\Modules\Document\Models\Document::create([
             'agency_id'    => $case->agency_id,
             'case_id'      => $case->id,
+            'client_id'    => $case->client_id,
             'original_name'=> $request->file('file')->getClientOriginalName(),
             'file_path'    => $path,
             'mime_type'    => $request->file('file')->getMimeType(),
