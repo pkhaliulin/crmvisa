@@ -153,12 +153,42 @@
         </div>
         <div>
           <AppInput v-model="form.travel_date" label="Дата поездки" type="date" :error="errors.travel_date" />
+          <!-- Timeline preview (per-visa-type) -->
+          <div v-if="currentVisaSetting && form.travel_date" class="mt-2 p-3 bg-blue-50 rounded-lg">
+            <div class="flex gap-1 h-5 rounded overflow-hidden text-[9px] font-medium text-white mb-1.5">
+              <div class="flex items-center justify-center bg-blue-400" :style="{ flex: currentVisaSetting.preparation_days }">
+                {{ currentVisaSetting.preparation_days }}
+              </div>
+              <div class="flex items-center justify-center bg-orange-400" :style="{ flex: currentVisaSetting.appointment_wait_days }">
+                {{ currentVisaSetting.appointment_wait_days }}
+              </div>
+              <div class="flex items-center justify-center bg-purple-500" :style="{ flex: currentVisaSetting.processing_days_avg }">
+                {{ currentVisaSetting.processing_days_avg }}
+              </div>
+              <div class="flex items-center justify-center bg-gray-400" :style="{ flex: currentVisaSetting.buffer_days }">
+                {{ currentVisaSetting.buffer_days }}
+              </div>
+            </div>
+            <div class="flex gap-1 text-[9px] text-gray-500">
+              <div :style="{ flex: currentVisaSetting.preparation_days }">Подготовка</div>
+              <div :style="{ flex: currentVisaSetting.appointment_wait_days }">Запись</div>
+              <div :style="{ flex: currentVisaSetting.processing_days_avg }">Обработка</div>
+              <div :style="{ flex: currentVisaSetting.buffer_days }">Буфер</div>
+            </div>
+          </div>
           <p v-if="suggestedDeadline" class="mt-1 text-xs text-blue-600 flex items-center gap-1">
             <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
             Рекомендуемый дедлайн: <strong>{{ suggestedDeadline }}</strong>
-            (обработка {{ selectedCountryDays }} дн.)
+            ({{ selectedCountryDays }} дн. до поездки)
+          </p>
+          <!-- Late submission warning -->
+          <p v-if="lateSubmissionWarning" class="mt-1 text-xs text-red-600 flex items-center gap-1 bg-red-50 px-2 py-1.5 rounded-lg">
+            <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+            </svg>
+            Внимание: до вылета осталось меньше {{ minDaysBeforeDeparture }} дней. Возможно, не хватит времени на оформление.
           </p>
         </div>
         <AppInput v-model="form.critical_date" label="Дедлайн (необязательно, рассчитается автоматически)" type="date" />
@@ -309,11 +339,34 @@ onMounted(async () => {
   }
 });
 
-// Подсказка: рекомендуемый дедлайн на основе данных посольства
+// Per-visa-type настройки
+const visaTypeSettings = ref([]);
+const currentVisaSetting = computed(() => {
+  if (!form.country_code || !form.visa_type) return null;
+  return visaTypeSettings.value.find(s => s.visa_type === form.visa_type) ?? null;
+});
+
+// Подсказка: рекомендуемый дедлайн — per-visa-type → fallback на portal_countries
 const selectedCountryDays = computed(() => {
+  if (currentVisaSetting.value) {
+    return currentVisaSetting.value.recommended_days_before_departure;
+  }
   if (!form.country_code) return 0;
   const c = allCountries.value.find(c => c.country_code === form.country_code);
   return (c?.processing_days_standard ?? 0) + (c?.appointment_wait_days ?? 0) + (c?.buffer_days_recommended ?? 0);
+});
+
+const minDaysBeforeDeparture = computed(() => {
+  if (currentVisaSetting.value) {
+    return currentVisaSetting.value.min_days_before_departure;
+  }
+  return 0;
+});
+
+const lateSubmissionWarning = computed(() => {
+  if (!form.travel_date || !minDaysBeforeDeparture.value) return false;
+  const daysLeft = Math.ceil((new Date(form.travel_date) - new Date()) / 86400000);
+  return daysLeft < minDaysBeforeDeparture.value;
 });
 
 const suggestedDeadline = computed(() => {
@@ -322,6 +375,16 @@ const suggestedDeadline = computed(() => {
   d.setDate(d.getDate() - selectedCountryDays.value);
   return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
 });
+
+// Загрузка per-visa-type данных при выборе страны
+async function loadVisaSettings(countryCode) {
+  try {
+    const { data } = await countriesApi.visaSettingsPublic(countryCode);
+    visaTypeSettings.value = data.data ?? [];
+  } catch {
+    visaTypeSettings.value = [];
+  }
+}
 
 const filteredCountries = computed(() => {
   const q = countrySearch.value.trim().toLowerCase();
@@ -354,6 +417,7 @@ function selectCountry(c) {
   countrySearch.value  = c.name;
   countryDropdownVisible.value = false;
   if (errors.value.country_code) delete errors.value.country_code;
+  loadVisaSettings(c.country_code);
 }
 
 function clearCountry() {

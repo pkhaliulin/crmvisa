@@ -36,6 +36,22 @@ class SlaService
     }
 
     /**
+     * Улучшенный расчёт critical_date с учётом per-visa-type данных.
+     * Сначала ищет в country_visa_type_settings, затем fallback на portal_countries.
+     */
+    public function calculateCriticalDateFromTravelEnhanced(string $countryCode, string $visaType, Carbon $travelDate): ?Carbon
+    {
+        $setting = \App\Modules\Owner\Models\CountryVisaTypeSetting::findSetting($countryCode, $visaType);
+
+        if ($setting) {
+            return $travelDate->copy()->subDays($setting->recommended_days_before_departure);
+        }
+
+        // Fallback: старая логика из portal_countries
+        return $this->calculateCriticalDateFromTravel($countryCode, $travelDate);
+    }
+
+    /**
      * Рассчитать critical_date для заявки по правилу SLA.
      * Возвращает null если правило не найдено.
      */

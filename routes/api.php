@@ -22,6 +22,7 @@ use App\Modules\Payment\Controllers\BillingController;
 use App\Modules\Payment\Controllers\MarketplaceController;
 use App\Modules\Scoring\Controllers\ScoringController;
 use App\Modules\Service\Controllers\ServiceCatalogController;
+use App\Modules\Owner\Controllers\CountryDetailController;
 use App\Modules\Owner\Controllers\OwnerController;
 use App\Modules\TelegramBot\Controllers\TelegramBotController;
 use App\Modules\User\Controllers\UserController;
@@ -125,6 +126,7 @@ Route::prefix('v1')->group(function () {
         Route::get('services',   [ServiceCatalogController::class, 'index']);
         Route::get('countries',  [OwnerController::class, 'countries']);
         Route::get('visa-types', [OwnerController::class, 'visaTypes']);
+        Route::get('countries/{code}/visa-settings', [CountryDetailController::class, 'visaSettingsPublic']);
     });
 
     // -------------------------------------------------------------------------
@@ -226,6 +228,18 @@ Route::prefix('v1')->group(function () {
         Route::get('countries',            [OwnerController::class, 'countries']);
         Route::post('countries',           [OwnerController::class, 'countryStore']);
         Route::patch('countries/{code}',   [OwnerController::class, 'countryUpdate']);
+
+        // Country Operations Center — детальная страница страны
+        Route::get('countries/{code}/detail',                  [CountryDetailController::class, 'countryShow']);
+        Route::patch('countries/{code}/embassy',               [CountryDetailController::class, 'updateEmbassy']);
+        Route::get('countries/{code}/visa-settings',           [CountryDetailController::class, 'visaSettings']);
+        Route::post('countries/{code}/visa-settings',          [CountryDetailController::class, 'visaSettingStore']);
+        Route::patch('countries/{code}/visa-settings/{id}',    [CountryDetailController::class, 'visaSettingUpdate']);
+        Route::delete('countries/{code}/visa-settings/{id}',   [CountryDetailController::class, 'visaSettingDestroy']);
+        Route::get('countries/{code}/requirements',            [CountryDetailController::class, 'requirements']);
+        Route::get('countries/{code}/scoring',                 [CountryDetailController::class, 'scoring']);
+        Route::patch('countries/{code}/scoring',               [CountryDetailController::class, 'updateScoring']);
+        Route::get('countries/{code}/stats',                   [CountryDetailController::class, 'stats']);
 
         // Типы виз
         Route::get('visa-types',           [OwnerController::class, 'visaTypes']);

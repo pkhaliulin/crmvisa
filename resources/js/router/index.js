@@ -108,6 +108,11 @@ const routes = [
                 component: () => import('@/pages/owner/OwnerCountriesPage.vue'),
             },
             {
+                path: 'countries/:code',
+                name: 'owner.country.detail',
+                component: () => import('@/pages/owner/OwnerCountryDetailPage.vue'),
+            },
+            {
                 path: 'documents',
                 name: 'owner.documents',
                 component: () => import('@/pages/owner/OwnerDocumentsPage.vue'),

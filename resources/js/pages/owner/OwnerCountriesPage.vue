@@ -96,11 +96,18 @@
                                 </button>
                             </td>
                             <td class="px-3 py-3 text-center">
-                                <button @click="openEdit(c)"
-                                    class="text-xs px-3 py-1.5 border border-gray-200 rounded-lg
-                                           hover:bg-gray-50 text-gray-600 transition-colors">
-                                    Изменить
-                                </button>
+                                <div class="flex gap-1.5 justify-center">
+                                    <RouterLink :to="{ name: 'owner.country.detail', params: { code: c.country_code } }"
+                                        class="text-xs px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg
+                                               hover:bg-blue-100 transition-colors font-medium">
+                                        Подробнее
+                                    </RouterLink>
+                                    <button @click="openEdit(c)"
+                                        class="text-xs px-3 py-1.5 border border-gray-200 rounded-lg
+                                               hover:bg-gray-50 text-gray-600 transition-colors">
+                                        Изменить
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     </template>
@@ -340,6 +347,7 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
+import { RouterLink } from 'vue-router';
 import api from '@/api/index';
 
 const countries    = ref([]);

@@ -58,10 +58,12 @@ class CaseService extends BaseService
 
         // Автоматический расчёт critical_date
         if (empty($data['critical_date']) && isset($data['country_code'])) {
-            // Приоритет 1: travel_date − (processing + appointment_wait + buffer) из portal_countries
+            // Приоритет 1: travel_date − per-visa-type данные (или fallback на portal_countries)
             if (!empty($data['travel_date'])) {
                 $travelDate   = \Illuminate\Support\Carbon::parse($data['travel_date']);
-                $criticalDate = $this->slaService->calculateCriticalDateFromTravel($data['country_code'], $travelDate);
+                $criticalDate = isset($data['visa_type'])
+                    ? $this->slaService->calculateCriticalDateFromTravelEnhanced($data['country_code'], $data['visa_type'], $travelDate)
+                    : $this->slaService->calculateCriticalDateFromTravel($data['country_code'], $travelDate);
             }
             // Приоритет 2: SLA-правило (now + max_days)
             if (empty($criticalDate) && isset($data['visa_type'])) {
@@ -99,10 +101,12 @@ class CaseService extends BaseService
         /** @var VisaCase $case */
         $case = $this->repository->findOrFail($id);
 
-        // Авторасчёт critical_date при изменении travel_date
+        // Авторасчёт critical_date при изменении travel_date (per-visa-type → fallback)
         if (isset($data['travel_date']) && !array_key_exists('critical_date', $data)) {
             $travelDate   = \Illuminate\Support\Carbon::parse($data['travel_date']);
-            $criticalDate = $this->slaService->calculateCriticalDateFromTravel($case->country_code, $travelDate);
+            $criticalDate = $case->visa_type
+                ? $this->slaService->calculateCriticalDateFromTravelEnhanced($case->country_code, $case->visa_type, $travelDate)
+                : $this->slaService->calculateCriticalDateFromTravel($case->country_code, $travelDate);
             if ($criticalDate) {
                 $data['critical_date'] = $criticalDate;
             }
