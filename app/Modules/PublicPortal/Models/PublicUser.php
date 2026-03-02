@@ -101,17 +101,25 @@ class PublicUser extends Model
     /** Количество заполненных полей профиля (0–100%) */
     public function profileCompleteness(): int
     {
-        $fields = [
-            'name', 'dob', 'citizenship', 'employment_type',
-            'monthly_income_usd', 'marital_status',
-        ];
+        // Обязательные поля — 60 баллов (по 10 каждое)
+        $required = ['name', 'dob', 'citizenship', 'employment_type', 'monthly_income_usd', 'marital_status'];
+        $filled   = collect($required)->filter(fn ($f) => ! empty($this->$f))->count();
+        $percent  = $filled * 10; // max 60
 
-        $filled  = collect($fields)->filter(fn ($f) => ! empty($this->$f))->count();
-        $percent = (int) round($filled / count($fields) * 100);
+        // Занятость — стаж
+        if ($this->employed_years !== null && $this->employed_years >= 0) $percent += 5;
 
-        // +10 за каждый блок скоринга
-        if ($this->has_property || $this->has_car)   $percent += 10;
+        // Семья
+        if ($this->has_property || $this->has_car) $percent += 5;
+
+        // Визовая история — явно указана (даже если нет виз = уже заполнено)
+        if ($this->visas_obtained_count !== null) $percent += 5;
+        if ($this->refusals_count !== null)       $percent += 5;
+
+        // Сильные визы — бонус
         if ($this->has_schengen_visa || $this->has_us_visa) $percent += 10;
+
+        // Данные паспорта
         if ($this->passport_number) $percent += 10;
 
         return min(100, $percent);

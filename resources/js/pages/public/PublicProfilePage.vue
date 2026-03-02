@@ -112,15 +112,15 @@
             </div>
         </div>
 
-        <!-- Занятость и доход (ключевые для скоринга) -->
+        <!-- Занятость и доходы -->
         <div class="bg-white rounded-2xl border border-gray-100 shadow-sm">
             <div class="px-5 py-4 border-b border-gray-50">
-                <h3 class="font-bold text-[#0A1F44] text-sm">Занятость и доход</h3>
-                <p class="text-xs text-gray-400 mt-0.5">Влияют на скоринг — консульство оценивает финансовую состоятельность</p>
+                <h3 class="font-bold text-[#0A1F44] text-sm">Занятость и доходы</h3>
+                <p class="text-xs text-gray-400 mt-0.5">Консульство оценивает стабильность занятости и финансовую состоятельность</p>
             </div>
             <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-1">Занятость</label>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Статус занятости <span class="text-red-500">*</span></label>
                     <select v-model="form.employment_type"
                         class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] transition-colors">
                         <option value="">Не указано</option>
@@ -129,23 +129,53 @@
                         <option value="self_employed">Самозанятый / ИП</option>
                         <option value="retired">Пенсионер</option>
                         <option value="student">Студент</option>
-                        <option value="unemployed">Безработный</option>
+                        <option value="unemployed">Безработный / без работы</option>
                     </select>
                 </div>
                 <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-1">Доход в месяц</label>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">
+                        Стаж на текущем месте работы
+                        <span class="text-gray-400 font-normal">(повышает скоринг)</span>
+                    </label>
+                    <select v-model="form.employed_years"
+                        class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] transition-colors"
+                        :disabled="form.employment_type === 'unemployed' || form.employment_type === 'student'">
+                        <option value="">Не указано</option>
+                        <option :value="0">Менее 1 года</option>
+                        <option :value="1">1–2 года</option>
+                        <option :value="3">2–5 лет</option>
+                        <option :value="5">5–10 лет</option>
+                        <option :value="10">Более 10 лет</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">
+                        Ежемесячный доход <span class="text-red-500">*</span>
+                        <span class="text-gray-400 font-normal">(самый важный параметр)</span>
+                    </label>
                     <select v-model="form.monthly_income_usd"
                         class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] transition-colors">
                         <option value="">Не указано</option>
-                        <option :value="300">До $500</option>
-                        <option :value="800">$500 – 1 000</option>
-                        <option :value="1500">$1 000 – 2 000</option>
-                        <option :value="3000">$2 000 – 4 000</option>
-                        <option :value="5000">Более $4 000</option>
+                        <option :value="300">До $500 (до 6 млн сум)</option>
+                        <option :value="800">$500–1 000 (6–12 млн сум)</option>
+                        <option :value="1500">$1 000–2 000 (12–25 млн сум)</option>
+                        <option :value="3000">$2 000–4 000 (25–50 млн сум)</option>
+                        <option :value="5000">Более $4 000 (от 50 млн сум)</option>
                     </select>
+                    <p class="text-[11px] text-gray-400 mt-1">Совокупный доход семьи, включая аренду, дивиденды и т.д.</p>
                 </div>
+            </div>
+        </div>
+
+        <!-- Семья и привязанность к стране -->
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm">
+            <div class="px-5 py-4 border-b border-gray-50">
+                <h3 class="font-bold text-[#0A1F44] text-sm">Семья и привязанность к стране</h3>
+                <p class="text-xs text-gray-400 mt-0.5">Семья, имущество и корни в стране убеждают консульство, что вы вернётесь</p>
+            </div>
+            <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-1">Семейное положение</label>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Семейное положение <span class="text-red-500">*</span></label>
                     <select v-model="form.marital_status"
                         class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] transition-colors">
                         <option value="">Не указано</option>
@@ -155,35 +185,186 @@
                         <option value="widowed">Вдовец / вдова</option>
                     </select>
                 </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Дети</label>
+                    <div class="flex gap-2">
+                        <button type="button" @click="form.has_children = false; form.children_count = 0"
+                            :class="!form.has_children ? 'bg-[#0A1F44] text-white border-[#0A1F44]' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'"
+                            class="flex-1 px-3 py-2.5 rounded-xl text-sm border transition-colors font-medium">
+                            Нет детей
+                        </button>
+                        <button type="button" @click="form.has_children = true; if (!form.children_count) form.children_count = 1"
+                            :class="form.has_children ? 'bg-[#0A1F44] text-white border-[#0A1F44]' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'"
+                            class="flex-1 px-3 py-2.5 rounded-xl text-sm border transition-colors font-medium">
+                            Есть дети
+                        </button>
+                    </div>
+                </div>
+                <div v-if="form.has_children">
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Количество детей</label>
+                    <select v-model="form.children_count"
+                        class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] transition-colors">
+                        <option :value="1">1 ребёнок</option>
+                        <option :value="2">2 ребёнка</option>
+                        <option :value="3">3 ребёнка</option>
+                        <option :value="4">4 и более</option>
+                    </select>
+                </div>
+                <div class="sm:col-span-2">
+                    <label class="block text-xs font-medium text-gray-600 mb-2">Имущество в стране проживания</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <label class="flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer transition-colors"
+                            :class="form.has_property ? 'border-[#1BA97F]/40 bg-[#1BA97F]/5' : 'border-gray-100 bg-gray-50 hover:bg-gray-100'">
+                            <input type="checkbox" v-model="form.has_property" class="sr-only"/>
+                            <div class="w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors"
+                                 :class="form.has_property ? 'bg-[#1BA97F] border-[#1BA97F]' : 'border-gray-300'">
+                                <svg v-if="form.has_property" class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <span class="text-sm font-medium" :class="form.has_property ? 'text-[#0A1F44]' : 'text-gray-600'">Недвижимость</span>
+                                <p class="text-[11px] text-gray-400">Квартира, дом, земля</p>
+                            </div>
+                        </label>
+                        <label class="flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer transition-colors"
+                            :class="form.has_car ? 'border-[#1BA97F]/40 bg-[#1BA97F]/5' : 'border-gray-100 bg-gray-50 hover:bg-gray-100'">
+                            <input type="checkbox" v-model="form.has_car" class="sr-only"/>
+                            <div class="w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors"
+                                 :class="form.has_car ? 'bg-[#1BA97F] border-[#1BA97F]' : 'border-gray-300'">
+                                <svg v-if="form.has_car" class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <span class="text-sm font-medium" :class="form.has_car ? 'text-[#0A1F44]' : 'text-gray-600'">Автомобиль</span>
+                                <p class="text-[11px] text-gray-400">Зарегистрирован на вас</p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Имущество и визовая история -->
+        <!-- Визовая история -->
         <div class="bg-white rounded-2xl border border-gray-100 shadow-sm">
             <div class="px-5 py-4 border-b border-gray-50">
-                <h3 class="font-bold text-[#0A1F44] text-sm">Имущество и визовая история</h3>
-                <p class="text-xs text-gray-400 mt-0.5">Наличие имущества и предыдущие визы повышают шансы</p>
+                <h3 class="font-bold text-[#0A1F44] text-sm">Визовая история</h3>
+                <p class="text-xs text-gray-400 mt-0.5">Прошлые визы — сильнейший положительный фактор. Отказы снижают скоринг.</p>
             </div>
-            <div class="p-5">
-                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    <label v-for="cb in checkboxItems" :key="cb.key"
-                        class="flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer transition-colors"
-                        :class="form[cb.key] ? 'border-[#1BA97F]/40 bg-[#1BA97F]/5' : 'border-gray-100 bg-gray-50 hover:bg-gray-100'">
-                        <input type="checkbox" v-model="form[cb.key]" class="sr-only"/>
-                        <div class="w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors"
-                             :class="form[cb.key] ? 'bg-[#1BA97F] border-[#1BA97F]' : 'border-gray-300'">
-                            <svg v-if="form[cb.key]" class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-                            </svg>
-                        </div>
-                        <span class="text-sm leading-tight" :class="form[cb.key] ? 'text-[#0A1F44] font-medium' : 'text-gray-600'">{{ cb.label }}</span>
-                    </label>
+            <div class="p-5 space-y-4">
+                <!-- Количество полученных виз -->
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-2">Сколько виз вы уже получали?</label>
+                    <div class="grid grid-cols-4 gap-2">
+                        <button v-for="opt in visasObtainedOptions" :key="opt.value" type="button"
+                            @click="form.visas_obtained_count = opt.value"
+                            :class="form.visas_obtained_count === opt.value
+                                ? 'bg-[#0A1F44] text-white border-[#0A1F44]'
+                                : 'bg-gray-50 text-gray-600 border-gray-200 hover:border-gray-300'"
+                            class="px-2 py-2.5 rounded-xl text-sm border transition-colors font-medium text-center">
+                            {{ opt.label }}
+                        </button>
+                    </div>
                 </div>
 
-                <!-- Отказ в визе — предупреждение -->
-                <div v-if="form.had_visa_refusal"
-                    class="mt-3 p-3 bg-amber-50 rounded-xl text-xs text-amber-700">
-                    Отказы влияют на скоринг. Укажите это в запросе к агентству — специалисты помогут улучшить профиль.
+                <!-- Сильные визы -->
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-2">Наличие ключевых виз <span class="text-gray-400 font-normal">(значительно повышают скоринг)</span></label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <label class="flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer transition-colors"
+                            :class="form.has_schengen_visa ? 'border-[#1BA97F]/40 bg-[#1BA97F]/5' : 'border-gray-100 bg-gray-50 hover:bg-gray-100'">
+                            <input type="checkbox" v-model="form.has_schengen_visa" class="sr-only"/>
+                            <div class="w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors"
+                                 :class="form.has_schengen_visa ? 'bg-[#1BA97F] border-[#1BA97F]' : 'border-gray-300'">
+                                <svg v-if="form.has_schengen_visa" class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <span class="text-sm font-medium" :class="form.has_schengen_visa ? 'text-[#0A1F44]' : 'text-gray-600'">Шенгенская виза</span>
+                                <p class="text-[11px] text-gray-400">Действующая или была ранее</p>
+                            </div>
+                        </label>
+                        <label class="flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer transition-colors"
+                            :class="form.has_us_visa ? 'border-[#1BA97F]/40 bg-[#1BA97F]/5' : 'border-gray-100 bg-gray-50 hover:bg-gray-100'">
+                            <input type="checkbox" v-model="form.has_us_visa" class="sr-only"/>
+                            <div class="w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors"
+                                 :class="form.has_us_visa ? 'bg-[#1BA97F] border-[#1BA97F]' : 'border-gray-300'">
+                                <svg v-if="form.has_us_visa" class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <span class="text-sm font-medium" :class="form.has_us_visa ? 'text-[#0A1F44]' : 'text-gray-600'">Виза США</span>
+                                <p class="text-[11px] text-gray-400">Действующая или была ранее</p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Отказы -->
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-2">
+                        Отказы в визе за последние 5 лет
+                        <span class="text-red-500 font-normal">(снижают скоринг)</span>
+                    </label>
+                    <div class="grid grid-cols-4 gap-2">
+                        <button v-for="opt in refusalsOptions" :key="opt.value" type="button"
+                            @click="form.refusals_count = opt.value; if (opt.value === 0) form.last_refusal_year = null"
+                            :class="form.refusals_count === opt.value
+                                ? (opt.value > 0 ? 'bg-red-600 text-white border-red-600' : 'bg-[#0A1F44] text-white border-[#0A1F44]')
+                                : 'bg-gray-50 text-gray-600 border-gray-200 hover:border-gray-300'"
+                            class="px-2 py-2.5 rounded-xl text-sm border transition-colors font-medium text-center">
+                            {{ opt.label }}
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Год последнего отказа (показывается если есть отказы) -->
+                <div v-if="form.refusals_count > 0">
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Год последнего отказа</label>
+                    <select v-model="form.last_refusal_year"
+                        class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-red-400 transition-colors">
+                        <option :value="null">Не указано</option>
+                        <option v-for="y in recentYears" :key="y" :value="y">{{ y }}</option>
+                    </select>
+                    <p class="text-[11px] text-amber-600 mt-1">Отказ 3+ года назад учитывается слабее, чем недавний</p>
+                </div>
+
+                <!-- Нарушения -->
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-2">Нарушения визового режима</label>
+                    <div class="space-y-2">
+                        <label class="flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors"
+                            :class="form.had_overstay ? 'border-amber-300 bg-amber-50' : 'border-gray-100 bg-gray-50 hover:bg-gray-100'">
+                            <input type="checkbox" v-model="form.had_overstay" class="sr-only"/>
+                            <div class="w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors"
+                                 :class="form.had_overstay ? 'bg-amber-500 border-amber-500' : 'border-gray-300'">
+                                <svg v-if="form.had_overstay" class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <span class="text-sm font-medium" :class="form.had_overstay ? 'text-amber-800' : 'text-gray-600'">Задерживался сверх срока визы</span>
+                                <p class="text-[11px]" :class="form.had_overstay ? 'text-amber-600' : 'text-gray-400'">Остался в стране дольше разрешённого срока</p>
+                            </div>
+                        </label>
+                        <label class="flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors"
+                            :class="form.had_deportation ? 'border-red-300 bg-red-50' : 'border-gray-100 bg-gray-50 hover:bg-gray-100'">
+                            <input type="checkbox" v-model="form.had_deportation" class="sr-only"/>
+                            <div class="w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors"
+                                 :class="form.had_deportation ? 'bg-red-500 border-red-500' : 'border-gray-300'">
+                                <svg v-if="form.had_deportation" class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <span class="text-sm font-medium" :class="form.had_deportation ? 'text-red-700' : 'text-gray-600'">Был депортирован</span>
+                                <p class="text-[11px]" :class="form.had_deportation ? 'text-red-500' : 'text-gray-400'">Принудительно выдворен из страны — серьёзный фактор</p>
+                            </div>
+                        </label>
+                    </div>
                 </div>
             </div>
         </div>
@@ -289,22 +470,27 @@ const wizardStep = ref(0);
 const wizardAnswers = reactive({});
 
 const form = reactive({
-    name:               publicAuth.user?.name ?? '',
-    dob:                publicAuth.user?.dob?.slice(0, 10) ?? '',
-    citizenship:        publicAuth.user?.citizenship ?? '',
-    gender:             publicAuth.user?.gender ?? '',
-    passport_number:    publicAuth.user?.passport_number ?? '',
-    passport_expires_at: publicAuth.user?.passport_expires_at?.slice(0, 10) ?? '',
-    employment_type:    publicAuth.user?.employment_type ?? '',
-    monthly_income_usd: publicAuth.user?.monthly_income_usd ?? '',
-    marital_status:     publicAuth.user?.marital_status ?? '',
-    has_children:       !!publicAuth.user?.has_children,
-    has_property:       !!publicAuth.user?.has_property,
-    has_car:            !!publicAuth.user?.has_car,
-    has_schengen_visa:  !!publicAuth.user?.has_schengen_visa,
-    has_us_visa:        !!publicAuth.user?.has_us_visa,
-    had_visa_refusal:   !!publicAuth.user?.had_visa_refusal,
-    had_overstay:       !!publicAuth.user?.had_overstay,
+    name:                 publicAuth.user?.name ?? '',
+    dob:                  publicAuth.user?.dob?.slice(0, 10) ?? '',
+    citizenship:          publicAuth.user?.citizenship ?? '',
+    gender:               publicAuth.user?.gender ?? '',
+    passport_number:      publicAuth.user?.passport_number ?? '',
+    passport_expires_at:  publicAuth.user?.passport_expires_at?.slice(0, 10) ?? '',
+    employment_type:      publicAuth.user?.employment_type ?? '',
+    employed_years:       publicAuth.user?.employed_years ?? '',
+    monthly_income_usd:   publicAuth.user?.monthly_income_usd ?? '',
+    marital_status:       publicAuth.user?.marital_status ?? '',
+    has_children:         !!publicAuth.user?.has_children,
+    children_count:       publicAuth.user?.children_count ?? 1,
+    has_property:         !!publicAuth.user?.has_property,
+    has_car:              !!publicAuth.user?.has_car,
+    visas_obtained_count: publicAuth.user?.visas_obtained_count ?? 0,
+    has_schengen_visa:    !!publicAuth.user?.has_schengen_visa,
+    has_us_visa:          !!publicAuth.user?.has_us_visa,
+    refusals_count:       publicAuth.user?.refusals_count ?? 0,
+    last_refusal_year:    publicAuth.user?.last_refusal_year ?? null,
+    had_overstay:         !!publicAuth.user?.had_overstay,
+    had_deportation:      !!publicAuth.user?.had_deportation,
 });
 
 // Максимальная дата рождения (18 лет назад)
@@ -327,35 +513,53 @@ const passportExpiringSoon = computed(() => {
     return days < 180;
 });
 
-const checkboxItems = [
-    { key: 'has_children',     label: 'Есть дети' },
-    { key: 'has_property',     label: 'Есть недвижимость' },
-    { key: 'has_car',          label: 'Есть автомобиль' },
-    { key: 'has_schengen_visa',label: 'Шенгенская виза' },
-    { key: 'has_us_visa',      label: 'Виза США' },
-    { key: 'had_visa_refusal', label: 'Был отказ в визе' },
-    { key: 'had_overstay',     label: 'Нарушал срок визы' },
+const visasObtainedOptions = [
+    { value: 0,  label: 'Нет' },
+    { value: 1,  label: '1–2' },
+    { value: 3,  label: '3–5' },
+    { value: 6,  label: '6+' },
 ];
 
-// Быстрый мастер — 4 шага
+const refusalsOptions = [
+    { value: 0,  label: 'Нет' },
+    { value: 1,  label: '1' },
+    { value: 2,  label: '2' },
+    { value: 3,  label: '3+' },
+];
+
+const recentYears = Array.from({ length: 8 }, (_, i) => new Date().getFullYear() - i);
+
+// Быстрый мастер — 5 шагов
 const wizardSteps = [
     {
         field: 'employment_type',
         question: 'Ваша занятость?',
-        hint: 'Консульство оценивает стабильность занятости',
+        hint: 'Стабильность занятости — ключевой фактор доверия консульства',
         options: [
             { value: 'employed',       icon: '💼', label: 'Работаю по найму' },
             { value: 'business_owner', icon: '🏢', label: 'Владелец бизнеса' },
             { value: 'self_employed',  icon: '🛠', label: 'Самозанятый / ИП' },
             { value: 'student',        icon: '🎓', label: 'Студент' },
             { value: 'retired',        icon: '🏖', label: 'Пенсионер' },
-            { value: 'unemployed',     icon: '🔍', label: 'Безработный' },
+            { value: 'unemployed',     icon: '🔍', label: 'Не работаю' },
+        ],
+    },
+    {
+        field: 'employed_years',
+        question: 'Стаж на текущем месте?',
+        hint: 'Долгий стаж означает стабильность — консульства это ценят',
+        options: [
+            { value: 0,  icon: '🆕', label: 'Менее 1 года' },
+            { value: 1,  icon: '📅', label: '1–2 года' },
+            { value: 3,  icon: '📈', label: '2–5 лет' },
+            { value: 5,  icon: '🏆', label: '5–10 лет' },
+            { value: 10, icon: '🥇', label: 'Более 10 лет' },
         ],
     },
     {
         field: 'monthly_income_usd',
         question: 'Ваш доход в месяц?',
-        hint: 'Финансы — самый важный фактор скоринга',
+        hint: 'Совокупный доход — самый важный финансовый параметр',
         options: [
             { value: 300,  icon: '💵', label: 'До $500' },
             { value: 800,  icon: '💵', label: '$500 – $1 000' },
@@ -367,7 +571,7 @@ const wizardSteps = [
     {
         field: 'marital_status',
         question: 'Семейное положение?',
-        hint: 'Семейные связи показывают намерение вернуться',
+        hint: 'Семья в стране — доказательство намерения вернуться',
         options: [
             { value: 'single',   icon: '👤', label: 'Холост / не замужем' },
             { value: 'married',  icon: '👫', label: 'Женат / замужем' },
@@ -377,13 +581,13 @@ const wizardSteps = [
     },
     {
         field: 'visaHistory',
-        question: 'Есть ли у вас визы?',
-        hint: 'Шенген и США значительно повышают шансы',
+        question: 'Шенген или виза США?',
+        hint: 'Наличие этих виз резко повышает шансы во всех консульствах',
         options: [
-            { value: 'none',    icon: '🆕', label: 'Ещё нет виз' },
-            { value: 'schengen',icon: '🇪🇺', label: 'Есть шенгенская виза' },
-            { value: 'us',      icon: '🇺🇸', label: 'Есть американская виза' },
-            { value: 'both',    icon: '✈️',  label: 'Есть и та, и другая' },
+            { value: 'none',    icon: '🆕', label: 'Ещё не было' },
+            { value: 'schengen',icon: '🇪🇺', label: 'Есть шенгенская' },
+            { value: 'us',      icon: '🇺🇸', label: 'Есть виза США' },
+            { value: 'both',    icon: '✈️',  label: 'Обе визы' },
         ],
     },
 ];
@@ -399,10 +603,10 @@ function selectWizardAnswer(value) {
 }
 
 async function finishWizard() {
-    // Применяем ответы мастера к форме
-    if (wizardAnswers.employment_type) form.employment_type = wizardAnswers.employment_type;
+    if (wizardAnswers.employment_type)   form.employment_type   = wizardAnswers.employment_type;
+    if (wizardAnswers.employed_years !== undefined) form.employed_years = wizardAnswers.employed_years;
     if (wizardAnswers.monthly_income_usd) form.monthly_income_usd = wizardAnswers.monthly_income_usd;
-    if (wizardAnswers.marital_status) form.marital_status = wizardAnswers.marital_status;
+    if (wizardAnswers.marital_status)    form.marital_status    = wizardAnswers.marital_status;
     const vh = wizardAnswers.visaHistory;
     if (vh === 'schengen' || vh === 'both') form.has_schengen_visa = true;
     if (vh === 'us' || vh === 'both') form.has_us_visa = true;

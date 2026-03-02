@@ -201,10 +201,17 @@ class PublicScoringService
     {
         $score = 0;
 
+        // Семья
         if ($user->marital_status === 'married') $score += 20;
-        if ($user->has_children)                 $score += 20;
-        if ($user->has_property)                 $score += 25;
-        if ($user->has_car)                      $score += 10;
+        if ($user->has_children) {
+            $score += 15;
+            // Несколько детей — сильнее привязанность
+            if (($user->children_count ?? 1) >= 2) $score += 5;
+        }
+
+        // Имущество
+        if ($user->has_property) $score += 25;
+        if ($user->has_car)      $score += 10;
 
         // Стаж работы
         $empYears = (int) ($user->employed_years ?? 0);
@@ -214,6 +221,15 @@ class PublicScoringService
 
         // Занятость как доп. привязка
         if (in_array($user->employment_type, ['employed', 'business_owner'])) $score += 5;
+
+        // Возраст — ключевой фактор для консульств
+        if ($user->dob) {
+            $age = now()->diffInYears($user->dob);
+            if ($age >= 30 && $age <= 55) $score += 15; // оптимальный: семья, стабильность
+            elseif ($age >= 25)           $score += 10; // молодой специалист
+            elseif ($age >= 18)           $score += 5;  // студент / начало карьеры
+            elseif ($age > 55)            $score += 8;  // предпенсионный/пенсионный
+        }
 
         return min(100, $score);
     }
