@@ -48,7 +48,7 @@ const routes = [
             {
                 path: 'agencies/:id',
                 name: 'me.agencies.show',
-                component: () => import('@/pages/public/PublicAgencyDetailPage.vue'),
+                redirect: { name: 'me.agencies' },
             },
         ],
     },

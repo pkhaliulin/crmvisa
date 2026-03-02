@@ -53,6 +53,11 @@ export const publicPortalApi = {
     agencies:   (params) => publicApi.get('/agencies', { params }),
     submitLead: (data)   => publicApi.post('/leads', data),
 
+    // Reviews
+    agencyReviews:  (agencyId, params) => publicApi.get(`/agencies/${agencyId}/reviews`, { params }),
+    submitReview:   (agencyId, data)   => publicApi.post(`/agencies/${agencyId}/reviews`, data),
+    canReview:      (agencyId)         => publicApi.get(`/me/can-review/${agencyId}`),
+
     // Scoring
     countries:    ()     => publicApi.get('/countries'),
     scoreAll:     ()     => publicApi.get('/scoring'),

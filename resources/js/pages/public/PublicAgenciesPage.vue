@@ -1,259 +1,479 @@
 <template>
     <div>
 
-            <!-- Хедер страницы -->
-            <div class="mb-5 sm:mb-6">
-                <button @click="router.back()"
-                    class="flex items-center gap-1.5 text-sm text-gray-400 hover:text-[#0A1F44] transition-colors mb-3">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
-                    </svg>
-                    Назад к скорингу
-                </button>
+        <!-- Хедер страницы -->
+        <div class="mb-5 sm:mb-6">
+            <h1 class="text-xl sm:text-2xl font-bold text-[#0A1F44]">
+                <span v-if="countryCode">{{ countryFlag(countryCode) }} Агентства для {{ countryName(countryCode) }}</span>
+                <span v-else>Агентства</span>
+            </h1>
+            <p class="text-gray-500 text-sm mt-0.5">Выберите агентство, ознакомьтесь с отзывами и отправьте заявку</p>
+        </div>
 
-                <h1 class="text-xl sm:text-2xl font-bold text-[#0A1F44]">
-                    <span v-if="countryCode">{{ countryFlag(countryCode) }} Агентства для {{ countryName(countryCode) }}</span>
-                    <span v-else>Агентства</span>
-                </h1>
-                <p class="text-gray-500 text-sm mt-0.5">Выберите агентство и отправьте заявку</p>
-            </div>
-
-            <!-- Фильтр по стране -->
-            <div v-if="allCountries.length > 1" class="mb-4">
-                <label class="text-xs text-gray-400 mb-1.5 block">Страна назначения</label>
-                <div class="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-                    <button v-for="c in allCountries" :key="c.code"
-                        @click="selectCountry(c.code)"
-                        class="flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-medium border transition-colors"
-                        :class="selectedCountryCode === c.code
-                            ? 'bg-[#0A1F44] text-white border-[#0A1F44]'
-                            : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'">
-                        <span v-if="c.flag" class="mr-1">{{ c.flag }}</span>{{ c.label }}
-                    </button>
-                </div>
-            </div>
-
-            <!-- Фильтр по типу визы -->
-            <div class="flex gap-2 mb-5 overflow-x-auto pb-1 scrollbar-hide">
-                <button v-for="vt in visaTypes" :key="vt.value"
-                    @click="selectedVisaType = vt.value"
-                    class="flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium border transition-colors"
-                    :class="selectedVisaType === vt.value
+        <!-- Фильтр по стране -->
+        <div v-if="allCountries.length > 1" class="mb-4">
+            <div class="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                <button v-for="c in allCountries" :key="c.code"
+                    @click="selectCountry(c.code)"
+                    class="flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-medium border transition-colors"
+                    :class="selectedCountryCode === c.code
                         ? 'bg-[#0A1F44] text-white border-[#0A1F44]'
                         : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'">
-                    {{ vt.label }}
+                    <span v-if="c.flag" class="mr-1">{{ c.flag }}</span>{{ c.label }}
                 </button>
             </div>
+        </div>
 
-            <!-- Загрузка -->
-            <div v-if="loading" class="space-y-4">
-                <div v-for="i in 3" :key="i"
-                    class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sm:p-6 animate-pulse">
-                    <div class="flex items-start gap-4 mb-4">
-                        <div class="w-14 h-14 bg-gray-100 rounded-xl shrink-0"></div>
-                        <div class="flex-1 space-y-2">
-                            <div class="h-5 bg-gray-100 rounded w-48"></div>
-                            <div class="h-4 bg-gray-50 rounded w-32"></div>
-                        </div>
+        <!-- Фильтр по типу визы -->
+        <div class="flex gap-2 mb-5 overflow-x-auto pb-1 scrollbar-hide">
+            <button v-for="vt in visaTypes" :key="vt.value"
+                @click="selectedVisaType = vt.value"
+                class="flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium border transition-colors"
+                :class="selectedVisaType === vt.value
+                    ? 'bg-[#0A1F44] text-white border-[#0A1F44]'
+                    : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'">
+                {{ vt.label }}
+            </button>
+        </div>
+
+        <!-- Загрузка -->
+        <div v-if="loading" class="space-y-4">
+            <div v-for="i in 3" :key="i"
+                class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 animate-pulse">
+                <div class="flex items-start gap-4 mb-4">
+                    <div class="w-14 h-14 bg-gray-100 rounded-xl shrink-0"></div>
+                    <div class="flex-1 space-y-2">
+                        <div class="h-5 bg-gray-100 rounded w-48"></div>
+                        <div class="h-4 bg-gray-50 rounded w-32"></div>
                     </div>
-                    <div class="h-4 bg-gray-50 rounded mb-2"></div>
-                    <div class="h-4 bg-gray-50 rounded w-3/4"></div>
                 </div>
+                <div class="h-4 bg-gray-50 rounded mb-2"></div>
+                <div class="h-4 bg-gray-50 rounded w-3/4"></div>
             </div>
+        </div>
 
-            <!-- Пусто -->
-            <div v-else-if="!agencies.length"
-                class="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center">
-                <div class="text-4xl mb-3">🏢</div>
-                <div class="font-semibold text-[#0A1F44] mb-1">Агентств не найдено</div>
-                <p class="text-sm text-gray-500">
-                    По выбранным параметрам агентств пока нет. Попробуйте другой тип визы.
-                </p>
-            </div>
+        <!-- Пусто -->
+        <div v-else-if="!agencies.length"
+            class="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center">
+            <div class="text-4xl mb-3">🏢</div>
+            <div class="font-semibold text-[#0A1F44] mb-1">Агентств не найдено</div>
+            <p class="text-sm text-gray-500">По выбранным параметрам агентств пока нет. Попробуйте другой тип визы.</p>
+        </div>
 
-            <!-- Список агентств -->
-            <div v-else class="space-y-4">
-                <div v-for="agency in agencies" :key="agency.id"
-                    class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <!-- Список агентств -->
+        <div v-else class="space-y-4">
+            <div v-for="agency in agencies" :key="agency.id"
+                class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden transition-all">
 
-                    <!-- Агентство: заголовок -->
-                    <div class="p-5 sm:p-6 pb-4">
-                        <div class="flex items-start gap-4 mb-3">
-                            <!-- Логотип / инициалы -->
-                            <div class="shrink-0 w-14 h-14 rounded-xl overflow-hidden border border-gray-100 flex items-center justify-center bg-gray-50">
-                                <img v-if="agency.logo_url" :src="agency.logo_url" :alt="agency.name"
-                                    class="w-full h-full object-cover">
-                                <span v-else class="text-xl font-bold text-gray-300">
-                                    {{ agency.name?.[0]?.toUpperCase() }}
+                <!-- ── Шапка карточки (всегда видна) ── -->
+                <div class="p-5">
+                    <div class="flex items-start gap-4">
+                        <!-- Логотип -->
+                        <div class="shrink-0 w-14 h-14 rounded-xl overflow-hidden border border-gray-100 flex items-center justify-center bg-gray-50">
+                            <img v-if="agency.logo_url" :src="agency.logo_url" :alt="agency.name"
+                                class="w-full h-full object-cover">
+                            <span v-else class="text-xl font-bold text-gray-300">{{ agency.name?.[0]?.toUpperCase() }}</span>
+                        </div>
+                        <!-- Название и метаданные -->
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <h2 class="font-bold text-[#0A1F44] text-base leading-tight">{{ agency.name }}</h2>
+                                <span v-if="agency.is_verified"
+                                    class="flex items-center gap-1 text-xs text-[#1BA97F] bg-[#1BA97F]/10 px-2 py-0.5 rounded-full font-medium shrink-0">
+                                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                    </svg>
+                                    Верифицировано
                                 </span>
                             </div>
-                            <div class="flex-1 min-w-0">
-                                <div class="flex items-center gap-2 flex-wrap">
-                                    <h2 class="font-bold text-[#0A1F44] text-base">{{ agency.name }}</h2>
-                                    <span v-if="agency.is_verified"
-                                        class="flex items-center gap-1 text-xs text-[#1BA97F] bg-[#1BA97F]/10 px-2 py-0.5 rounded-full font-medium shrink-0">
-                                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                                        </svg>
-                                        Верифицировано
-                                    </span>
-                                </div>
-                                <div class="flex items-center gap-3 mt-1 text-sm text-gray-400 flex-wrap">
-                                    <span v-if="agency.city">{{ agency.city }}</span>
-                                    <span v-if="agency.experience_years" class="flex items-center gap-1">
-                                        {{ agency.experience_years }} лет опыта
-                                    </span>
-                                    <!-- Рейтинг -->
-                                    <span v-if="agency.rating" class="flex items-center gap-1">
-                                        <svg class="w-3.5 h-3.5 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
+                            <!-- Мета-строка -->
+                            <div class="flex items-center gap-3 mt-1 text-xs text-gray-400 flex-wrap">
+                                <span v-if="agency.city" class="flex items-center gap-1">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                    </svg>
+                                    {{ agency.city }}
+                                </span>
+                                <span v-if="agency.experience_years">{{ agency.experience_years }} лет опыта</span>
+                                <!-- Рейтинг -->
+                                <span v-if="agency.rating" class="flex items-center gap-1">
+                                    <span class="flex gap-0.5">
+                                        <svg v-for="n in 5" :key="n"
+                                            class="w-3 h-3"
+                                            :class="n <= Math.round(agency.rating) ? 'text-amber-400' : 'text-gray-200'"
+                                            fill="currentColor" viewBox="0 0 20 20">
                                             <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
                                         </svg>
-                                        {{ Number(agency.rating).toFixed(1) }}
-                                        <span v-if="agency.reviews_count" class="text-gray-300">({{ agency.reviews_count }})</span>
+                                    </span>
+                                    <span class="font-semibold text-gray-600">{{ Number(agency.rating).toFixed(1) }}</span>
+                                    <span v-if="agency.reviews_count" class="text-gray-300">({{ agency.reviews_count }})</span>
+                                </span>
+                                <span v-else class="text-gray-300 italic">Нет отзывов</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Описание -->
+                    <p v-if="agency.description" class="text-sm text-gray-500 leading-relaxed mt-3 line-clamp-2">
+                        {{ agency.description }}
+                    </p>
+
+                    <!-- Статс-строка -->
+                    <div class="flex items-center gap-4 mt-3 text-xs text-gray-400">
+                        <span v-if="agency.packages?.length" class="flex items-center gap-1">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                            </svg>
+                            {{ agency.packages.length }} {{ plu(agency.packages.length, 'пакет', 'пакета', 'пакетов') }}
+                        </span>
+                        <span v-if="agency.phone" class="flex items-center gap-1">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                            </svg>
+                            {{ agency.phone }}
+                        </span>
+                        <a v-if="agency.website_url" :href="agency.website_url" target="_blank" rel="noopener"
+                            @click.stop class="flex items-center gap-1 text-[#1BA97F] hover:underline">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                            </svg>
+                            Сайт
+                        </a>
+                    </div>
+                </div>
+
+                <!-- ── Кнопки раскрытия ── -->
+                <div class="px-5 pb-4 flex flex-wrap gap-2">
+                    <!-- Пакеты -->
+                    <button v-if="agency.packages?.length"
+                        @click="togglePackages(agency.id)"
+                        class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all"
+                        :class="expandedPackages[agency.id]
+                            ? 'bg-[#0A1F44] text-white border-[#0A1F44]'
+                            : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                        </svg>
+                        Пакеты услуг ({{ agency.packages.length }})
+                        <svg class="w-3 h-3 transition-transform" :class="expandedPackages[agency.id] ? 'rotate-180' : ''" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </button>
+                    <!-- Подробнее -->
+                    <button @click="toggleDetails(agency)"
+                        class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all"
+                        :class="expandedDetails[agency.id]
+                            ? 'bg-[#0A1F44] text-white border-[#0A1F44]'
+                            : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        Об агентстве + отзывы
+                        <svg class="w-3 h-3 transition-transform" :class="expandedDetails[agency.id] ? 'rotate-180' : ''" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </button>
+                    <!-- Отправить заявку -->
+                    <button @click="openConfirm(agency, null)"
+                        class="ml-auto flex items-center gap-1.5 px-4 py-1.5 bg-[#1BA97F] hover:bg-[#17956f] text-white text-xs font-semibold rounded-full transition-colors">
+                        Отправить заявку
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- ── Пакеты услуг (раскрывается) ── -->
+                <div v-show="expandedPackages[agency.id]" class="border-t border-gray-50">
+                    <div v-if="!agency.packages?.length" class="px-5 py-4 text-sm text-gray-400 text-center">
+                        Нет доступных пакетов для выбранных параметров
+                    </div>
+                    <div v-else class="divide-y divide-gray-50">
+                        <div v-for="pkg in agency.packages" :key="pkg.id"
+                            class="px-5 py-4 flex items-start gap-4">
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-2 mb-1 flex-wrap">
+                                    <span class="font-semibold text-[#0A1F44] text-sm">{{ pkg.name }}</span>
+                                    <span v-if="pkg.visa_type" class="text-xs bg-purple-50 text-purple-600 px-2 py-0.5 rounded-full">{{ pkg.visa_type }}</span>
+                                    <span v-if="pkg.processing_days" class="text-xs bg-gray-50 text-gray-500 px-2 py-0.5 rounded-full">{{ pkg.processing_days }} дней</span>
+                                </div>
+                                <p v-if="pkg.description" class="text-xs text-gray-400 mb-2 leading-relaxed">{{ pkg.description }}</p>
+                                <div v-if="pkg.services?.length" class="flex flex-wrap gap-1">
+                                    <span v-for="svc in pkg.services.slice(0, 6)" :key="svc.name"
+                                        class="text-xs bg-gray-50 text-gray-500 px-2 py-0.5 rounded-full">{{ svc.name }}</span>
+                                    <span v-if="pkg.services.length > 6" class="text-xs text-gray-400 px-1">+{{ pkg.services.length - 6 }}</span>
+                                </div>
+                            </div>
+                            <div class="shrink-0 text-right">
+                                <div class="font-bold text-[#0A1F44] text-base whitespace-nowrap">
+                                    {{ pkg.price ? `${Number(pkg.price).toLocaleString()} сум` : 'По запросу' }}
+                                </div>
+                                <button @click="openConfirm(agency, pkg)"
+                                    class="mt-2 px-4 py-1.5 bg-[#1BA97F] hover:bg-[#17956f] text-white text-xs font-semibold rounded-lg transition-colors">
+                                    Выбрать
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── Подробнее об агентстве + отзывы (раскрывается) ── -->
+                <div v-show="expandedDetails[agency.id]" class="border-t border-gray-50">
+
+                    <!-- Контакты -->
+                    <div class="px-5 py-4 grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-sm border-b border-gray-50">
+                        <a v-if="agency.phone" :href="`tel:${agency.phone}`"
+                            class="flex items-center gap-2 text-gray-600 hover:text-[#0A1F44]">
+                            <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                            </svg>
+                            {{ agency.phone }}
+                        </a>
+                        <a v-if="agency.email" :href="`mailto:${agency.email}`"
+                            class="flex items-center gap-2 text-gray-600 hover:text-[#0A1F44]">
+                            <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                            </svg>
+                            {{ agency.email }}
+                        </a>
+                        <span v-if="agency.address" class="flex items-center gap-2 text-gray-500 sm:col-span-2">
+                            <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            </svg>
+                            {{ agency.address }}
+                        </span>
+                    </div>
+
+                    <!-- Полное описание если есть -->
+                    <div v-if="agency.description" class="px-5 py-4 border-b border-gray-50">
+                        <p class="text-sm text-gray-600 leading-relaxed">{{ agency.description }}</p>
+                    </div>
+
+                    <!-- Блок отзывов -->
+                    <div class="px-5 py-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="font-bold text-[#0A1F44] text-sm">Отзывы клиентов</h3>
+                            <!-- Итоговый рейтинг -->
+                            <div v-if="reviewsData[agency.id]?.stats?.avg_rating" class="flex items-center gap-1.5">
+                                <span class="text-lg font-bold text-[#0A1F44]">{{ reviewsData[agency.id].stats.avg_rating }}</span>
+                                <div class="flex gap-0.5">
+                                    <svg v-for="n in 5" :key="n" class="w-3.5 h-3.5"
+                                        :class="n <= Math.round(reviewsData[agency.id].stats.avg_rating) ? 'text-amber-400' : 'text-gray-200'"
+                                        fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                    </svg>
+                                </div>
+                                <span class="text-xs text-gray-400">({{ reviewsData[agency.id].stats.total }})</span>
+                            </div>
+                        </div>
+
+                        <!-- Табы сортировки -->
+                        <div class="flex gap-1.5 mb-3 overflow-x-auto scrollbar-hide">
+                            <button v-for="tab in reviewTabs" :key="tab.value"
+                                @click="setReviewSort(agency.id, tab.value)"
+                                class="flex-shrink-0 px-3 py-1 rounded-full text-xs font-medium border transition-colors"
+                                :class="(reviewSort[agency.id] || 'latest') === tab.value
+                                    ? 'bg-[#0A1F44] text-white border-[#0A1F44]'
+                                    : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'">
+                                {{ tab.label }}
+                            </button>
+                        </div>
+
+                        <!-- Загрузка отзывов -->
+                        <div v-if="reviewsLoading[agency.id]" class="py-6 text-center">
+                            <div class="w-5 h-5 border-2 border-[#0A1F44] border-t-transparent rounded-full animate-spin mx-auto"></div>
+                        </div>
+
+                        <!-- Нет отзывов -->
+                        <div v-else-if="!reviewsData[agency.id]?.reviews?.length"
+                            class="py-6 text-center text-sm text-gray-400">
+                            Отзывов пока нет. Будьте первым!
+                        </div>
+
+                        <!-- Список отзывов -->
+                        <div v-else class="space-y-3 mb-3">
+                            <div v-for="review in reviewsData[agency.id].reviews" :key="review.id"
+                                class="bg-gray-50 rounded-xl p-4">
+                                <div class="flex items-start justify-between gap-3 mb-2">
+                                    <div>
+                                        <div class="font-semibold text-[#0A1F44] text-sm">{{ review.client_name }}</div>
+                                        <div class="text-xs text-gray-400 mt-0.5">{{ review.created_at }}</div>
+                                    </div>
+                                    <div class="flex gap-0.5 shrink-0">
+                                        <svg v-for="n in 5" :key="n" class="w-3.5 h-3.5"
+                                            :class="n <= review.rating ? 'text-amber-400' : 'text-gray-200'"
+                                            fill="currentColor" viewBox="0 0 20 20">
+                                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <p v-if="review.comment" class="text-sm text-gray-600 leading-relaxed">{{ review.comment }}</p>
+                                <p v-else class="text-xs text-gray-400 italic">Без комментария</p>
+                            </div>
+                        </div>
+
+                        <!-- Пагинация -->
+                        <div v-if="reviewsData[agency.id]?.pagination?.last_page > 1"
+                            class="flex items-center justify-between mb-4">
+                            <button v-if="reviewsData[agency.id].pagination.current_page > 1"
+                                @click="loadReviewsPage(agency.id, reviewsData[agency.id].pagination.current_page - 1)"
+                                class="text-xs text-[#0A1F44] font-medium hover:underline">
+                                Предыдущие
+                            </button>
+                            <span class="text-xs text-gray-400">
+                                {{ reviewsData[agency.id].pagination.current_page }} / {{ reviewsData[agency.id].pagination.last_page }}
+                            </span>
+                            <button v-if="reviewsData[agency.id].pagination.current_page < reviewsData[agency.id].pagination.last_page"
+                                @click="loadReviewsPage(agency.id, reviewsData[agency.id].pagination.current_page + 1)"
+                                class="text-xs text-[#0A1F44] font-medium hover:underline">
+                                Следующие
+                            </button>
+                        </div>
+
+                        <!-- Форма отзыва -->
+                        <div v-if="canReviewMap[agency.id]?.can_review" class="border-t border-gray-100 pt-4">
+                            <h4 class="text-sm font-semibold text-[#0A1F44] mb-3">Оставить отзыв</h4>
+                            <div class="mb-3">
+                                <label class="text-xs text-gray-500 mb-1.5 block">Оценка <span class="text-red-500">*</span></label>
+                                <div class="flex gap-1.5">
+                                    <button v-for="n in 5" :key="n"
+                                        @click="reviewForms[agency.id].rating = n"
+                                        class="w-8 h-8 flex items-center justify-center rounded-lg transition-all"
+                                        :class="(reviewForms[agency.id]?.rating ?? 0) >= n
+                                            ? 'text-amber-400 bg-amber-50'
+                                            : 'text-gray-300 bg-gray-50 hover:text-amber-300'">
+                                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                        </svg>
+                                    </button>
+                                    <span class="text-xs text-gray-400 self-center ml-1">
+                                        {{ ratingLabels[reviewForms[agency.id]?.rating] ?? 'Выберите оценку' }}
                                     </span>
                                 </div>
                             </div>
-                        </div>
-                        <p v-if="agency.description" class="text-sm text-gray-500 leading-relaxed line-clamp-2">
-                            {{ agency.description }}
-                        </p>
-                    </div>
-
-                    <!-- Пакеты услуг -->
-                    <div class="border-t border-gray-50">
-                        <div class="px-5 sm:px-6 py-3 flex items-center justify-between">
-                            <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Пакеты услуг</span>
-                            <button @click="router.push({ name: 'me.agencies.show', params: { id: agency.id } })"
-                                class="text-xs text-[#0A1F44] font-medium hover:underline underline-offset-2">
-                                Подробнее об агентстве
+                            <textarea v-model="reviewForms[agency.id].comment"
+                                placeholder="Расскажите о своём опыте работы с агентством..."
+                                rows="3"
+                                class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] resize-none transition-colors mb-3">
+                            </textarea>
+                            <button @click="submitReview(agency.id)"
+                                :disabled="!reviewForms[agency.id]?.rating || reviewsSubmitting[agency.id]"
+                                class="w-full py-2.5 bg-[#1BA97F] hover:bg-[#17956f] text-white text-sm font-semibold rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+                                <svg v-if="reviewsSubmitting[agency.id]" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                                </svg>
+                                {{ reviewsSubmitting[agency.id] ? 'Отправляем...' : 'Опубликовать отзыв' }}
                             </button>
                         </div>
-                        <!-- Нет пакетов -->
-                        <div v-if="!agency.packages?.length"
-                            class="mx-5 sm:mx-6 mb-4 px-4 py-3 rounded-xl bg-amber-50 border border-amber-100 text-xs text-amber-700">
-                            Агентство принимает заявки. Подробности уточняйте напрямую.
+                        <div v-else-if="canReviewMap[agency.id]?.has_review"
+                            class="border-t border-gray-100 pt-3 text-xs text-gray-400 text-center">
+                            Вы уже оставили отзыв для этого агентства
                         </div>
-                        <div v-else class="divide-y divide-gray-50">
-                            <div v-for="pkg in agency.packages" :key="pkg.id"
-                                class="px-5 sm:px-6 py-4 flex items-start gap-4">
-                                <div class="flex-1 min-w-0">
-                                    <div class="font-semibold text-[#0A1F44] text-sm mb-1">{{ pkg.name }}</div>
-                                    <p v-if="pkg.description" class="text-xs text-gray-400 mb-2 line-clamp-2">
-                                        {{ pkg.description }}
-                                    </p>
-                                    <!-- Услуги пакета -->
-                                    <div v-if="pkg.services?.length" class="flex flex-wrap gap-1.5 mb-2">
-                                        <span v-for="svc in pkg.services.slice(0, 5)" :key="svc.name"
-                                            class="text-xs bg-gray-50 text-gray-500 px-2 py-0.5 rounded-full">
-                                            {{ svc.name }}
-                                        </span>
-                                        <span v-if="pkg.services.length > 5"
-                                            class="text-xs text-gray-400 px-2 py-0.5">
-                                            +{{ pkg.services.length - 5 }} ещё
-                                        </span>
-                                    </div>
-                                    <!-- Срок -->
-                                    <div v-if="pkg.processing_days" class="text-xs text-gray-400">
-                                        Срок: {{ pkg.processing_days }} рабочих дней
-                                    </div>
-                                </div>
-                                <div class="shrink-0 text-right">
-                                    <div class="font-bold text-[#0A1F44] text-base">
-                                        {{ pkg.price ? `${Number(pkg.price).toLocaleString()} сум` : 'По запросу' }}
-                                    </div>
-                                    <button @click="openConfirm(agency, pkg)"
-                                        class="mt-2 px-4 py-2 bg-[#1BA97F] hover:bg-[#17956f] active:scale-[0.97]
-                                               text-white text-xs font-semibold rounded-lg transition-all">
-                                        Выбрать
-                                    </button>
-                                </div>
-                            </div>
+                        <div v-else-if="canReviewMap[agency.id]?.has_case === false"
+                            class="border-t border-gray-100 pt-3 text-xs text-gray-400 text-center">
+                            Отзыв можно оставить только после оформления заявки
                         </div>
                     </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ── Карта агентств (Яндекс) ── -->
+        <div v-if="!loading && agenciesWithCoords.length" class="mt-6">
+            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                <div class="px-5 py-4 border-b border-gray-50">
+                    <h2 class="font-bold text-[#0A1F44] text-sm">Агентства на карте</h2>
+                    <p class="text-xs text-gray-400 mt-0.5">{{ agenciesWithCoords.length }} {{ plu(agenciesWithCoords.length, 'агентство', 'агентства', 'агентств') }} с указанным адресом</p>
+                </div>
+                <div class="relative" style="height: 420px;">
+                    <iframe
+                        :src="yandexMapUrl"
+                        width="100%"
+                        height="420"
+                        frameborder="0"
+                        allowfullscreen
+                        class="block"
+                    ></iframe>
                 </div>
             </div>
         </div>
 
-        <!-- Модал подтверждения -->
-        <div v-if="confirm.show"
-            class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center sm:p-4"
-            @click.self="confirm.show = false">
-            <div class="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl shadow-xl">
-                <div class="p-6">
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-base font-bold text-[#0A1F44]">Подтверждение заявки</h3>
-                        <button @click="confirm.show = false"
-                            class="text-gray-400 hover:text-gray-600 transition-colors p-1">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
-                            </svg>
-                        </button>
+    </div>
+
+    <!-- ── Модал подтверждения заявки ── -->
+    <div v-if="confirm.show"
+        class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center sm:p-4"
+        @click.self="confirm.show = false">
+        <div class="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl shadow-xl">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-base font-bold text-[#0A1F44]">Подтверждение заявки</h3>
+                    <button @click="confirm.show = false"
+                        class="text-gray-400 hover:text-gray-600 p-1">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="bg-gray-50 rounded-xl p-4 mb-4 space-y-2.5 text-sm">
+                    <div class="flex justify-between gap-3">
+                        <span class="text-gray-400 shrink-0">Агентство</span>
+                        <span class="font-semibold text-[#0A1F44] text-right">{{ confirm.agency?.name }}</span>
                     </div>
-
-                    <!-- Краткое резюме -->
-                    <div class="bg-gray-50 rounded-xl p-4 mb-4 space-y-2.5 text-sm">
-                        <div class="flex items-start justify-between gap-3">
-                            <span class="text-gray-400 shrink-0">Агентство</span>
-                            <span class="font-semibold text-[#0A1F44] text-right">{{ confirm.agency?.name }}</span>
-                        </div>
-                        <div class="flex items-start justify-between gap-3">
-                            <span class="text-gray-400 shrink-0">Страна</span>
-                            <span class="font-semibold text-[#0A1F44]">
-                                {{ countryFlag(countryCode) }} {{ countryName(countryCode) }}
-                            </span>
-                        </div>
-                        <div class="flex items-start justify-between gap-3">
-                            <span class="text-gray-400 shrink-0">Пакет</span>
-                            <span class="font-semibold text-[#0A1F44] text-right">{{ confirm.pkg?.name }}</span>
-                        </div>
-                        <div v-if="confirm.pkg?.price" class="flex items-start justify-between gap-3">
-                            <span class="text-gray-400 shrink-0">Стоимость</span>
-                            <span class="font-bold text-[#0A1F44]">{{ Number(confirm.pkg.price).toLocaleString() }} сум</span>
-                        </div>
+                    <div v-if="countryCode" class="flex justify-between gap-3">
+                        <span class="text-gray-400 shrink-0">Страна</span>
+                        <span class="font-semibold text-[#0A1F44]">{{ countryFlag(countryCode) }} {{ countryName(countryCode) }}</span>
                     </div>
-
-                    <p class="text-xs text-gray-400 mb-5 leading-relaxed">
-                        Агентство получит вашу контактную информацию и свяжется с вами.
-                        Заявка появится в разделе «Мои заявки».
-                    </p>
-
-                    <div class="flex gap-3">
-                        <button @click="confirm.show = false"
-                            class="flex-1 py-3 border border-gray-200 text-gray-600 text-sm font-semibold rounded-xl
-                                   hover:bg-gray-50 transition-colors">
-                            Отмена
-                        </button>
-                        <button @click="submitLead"
-                            :disabled="submitting"
-                            class="flex-1 py-3 bg-[#1BA97F] hover:bg-[#17956f] text-white text-sm font-semibold
-                                   rounded-xl transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
-                            <svg v-if="submitting" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                            </svg>
-                            {{ submitting ? 'Отправляем...' : 'Отправить заявку' }}
-                        </button>
+                    <div v-if="confirm.pkg" class="flex justify-between gap-3">
+                        <span class="text-gray-400 shrink-0">Пакет</span>
+                        <span class="font-semibold text-[#0A1F44] text-right">{{ confirm.pkg.name }}</span>
+                    </div>
+                    <div v-if="confirm.pkg?.price" class="flex justify-between gap-3">
+                        <span class="text-gray-400 shrink-0">Стоимость</span>
+                        <span class="font-bold text-[#0A1F44]">{{ Number(confirm.pkg.price).toLocaleString() }} сум</span>
                     </div>
                 </div>
+                <p class="text-xs text-gray-400 mb-5 leading-relaxed">
+                    Агентство получит вашу контактную информацию и свяжется с вами. Заявка появится в «Мои заявки».
+                </p>
+                <div class="flex gap-3">
+                    <button @click="confirm.show = false"
+                        class="flex-1 py-3 border border-gray-200 text-gray-600 text-sm font-semibold rounded-xl hover:bg-gray-50">
+                        Отмена
+                    </button>
+                    <button @click="submitLead" :disabled="submitting"
+                        class="flex-1 py-3 bg-[#1BA97F] hover:bg-[#17956f] text-white text-sm font-semibold rounded-xl disabled:opacity-60 flex items-center justify-center gap-2">
+                        <svg v-if="submitting" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                        </svg>
+                        {{ submitting ? 'Отправляем...' : 'Отправить заявку' }}
+                    </button>
+                </div>
             </div>
+        </div>
+    </div>
 
-        <!-- Toast успеха -->
-        <div v-if="toast"
-            class="fixed top-4 left-1/2 -translate-x-1/2 z-[60] max-w-sm w-[calc(100%-2rem)]
-                   bg-[#1BA97F] text-white rounded-2xl shadow-xl px-5 py-4 flex items-start gap-3">
-            <svg class="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-            </svg>
-            <div>
-                <div class="font-semibold text-sm">Заявка отправлена!</div>
-                <div class="text-xs text-white/80 mt-0.5">{{ toast }}</div>
-            </div>
+    <!-- Toast -->
+    <div v-if="toast"
+        class="fixed top-4 left-1/2 -translate-x-1/2 z-[60] max-w-sm w-[calc(100%-2rem)]
+               bg-[#1BA97F] text-white rounded-2xl shadow-xl px-5 py-4 flex items-start gap-3">
+        <svg class="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+        </svg>
+        <div>
+            <div class="font-semibold text-sm">{{ toastTitle }}</div>
+            <div class="text-xs text-white/80 mt-0.5">{{ toast }}</div>
         </div>
     </div>
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue';
+import { ref, computed, reactive, watch, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { publicPortalApi } from '@/api/public';
 import { countryName as getCountryName, codeToFlag } from '@/utils/countries';
@@ -261,20 +481,30 @@ import { countryName as getCountryName, codeToFlag } from '@/utils/countries';
 const route  = useRoute();
 const router = useRouter();
 
-// Текущий код страны — из query или из выбранного фильтра
 const selectedCountryCode = ref((route.query.country_code ?? '').toUpperCase());
 const countryCode = computed(() => selectedCountryCode.value);
 
-const agencies = ref([]);
-const loading  = ref(false);
+const agencies  = ref([]);
+const loading   = ref(false);
 const selectedVisaType = ref('');
 const submitting = ref(false);
-const toast = ref('');
+const toast      = ref('');
+const toastTitle = ref('');
 
 const confirm = ref({ show: false, agency: null, pkg: null });
-
-// Список стран для фильтра — заполняется из API
 const allCountries = ref([]);
+
+// Раскрытие карточек
+const expandedPackages = reactive({});
+const expandedDetails  = reactive({});
+
+// Отзывы
+const reviewsData       = reactive({});
+const reviewsLoading    = reactive({});
+const reviewSort        = reactive({});
+const reviewForms       = reactive({});
+const reviewsSubmitting = reactive({});
+const canReviewMap      = reactive({});
 
 const visaTypes = [
     { value: '',          label: 'Все типы' },
@@ -285,8 +515,47 @@ const visaTypes = [
     { value: 'transit',   label: 'Транзитная' },
 ];
 
+const reviewTabs = [
+    { value: 'latest',   label: 'Последние' },
+    { value: 'positive', label: 'Положительные' },
+    { value: 'negative', label: 'Критические' },
+];
+
+const ratingLabels = {
+    1: 'Очень плохо',
+    2: 'Плохо',
+    3: 'Нормально',
+    4: 'Хорошо',
+    5: 'Отлично',
+};
+
 function countryName(code) { return getCountryName(code) ?? code; }
 function countryFlag(code) { return codeToFlag(code); }
+
+function plu(n, one, few, many) {
+    const mod10  = n % 10;
+    const mod100 = n % 100;
+    if (mod10 === 1 && mod100 !== 11) return `${n} ${one}`;
+    if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return `${n} ${few}`;
+    return `${n} ${many}`;
+}
+
+// Агентства с координатами для карты
+const agenciesWithCoords = computed(() =>
+    agencies.value.filter(a => a.latitude && a.longitude)
+);
+
+// URL для Яндекс Карты
+const yandexMapUrl = computed(() => {
+    if (!agenciesWithCoords.value.length) return '';
+    const pts = agenciesWithCoords.value
+        .map((a, i) => `${a.longitude},${a.latitude},pm2rd`)
+        .join('~');
+    // Центр карты — первое агентство
+    const first = agenciesWithCoords.value[0];
+    const zoom = agenciesWithCoords.value.length === 1 ? 14 : 7;
+    return `https://yandex.ru/map-widget/v1/?lang=ru_RU&ll=${first.longitude},${first.latitude}&z=${zoom}&pt=${pts}&l=map`;
+});
 
 async function loadCountries() {
     try {
@@ -300,9 +569,7 @@ async function loadCountries() {
                 flag:  c.flag_emoji ?? '',
             })),
         ];
-    } catch {
-        // Если ошибка — оставить пустой список, фильтр по стране не показывается
-    }
+    } catch { /* ignore */ }
 }
 
 function selectCountry(code) {
@@ -315,7 +582,7 @@ async function loadAgencies() {
     loading.value = true;
     try {
         const params = {};
-        if (countryCode.value) params.country_code = countryCode.value;
+        if (countryCode.value)   params.country_code = countryCode.value;
         if (selectedVisaType.value) params.visa_type = selectedVisaType.value;
         const res = await publicPortalApi.agencies(params);
         agencies.value = res.data.data?.agencies ?? [];
@@ -323,6 +590,72 @@ async function loadAgencies() {
         agencies.value = [];
     } finally {
         loading.value = false;
+    }
+}
+
+function togglePackages(agencyId) {
+    expandedPackages[agencyId] = !expandedPackages[agencyId];
+}
+
+async function toggleDetails(agency) {
+    const id = agency.id;
+    expandedDetails[id] = !expandedDetails[id];
+    if (expandedDetails[id] && !reviewsData[id]) {
+        await loadReviews(id);
+        await loadCanReview(id);
+    }
+}
+
+async function loadReviews(agencyId, page = 1) {
+    reviewsLoading[agencyId] = true;
+    try {
+        const sort = reviewSort[agencyId] ?? 'latest';
+        const res  = await publicPortalApi.agencyReviews(agencyId, { sort, page });
+        reviewsData[agencyId] = res.data.data;
+    } catch {
+        reviewsData[agencyId] = { reviews: [], pagination: {}, stats: {} };
+    } finally {
+        reviewsLoading[agencyId] = false;
+    }
+}
+
+async function loadReviewsPage(agencyId, page) {
+    await loadReviews(agencyId, page);
+}
+
+async function loadCanReview(agencyId) {
+    try {
+        const res = await publicPortalApi.canReview(agencyId);
+        canReviewMap[agencyId] = res.data.data;
+        if (!reviewForms[agencyId]) {
+            reviewForms[agencyId] = { rating: 0, comment: '' };
+        }
+    } catch { /* ignore */ }
+}
+
+async function setReviewSort(agencyId, sort) {
+    reviewSort[agencyId] = sort;
+    await loadReviews(agencyId, 1);
+}
+
+async function submitReview(agencyId) {
+    const form = reviewForms[agencyId];
+    if (!form?.rating) return;
+    reviewsSubmitting[agencyId] = true;
+    try {
+        await publicPortalApi.submitReview(agencyId, {
+            rating:  form.rating,
+            comment: form.comment || null,
+        });
+        // Обновляем список отзывов и статус
+        await loadReviews(agencyId, 1);
+        canReviewMap[agencyId] = { ...canReviewMap[agencyId], can_review: false, has_review: true };
+        showToast('Отзыв опубликован', 'Спасибо за вашу оценку!');
+    } catch (e) {
+        const msg = e?.response?.data?.message ?? 'Ошибка отправки отзыва';
+        showToast('Ошибка', msg);
+    } finally {
+        reviewsSubmitting[agencyId] = false;
     }
 }
 
@@ -335,28 +668,33 @@ async function submitLead() {
     try {
         await publicPortalApi.submitLead({
             agency_id:    confirm.value.agency.id,
-            country_code: countryCode.value,
+            country_code: countryCode.value || confirm.value.pkg?.country_code || 'UZ',
             visa_type:    confirm.value.pkg?.visa_type || selectedVisaType.value || 'tourist',
             package_id:   confirm.value.pkg?.id ?? null,
         });
         confirm.value.show = false;
-        toast.value = `Агентство ${confirm.value.agency?.name ?? ''} получило вашу заявку`;
+        showToast('Заявка отправлена!', `Агентство ${confirm.value.agency?.name ?? ''} получило вашу заявку`);
         setTimeout(() => {
             toast.value = '';
             router.push({ name: 'me.cases' });
         }, 2500);
     } catch (e) {
-        const msg = e?.response?.data?.message;
         if (e?.response?.status === 409) {
-            toast.value = 'Заявка в это агентство уже отправлена';
             confirm.value.show = false;
+            showToast('Уже отправлено', 'Заявка в это агентство уже была отправлена');
             setTimeout(() => { toast.value = ''; }, 3000);
         } else {
-            alert(msg ?? 'Ошибка отправки. Попробуйте ещё раз.');
+            alert(e?.response?.data?.message ?? 'Ошибка отправки. Попробуйте ещё раз.');
         }
     } finally {
         submitting.value = false;
     }
+}
+
+function showToast(title, msg) {
+    toastTitle.value = title;
+    toast.value      = msg;
+    setTimeout(() => { toast.value = ''; toastTitle.value = ''; }, 3500);
 }
 
 watch(selectedVisaType, loadAgencies);

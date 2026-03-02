@@ -12,6 +12,7 @@ use App\Modules\Client\Controllers\ClientPortalController;
 use App\Modules\PublicPortal\Controllers\PublicAgencyController;
 use App\Modules\PublicPortal\Controllers\PublicAuthController;
 use App\Modules\PublicPortal\Controllers\PublicProfileController;
+use App\Modules\PublicPortal\Controllers\PublicReviewController;
 use App\Modules\PublicPortal\Controllers\PublicScoringController;
 use App\Modules\Document\Controllers\ChecklistController;
 use App\Modules\Document\Controllers\CountryRequirementController;
@@ -282,8 +283,11 @@ Route::prefix('v1')->group(function () {
         Route::get('me/cases/{id}',                               [PublicProfileController::class, 'caseDetail']);
         Route::post('me/cases/{caseId}/checklist/{itemId}/upload',[PublicProfileController::class, 'uploadChecklistItem']);
 
-        Route::get('agencies',       [PublicAgencyController::class, 'index']);
-        Route::post('leads',         [PublicAgencyController::class, 'submitLead']);
+        Route::get('agencies',              [PublicAgencyController::class, 'index']);
+        Route::post('leads',                [PublicAgencyController::class, 'submitLead']);
+        Route::get('agencies/{id}/reviews', [PublicReviewController::class, 'index']);
+        Route::post('agencies/{id}/reviews',[PublicReviewController::class, 'store']);
+        Route::get('me/can-review/{id}',    [PublicReviewController::class, 'canReview']);
 
         Route::get('scoring',        [PublicScoringController::class, 'scoreAll']);
         Route::get('scoring/{cc}',   [PublicScoringController::class, 'scoreCountry']);

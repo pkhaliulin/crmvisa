@@ -42,6 +42,7 @@ class PublicAgencyController extends Controller
                 'id', 'name', 'city', 'address', 'latitude', 'longitude',
                 'rating', 'reviews_count', 'description',
                 'experience_years', 'website_url', 'logo_url', 'is_verified',
+                'phone', 'email',
             ])
             ->orderByDesc('rating')
             ->get()
