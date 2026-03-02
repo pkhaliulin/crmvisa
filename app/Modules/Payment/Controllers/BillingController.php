@@ -48,7 +48,22 @@ class BillingController extends Controller
         $subscription = $this->billing->currentSubscription($agency);
 
         if (! $subscription) {
-            return ApiResponse::notFound('No active subscription');
+            // Нет записи в agency_subscriptions — возвращаем план агентства как fallback
+            $planValue = $agency->plan instanceof \BackedEnum
+                ? $agency->plan->value
+                : (string) $agency->plan;
+
+            return ApiResponse::success([
+                'id'             => null,
+                'plan_slug'      => $planValue,
+                'plan'           => $planValue,
+                'status'         => 'active',
+                'billing_period' => null,
+                'payment_method' => null,
+                'starts_at'      => $agency->created_at,
+                'expires_at'     => $agency->plan_expires_at,
+                'days_left'      => null,
+            ]);
         }
 
         return ApiResponse::success([

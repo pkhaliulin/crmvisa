@@ -127,24 +127,30 @@ class BillingService
      */
     public function checkPlanLimits(Agency $agency): array
     {
-        $plan = BillingPlan::find($agency->plan);
+        $planValue = $agency->plan instanceof \BackedEnum
+            ? $agency->plan->value
+            : (string) $agency->plan;
+
+        $plan = BillingPlan::find($planValue);
 
         if (! $plan) {
             return ['valid' => false, 'reason' => 'Plan not found'];
         }
 
         $managersCount = $agency->users()->whereIn('role', ['owner', 'manager'])->count();
-        $casesCount    = $agency->hasMany(\App\Modules\Case\Models\VisaCase::class, 'agency_id')
+        $casesCount    = \App\Modules\Case\Models\VisaCase::where('agency_id', $agency->id)
                                 ->whereNotIn('stage', ['result'])
                                 ->count();
 
-        $maxManagers = $plan->max_managers === 0 ? PHP_INT_MAX : $plan->max_managers;
-        $maxCases    = $plan->max_cases === 0    ? PHP_INT_MAX : $plan->max_cases;
+        $maxManagers = $plan->max_managers === 0 ? null : $plan->max_managers;
+        $maxCases    = $plan->max_cases === 0    ? null : $plan->max_cases;
 
         return [
-            'valid'          => true,
-            'managers'       => ['current' => $managersCount, 'max' => $plan->max_managers, 'exceeded' => $managersCount >= $maxManagers],
-            'cases'          => ['current' => $casesCount,    'max' => $plan->max_cases,    'exceeded' => $casesCount >= $maxCases],
+            'valid'           => true,
+            'managers_count'  => $managersCount,
+            'max_managers'    => $maxManagers,
+            'cases_count'     => $casesCount,
+            'max_cases'       => $maxCases,
             'has_marketplace' => $plan->has_marketplace,
         ];
     }
