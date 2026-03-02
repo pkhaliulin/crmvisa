@@ -1,6 +1,5 @@
 <template>
-    <div class="min-h-0">
-        <div class="max-w-2xl mx-auto">
+    <div>
 
             <!-- Назад -->
             <button @click="router.back()"
@@ -234,7 +233,6 @@
                     </div>
                 </div>
             </div>
-        </div>
 
         <!-- Toast успеха -->
         <div v-if="toast"

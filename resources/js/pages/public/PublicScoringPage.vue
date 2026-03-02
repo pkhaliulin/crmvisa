@@ -1,6 +1,5 @@
 <template>
-    <div class="min-h-0">
-        <div class="max-w-4xl mx-auto">
+    <div>
 
             <!-- Хедер страницы -->
             <div class="mb-6 sm:mb-8">
@@ -195,7 +194,6 @@
                         </div>
                     </div>
             </div>
-        </div>
     </div>
 </template>
 

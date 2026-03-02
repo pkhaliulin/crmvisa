@@ -1,5 +1,5 @@
 <template>
-    <div class="max-w-2xl mx-auto space-y-5">
+    <div class="space-y-5">
 
         <!-- Приветственный баннер для новых пользователей -->
         <div v-if="!publicAuth.user?.name"
@@ -17,26 +17,9 @@
 
         <!-- Основные данные (паспорт) -->
         <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <div class="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
-                <div>
-                    <h3 class="font-bold text-[#0A1F44] text-sm">Личные данные</h3>
-                    <p class="text-xs text-gray-400 mt-0.5">ФИО, дата рождения, гражданство</p>
-                </div>
-                <!-- Passport photo upload -->
-                <label class="flex items-center gap-1.5 text-xs text-[#1BA97F] font-medium cursor-pointer hover:text-[#169B72] transition-colors">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
-                    </svg>
-                    <span class="hidden sm:inline">Загрузить фото паспорта</span>
-                    <span class="sm:hidden">Фото</span>
-                    <input type="file" accept="image/*" class="hidden" @change="uploadPassport"/>
-                </label>
-            </div>
-
-            <div v-if="ocrStatus === 'pending'" class="px-5 py-3 bg-amber-50 border-b border-amber-100 flex items-center gap-2 text-sm text-amber-700">
-                <div class="w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin shrink-0"></div>
-                Распознаём данные паспорта... Обновите страницу через 30 секунд.
+            <div class="px-5 py-4 border-b border-gray-50">
+                <h3 class="font-bold text-[#0A1F44] text-sm">Личные данные</h3>
+                <p class="text-xs text-gray-400 mt-0.5">ФИО, дата рождения, гражданство</p>
             </div>
 
             <div class="p-5 space-y-4">
@@ -501,7 +484,6 @@ const publicAuth = usePublicAuthStore();
 const saving    = ref(false);
 const saveMsg   = ref('');
 const saveError = ref(false);
-const ocrStatus = ref(publicAuth.user?.ocr_status ?? null);
 
 const showWizard = ref(false);
 const wizardStep = ref(0);
@@ -709,17 +691,6 @@ async function save() {
     }
 }
 
-async function uploadPassport(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    try {
-        await publicPortalApi.uploadPassport(file);
-        ocrStatus.value = 'pending';
-    } catch {
-        // ignore
-    }
-}
-
 // Инициализация серии/номера из формы при старте
 initPassportFields(form.passport_number);
 
@@ -733,7 +704,6 @@ onMounted(async () => {
             }
         });
         initPassportFields(form.passport_number);
-        ocrStatus.value = publicAuth.user?.ocr_status ?? null;
     } catch { /* ignore */ }
 });
 </script>

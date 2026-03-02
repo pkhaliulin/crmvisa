@@ -1,6 +1,5 @@
 <template>
-    <div class="min-h-0">
-        <div class="max-w-3xl mx-auto">
+    <div>
 
             <!-- Хедер страницы -->
             <div class="mb-5 sm:mb-6">
@@ -237,7 +236,6 @@
                     </div>
                 </div>
             </div>
-        </div>
 
         <!-- Toast успеха -->
         <div v-if="toast"

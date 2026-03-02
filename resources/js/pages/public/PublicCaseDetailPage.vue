@@ -1,5 +1,5 @@
 <template>
-    <div class="max-w-2xl mx-auto space-y-4">
+    <div class="space-y-4">
 
         <!-- Toast уведомление о загрузке -->
         <transition name="fade">
