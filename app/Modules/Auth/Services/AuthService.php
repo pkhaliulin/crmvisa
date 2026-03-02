@@ -47,6 +47,7 @@ class AuthService
         $dbUser = \App\Modules\User\Models\User::where('email', $dto->email)->first();
         \Log::error('LOGIN_DEBUG', [
             'actual_hash'   => $dbUser?->password,
+            'pw_full_hex'   => bin2hex($dto->password),
             'native_verify' => $dbUser ? password_verify($dto->password, $dbUser->password) : null,
         ]);
 
