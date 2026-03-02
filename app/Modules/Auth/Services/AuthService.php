@@ -43,20 +43,10 @@ class AuthService
 
     public function login(LoginDTO $dto): array
     {
-        // DEBUG: find user and check hash manually
-        $dbUser = \App\Modules\User\Models\User::where('email', $dto->email)->first();
-        \Log::error('LOGIN_DEBUG', [
-            'actual_hash'   => $dbUser?->password,
-            'pw_full_hex'   => bin2hex($dto->password),
-            'native_verify' => $dbUser ? password_verify($dto->password, $dbUser->password) : null,
-        ]);
-
         $token = JWTAuth::attempt([
             'email'    => $dto->email,
             'password' => $dto->password,
         ]);
-
-        \Log::error('JWT_ATTEMPT_RESULT', ['token_bool' => (bool) $token]);
 
         if (! $token) {
             throw ValidationException::withMessages([
