@@ -26,7 +26,7 @@
                 </p>
 
                 <div class="flex flex-col sm:flex-row gap-3 justify-center px-4 sm:px-0">
-                    <button @click="showAuth = true"
+                    <button @click="goToScoring"
                         class="w-full sm:w-auto px-6 sm:px-8 py-4 bg-[#0A1F44] text-white
                                font-semibold rounded-xl text-base sm:text-lg
                                hover:bg-[#0d2a5e] transition-all shadow-lg shadow-[#0A1F44]/20
@@ -191,7 +191,7 @@
                                 {{ f }}
                             </li>
                         </ul>
-                        <button @click="showAuth = true"
+                        <button @click="goToScoring"
                             class="mt-6 sm:mt-8 w-full sm:w-auto px-6 py-3 bg-[#0A1F44] text-white
                                    font-semibold rounded-xl hover:bg-[#0d2a5e] transition-colors
                                    active:scale-95">
@@ -319,7 +319,7 @@
                                 {{ country }}
                             </span>
                         </div>
-                        <button @click="showAuth = true"
+                        <button @click="goToAgencies"
                             class="mt-4 w-full text-center text-xs font-semibold text-[#1BA97F]
                                    hover:text-[#17956f] transition-colors py-1">
                             Подать заявку
@@ -331,7 +331,7 @@
                 <div id="map" class="w-full h-80 sm:h-96 rounded-2xl overflow-hidden shadow-sm border border-gray-100"></div>
 
                 <div class="text-center mt-8">
-                    <button @click="showAuth = true"
+                    <button @click="goToAgencies"
                         class="w-full sm:w-auto px-8 py-4 bg-[#0A1F44] text-white font-semibold
                                rounded-xl text-base sm:text-lg hover:bg-[#0d2a5e] transition-colors
                                active:scale-95">
@@ -361,8 +361,9 @@ import { usePublicAuthStore } from '@/stores/publicAuth';
 
 const router     = useRouter();
 const publicAuth = usePublicAuthStore();
-const showAuth   = ref(false);
-const loading    = ref(true);
+const showAuth      = ref(false);
+const pendingAction = ref(null); // 'scoring' | 'agencies'
+const loading       = ref(true);
 const countries  = ref([]);
 const selectedCountry = ref(null);
 const mockScore  = ref(0);
@@ -441,21 +442,40 @@ function selectCountry(c) {
     selectedCountry.value = selectedCountry.value?.code === c.code ? null : c;
 }
 
-function startScoring() {
+function goToScoring() {
     if (publicAuth.isLoggedIn) {
         router.push({ name: 'me.scoring', query: { country: selectedCountry.value?.code } });
     } else {
+        pendingAction.value = 'scoring';
         showAuth.value = true;
     }
 }
 
+function goToAgencies() {
+    if (publicAuth.isLoggedIn) {
+        router.push({ name: 'me.agencies' });
+    } else {
+        pendingAction.value = 'agencies';
+        showAuth.value = true;
+    }
+}
+
+function startScoring() {
+    goToScoring();
+}
+
 function onAuthSuccess() {
     showAuth.value = false;
-    // Новый пользователь → профиль, существующий → скоринг
-    const dest = selectedCountry.value?.code
-        ? { name: 'me.scoring', query: { country: selectedCountry.value.code } }
-        : { name: 'me.profile' };
-    router.push(dest);
+    const action = pendingAction.value;
+    pendingAction.value = null;
+
+    if (action === 'agencies') {
+        router.push({ name: 'me.agencies' });
+    } else if (selectedCountry.value?.code) {
+        router.push({ name: 'me.scoring', query: { country: selectedCountry.value.code } });
+    } else {
+        router.push({ name: 'me.profile' });
+    }
 }
 </script>
 
