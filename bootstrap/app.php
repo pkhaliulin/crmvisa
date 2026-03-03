@@ -32,6 +32,9 @@ return Application::configure(basePath: dirname(__DIR__))
         // Глобальный middleware — security headers на все ответы
         $middleware->append(SecurityHeaders::class);
 
+        // SetTenantContext глобально ПЕРВЫМ — до auth middleware и любых DB-запросов
+        $middleware->prepend(SetTenantContext::class);
+
         // Алиасы для route middleware
         $middleware->alias([
             'role'           => CheckRole::class,
@@ -46,11 +49,6 @@ return Application::configure(basePath: dirname(__DIR__))
         // Rate limiting на все API маршруты
         $middleware->api(prepend: [
             \Illuminate\Routing\Middleware\ThrottleRequests::class.':api',
-        ]);
-
-        // Установка tenant context для RLS (после аутентификации)
-        $middleware->api(append: [
-            SetTenantContext::class,
         ]);
 
         // Логирование всех API-запросов
