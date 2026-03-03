@@ -5,6 +5,7 @@ namespace App\Modules\PublicPortal\Middleware;
 use App\Modules\PublicPortal\Services\PhoneAuthService;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class AuthPublicUser
 {
@@ -26,6 +27,9 @@ class AuthPublicUser
 
         $request->merge(['_public_user' => $user]);
         $request->setUserResolver(fn () => $user);
+
+        // RLS: разрешить публичному пользователю работу с записями agency_id = NULL
+        DB::statement("SET LOCAL app.is_public_user = 'true'");
 
         return $next($request);
     }
