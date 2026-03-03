@@ -43,6 +43,20 @@ class AuthService
 
     public function login(LoginDTO $dto): array
     {
+        $user = User::where('email', $dto->email)->first();
+
+        if (! $user) {
+            throw ValidationException::withMessages([
+                'email' => __('auth.user_not_found'),
+            ]);
+        }
+
+        if (! $user->is_active) {
+            throw ValidationException::withMessages([
+                'email' => __('auth.account_deactivated'),
+            ]);
+        }
+
         $token = JWTAuth::attempt([
             'email'    => $dto->email,
             'password' => $dto->password,
@@ -50,16 +64,7 @@ class AuthService
 
         if (! $token) {
             throw ValidationException::withMessages([
-                'email' => 'Invalid credentials.',
-            ]);
-        }
-
-        $user = JWTAuth::user();
-
-        if (! $user->is_active) {
-            JWTAuth::invalidate();
-            throw ValidationException::withMessages([
-                'email' => 'Account is deactivated.',
+                'password' => __('auth.wrong_password'),
             ]);
         }
 
