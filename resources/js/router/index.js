@@ -113,6 +113,16 @@ const routes = [
                 component: () => import('@/pages/owner/OwnerCountryDetailPage.vue'),
             },
             {
+                path: 'visa-types',
+                name: 'owner.visa-types',
+                component: () => import('@/pages/owner/OwnerVisaTypesPage.vue'),
+            },
+            {
+                path: 'references',
+                name: 'owner.references',
+                component: () => import('@/pages/owner/OwnerReferencesPage.vue'),
+            },
+            {
                 path: 'documents',
                 name: 'owner.documents',
                 component: () => import('@/pages/owner/OwnerDocumentsPage.vue'),

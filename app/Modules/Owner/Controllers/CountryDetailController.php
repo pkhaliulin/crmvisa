@@ -89,7 +89,7 @@ class CountryDetailController extends Controller
     public function visaSettingStore(Request $request, string $code): JsonResponse
     {
         $data = $request->validate([
-            'visa_type'              => 'required|string|max:50',
+            'visa_type'              => 'required|string|max:50|exists:portal_visa_types,slug',
             'preparation_days'       => 'sometimes|integer|min:0|max:365',
             'appointment_wait_days'  => 'sometimes|integer|min:0|max:365',
             'processing_days_min'    => 'sometimes|integer|min:0|max:365',

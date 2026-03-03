@@ -337,7 +337,15 @@ class OwnerController extends Controller
 
     public function visaTypes(): JsonResponse
     {
-        $types = DB::table('portal_visa_types')->orderBy('sort_order')->get();
+        $types = DB::table('portal_visa_types')
+            ->orderBy('sort_order')
+            ->get()
+            ->map(function ($t) {
+                $t->settings_count = DB::table('country_visa_type_settings')
+                    ->where('visa_type', $t->slug)->count();
+                return $t;
+            });
+
         return ApiResponse::success($types);
     }
 
@@ -346,6 +354,7 @@ class OwnerController extends Controller
         $data = $request->validate([
             'slug'       => 'required|string|max:50|regex:/^[a-z_]+$/|unique:portal_visa_types,slug',
             'name_ru'    => 'required|string|max:100',
+            'name_uz'    => 'sometimes|nullable|string|max:100',
             'sort_order' => 'sometimes|integer|min:0',
         ]);
 
@@ -366,6 +375,7 @@ class OwnerController extends Controller
     {
         $data = $request->validate([
             'name_ru'    => 'sometimes|string|max:100',
+            'name_uz'    => 'sometimes|nullable|string|max:100',
             'sort_order' => 'sometimes|integer|min:0',
             'is_active'  => 'sometimes|boolean',
         ]);
@@ -380,6 +390,17 @@ class OwnerController extends Controller
 
     public function visaTypeDestroy(string $slug): JsonResponse
     {
+        // Проверяем использование
+        $usageCount = DB::table('country_visa_type_settings')
+            ->where('visa_type', $slug)->count();
+
+        if ($usageCount > 0) {
+            return ApiResponse::error(
+                "Тип визы используется в $usageCount настройках стран. Сначала удалите их.",
+                422
+            );
+        }
+
         DB::table('portal_visa_types')->where('slug', $slug)->delete();
         return ApiResponse::success(null, 'Тип визы удалён');
     }

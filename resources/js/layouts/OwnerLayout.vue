@@ -105,9 +105,11 @@ const navGroups = [
   {
     title: 'Настройки платформы',
     items: [
-      { to: '/crm/countries', icon: '🌍', label: 'Страны и веса' },
-      { to: '/crm/documents', icon: '📄', label: 'Документы' },
-      { to: '/crm/services',  icon: '🛠', label: 'Каталог услуг' },
+      { to: '/crm/countries',   icon: '🌍', label: 'Страны и веса' },
+      { to: '/crm/visa-types',  icon: '🛂', label: 'Типы виз' },
+      { to: '/crm/documents',   icon: '📄', label: 'Документы' },
+      { to: '/crm/references',  icon: '📋', label: 'Справочники' },
+      { to: '/crm/services',    icon: '🛠', label: 'Каталог услуг' },
     ],
   },
   {
@@ -125,6 +127,8 @@ const routeTitles = {
   '/crm/users':      'Клиенты (публичный портал)',
   '/crm/leads':      'Лиды',
   '/crm/countries':  'Страны и веса скоринга',
+  '/crm/visa-types': 'Типы виз',
+  '/crm/references': 'Справочники',
   '/crm/documents':  'Справочник документов',
   '/crm/services':   'Каталог услуг',
   '/crm/finance':    'Финансовые транзакции',

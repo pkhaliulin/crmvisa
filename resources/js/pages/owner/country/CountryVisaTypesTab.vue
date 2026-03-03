@@ -216,8 +216,13 @@
         <form @submit.prevent="saveForm" class="space-y-3">
           <div v-if="!editingSetting">
             <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.visaTypeSlug') }}</label>
-            <input v-model="formData.visa_type" required
-              class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]" />
+            <select v-model="formData.visa_type" required
+              class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]">
+              <option value="" disabled>{{ $t('countryDetail.selectVisaType') }}</option>
+              <option v-for="vt in availableVisaTypes" :key="vt.slug" :value="vt.slug">
+                {{ vt.name_ru }} ({{ vt.slug }})
+              </option>
+            </select>
           </div>
 
           <h4 class="text-xs font-semibold text-gray-400 uppercase pt-2">{{ $t('countryDetail.timeline') }}</h4>
@@ -292,6 +297,7 @@
 import { ref, reactive, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { ownerCountriesApi } from '@/api/countries';
+import api from '@/api/index';
 
 const { t } = useI18n();
 const props = defineProps({ countryCode: String });
@@ -303,6 +309,14 @@ const saving         = ref(false);
 const expanded       = ref(null);
 const openAdd        = ref(false);
 const editingSetting = ref(null);
+
+// Visa types reference
+const allVisaTypes = ref([]);
+
+const availableVisaTypes = computed(() => {
+  const usedSlugs = settings.value.map(s => s.visa_type);
+  return allVisaTypes.value.filter(vt => vt.is_active && !usedSlugs.includes(vt.slug));
+});
 
 // Documents
 const requirements   = ref([]);
@@ -351,12 +365,14 @@ function startEdit(s) {
 async function loadSettings() {
   loading.value = true;
   try {
-    const [settingsRes, reqRes] = await Promise.all([
+    const [settingsRes, reqRes, vtRes] = await Promise.all([
       ownerCountriesApi.visaSettings(props.countryCode),
       ownerCountriesApi.requirements(props.countryCode),
+      api.get('/owner/visa-types'),
     ]);
     settings.value = settingsRes.data.data;
     requirements.value = reqRes.data.data ?? [];
+    allVisaTypes.value = vtRes.data.data ?? [];
   } finally {
     loading.value = false;
   }

@@ -126,6 +126,7 @@ Route::prefix('v1')->group(function () {
         Route::get('services',   [ServiceCatalogController::class, 'index']);
         Route::get('countries',  [OwnerController::class, 'countries']);
         Route::get('visa-types', [OwnerController::class, 'visaTypes']);
+        Route::get('references/all', [\App\Modules\Owner\Controllers\ReferenceController::class, 'all']);
         Route::get('countries/{code}/visa-settings', [CountryDetailController::class, 'visaSettingsPublic']);
     });
 
@@ -246,6 +247,14 @@ Route::prefix('v1')->group(function () {
         Route::post('visa-types',          [OwnerController::class, 'visaTypeStore']);
         Route::patch('visa-types/{slug}',  [OwnerController::class, 'visaTypeUpdate']);
         Route::delete('visa-types/{slug}', [OwnerController::class, 'visaTypeDestroy']);
+
+        // Справочники
+        Route::get('references',                          [\App\Modules\Owner\Controllers\ReferenceController::class, 'categories']);
+        Route::get('references/all',                      [\App\Modules\Owner\Controllers\ReferenceController::class, 'all']);
+        Route::get('references/{category}',               [\App\Modules\Owner\Controllers\ReferenceController::class, 'index']);
+        Route::post('references/{category}',              [\App\Modules\Owner\Controllers\ReferenceController::class, 'store']);
+        Route::patch('references/{category}/{id}',        [\App\Modules\Owner\Controllers\ReferenceController::class, 'update']);
+        Route::delete('references/{category}/{id}',       [\App\Modules\Owner\Controllers\ReferenceController::class, 'destroy']);
 
         // Документы
         Route::get('documents', [OwnerController::class, 'documents']);
