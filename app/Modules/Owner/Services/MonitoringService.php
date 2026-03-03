@@ -336,9 +336,9 @@ class MonitoringService
 
     public function sentryIssues(string $period = '24h'): array
     {
-        $token   = config('sentry.auth_token');
-        $org     = config('sentry.org');
-        $project = config('sentry.project');
+        $token   = env('SENTRY_AUTH_TOKEN');
+        $org     = env('SENTRY_ORG', 'visabor');
+        $project = env('SENTRY_PROJECT', 'php-laravel');
 
         if (! $token || ! $org || ! $project) {
             return ['configured' => false, 'issues' => [], 'stats' => []];
