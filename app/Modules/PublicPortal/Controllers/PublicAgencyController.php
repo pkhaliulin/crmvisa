@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Modules\Agency\Models\Agency;
 use App\Modules\Case\Models\VisaCase;
 use App\Modules\Client\Models\Client;
+use App\Modules\Document\Services\ChecklistService;
 use App\Modules\PublicPortal\Models\PublicLead;
 use App\Support\Helpers\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -196,6 +197,11 @@ class PublicAgencyController extends Controller
                         $packageNote,
                     ])),
                 ]);
+            }
+
+            // Создать чек-лист документов, если ещё нет
+            if (\DB::table('case_checklist')->where('case_id', $case->id)->doesntExist()) {
+                app(ChecklistService::class)->createForCase($case);
             }
 
             // 3. Получить скор по стране из кеша

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Modules\Case\Models\VisaCase;
 use App\Modules\Client\Models\Client;
 use App\Modules\Document\Models\CaseChecklist;
+use App\Modules\Document\Services\ChecklistService;
 use App\Support\Helpers\ApiResponse;
 use App\Support\Rules\ReferenceExists;
 use Illuminate\Http\JsonResponse;
@@ -115,7 +116,7 @@ class PublicProfileController extends Controller
                 $client = Client::find($clientId);
             }
 
-            return VisaCase::create([
+            $case = VisaCase::create([
                 'agency_id'     => null,
                 'client_id'     => $client->id,
                 'country_code'  => strtoupper($data['country_code']),
@@ -125,6 +126,10 @@ class PublicProfileController extends Controller
                 'priority'      => 'normal',
                 'travel_date'   => $data['planned_travel_date'] ?? null,
             ]);
+
+            app(ChecklistService::class)->createForCase($case);
+
+            return $case;
         });
 
         return ApiResponse::created([
