@@ -5,21 +5,30 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 use Symfony\Component\HttpFoundation\Response;
 
 class SetTenantContext
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $user = $request->user();
+        $token = $request->bearerToken();
 
-        if ($user) {
-            if ($user->role === 'superadmin') {
-                DB::statement("SET LOCAL app.is_superadmin = 'true'");
-            }
+        if ($token) {
+            try {
+                $payload = JWTAuth::setToken($token)->getPayload();
+                $role     = $payload->get('role');
+                $agencyId = $payload->get('agency_id');
 
-            if ($user->agency_id) {
-                DB::statement("SET LOCAL app.current_tenant_id = ?", [$user->agency_id]);
+                if ($role === 'superadmin') {
+                    DB::statement("SET app.is_superadmin = 'true'");
+                }
+
+                if ($agencyId) {
+                    DB::statement("SET app.current_tenant_id = ?", [(string) $agencyId]);
+                }
+            } catch (\Exception) {
+                // Невалидный/истёкший токен — пропускаем, auth middleware отклонит позже
             }
         }
 
