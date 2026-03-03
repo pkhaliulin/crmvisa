@@ -3,10 +3,16 @@
 namespace App\Modules\Owner\Models;
 
 use App\Modules\Agency\Models\Agency;
-use App\Support\Abstracts\BaseModel;
+use App\Support\Traits\HasUuid;
+use Illuminate\Database\Eloquent\Model;
 
-class FeatureFlag extends BaseModel
+class FeatureFlag extends Model
 {
+    use HasUuid;
+
+    protected $keyType = 'string';
+    public $incrementing = false;
+
     protected $fillable = [
         'key',
         'name',
