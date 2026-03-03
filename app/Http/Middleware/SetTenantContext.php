@@ -27,8 +27,11 @@ class SetTenantContext
                 if ($agencyId) {
                     DB::statement("SET app.current_tenant_id = ?", [(string) $agencyId]);
                 }
-            } catch (\Exception) {
-                // Невалидный/истёкший токен — пропускаем, auth middleware отклонит позже
+            } catch (\Exception $e) {
+                \Log::warning('SetTenantContext JWT parse failed', [
+                    'error' => $e->getMessage(),
+                    'token_prefix' => substr($token, 0, 20),
+                ]);
             }
         }
 
