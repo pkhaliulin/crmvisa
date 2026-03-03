@@ -147,7 +147,18 @@ const routes = [
                 name: 'owner.monitoring',
                 component: () => import('@/pages/owner/OwnerMonitoringPage.vue'),
             },
+            {
+                path: 'memory',
+                name: 'owner.memory',
+                component: () => import('@/pages/owner/OwnerMemoryPage.vue'),
+            },
         ],
+    },
+
+    // /memory → redirect в CRM (superadmin only)
+    {
+        path: '/memory',
+        redirect: '/crm/memory',
     },
 
     // ----------------------------------------------------------------

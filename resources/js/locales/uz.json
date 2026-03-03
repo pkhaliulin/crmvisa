@@ -667,6 +667,13 @@
     "retry": "Qaytadan",
     "delete": "O'chirish"
   },
+  "memory": {
+    "title": "Loyiha xotirasi",
+    "subtitle": "Qoidalar, arxitektura, cheklistlar",
+    "allFiles": "Barcha fayllar",
+    "filesCount": "fayl",
+    "selectFile": "Chapdan faylni tanlang"
+  },
   "countries": {
     "UZ": "O'zbekiston",
     "KZ": "Qozog'iston",

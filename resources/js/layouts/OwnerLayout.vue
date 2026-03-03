@@ -121,6 +121,7 @@ const navGroups = [
     items: [
       { to: '/crm',             icon: '📊', label: 'Дашборд' },
       { to: '/crm/monitoring',  icon: '🖥', label: 'Мониторинг', alertBadge: true },
+      { to: '/crm/memory',      icon: '🧠', label: 'Память проекта' },
     ],
   },
   {
@@ -163,6 +164,7 @@ const routeTitles = {
   '/crm/services':   'Каталог услуг',
   '/crm/finance':      'Финансовые транзакции',
   '/crm/monitoring':   'Мониторинг системы',
+  '/crm/memory':       'Память проекта',
 };
 
 const currentPageTitle = computed(() => routeTitles[route.path] ?? 'Owner Panel');

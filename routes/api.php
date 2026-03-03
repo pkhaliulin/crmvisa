@@ -23,6 +23,7 @@ use App\Modules\Payment\Controllers\MarketplaceController;
 use App\Modules\Scoring\Controllers\ScoringController;
 use App\Modules\Service\Controllers\ServiceCatalogController;
 use App\Modules\Owner\Controllers\CountryDetailController;
+use App\Modules\Owner\Controllers\MemoryController;
 use App\Modules\Owner\Controllers\MonitoringController;
 use App\Modules\Owner\Controllers\OwnerController;
 use App\Modules\TelegramBot\Controllers\TelegramBotController;
@@ -275,6 +276,9 @@ Route::prefix('v1')->group(function () {
         Route::post('services',            [ServiceCatalogController::class, 'storeGlobal']);
         Route::patch('services/{id}',      [ServiceCatalogController::class, 'updateGlobal']);
         Route::delete('services/{id}',     [ServiceCatalogController::class, 'destroyGlobal']);
+
+        // Память проекта (документация)
+        Route::get('memory', [MemoryController::class, 'index']);
 
         // Мониторинг системы
         Route::prefix('monitoring')->group(function () {

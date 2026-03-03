@@ -9,4 +9,5 @@ export const monitoringApi = {
     queue:     () => api.get('/owner/monitoring/queue'),
     retryJob:  (id) => api.post(`/owner/monitoring/queue/${id}/retry`),
     deleteJob: (id) => api.delete(`/owner/monitoring/queue/${id}`),
+    memory:    () => api.get('/owner/memory'),
 };
