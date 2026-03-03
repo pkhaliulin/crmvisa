@@ -57,6 +57,13 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->api(append: [
             LogApiRequest::class,
         ]);
+
+        // SetTenantContext ДОЛЖЕН работать ДО Authenticate,
+        // иначе auth:api не сможет найти пользователя из-за RLS
+        $middleware->prependToPriorityList(
+            \Illuminate\Auth\Middleware\Authenticate::class,
+            SetTenantContext::class,
+        );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         Integration::handles($exceptions);
