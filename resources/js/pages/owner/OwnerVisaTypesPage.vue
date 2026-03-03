@@ -66,6 +66,27 @@
       </div>
     </div>
 
+    <!-- Modal: Confirm Delete -->
+    <div v-if="deleteTarget" class="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+        <h3 class="font-bold text-red-600 text-lg mb-2">{{ $t('common.confirmDeleteTitle') }}</h3>
+        <p class="text-sm text-gray-600 mb-1">{{ $t('common.confirmDeleteMessage') }}</p>
+        <p class="text-sm font-medium text-gray-800 mb-4">
+          {{ deleteTarget.name_ru }} <span class="text-gray-400">({{ deleteTarget.slug }})</span>
+        </p>
+        <div class="flex gap-3">
+          <button @click="confirmDeleteAction" :disabled="deleting"
+            class="flex-1 py-2.5 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 disabled:opacity-60">
+            {{ deleting ? $t('common.loading') : $t('common.confirmDeleteBtn') }}
+          </button>
+          <button @click="deleteTarget = null"
+            class="px-5 py-2.5 border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50">
+            {{ $t('common.cancel') }}
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Modal: Create / Edit -->
     <div v-if="showModal" class="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
       <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
@@ -183,12 +204,23 @@ async function toggleActive(vt) {
   } catch { /* ignore */ }
 }
 
-async function doDelete(vt) {
+const deleteTarget = ref(null);
+const deleting     = ref(false);
+
+function doDelete(vt) {
+  deleteTarget.value = vt;
+}
+
+async function confirmDeleteAction() {
+  deleting.value = true;
   try {
-    await api.delete(`/owner/visa-types/${vt.slug}`);
-    types.value = types.value.filter(t => t.slug !== vt.slug);
+    await api.delete(`/owner/visa-types/${deleteTarget.value.slug}`);
+    types.value = types.value.filter(t => t.slug !== deleteTarget.value.slug);
+    deleteTarget.value = null;
   } catch (err) {
     alert(err.response?.data?.message || t('common.error'));
+  } finally {
+    deleting.value = false;
   }
 }
 

@@ -146,6 +146,24 @@
         </div>
       </div>
     </div>
+
+    <!-- Modal: Confirm Delete Document -->
+    <div v-if="deleteDocId" class="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+        <h3 class="font-bold text-red-600 text-lg mb-2">{{ $t('common.confirmDeleteTitle') }}</h3>
+        <p class="text-sm text-gray-600 mb-4">{{ $t('common.confirmDeleteMessage') }}</p>
+        <div class="flex gap-3">
+          <button @click="confirmRemoveDoc"
+            class="flex-1 py-2.5 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700">
+            {{ $t('common.confirmDeleteBtn') }}
+          </button>
+          <button @click="deleteDocId = null"
+            class="px-5 py-2.5 border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50">
+            {{ $t('common.cancel') }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -253,7 +271,15 @@ async function updateLevel(id, level) {
   } catch { /* ignore */ }
 }
 
-async function removeDoc(id) {
+const deleteDocId = ref(null);
+
+function removeDoc(id) {
+  deleteDocId.value = id;
+}
+
+async function confirmRemoveDoc() {
+  const id = deleteDocId.value;
+  deleteDocId.value = null;
   try {
     await ownerCountriesApi.requirementDestroy(id);
     requirements.value = requirements.value.filter(r => r.id !== id);

@@ -9,3 +9,4 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('visabor:sla-check')->dailyAt('09:00');
+Schedule::command('monitoring:prune')->dailyAt('03:00');

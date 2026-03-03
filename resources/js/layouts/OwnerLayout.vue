@@ -36,6 +36,13 @@
                                             px-1.5 py-0.5 rounded-full shrink-0">
               {{ item.badge }}
             </span>
+            <span v-if="item.alertBadge && alertCount > 0"
+                  :class="[
+                    'ml-auto text-xs text-white px-1.5 py-0.5 rounded-full shrink-0',
+                    alertLevel === 'critical' ? 'bg-red-500 animate-pulse' : 'bg-amber-500'
+                  ]">
+              {{ alertCount }}
+            </span>
           </router-link>
         </div>
       </nav>
@@ -76,13 +83,35 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, ref, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
+import { monitoringApi } from '@/api/monitoring';
 
 const auth   = useAuthStore();
 const route  = useRoute();
 const router = useRouter();
+
+const alertCount = ref(0);
+const alertLevel = ref('ok');
+let alertInterval = null;
+
+async function pollAlerts() {
+  try {
+    const { data } = await monitoringApi.alerts();
+    alertCount.value = data.data.count;
+    alertLevel.value = data.data.level;
+  } catch {}
+}
+
+onMounted(() => {
+  pollAlerts();
+  alertInterval = setInterval(pollAlerts, 30000);
+});
+
+onUnmounted(() => {
+  clearInterval(alertInterval);
+});
 
 const today = new Date().toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
 
@@ -90,7 +119,8 @@ const navGroups = [
   {
     title: 'Аналитика',
     items: [
-      { to: '/crm',          icon: '📊', label: 'Дашборд' },
+      { to: '/crm',             icon: '📊', label: 'Дашборд' },
+      { to: '/crm/monitoring',  icon: '🖥', label: 'Мониторинг', alertBadge: true },
     ],
   },
   {
@@ -131,7 +161,8 @@ const routeTitles = {
   '/crm/references': 'Справочники',
   '/crm/documents':  'Справочник документов',
   '/crm/services':   'Каталог услуг',
-  '/crm/finance':    'Финансовые транзакции',
+  '/crm/finance':      'Финансовые транзакции',
+  '/crm/monitoring':   'Мониторинг системы',
 };
 
 const currentPageTitle = computed(() => routeTitles[route.path] ?? 'Owner Panel');

@@ -290,6 +290,43 @@
         </form>
       </div>
     </div>
+
+    <!-- Modal: Confirm Delete Visa Setting -->
+    <div v-if="deleteTarget" class="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+        <h3 class="font-bold text-red-600 text-lg mb-2">{{ $t('common.confirmDeleteTitle') }}</h3>
+        <p class="text-sm text-gray-600 mb-1">{{ $t('common.confirmDeleteMessage') }}</p>
+        <p class="text-sm font-medium text-gray-800 mb-4">{{ deleteTarget.visa_type }}</p>
+        <div class="flex gap-3">
+          <button @click="confirmDestroy" :disabled="saving"
+            class="flex-1 py-2.5 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 disabled:opacity-60">
+            {{ saving ? $t('common.loading') : $t('common.confirmDeleteBtn') }}
+          </button>
+          <button @click="deleteTarget = null"
+            class="px-5 py-2.5 border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50">
+            {{ $t('common.cancel') }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Confirm Delete Document -->
+    <div v-if="deleteDocId" class="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+        <h3 class="font-bold text-red-600 text-lg mb-2">{{ $t('common.confirmDeleteTitle') }}</h3>
+        <p class="text-sm text-gray-600 mb-4">{{ $t('common.confirmDeleteMessage') }}</p>
+        <div class="flex gap-3">
+          <button @click="confirmRemoveDoc"
+            class="flex-1 py-2.5 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700">
+            {{ $t('common.confirmDeleteBtn') }}
+          </button>
+          <button @click="deleteDocId = null"
+            class="px-5 py-2.5 border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50">
+            {{ $t('common.cancel') }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -430,7 +467,15 @@ async function updateReqLevel(reqId, level) {
   } catch { /* ignore */ }
 }
 
-async function removeDoc(reqId) {
+const deleteDocId = ref(null);
+
+function removeDoc(reqId) {
+  deleteDocId.value = reqId;
+}
+
+async function confirmRemoveDoc() {
+  const reqId = deleteDocId.value;
+  deleteDocId.value = null;
   try {
     await ownerCountriesApi.requirementDestroy(reqId);
     requirements.value = requirements.value.filter(r => r.id !== reqId);
@@ -456,10 +501,17 @@ async function saveForm() {
   }
 }
 
-async function destroy(s) {
+const deleteTarget = ref(null);
+
+function destroy(s) {
+  deleteTarget.value = s;
+}
+
+async function confirmDestroy() {
   saving.value = true;
   try {
-    await ownerCountriesApi.visaSettingDestroy(props.countryCode, s.id);
+    await ownerCountriesApi.visaSettingDestroy(props.countryCode, deleteTarget.value.id);
+    deleteTarget.value = null;
     await loadSettings();
     emit('updated');
   } finally {

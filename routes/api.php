@@ -23,6 +23,7 @@ use App\Modules\Payment\Controllers\MarketplaceController;
 use App\Modules\Scoring\Controllers\ScoringController;
 use App\Modules\Service\Controllers\ServiceCatalogController;
 use App\Modules\Owner\Controllers\CountryDetailController;
+use App\Modules\Owner\Controllers\MonitoringController;
 use App\Modules\Owner\Controllers\OwnerController;
 use App\Modules\TelegramBot\Controllers\TelegramBotController;
 use App\Modules\User\Controllers\UserController;
@@ -274,6 +275,18 @@ Route::prefix('v1')->group(function () {
         Route::post('services',            [ServiceCatalogController::class, 'storeGlobal']);
         Route::patch('services/{id}',      [ServiceCatalogController::class, 'updateGlobal']);
         Route::delete('services/{id}',     [ServiceCatalogController::class, 'destroyGlobal']);
+
+        // Мониторинг системы
+        Route::prefix('monitoring')->group(function () {
+            Route::get('health',   [MonitoringController::class, 'health']);
+            Route::get('errors',   [MonitoringController::class, 'errors']);
+            Route::get('activity', [MonitoringController::class, 'activity']);
+            Route::get('metrics',  [MonitoringController::class, 'metrics']);
+            Route::get('alerts',   [MonitoringController::class, 'alerts']);
+            Route::get('queue',    [MonitoringController::class, 'queue']);
+            Route::post('queue/{id}/retry',  [MonitoringController::class, 'retryJob']);
+            Route::delete('queue/{id}',      [MonitoringController::class, 'deleteJob']);
+        });
     });
 
     // -------------------------------------------------------------------------

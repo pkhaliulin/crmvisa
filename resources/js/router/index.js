@@ -142,6 +142,11 @@ const routes = [
                 name: 'owner.crm-users',
                 component: () => import('@/pages/owner/OwnerCrmUsersPage.vue'),
             },
+            {
+                path: 'monitoring',
+                name: 'owner.monitoring',
+                component: () => import('@/pages/owner/OwnerMonitoringPage.vue'),
+            },
         ],
     },
 

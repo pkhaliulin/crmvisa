@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\CheckAgencyPlan;
 use App\Http\Middleware\CheckRole;
+use App\Http\Middleware\LogApiRequest;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\SetLocale;
 use App\Modules\PublicPortal\Middleware\AuthPublicUser;
@@ -38,6 +39,11 @@ return Application::configure(basePath: dirname(__DIR__))
         // Rate limiting на все API маршруты
         $middleware->api(prepend: [
             \Illuminate\Routing\Middleware\ThrottleRequests::class.':api',
+        ]);
+
+        // Логирование всех API-запросов
+        $middleware->api(append: [
+            LogApiRequest::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
