@@ -95,30 +95,23 @@ class PublicProfileController extends Controller
         ]);
 
         $case = DB::transaction(function () use ($publicUser, $data) {
-            // Найти клиента по нормализованному телефону
-            $phoneDigits = ltrim($publicUser->phone, '+');
             $client = Client::withoutTenant()
-                ->whereRaw("REPLACE(phone, '+', '') = ?", [$phoneDigits])
+                ->where('public_user_id', $publicUser->id)
+                ->whereNull('agency_id')
                 ->first();
 
             if (! $client) {
-                // Создаём клиента без agency_id для DRAFT — но agency_id обязателен
-                // Используем первое агентство как заглушку? Нет — клиент пока без агентства
-                // Создаём запись с agency_id = null (если допускается) или пропускаем
-                // Для DRAFT заявки создаём её с agency_id = null
-                $clientData = [
-                    'name'   => $publicUser->name ?? ('Клиент ' . $publicUser->phone),
-                    'phone'  => $publicUser->phone,
-                    'source' => 'marketplace',
-                ];
-                // Client HasTenant требует agency_id — создаём без него через DB
                 $clientId = \Illuminate\Support\Str::uuid()->toString();
-                \Illuminate\Support\Facades\DB::table('clients')->insert(array_merge($clientData, [
-                    'id'         => $clientId,
-                    'agency_id'  => null,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]));
+                DB::table('clients')->insert([
+                    'id'             => $clientId,
+                    'agency_id'      => null,
+                    'public_user_id' => $publicUser->id,
+                    'name'           => $publicUser->name ?? ('Клиент ' . $publicUser->phone),
+                    'phone'          => app('encrypter')->encrypt($publicUser->phone),
+                    'source'         => 'marketplace',
+                    'created_at'     => now(),
+                    'updated_at'     => now(),
+                ]);
                 $client = Client::find($clientId);
             }
 
@@ -152,10 +145,7 @@ class PublicProfileController extends Controller
         $stages        = config('stages');
         $caseStatuses  = config('case_statuses');
 
-        // Поиск по нормализованному телефону (без +, чтобы найти оба формата)
-        $phoneDigits = ltrim($publicUser->phone, '+');
-
-        $cases = VisaCase::whereHas('client', fn ($q) => $q->whereRaw("REPLACE(phone, '+', '') = ?", [$phoneDigits]))
+        $cases = VisaCase::whereHas('client', fn ($q) => $q->where('public_user_id', $publicUser->id))
             ->with(['agency:id,name,city', 'assignee:id,name'])
             ->orderBy('created_at', 'desc')
             ->get()
@@ -203,9 +193,7 @@ class PublicProfileController extends Controller
         $stages       = config('stages');
         $caseStatuses = config('case_statuses');
 
-        $phoneDigits = ltrim($publicUser->phone, '+');
-
-        $case = VisaCase::whereHas('client', fn ($q) => $q->whereRaw("REPLACE(phone, '+', '') = ?", [$phoneDigits]))
+        $case = VisaCase::whereHas('client', fn ($q) => $q->where('public_user_id', $publicUser->id))
             ->with([
                 'agency:id,name,city,address,description,website_url,logo_url,phone,email,is_verified,rating,experience_years',
                 'assignee:id,name,email,phone',
@@ -291,8 +279,7 @@ class PublicProfileController extends Controller
         ]);
 
         // Проверяем что кейс принадлежит пользователю
-        $phoneDigits = ltrim($publicUser->phone, '+');
-        $case = VisaCase::whereHas('client', fn ($q) => $q->whereRaw("REPLACE(phone, '+', '') = ?", [$phoneDigits]))
+        $case = VisaCase::whereHas('client', fn ($q) => $q->where('public_user_id', $publicUser->id))
             ->findOrFail($caseId);
 
         $item = CaseChecklist::where('case_id', $case->id)->findOrFail($itemId);

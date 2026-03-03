@@ -128,14 +128,25 @@ class PublicAgencyController extends Controller
         $agency = Agency::findOrFail($agencyId);
 
         return DB::transaction(function () use ($publicUser, $agency, $data, $cc) {
-            // 1. Найти или создать клиента в агентстве по номеру телефона
-            $client = Client::firstOrCreate(
-                ['phone' => $publicUser->phone, 'agency_id' => $agency->id],
-                [
-                    'name'   => $publicUser->name ?? ('Клиент ' . $publicUser->phone),
-                    'source' => 'marketplace',
-                ]
-            );
+            // 1. Найти или создать клиента в агентстве
+            $client = Client::where('public_user_id', $publicUser->id)
+                ->where('agency_id', $agency->id)
+                ->first();
+
+            if (! $client) {
+                $clientId = \Illuminate\Support\Str::uuid()->toString();
+                DB::table('clients')->insert([
+                    'id'             => $clientId,
+                    'agency_id'      => $agency->id,
+                    'public_user_id' => $publicUser->id,
+                    'name'           => $publicUser->name ?? ('Клиент ' . $publicUser->phone),
+                    'phone'          => app('encrypter')->encrypt($publicUser->phone),
+                    'source'         => 'marketplace',
+                    'created_at'     => now(),
+                    'updated_at'     => now(),
+                ]);
+                $client = Client::find($clientId);
+            }
 
             // Обновляем имя если оно теперь известно
             if ($publicUser->name && !$client->wasRecentlyCreated && !$client->name) {
@@ -150,8 +161,7 @@ class PublicAgencyController extends Controller
 
             // Если передан case_id — обновляем существующий DRAFT
             if (!empty($data['case_id'])) {
-                $phoneDigits = ltrim($publicUser->phone, '+');
-                $case = VisaCase::whereHas('client', fn ($q) => $q->whereRaw("REPLACE(phone, '+', '') = ?", [$phoneDigits]))
+                $case = VisaCase::whereHas('client', fn ($q) => $q->where('public_user_id', $publicUser->id))
                     ->where('public_status', 'draft')
                     ->find($data['case_id']);
 

@@ -15,6 +15,7 @@ class Client extends BaseModel
 
     protected $fillable = [
         'agency_id',
+        'public_user_id',
         'name',
         'email',
         'phone',
