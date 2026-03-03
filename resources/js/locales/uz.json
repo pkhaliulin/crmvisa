@@ -575,7 +575,15 @@
     "tabEmbassy": "Elchixona",
     "tabVisaTypes": "Viza turlari",
     "tabScoring": "Skoring",
-    "tabAnalytics": "Tahlil"
+    "tabDocuments": "Hujjatlar",
+    "tabAnalytics": "Tahlil",
+    "docsTabDesc": "Mamlakat uchun hujjatlar shabloni. Ushbu hujjatlar ariza yaratilganda chek-listga avtomatik qo'shiladi.",
+    "allVisaTypes": "Barcha viza turlari",
+    "docsCount": "hujj.",
+    "noDocsYet": "Hujjatlar qo'shilmagan. Shablon yaratish uchun «+ Hujjat qo'shish» tugmasini bosing.",
+    "visaTypeLabel": "Viza turi",
+    "typeUpload": "Fayl",
+    "typeCheckbox": "Belgilash"
   },
   "countries": {
     "UZ": "O'zbekiston",

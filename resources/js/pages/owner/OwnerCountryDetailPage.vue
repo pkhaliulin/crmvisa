@@ -52,6 +52,7 @@
       <CountryOverviewTab v-if="activeTab === 'overview'" :country="country" />
       <CountryEmbassyTab v-else-if="activeTab === 'embassy'" :country="country" @updated="reload" />
       <CountryVisaTypesTab v-else-if="activeTab === 'visa-types'" :country-code="country.country_code" @updated="reload" />
+      <CountryDocumentsTab v-else-if="activeTab === 'documents'" :country-code="country.country_code" @updated="reload" />
       <CountryScoringTab v-else-if="activeTab === 'scoring'" :country="country" :country-code="country.country_code" @updated="reload" />
       <CountryAnalyticsTab v-else-if="activeTab === 'analytics'" :country-code="country.country_code" />
     </template>
@@ -71,6 +72,7 @@ import { ownerCountriesApi } from '@/api/countries';
 import CountryOverviewTab from './country/CountryOverviewTab.vue';
 import CountryEmbassyTab from './country/CountryEmbassyTab.vue';
 import CountryVisaTypesTab from './country/CountryVisaTypesTab.vue';
+import CountryDocumentsTab from './country/CountryDocumentsTab.vue';
 import CountryScoringTab from './country/CountryScoringTab.vue';
 import CountryAnalyticsTab from './country/CountryAnalyticsTab.vue';
 
@@ -101,6 +103,7 @@ const tabs = computed(() => [
   { id: 'overview',   label: t('countryDetail.tabOverview') },
   { id: 'embassy',    label: t('countryDetail.tabEmbassy') },
   { id: 'visa-types', label: t('countryDetail.tabVisaTypes') },
+  { id: 'documents',  label: t('countryDetail.tabDocuments') },
   { id: 'scoring',    label: t('countryDetail.tabScoring') },
   { id: 'analytics',  label: t('countryDetail.tabAnalytics') },
 ]);
