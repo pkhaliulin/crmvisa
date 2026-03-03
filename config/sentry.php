@@ -30,4 +30,9 @@ return [
     'before_send' => [App\Support\Helpers\SentryScrubber::class, 'beforeSend'],
 
     'send_default_pii' => false,
+
+    // Sentry API (for monitoring panel)
+    'auth_token' => env('SENTRY_AUTH_TOKEN'),
+    'org'        => env('SENTRY_ORG', 'visabor'),
+    'project'    => env('SENTRY_PROJECT', 'php-laravel'),
 ];

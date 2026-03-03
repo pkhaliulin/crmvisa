@@ -98,6 +98,83 @@
       </div>
     </div>
 
+    <!-- Sentry Issues -->
+    <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-sm font-semibold text-gray-700">{{ t('monitoring.sentryTitle') }}</h3>
+        <div v-if="sentry.configured && sentry.stats" class="flex gap-4 text-xs text-gray-500">
+          <span v-if="sentry.stats.critical" class="text-red-600 font-semibold">
+            {{ t('monitoring.sentryCritical') }}: {{ sentry.stats.critical }}
+          </span>
+          <span v-if="sentry.stats.errors" class="text-orange-600">
+            {{ t('monitoring.sentryErrors') }}: {{ sentry.stats.errors }}
+          </span>
+          <span v-if="sentry.stats.warnings" class="text-amber-600">
+            {{ t('monitoring.sentryWarnings') }}: {{ sentry.stats.warnings }}
+          </span>
+          <span class="text-gray-400">{{ t('monitoring.sentryTotalEvents') }}: {{ sentry.stats.total_events }}</span>
+        </div>
+      </div>
+
+      <!-- Not configured -->
+      <div v-if="!sentry.configured" class="text-xs text-amber-600 bg-amber-50 border border-amber-100 rounded-lg p-3">
+        {{ t('monitoring.sentryNotConfigured') }}
+      </div>
+
+      <!-- Connection error -->
+      <div v-else-if="sentry.error" class="text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg p-3">
+        {{ t('monitoring.sentryConnectionError') }}: {{ sentry.error }}
+      </div>
+
+      <!-- No issues -->
+      <div v-else-if="!sentry.issues?.length" class="text-xs text-emerald-600 bg-emerald-50 border border-emerald-100 rounded-lg p-3 text-center">
+        {{ t('monitoring.sentryNoIssues') }}
+      </div>
+
+      <!-- Issues list -->
+      <div v-else class="overflow-x-auto">
+        <table class="w-full text-xs">
+          <thead>
+            <tr class="text-left text-gray-400 border-b">
+              <th class="pb-2 pr-2">{{ t('monitoring.sentryIssues') }}</th>
+              <th class="pb-2 pr-2 text-center">{{ t('monitoring.sentryEvents') }}</th>
+              <th class="pb-2 pr-2 text-center">{{ t('monitoring.sentryUsers') }}</th>
+              <th class="pb-2 pr-2">{{ t('monitoring.sentryLastSeen') }}</th>
+              <th class="pb-2"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="issue in sentry.issues" :key="issue.id" class="border-b border-gray-50 hover:bg-gray-50/50">
+              <td class="py-2 pr-2 max-w-[400px]">
+                <div class="flex items-center gap-1.5">
+                  <span class="inline-block w-2 h-2 rounded-full shrink-0"
+                        :class="{
+                          'bg-red-500': issue.level === 'fatal',
+                          'bg-orange-500': issue.level === 'error',
+                          'bg-amber-400': issue.level === 'warning',
+                          'bg-blue-400': issue.level === 'info',
+                        }"></span>
+                  <span class="font-medium text-gray-700 truncate">{{ issue.title }}</span>
+                </div>
+                <div v-if="issue.culprit" class="text-[10px] text-gray-400 font-mono mt-0.5 truncate pl-3.5">
+                  {{ issue.culprit }}
+                </div>
+              </td>
+              <td class="py-2 pr-2 text-center font-semibold text-gray-600">{{ issue.count }}</td>
+              <td class="py-2 pr-2 text-center text-gray-500">{{ issue.userCount }}</td>
+              <td class="py-2 pr-2 text-gray-400">{{ formatTime(issue.lastSeen) }}</td>
+              <td class="py-2">
+                <a v-if="issue.permalink" :href="issue.permalink" target="_blank" rel="noopener"
+                   class="text-[10px] text-[#1BA97F] hover:underline whitespace-nowrap">
+                  {{ t('monitoring.sentryOpenInSentry') }}
+                </a>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     <!-- Errors + Activity -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <!-- Error Log -->
@@ -254,6 +331,7 @@ const metrics = ref({});
 const errors = ref({});
 const activity = ref({});
 const queueData = ref({ pending: [], failed: [] });
+const sentry = ref({ configured: false, issues: [], stats: {} });
 
 const maxTraffic = computed(() => {
   if (!metrics.value.traffic_hourly?.length) return 1;
@@ -281,13 +359,14 @@ function formatTime(dt) {
 async function loadAll() {
   loading.value = true;
   try {
-    const [h, a, m, e, act, q] = await Promise.all([
+    const [h, a, m, e, act, q, s] = await Promise.all([
       monitoringApi.health(),
       monitoringApi.alerts(),
       monitoringApi.metrics(period.value),
       monitoringApi.errors(period.value),
       monitoringApi.activity(period.value),
       monitoringApi.queue(),
+      monitoringApi.sentry(period.value),
     ]);
     health.value = h.data.data;
     alerts.value = a.data.data;
@@ -295,6 +374,7 @@ async function loadAll() {
     errors.value = e.data.data;
     activity.value = act.data.data;
     queueData.value = q.data.data;
+    sentry.value = s.data.data;
   } catch (err) {
     console.error('Monitoring load error:', err);
   } finally {

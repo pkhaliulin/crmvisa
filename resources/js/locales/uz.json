@@ -665,7 +665,21 @@
     "failedJobsTitle": "Muvaffaqiyatsiz vazifalar",
     "noFailedJobs": "Muvaffaqiyatsiz vazifalar yo'q",
     "retry": "Qaytadan",
-    "delete": "O'chirish"
+    "delete": "O'chirish",
+    "sentryTitle": "Sentry — ilova xatolari",
+    "sentryNotConfigured": "Sentry API sozlanmagan. .env ga SENTRY_AUTH_TOKEN qo'shing",
+    "sentryNoIssues": "Hal qilinmagan xatolar yo'q",
+    "sentryIssues": "Hal qilinmagan xatolar",
+    "sentryEvents": "Hodisalar",
+    "sentryUsers": "Foydalanuvchilar",
+    "sentryFirstSeen": "Birinchi",
+    "sentryLastSeen": "Oxirgi",
+    "sentryOpenInSentry": "Sentry da ochish",
+    "sentryCritical": "Kritik",
+    "sentryErrors": "Xatolar",
+    "sentryWarnings": "Ogohlantirishlar",
+    "sentryTotalEvents": "Jami hodisalar",
+    "sentryConnectionError": "Sentry ga ulanishda xatolik"
   },
   "memory": {
     "title": "Loyiha xotirasi",

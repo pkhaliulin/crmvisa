@@ -299,6 +299,7 @@ Route::prefix('v1')->group(function () {
             Route::get('metrics',  [MonitoringController::class, 'metrics']);
             Route::get('alerts',   [MonitoringController::class, 'alerts']);
             Route::get('queue',    [MonitoringController::class, 'queue']);
+            Route::get('sentry',   [MonitoringController::class, 'sentry']);
             Route::post('queue/{id}/retry',  [MonitoringController::class, 'retryJob']);
             Route::delete('queue/{id}',      [MonitoringController::class, 'deleteJob']);
         });

@@ -665,7 +665,21 @@
     "failedJobsTitle": "Проваленные задачи",
     "noFailedJobs": "Проваленных задач нет",
     "retry": "Повторить",
-    "delete": "Удалить"
+    "delete": "Удалить",
+    "sentryTitle": "Sentry — ошибки приложения",
+    "sentryNotConfigured": "Sentry API не настроен. Добавьте SENTRY_AUTH_TOKEN в .env",
+    "sentryNoIssues": "Нет нерешённых ошибок",
+    "sentryIssues": "Нерешённые ошибки",
+    "sentryEvents": "Событий",
+    "sentryUsers": "Пользователей",
+    "sentryFirstSeen": "Первая",
+    "sentryLastSeen": "Последняя",
+    "sentryOpenInSentry": "Открыть в Sentry",
+    "sentryCritical": "Критических",
+    "sentryErrors": "Ошибок",
+    "sentryWarnings": "Предупреждений",
+    "sentryTotalEvents": "Всего событий",
+    "sentryConnectionError": "Ошибка подключения к Sentry"
   },
   "memory": {
     "title": "Память проекта",

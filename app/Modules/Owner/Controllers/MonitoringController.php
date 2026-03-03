@@ -46,6 +46,13 @@ class MonitoringController extends Controller
         return ApiResponse::success($this->monitoring->alerts());
     }
 
+    public function sentry(Request $request): JsonResponse
+    {
+        $period = $request->input('period', '24h');
+
+        return ApiResponse::success($this->monitoring->sentryIssues($period));
+    }
+
     public function queue(): JsonResponse
     {
         return ApiResponse::success($this->monitoring->queue());

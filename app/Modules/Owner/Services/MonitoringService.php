@@ -4,6 +4,7 @@ namespace App\Modules\Owner\Services;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Carbon;
 
 class MonitoringService
@@ -331,6 +332,88 @@ class MonitoringService
             'level' => $level,
             'items' => $items,
         ];
+    }
+
+    public function sentryIssues(string $period = '24h'): array
+    {
+        $token   = config('sentry.auth_token');
+        $org     = config('sentry.org');
+        $project = config('sentry.project');
+
+        if (! $token || ! $org || ! $project) {
+            return ['configured' => false, 'issues' => [], 'stats' => []];
+        }
+
+        $statsPeriod = match ($period) {
+            '1h'  => '1h',
+            '6h'  => '6h',
+            '7d'  => '7d',
+            '30d' => '30d',
+            default => '24h',
+        };
+
+        try {
+            $response = Http::withToken($token)
+                ->timeout(10)
+                ->get("https://sentry.io/api/0/projects/{$org}/{$project}/issues/", [
+                    'statsPeriod' => $statsPeriod,
+                    'query'       => 'is:unresolved',
+                    'sort'        => 'freq',
+                    'limit'       => 25,
+                ]);
+
+            if (! $response->successful()) {
+                return [
+                    'configured' => true,
+                    'error'      => 'Sentry API error: ' . $response->status(),
+                    'issues'     => [],
+                    'stats'      => [],
+                ];
+            }
+
+            $issues = collect($response->json())->map(fn ($issue) => [
+                'id'         => $issue['id'],
+                'title'      => $issue['title'],
+                'culprit'    => $issue['culprit'] ?? '',
+                'level'      => $issue['level'] ?? 'error',
+                'count'      => (int) ($issue['count'] ?? 0),
+                'userCount'  => (int) ($issue['userCount'] ?? 0),
+                'firstSeen'  => $issue['firstSeen'] ?? null,
+                'lastSeen'   => $issue['lastSeen'] ?? null,
+                'status'     => $issue['status'] ?? 'unresolved',
+                'permalink'  => $issue['permalink'] ?? '',
+                'shortId'    => $issue['shortId'] ?? '',
+                'metadata'   => [
+                    'type'  => $issue['metadata']['type'] ?? null,
+                    'value' => $issue['metadata']['value'] ?? null,
+                ],
+            ])->all();
+
+            // Статистика
+            $totalEvents = collect($issues)->sum('count');
+            $criticalCount = collect($issues)->where('level', 'fatal')->count();
+            $errorCount = collect($issues)->where('level', 'error')->count();
+            $warningCount = collect($issues)->where('level', 'warning')->count();
+
+            return [
+                'configured' => true,
+                'issues'     => $issues,
+                'stats'      => [
+                    'total_issues'  => count($issues),
+                    'total_events'  => $totalEvents,
+                    'critical'      => $criticalCount,
+                    'errors'        => $errorCount,
+                    'warnings'      => $warningCount,
+                ],
+            ];
+        } catch (\Throwable $e) {
+            return [
+                'configured' => true,
+                'error'      => 'Sentry connection failed: ' . $e->getMessage(),
+                'issues'     => [],
+                'stats'      => [],
+            ];
+        }
     }
 
     public function queue(): array

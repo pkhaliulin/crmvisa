@@ -7,6 +7,7 @@ export const monitoringApi = {
     metrics:   (period) => api.get('/owner/monitoring/metrics', { params: { period } }),
     alerts:    () => api.get('/owner/monitoring/alerts'),
     queue:     () => api.get('/owner/monitoring/queue'),
+    sentry:    (period) => api.get('/owner/monitoring/sentry', { params: { period } }),
     retryJob:  (id) => api.post(`/owner/monitoring/queue/${id}/retry`),
     deleteJob: (id) => api.delete(`/owner/monitoring/queue/${id}`),
     memory:    () => api.get('/owner/memory'),
