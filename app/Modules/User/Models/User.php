@@ -12,10 +12,12 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class User extends Authenticatable implements JWTSubject
 {
-    use HasUuid, SoftDeletes, Notifiable, NormalizesPhone;
+    use HasUuid, SoftDeletes, Notifiable, NormalizesPhone, LogsActivity;
 
     protected $keyType = 'string';
     public $incrementing = false;
@@ -90,5 +92,14 @@ class User extends Authenticatable implements JWTSubject
     public function hasRole(string $role): bool
     {
         return $this->role === $role;
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['name', 'email', 'phone', 'role', 'is_active'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs()
+            ->useLogName('users');
     }
 }

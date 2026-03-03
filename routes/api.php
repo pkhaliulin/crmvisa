@@ -88,7 +88,7 @@ Route::prefix('v1')->group(function () {
         Route::post('clients/{id}/profile',                    [ScoringController::class, 'saveProfile']);
         Route::get('clients/{id}/scoring',                     [ScoringController::class, 'scores']);
         Route::get('clients/{id}/scoring/recommendations',     [ScoringController::class, 'recommendations']);
-        Route::post('clients/{id}/scoring/recalculate',        [ScoringController::class, 'recalculate']);
+        Route::post('clients/{id}/scoring/recalculate',        [ScoringController::class, 'recalculate'])->middleware('throttle:heavy');
         Route::get('clients/{id}/scoring/{country}',           [ScoringController::class, 'scoreByCountry']);
 
     });
@@ -113,12 +113,14 @@ Route::prefix('v1')->group(function () {
         Route::patch('agency/packages/{id}',   [ServiceCatalogController::class, 'update']);
         Route::delete('agency/packages/{id}',  [ServiceCatalogController::class, 'destroy']);
 
-        // Отчёты (только owner)
-        Route::get('reports/overview',         [ReportController::class, 'overview']);
-        Route::get('reports/managers',         [ReportController::class, 'managers']);
-        Route::get('reports/countries',        [ReportController::class, 'countries']);
-        Route::get('reports/overdue',          [ReportController::class, 'overdue']);
-        Route::get('reports/sla-performance',  [ReportController::class, 'slaPerformance']);
+        // Отчёты (только owner, rate limited)
+        Route::middleware('throttle:heavy')->group(function () {
+            Route::get('reports/overview',         [ReportController::class, 'overview']);
+            Route::get('reports/managers',         [ReportController::class, 'managers']);
+            Route::get('reports/countries',        [ReportController::class, 'countries']);
+            Route::get('reports/overdue',          [ReportController::class, 'overdue']);
+            Route::get('reports/sla-performance',  [ReportController::class, 'slaPerformance']);
+        });
     });
 
     // Глобальный каталог услуг + страны + типы виз (все авторизованные)

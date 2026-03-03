@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Support\Helpers\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -40,15 +41,18 @@ class ReferenceController extends Controller
 
     /**
      * Все элементы всех категорий (для фронта — один запрос).
+     * Кэшируется на 60 минут, инвалидируется при изменениях.
      */
     public function all(): JsonResponse
     {
-        $items = DB::table('reference_items')
-            ->where('is_active', true)
-            ->orderBy('category')
-            ->orderBy('sort_order')
-            ->get()
-            ->groupBy('category');
+        $items = Cache::remember('references:all', 3600, function () {
+            return DB::table('reference_items')
+                ->where('is_active', true)
+                ->orderBy('category')
+                ->orderBy('sort_order')
+                ->get()
+                ->groupBy('category');
+        });
 
         return ApiResponse::success($items);
     }
@@ -88,6 +92,7 @@ class ReferenceController extends Controller
         ]));
 
         $item = DB::table('reference_items')->where('id', $id)->first();
+        Cache::forget('references:all');
 
         return ApiResponse::created($item, 'Элемент добавлен');
     }
@@ -118,6 +123,7 @@ class ReferenceController extends Controller
             ->update($data);
 
         $item = DB::table('reference_items')->where('id', $id)->first();
+        Cache::forget('references:all');
 
         return ApiResponse::success($item);
     }
@@ -131,6 +137,8 @@ class ReferenceController extends Controller
             ->where('id', $id)
             ->where('category', $category)
             ->delete();
+
+        Cache::forget('references:all');
 
         return ApiResponse::success(null, 'Элемент удалён');
     }
