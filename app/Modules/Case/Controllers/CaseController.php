@@ -85,7 +85,7 @@ class CaseController extends Controller
         $data = $request->validate([
             'client_id'    => ['required', 'uuid', "exists:clients,id,agency_id,{$agencyId}"],
             'country_code' => ['required', 'string', 'size:2'],
-            'visa_type'    => ['required', 'string', 'max:50'],
+            'visa_type'    => ['required', 'string', 'max:50', 'exists:portal_visa_types,slug'],
             'assigned_to'  => ['nullable', 'uuid', "exists:users,id,agency_id,{$agencyId}"],
             'priority'     => ['nullable', 'in:low,normal,high,urgent'],
             'critical_date'=> ['nullable', 'date'],

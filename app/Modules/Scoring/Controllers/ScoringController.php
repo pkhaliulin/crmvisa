@@ -9,6 +9,7 @@ use App\Modules\Scoring\Models\ClientProfile;
 use App\Modules\Scoring\Models\ClientScore;
 use App\Modules\Scoring\Services\ScoringEngine;
 use App\Support\Helpers\ApiResponse;
+use App\Support\Rules\ReferenceExists;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -37,7 +38,7 @@ class ScoringController extends Controller
         $data = $request->validate([
             // Block F
             'monthly_income'       => ['sometimes', 'integer', 'min:0'],
-            'income_type'          => ['sometimes', 'in:official,informal,business,mixed'],
+            'income_type'          => ['sometimes', new ReferenceExists('income_type')],
             'bank_balance'         => ['sometimes', 'integer', 'min:0'],
             'bank_history_months'  => ['sometimes', 'integer', 'min:0'],
             'bank_balance_stable'  => ['sometimes', 'boolean'],
@@ -46,15 +47,15 @@ class ScoringController extends Controller
             'has_investments'      => ['sometimes', 'boolean'],
             'investments_amount'   => ['sometimes', 'integer', 'min:0'],
             // Block E
-            'employment_type'      => ['sometimes', 'in:government,private,business_owner,self_employed,retired,student,unemployed'],
+            'employment_type'      => ['sometimes', new ReferenceExists('employment_type')],
             'employer_name'        => ['sometimes', 'nullable', 'string', 'max:255'],
             'position'             => ['sometimes', 'nullable', 'string', 'max:255'],
-            'position_level'       => ['sometimes', 'nullable', 'in:executive,senior,mid,junior,intern'],
+            'position_level'       => ['sometimes', 'nullable', new ReferenceExists('position_level')],
             'years_at_current_job' => ['sometimes', 'numeric', 'min:0'],
             'total_work_experience'=> ['sometimes', 'numeric', 'min:0'],
             'has_employment_gaps'  => ['sometimes', 'boolean'],
             // Block FM
-            'marital_status'       => ['sometimes', 'in:married,single,divorced,widowed'],
+            'marital_status'       => ['sometimes', new ReferenceExists('marital_status')],
             'spouse_employed'      => ['sometimes', 'boolean'],
             'children_count'       => ['sometimes', 'integer', 'min:0'],
             'children_staying_home'=> ['sometimes', 'boolean'],
@@ -70,11 +71,11 @@ class ScoringController extends Controller
             'previous_refusals'    => ['sometimes', 'integer', 'min:0'],
             'has_overstay'         => ['sometimes', 'boolean'],
             // Block P
-            'education_level'      => ['sometimes', 'in:none,secondary,bachelor,master,phd'],
+            'education_level'      => ['sometimes', new ReferenceExists('education_level')],
             'has_criminal_record'  => ['sometimes', 'boolean'],
             'age'                  => ['sometimes', 'integer', 'min:18', 'max:100'],
             // Block G
-            'travel_purpose'       => ['sometimes', 'in:tourism,business,education,treatment,family_visit'],
+            'travel_purpose'       => ['sometimes', new ReferenceExists('travel_purpose')],
             'has_return_ticket'    => ['sometimes', 'boolean'],
             'has_hotel_booking'    => ['sometimes', 'boolean'],
             'has_invitation_letter'=> ['sometimes', 'boolean'],

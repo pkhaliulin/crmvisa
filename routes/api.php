@@ -286,6 +286,9 @@ Route::prefix('v1')->group(function () {
 
     // Без авторизации
     Route::prefix('public')->middleware('locale')->group(function () {
+        // Справочники (публичные, без авторизации)
+        Route::get('references', [\App\Modules\Owner\Controllers\ReferenceController::class, 'all']);
+
         // Список стран для лендинга
         Route::get('countries', [PublicScoringController::class, 'countries']);
 

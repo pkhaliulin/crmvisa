@@ -5,6 +5,7 @@ namespace App\Modules\Client\Controllers;
 use App\Http\Controllers\Controller;
 use App\Modules\Client\Services\ClientService;
 use App\Support\Helpers\ApiResponse;
+use App\Support\Rules\ReferenceExists;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -36,7 +37,7 @@ class ClientController extends Controller
             'nationality'         => ['nullable', 'string', 'size:3'],
             'date_of_birth'       => ['nullable', 'date'],
             'passport_expires_at' => ['nullable', 'date'],
-            'source'              => ['nullable', 'in:direct,referral,marketplace,other'],
+            'source'              => ['nullable', new ReferenceExists('lead_source')],
             'notes'               => ['nullable', 'string'],
         ]);
 
@@ -63,7 +64,7 @@ class ClientController extends Controller
             'nationality'         => ['sometimes', 'nullable', 'string', 'size:3'],
             'date_of_birth'       => ['sometimes', 'nullable', 'date'],
             'passport_expires_at' => ['sometimes', 'nullable', 'date'],
-            'source'              => ['sometimes', 'in:direct,referral,marketplace,other'],
+            'source'              => ['sometimes', new ReferenceExists('lead_source')],
             'notes'               => ['sometimes', 'nullable', 'string'],
         ]);
 

@@ -64,4 +64,7 @@ export const publicPortalApi = {
     countries:    ()     => publicApi.get('/countries'),
     scoreAll:     ()     => publicApi.get('/scoring'),
     scoreCountry: (code) => publicApi.get(`/scoring/${code}`),
+
+    // References (public, no auth)
+    publicReferences: () => publicApi.get('/references'),
 };

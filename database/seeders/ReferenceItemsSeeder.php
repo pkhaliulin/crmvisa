@@ -23,6 +23,7 @@ class ReferenceItemsSeeder extends Seeder
             ],
 
             'employment_type' => [
+                ['code' => 'employed',       'label_ru' => 'Работает по найму',  'label_uz' => 'Yollangan xodim'],
                 ['code' => 'government',     'label_ru' => 'Госслужба',          'label_uz' => 'Davlat xizmati'],
                 ['code' => 'private',        'label_ru' => 'Частный сектор',     'label_uz' => 'Xususiy sektor'],
                 ['code' => 'business_owner', 'label_ru' => 'Владелец бизнеса',   'label_uz' => 'Biznes egasi'],
@@ -31,6 +32,14 @@ class ReferenceItemsSeeder extends Seeder
                 ['code' => 'student',        'label_ru' => 'Студент',            'label_uz' => 'Talaba'],
                 ['code' => 'unemployed',     'label_ru' => 'Безработный',        'label_uz' => 'Ishsiz'],
                 ['code' => 'freelancer',     'label_ru' => 'Фрилансер',          'label_uz' => 'Frilanser'],
+            ],
+
+            'position_level' => [
+                ['code' => 'executive', 'label_ru' => 'Руководитель',        'label_uz' => 'Rahbar'],
+                ['code' => 'senior',    'label_ru' => 'Старший специалист',   'label_uz' => 'Katta mutaxassis'],
+                ['code' => 'mid',       'label_ru' => 'Специалист',           'label_uz' => 'Mutaxassis'],
+                ['code' => 'junior',    'label_ru' => 'Младший специалист',   'label_uz' => 'Kichik mutaxassis'],
+                ['code' => 'intern',    'label_ru' => 'Стажёр',              'label_uz' => 'Stajiyor'],
             ],
 
             'marital_status' => [

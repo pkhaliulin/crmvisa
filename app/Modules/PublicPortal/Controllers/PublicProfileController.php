@@ -7,6 +7,7 @@ use App\Modules\Case\Models\VisaCase;
 use App\Modules\Client\Models\Client;
 use App\Modules\Document\Models\CaseChecklist;
 use App\Support\Helpers\ApiResponse;
+use App\Support\Rules\ReferenceExists;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -44,9 +45,9 @@ class PublicProfileController extends Controller
             'gender'             => ['sometimes', Rule::in(['M', 'F'])],
             'passport_number'    => ['sometimes', 'nullable', 'string', 'regex:/^[A-Z]{2}[0-9]{7}$/'],
             'passport_expires_at'=> 'sometimes|date|after:today',
-            'employment_type'    => ['sometimes', Rule::in(['employed','self_employed','business_owner','student','retired','unemployed'])],
+            'employment_type'    => ['sometimes', new ReferenceExists('employment_type')],
             'monthly_income_usd' => 'sometimes|integer|min:0',
-            'marital_status'     => ['sometimes', Rule::in(['single','married','divorced','widowed'])],
+            'marital_status'     => ['sometimes', new ReferenceExists('marital_status')],
             'has_children'       => 'sometimes|boolean',
             'children_count'     => 'sometimes|integer|min:0|max:20',
             'has_property'       => 'sometimes|boolean',

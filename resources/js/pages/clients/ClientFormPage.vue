@@ -122,6 +122,7 @@
 import { ref, reactive, onMounted, computed } from 'vue';
 import { useRouter, useRoute, RouterLink } from 'vue-router';
 import { clientsApi } from '@/api/clients';
+import { useReferences } from '@/composables/useReferences';
 import AppInput from '@/components/AppInput.vue';
 import AppPhoneInput from '@/components/AppPhoneInput.vue';
 import AppTextarea from '@/components/AppTextarea.vue';
@@ -141,13 +142,11 @@ const errors   = ref({});
 const errorMsg = ref('');
 const loading  = ref(false);
 
-// ── Sources ──────────────────────────────────────────────────────────────────
-const sourceOptions = [
-  { value: 'direct',      label: 'Прямой (агентство)' },
-  { value: 'referral',    label: 'Реферал' },
-  { value: 'marketplace', label: 'Маркетплейс CRMBOR' },
-  { value: 'other',       label: 'Другое' },
-];
+// ── Sources (из справочника) ─────────────────────────────────────────────────
+const { activeItems } = useReferences();
+const sourceOptions = computed(() =>
+  activeItems('lead_source').map(i => ({ value: i.code, label: i.label_ru }))
+);
 
 // ── Validation ───────────────────────────────────────────────────────────────
 function isValidEmail(email) {

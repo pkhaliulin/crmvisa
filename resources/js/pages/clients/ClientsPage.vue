@@ -61,10 +61,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { RouterLink, useRouter } from 'vue-router';
 import { clientsApi } from '@/api/clients';
 import { codeToFlag } from '@/utils/countries';
+import { useReferences } from '@/composables/useReferences';
 import AppInput from '@/components/AppInput.vue';
 import AppButton from '@/components/AppButton.vue';
 import AppBadge from '@/components/AppBadge.vue';
@@ -74,14 +75,15 @@ const clients = ref([]);
 const search  = ref('');
 const loading = ref(false);
 
-const sourceMap = {
-  direct: { label: 'Прямой', color: 'blue' },
-  referral: { label: 'Реферал', color: 'purple' },
-  marketplace: { label: 'Маркетплейс', color: 'green' },
-  other: { label: 'Другое', color: 'gray' },
+const { activeItems, label: refLabel } = useReferences();
+
+const SOURCE_COLORS = {
+  direct: 'blue', referral: 'purple', marketplace: 'green',
+  website: 'cyan', social_media: 'pink', partner: 'indigo',
+  repeat: 'teal', other: 'gray',
 };
-const sourceLabel = (s) => sourceMap[s]?.label ?? s;
-const sourceColor = (s) => sourceMap[s]?.color ?? 'gray';
+const sourceLabel = (s) => refLabel('lead_source', s) || s;
+const sourceColor = (s) => SOURCE_COLORS[s] ?? 'gray';
 
 // ISO Alpha-3 → название страны (гражданство клиента)
 const NATIONALITIES = {

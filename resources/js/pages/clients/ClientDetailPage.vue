@@ -140,10 +140,12 @@ import { ref, computed, onMounted } from 'vue';
 import { useRoute, RouterLink } from 'vue-router';
 import { clientsApi } from '@/api/clients';
 import { useCountries } from '@/composables/useCountries';
+import { useReferences } from '@/composables/useReferences';
 import AppBadge from '@/components/AppBadge.vue';
 import AppButton from '@/components/AppButton.vue';
 
 const { countryName, countryFlag, visaTypeName } = useCountries();
+const { label: refLabel } = useReferences();
 
 const route  = useRoute();
 const id     = route.params.id;
@@ -189,14 +191,13 @@ function priorityChip(p) {
 }
 
 
-const sourceMap = {
-  direct: { label: 'Прямой', color: 'blue' },
-  referral: { label: 'Реферал', color: 'purple' },
-  marketplace: { label: 'Маркетплейс', color: 'green' },
-  other: { label: 'Другое', color: 'gray' },
+const SOURCE_COLORS = {
+  direct: 'blue', referral: 'purple', marketplace: 'green',
+  website: 'cyan', social_media: 'pink', partner: 'indigo',
+  repeat: 'teal', other: 'gray',
 };
-const sourceLabel = computed(() => sourceMap[client.value?.source]?.label ?? '');
-const sourceColor = computed(() => sourceMap[client.value?.source]?.color ?? 'gray');
+const sourceLabel = computed(() => refLabel('lead_source', client.value?.source) || '');
+const sourceColor = computed(() => SOURCE_COLORS[client.value?.source] ?? 'gray');
 
 const passportClass = computed(() => {
   const d = client.value?.passport_expires_at;

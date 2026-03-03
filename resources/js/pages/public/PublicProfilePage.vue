@@ -145,12 +145,7 @@
                     <select v-model="form.employment_type"
                         class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] transition-colors">
                         <option value="">{{ $t('common.notSpecified') }}</option>
-                        <option value="employed">{{ $t('profile.employed') }}</option>
-                        <option value="business_owner">{{ $t('profile.businessOwner') }}</option>
-                        <option value="self_employed">{{ $t('profile.selfEmployed') }}</option>
-                        <option value="retired">{{ $t('profile.retired') }}</option>
-                        <option value="student">{{ $t('profile.student') }}</option>
-                        <option value="unemployed">{{ $t('profile.unemployed') }}</option>
+                        <option v-for="et in employmentTypes" :key="et.code" :value="et.code">{{ refLabel(et) }}</option>
                     </select>
                 </div>
                 <div>
@@ -200,10 +195,7 @@
                     <select v-model="form.marital_status"
                         class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] transition-colors">
                         <option value="">{{ $t('common.notSpecified') }}</option>
-                        <option value="single">{{ $t('profile.single') }}</option>
-                        <option value="married">{{ $t('profile.married') }}</option>
-                        <option value="divorced">{{ $t('profile.divorced') }}</option>
-                        <option value="widowed">{{ $t('profile.widowed') }}</option>
+                        <option v-for="ms in maritalStatuses" :key="ms.code" :value="ms.code">{{ refLabel(ms) }}</option>
                     </select>
                 </div>
                 <div>
@@ -478,10 +470,20 @@ import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { publicPortalApi } from '@/api/public';
 import { usePublicAuthStore } from '@/stores/publicAuth';
+import { usePublicReferences } from '@/composables/usePublicReferences';
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const router     = useRouter();
 const publicAuth = usePublicAuthStore();
+const { activeItems: refItems } = usePublicReferences();
+
+const employmentTypes = computed(() => refItems('employment_type'));
+const maritalStatuses = computed(() => refItems('marital_status'));
+
+function refLabel(item) {
+    if (locale.value === 'uz' && item.label_uz) return item.label_uz;
+    return item.label_ru;
+}
 
 const saving    = ref(false);
 const saveMsg   = ref('');

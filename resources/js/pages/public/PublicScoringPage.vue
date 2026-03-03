@@ -203,9 +203,14 @@ import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { publicPortalApi } from '@/api/public';
 import { usePublicAuthStore } from '@/stores/publicAuth';
+import { usePublicReferences } from '@/composables/usePublicReferences';
 import { countryName as getCountryName, codeToFlag } from '@/utils/countries';
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
+const { activeItems: refItems } = usePublicReferences();
+
+const employmentTypes = computed(() => refItems('employment_type'));
+const maritalStatuses = computed(() => refItems('marital_status'));
 
 const route          = useRoute();
 const router         = useRouter();
@@ -318,14 +323,18 @@ async function loadScores() {
 
 const ProfileFormInline = {
     name: 'ProfileFormInline',
-    props: ['profile', 'loading'],
+    props: ['profile', 'loading', 'employmentTypes', 'maritalStatuses', 'currentLocale'],
     emits: ['update:profile', 'update', 'recalculate'],
     setup(props, { emit }) {
         function set(key, value) {
             emit('update:profile', { ...props.profile, [key]: value });
             emit('update');
         }
-        return { set };
+        function rl(item) {
+            if (props.currentLocale === 'uz' && item.label_uz) return item.label_uz;
+            return item.label_ru;
+        }
+        return { set, rl };
     },
     template: `
         <div class="space-y-3">
@@ -335,12 +344,7 @@ const ProfileFormInline = {
                     @change="set('employment_type', $event.target.value)"
                     class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm text-[#0A1F44] outline-none focus:border-[#1BA97F]">
                     <option value="">{{ $t('common.notSpecified') }}</option>
-                    <option value="employed">{{ $t('scoring.employedShort') }}</option>
-                    <option value="business_owner">{{ $t('scoring.businessOwnerShort') }}</option>
-                    <option value="self_employed">{{ $t('scoring.selfEmployedShort') }}</option>
-                    <option value="retired">{{ $t('scoring.retiredShort') }}</option>
-                    <option value="student">{{ $t('scoring.studentShort') }}</option>
-                    <option value="unemployed">{{ $t('scoring.unemployedShort') }}</option>
+                    <option v-for="et in employmentTypes" :key="et.code" :value="et.code">{{ rl(et) }}</option>
                 </select>
             </div>
             <div>
@@ -374,10 +378,7 @@ const ProfileFormInline = {
                     @change="set('marital_status', $event.target.value)"
                     class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm text-[#0A1F44] outline-none focus:border-[#1BA97F]">
                     <option value="">{{ $t('common.notSpecified') }}</option>
-                    <option value="married">{{ $t('scoring.marriedShort') }}</option>
-                    <option value="single">{{ $t('scoring.singleShort') }}</option>
-                    <option value="divorced">{{ $t('scoring.divorcedShort') }}</option>
-                    <option value="widowed">{{ $t('scoring.widowedShort') }}</option>
+                    <option v-for="ms in maritalStatuses" :key="ms.code" :value="ms.code">{{ rl(ms) }}</option>
                 </select>
             </div>
             <div>
