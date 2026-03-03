@@ -10,6 +10,9 @@ class TestAgencyReviewsSeeder extends Seeder
 {
     public function run(): void
     {
+        // RLS bypass для сидирования
+        DB::statement("SET app.is_superadmin = 'true'");
+
         $slugs = ['silk-road-visa', 'euro-visa-pro', 'asia-passport', 'visa-grand', 'travel-docs-uz'];
 
         // Имена фиктивных рецензентов

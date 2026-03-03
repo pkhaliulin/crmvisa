@@ -10,6 +10,9 @@ class TestAgencyPackagesSeeder extends Seeder
 {
     public function run(): void
     {
+        // RLS bypass для сидирования
+        DB::statement("SET app.is_superadmin = 'true'");
+
         // Тестовые агентства: slug → страны
         $agencyData = [
             'silk-road-visa' => [

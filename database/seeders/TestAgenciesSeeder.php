@@ -130,6 +130,9 @@ class TestAgenciesSeeder extends Seeder
     {
         $now = now();
 
+        // RLS bypass для сидирования
+        DB::statement("SET app.is_superadmin = 'true'");
+
         foreach ($this->agencies as $ai => $agencyData) {
             // ------------------------------------------------------------------
             // Агентство

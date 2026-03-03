@@ -7,6 +7,7 @@ use App\Modules\Agency\Services\AgencyService;
 use App\Modules\Auth\DTOs\LoginDTO;
 use App\Modules\Auth\DTOs\RegisterDTO;
 use App\Modules\User\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
@@ -17,58 +18,69 @@ class AuthService
 
     public function register(RegisterDTO $dto): array
     {
-        $agencyDTO = RegisterAgencyDTO::fromArray([
-            'name'     => $dto->agencyName,
-            'email'    => $dto->email,
-            'phone'    => $dto->phone,
-            'country'  => $dto->country,
-            'timezone' => $dto->timezone,
-        ]);
+        // RLS bypass: при регистрации пользователь ещё не авторизован
+        return DB::transaction(function () use ($dto) {
+            DB::statement("SET LOCAL app.is_superadmin = 'true'");
 
-        $agency = $this->agencyService->register($agencyDTO);
+            $agencyDTO = RegisterAgencyDTO::fromArray([
+                'name'     => $dto->agencyName,
+                'email'    => $dto->email,
+                'phone'    => $dto->phone,
+                'country'  => $dto->country,
+                'timezone' => $dto->timezone,
+            ]);
 
-        $user = User::create([
-            'agency_id' => $agency->id,
-            'name'      => $dto->ownerName,
-            'email'     => $dto->email,
-            'password'  => Hash::make($dto->password),
-            'role'      => 'owner',
-            'is_active' => true,
-        ]);
+            $agency = $this->agencyService->register($agencyDTO);
 
-        $token = JWTAuth::fromUser($user);
+            $user = User::create([
+                'agency_id' => $agency->id,
+                'name'      => $dto->ownerName,
+                'email'     => $dto->email,
+                'password'  => Hash::make($dto->password),
+                'role'      => 'owner',
+                'is_active' => true,
+            ]);
 
-        return $this->tokenResponse($token, $user);
+            $token = JWTAuth::fromUser($user);
+
+            return $this->tokenResponse($token, $user);
+        });
     }
 
     public function login(LoginDTO $dto): array
     {
-        $user = User::where('email', $dto->email)->first();
+        // RLS bypass: при логине пользователь ещё не авторизован,
+        // SET LOCAL действует только внутри этой транзакции
+        return DB::transaction(function () use ($dto) {
+            DB::statement("SET LOCAL app.is_superadmin = 'true'");
 
-        if (! $user) {
-            throw ValidationException::withMessages([
-                'email' => __('auth.user_not_found'),
+            $user = User::where('email', $dto->email)->first();
+
+            if (! $user) {
+                throw ValidationException::withMessages([
+                    'email' => __('auth.user_not_found'),
+                ]);
+            }
+
+            if (! $user->is_active) {
+                throw ValidationException::withMessages([
+                    'email' => __('auth.account_deactivated'),
+                ]);
+            }
+
+            $token = JWTAuth::attempt([
+                'email'    => $dto->email,
+                'password' => $dto->password,
             ]);
-        }
 
-        if (! $user->is_active) {
-            throw ValidationException::withMessages([
-                'email' => __('auth.account_deactivated'),
-            ]);
-        }
+            if (! $token) {
+                throw ValidationException::withMessages([
+                    'password' => __('auth.wrong_password'),
+                ]);
+            }
 
-        $token = JWTAuth::attempt([
-            'email'    => $dto->email,
-            'password' => $dto->password,
-        ]);
-
-        if (! $token) {
-            throw ValidationException::withMessages([
-                'password' => __('auth.wrong_password'),
-            ]);
-        }
-
-        return $this->tokenResponse($token, $user);
+            return $this->tokenResponse($token, $user);
+        });
     }
 
     public function logout(): void
