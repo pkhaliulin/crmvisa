@@ -23,6 +23,7 @@ use App\Modules\Payment\Controllers\MarketplaceController;
 use App\Modules\Scoring\Controllers\ScoringController;
 use App\Modules\Service\Controllers\ServiceCatalogController;
 use App\Modules\Owner\Controllers\CountryDetailController;
+use App\Modules\Owner\Controllers\FeatureFlagController;
 use App\Modules\Owner\Controllers\MemoryController;
 use App\Modules\Owner\Controllers\MonitoringController;
 use App\Modules\Owner\Controllers\OwnerController;
@@ -50,7 +51,9 @@ Route::prefix('v1')->group(function () {
 
         // Клиенты
         Route::post('clients/parse-passport', [ClientController::class, 'parsePassport']);
-        Route::apiResource('clients', ClientController::class);
+        Route::apiResource('clients', ClientController::class)->middleware([
+            'plan.limit:max_cases', // enforce на создание — POST /clients
+        ]);
 
         // Канбан
         Route::get('kanban', [KanbanController::class, 'board']);
@@ -63,7 +66,9 @@ Route::prefix('v1')->group(function () {
         // Заявки
         Route::get('cases/critical',          [CaseController::class, 'critical']);
         Route::post('cases/{id}/move-stage',  [CaseController::class, 'moveStage']);
-        Route::apiResource('cases', CaseController::class);
+        Route::apiResource('cases', CaseController::class)->middleware([
+            'plan.limit:max_cases',
+        ]);
 
         // Документы (вложены в заявку)
         Route::prefix('cases/{caseId}/documents')->group(function () {
@@ -98,7 +103,7 @@ Route::prefix('v1')->group(function () {
     // Управление пользователями агентства (только owner)
     Route::middleware(['auth:api', 'role:owner,superadmin', 'plan.active'])->group(function () {
         Route::get('users',          [UserController::class, 'index']);
-        Route::post('users',         [UserController::class, 'store']);
+        Route::post('users',         [UserController::class, 'store'])->middleware('plan.limit:max_managers');
         Route::patch('users/{id}',   [UserController::class, 'update']);
         Route::delete('users/{id}',  [UserController::class, 'destroy']);
 
@@ -276,6 +281,12 @@ Route::prefix('v1')->group(function () {
         Route::post('services',            [ServiceCatalogController::class, 'storeGlobal']);
         Route::patch('services/{id}',      [ServiceCatalogController::class, 'updateGlobal']);
         Route::delete('services/{id}',     [ServiceCatalogController::class, 'destroyGlobal']);
+
+        // Feature Flags
+        Route::get('feature-flags',          [FeatureFlagController::class, 'index']);
+        Route::post('feature-flags',         [FeatureFlagController::class, 'store']);
+        Route::patch('feature-flags/{id}',   [FeatureFlagController::class, 'update']);
+        Route::delete('feature-flags/{id}',  [FeatureFlagController::class, 'destroy']);
 
         // Память проекта (документация)
         Route::get('memory', [MemoryController::class, 'index']);

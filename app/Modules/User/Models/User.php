@@ -39,6 +39,7 @@ class User extends Authenticatable implements JWTSubject
 
     protected $casts = [
         'is_active'          => 'boolean',
+        'phone'              => 'encrypted',
         'email_verified_at'  => 'datetime',
         'created_at'         => 'datetime',
         'updated_at'         => 'datetime',
@@ -97,7 +98,7 @@ class User extends Authenticatable implements JWTSubject
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['name', 'email', 'phone', 'role', 'is_active'])
+            ->logOnly(['name', 'email', 'role', 'is_active'])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs()
             ->useLogName('users');

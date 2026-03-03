@@ -7,6 +7,7 @@ use App\Support\Traits\HasTenant;
 use App\Support\Traits\NormalizesPhone;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Notifications\Notifiable;
+use Spatie\Activitylog\LogOptions;
 
 class Client extends BaseModel
 {
@@ -27,9 +28,23 @@ class Client extends BaseModel
     ];
 
     protected $casts = [
-        'date_of_birth'       => 'date',
-        'passport_expires_at' => 'date',
+        'phone'               => 'encrypted',
+        'passport_number'     => 'encrypted',
+        'date_of_birth'       => 'encrypted:date',
+        'passport_expires_at' => 'encrypted:date',
     ];
+
+    /**
+     * Activity log: исключаем PII-поля из логирования.
+     */
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['agency_id', 'name', 'email', 'nationality', 'source', 'notes'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs()
+            ->useLogName('clients');
+    }
 
     public function cases(): HasMany
     {

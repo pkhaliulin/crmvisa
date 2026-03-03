@@ -1,10 +1,13 @@
 <?php
 
 use App\Http\Middleware\CheckAgencyPlan;
+use App\Http\Middleware\CheckFeature;
+use App\Http\Middleware\CheckPlanLimits;
 use App\Http\Middleware\CheckRole;
 use App\Http\Middleware\LogApiRequest;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\SetLocale;
+use App\Http\Middleware\SetTenantContext;
 use App\Modules\PublicPortal\Middleware\AuthPublicUser;
 use App\Support\Helpers\ApiResponse;
 use Illuminate\Auth\AuthenticationException;
@@ -30,15 +33,23 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Алиасы для route middleware
         $middleware->alias([
-            'role'        => CheckRole::class,
-            'plan.active' => CheckAgencyPlan::class,
-            'auth.public' => AuthPublicUser::class,
-            'locale'      => SetLocale::class,
+            'role'           => CheckRole::class,
+            'plan.active'    => CheckAgencyPlan::class,
+            'auth.public'    => AuthPublicUser::class,
+            'locale'         => SetLocale::class,
+            'tenant.context' => SetTenantContext::class,
+            'plan.limit'     => CheckPlanLimits::class,
+            'feature'        => CheckFeature::class,
         ]);
 
         // Rate limiting на все API маршруты
         $middleware->api(prepend: [
             \Illuminate\Routing\Middleware\ThrottleRequests::class.':api',
+        ]);
+
+        // Установка tenant context для RLS (после аутентификации)
+        $middleware->api(append: [
+            SetTenantContext::class,
         ]);
 
         // Логирование всех API-запросов

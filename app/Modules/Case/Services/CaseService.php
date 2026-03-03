@@ -3,6 +3,8 @@
 namespace App\Modules\Case\Services;
 
 use App\Modules\Agency\Models\Agency;
+use App\Modules\Case\Events\CaseCreated;
+use App\Modules\Case\Events\CaseStatusChanged;
 use App\Modules\Case\Models\CaseStage;
 use App\Modules\Case\Models\VisaCase;
 use App\Modules\Case\Repositories\CaseRepository;
@@ -74,7 +76,7 @@ class CaseService extends BaseService
             }
         }
 
-        return DB::transaction(function () use ($data) {
+        $case = DB::transaction(function () use ($data) {
             /** @var VisaCase */
             $case = $this->repository->create($data);
 
@@ -90,6 +92,10 @@ class CaseService extends BaseService
 
             return $case->load(['client', 'assignee']);
         });
+
+        CaseCreated::dispatch($case, Auth::id());
+
+        return $case;
     }
 
     /**
@@ -141,6 +147,8 @@ class CaseService extends BaseService
 
             return $case->fresh(['client', 'assignee', 'stageHistory']);
         });
+
+        CaseStatusChanged::dispatch($result, $previousStage, $newStage, Auth::id());
 
         // Уведомление клиенту — email и Telegram
         if ($result->client) {

@@ -3,6 +3,7 @@
 namespace App\Modules\Payment\Services;
 
 use App\Modules\Agency\Models\Agency;
+use App\Modules\Payment\Events\PaymentReceived;
 use App\Modules\Payment\Models\AgencySubscription;
 use App\Modules\Payment\Models\BillingPlan;
 use App\Modules\Payment\Models\PaymentTransaction;
@@ -109,7 +110,7 @@ class BillingService
         string $providerTxId,
         string $description = ''
     ): PaymentTransaction {
-        return PaymentTransaction::create([
+        $transaction = PaymentTransaction::create([
             'agency_id'               => $agency->id,
             'subscription_id'         => $subscriptionId,
             'provider'                => $provider,
@@ -120,6 +121,10 @@ class BillingService
             'description'             => $description,
             'paid_at'                 => now(),
         ]);
+
+        PaymentReceived::dispatch($transaction, $agency->id);
+
+        return $transaction;
     }
 
     /**

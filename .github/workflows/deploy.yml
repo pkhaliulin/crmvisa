@@ -1,4 +1,4 @@
-name: Deploy to ServerCore
+name: CI/CD — Lint, Test, Build, Deploy
 
 on:
   push:
@@ -6,7 +6,48 @@ on:
       - main
 
 jobs:
+  quality:
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo_pgsql, redis
+          coverage: none
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Install JS dependencies
+        run: npm ci
+
+      - name: PHPStan (level 5)
+        run: composer lint
+        continue-on-error: true
+
+      - name: ESLint
+        run: npm run lint
+        continue-on-error: true
+
+      - name: Build frontend
+        run: npm run build
+
   deploy:
+    needs: quality
     runs-on: ubuntu-latest
     steps:
       - name: Trigger deploy webhook
