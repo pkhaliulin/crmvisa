@@ -429,6 +429,8 @@
       "rejected": "Afsuski, viza rad etildi. Sabablarni bilish va keyingi qadamlarni muhokama qilish uchun menejer bilan bog'laning."
     },
     "awaitingPayment": "To'lovni kutmoqdamiz",
+    "paymentRequired": "Ariza davom etishi uchun xizmat uchun to'lang. To'lovsiz menejer ishga kirishmaydi.",
+    "payNow": "Hozir to'lash",
     "paymentOverdue": "To'lov muddati tugadi",
     "paid": "To'langan",
     "unpaid": "To'lanmagan",

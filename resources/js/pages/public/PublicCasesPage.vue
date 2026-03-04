@@ -105,32 +105,68 @@
                     </div>
                 </div>
 
-                <!-- Payment countdown -->
+                <!-- Payment block -->
                 <div v-if="showPaymentBlock(c)" class="px-5 pb-2">
-                    <div class="rounded-xl p-3 flex items-center gap-3"
-                        :class="isPaymentOverdue(c) ? 'bg-red-50 border border-red-200' : 'bg-amber-50 border border-amber-200'">
-                        <div class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-                            :class="isPaymentOverdue(c) ? 'bg-red-100' : 'bg-amber-100'">
-                            <svg class="w-5 h-5"
-                                :class="isPaymentOverdue(c) ? 'text-red-500' : 'text-amber-600'"
-                                fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <div class="text-[10px] font-semibold uppercase tracking-wide"
-                                :class="isPaymentOverdue(c) ? 'text-red-600' : 'text-amber-600'">
-                                {{ $t('caseStatus.awaitingPayment') }}
+                    <div class="rounded-2xl overflow-hidden border-2"
+                        :class="isPaymentOverdue(c) ? 'border-red-300 bg-red-50' : 'border-amber-300 bg-amber-50'">
+                        <!-- Header -->
+                        <div class="px-4 py-3 flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                                :class="isPaymentOverdue(c) ? 'bg-red-100' : 'bg-amber-100'">
+                                <svg class="w-5 h-5"
+                                    :class="isPaymentOverdue(c) ? 'text-red-500' : 'text-amber-600'"
+                                    fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
                             </div>
-                            <div class="text-base font-bold tabular-nums"
-                                :class="isPaymentOverdue(c) ? 'text-red-700' : 'text-amber-700'">
-                                {{ getCountdownText(c) }}
+                            <div class="flex-1 min-w-0">
+                                <div class="text-sm font-bold"
+                                    :class="isPaymentOverdue(c) ? 'text-red-700' : 'text-amber-700'">
+                                    {{ $t('caseStatus.awaitingPayment') }}
+                                </div>
+                                <div class="text-xs mt-0.5"
+                                    :class="isPaymentOverdue(c) ? 'text-red-600' : 'text-amber-600'">
+                                    {{ $t('caseStatus.paymentRequired') }}
+                                </div>
                             </div>
                         </div>
-                        <span class="text-[10px] font-bold px-2.5 py-1 rounded-lg shrink-0"
-                            :class="isPaymentOverdue(c) ? 'bg-red-200 text-red-700' : 'bg-amber-200 text-amber-700'">
-                            {{ c.payment_status === 'paid' ? $t('caseStatus.paid') : $t('caseStatus.unpaid') }}
-                        </span>
+                        <!-- Countdown timer -->
+                        <div v-if="c.payment_deadline" class="px-4 pb-3">
+                            <div class="flex items-center gap-2 px-3 py-2 rounded-xl"
+                                :class="isPaymentOverdue(c) ? 'bg-red-100' : 'bg-amber-100'">
+                                <svg class="w-4 h-4 shrink-0"
+                                    :class="isPaymentOverdue(c) ? 'text-red-500 animate-pulse' : 'text-amber-500'"
+                                    fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                <span class="text-lg font-bold tabular-nums"
+                                    :class="isPaymentOverdue(c) ? 'text-red-700' : 'text-amber-700'">
+                                    {{ getCountdownText(c) }}
+                                </span>
+                            </div>
+                        </div>
+                        <!-- Pay button -->
+                        <div class="px-4 pb-3">
+                            <button @click.stop="router.push({ name: 'me.cases.show', params: { id: c.id } })"
+                                class="w-full py-3 rounded-xl text-sm font-bold text-white transition-colors flex items-center justify-center gap-2"
+                                :class="isPaymentOverdue(c) ? 'bg-red-500 hover:bg-red-600' : 'bg-[#1BA97F] hover:bg-[#0d7a5c]'">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+                                </svg>
+                                {{ $t('caseStatus.payNow') }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Paid badge -->
+                <div v-else-if="c.payment_status === 'paid' && c.public_status !== 'draft'"
+                    class="px-5 pb-2">
+                    <div class="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#1BA97F]/10">
+                        <svg class="w-4 h-4 text-[#1BA97F]" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        <span class="text-xs font-semibold text-[#1BA97F]">{{ $t('caseStatus.paid') }}</span>
                     </div>
                 </div>
 
@@ -343,7 +379,7 @@ function statusDescText(status) {
 
 // --- Payment countdown ---
 function showPaymentBlock(c) {
-    return c.payment_status !== 'paid' && c.public_status !== 'draft' && c.payment_deadline;
+    return c.payment_status !== 'paid' && c.public_status !== 'draft' && c.agency;
 }
 
 function isPaymentOverdue(c) {
