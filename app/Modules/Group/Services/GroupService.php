@@ -239,6 +239,9 @@ class GroupService
     public function setGroupAgency(CaseGroup $group, string $agencyId): void
     {
         DB::transaction(function () use ($group, $agencyId) {
+            // Устанавливаем tenant context для RLS (позволяет UPDATE agency_id из NULL в UUID)
+            DB::statement("SET LOCAL app.current_tenant_id = '{$agencyId}'");
+
             $group->update([
                 'agency_id' => $agencyId,
                 'status'    => 'active',
@@ -246,7 +249,7 @@ class GroupService
 
             VisaCase::where('group_id', $group->id)->update([
                 'agency_id'     => $agencyId,
-                'public_status' => 'submitted',
+                'public_status' => 'awaiting_payment',
             ]);
 
             // Обновить agency_id у всех клиентов группы

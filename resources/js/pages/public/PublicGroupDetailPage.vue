@@ -472,8 +472,8 @@ async function selectAgency(agencyId) {
         await publicPortalApi.setGroupAgency(route.params.id, agencyId);
         showAgencyPicker.value = false;
         await loadGroup();
-    } catch {
-        // ignore
+    } catch (e) {
+        alert(e?.response?.data?.message ?? t('common.error'));
     }
 }
 
