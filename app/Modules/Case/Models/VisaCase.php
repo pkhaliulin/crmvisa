@@ -10,12 +10,31 @@ use App\Support\Abstracts\BaseModel;
 use App\Support\Traits\HasTenant;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
 
 class VisaCase extends BaseModel
 {
     use HasTenant;
 
     protected $table = 'cases';
+
+    protected static function booted(): void
+    {
+        static::creating(function (self $case) {
+            if (! $case->case_number) {
+                $case->case_number = static::generateCaseNumber();
+            }
+        });
+    }
+
+    public static function generateCaseNumber(): string
+    {
+        do {
+            $number = 'VB-' . strtoupper(substr(bin2hex(random_bytes(3)), 0, 6));
+        } while (DB::table('cases')->where('case_number', $number)->exists());
+
+        return $number;
+    }
 
     protected $fillable = [
         'agency_id',

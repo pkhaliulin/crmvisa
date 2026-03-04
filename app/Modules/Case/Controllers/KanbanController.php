@@ -92,6 +92,7 @@ class KanbanController extends Controller
 
         return [
             'id'                  => $case->id,
+            'case_number'         => $case->case_number,
             'priority'            => $case->priority,
             'country_code'        => $case->country_code,
             'visa_type'           => $case->visa_type,

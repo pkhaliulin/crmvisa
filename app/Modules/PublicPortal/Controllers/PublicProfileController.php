@@ -139,6 +139,7 @@ class PublicProfileController extends Controller
 
         return ApiResponse::created([
             'id'            => $case->id,
+            'case_number'   => $case->case_number,
             'country_code'  => $case->country_code,
             'visa_type'     => $case->visa_type,
             'public_status' => $case->public_status,
@@ -177,6 +178,7 @@ class PublicProfileController extends Controller
 
                 return [
                     'id'                   => $case->id,
+                    'case_number'          => $case->case_number,
                     'country_code'         => $case->country_code,
                     'visa_type'            => $case->visa_type,
                     'stage'                => $case->stage,
@@ -255,6 +257,7 @@ class PublicProfileController extends Controller
 
         return ApiResponse::success([
             'id'                   => $case->id,
+            'case_number'          => $case->case_number,
             'country_code'         => $case->country_code,
             'visa_type'            => $case->visa_type,
             'stage'                => $case->stage,
