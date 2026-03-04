@@ -127,14 +127,39 @@
                     </div>
                 </div>
 
-                <!-- Даты -->
-                <div class="grid grid-cols-2 gap-3 mt-4">
-                    <div v-if="caseData.critical_date" class="p-3 rounded-xl bg-gray-50">
-                        <div class="text-xs text-gray-400 mb-0.5">{{ $t('cases.deadline') }}</div>
-                        <div class="text-sm font-semibold" :class="deadlineClass(caseData.critical_date)">
-                            {{ formatDate(caseData.critical_date) }}
+                <!-- Дедлайн подачи -->
+                <div v-if="caseData.critical_date || caseData.deadline_info" class="mt-4 p-4 rounded-xl border"
+                    :class="caseData.critical_date && deadlineUrgent(caseData.critical_date) ? 'bg-red-50 border-red-200' : 'bg-amber-50 border-amber-200'">
+                    <div class="flex items-start justify-between gap-3">
+                        <div>
+                            <div class="text-xs font-semibold uppercase tracking-wide mb-1"
+                                :class="caseData.critical_date && deadlineUrgent(caseData.critical_date) ? 'text-red-600' : 'text-amber-600'">
+                                {{ $t('cases.deadlineTitle') }}
+                            </div>
+                            <div v-if="caseData.critical_date" class="text-lg font-bold"
+                                :class="deadlineClass(caseData.critical_date)">
+                                {{ formatDate(caseData.critical_date) }}
+                                <span class="text-sm font-normal ml-1">
+                                    ({{ deadlineDaysText(caseData.critical_date) }})
+                                </span>
+                            </div>
+                            <div v-else class="text-sm text-amber-600 font-medium">
+                                {{ $t('cases.deadlineNoTravel') }}
+                            </div>
                         </div>
                     </div>
+                    <div v-if="caseData.deadline_info" class="mt-2 text-xs text-gray-500 leading-relaxed">
+                        {{ $t('cases.deadlineCalc', {
+                            processing: caseData.deadline_info.processing_days,
+                            wait: caseData.deadline_info.appointment_wait_days,
+                            buffer: caseData.deadline_info.buffer_days,
+                            total: caseData.deadline_info.min_days_before_departure
+                        }) }}
+                    </div>
+                </div>
+
+                <!-- Даты -->
+                <div class="grid grid-cols-2 gap-3 mt-4">
                     <!-- Дата поездки (туда) -->
                     <div class="p-3 rounded-xl bg-gray-50">
                         <div class="text-xs text-gray-400 mb-0.5">{{ $t('cases.departureDateLabel') }}</div>
@@ -972,8 +997,11 @@ function startEditTravelDate() {
 async function saveTravelDates() {
     savingTravelDate.value = true;
     try {
-        await publicPortalApi.updateCase(route.params.id, { travel_date: travelDateInput.value || null });
-        caseData.value.travel_date = travelDateInput.value || null;
+        const res = await publicPortalApi.updateCase(route.params.id, { travel_date: travelDateInput.value || null });
+        const d = res.data?.data ?? {};
+        caseData.value.travel_date = d.travel_date ?? travelDateInput.value ?? null;
+        caseData.value.critical_date = d.critical_date ?? caseData.value.critical_date;
+        if (d.deadline_info) caseData.value.deadline_info = d.deadline_info;
         editingTravelDate.value = false;
     } catch (e) {
         alert(e?.response?.data?.message ?? t('common.error'));
@@ -1440,6 +1468,19 @@ function deadlineClass(dateStr) {
     if (days < 0)  return 'text-red-600';
     if (days <= 5) return 'text-amber-600';
     return 'text-[#0A1F44]';
+}
+
+function deadlineUrgent(dateStr) {
+    if (!dateStr) return false;
+    return Math.floor((new Date(dateStr) - new Date()) / 86400000) < 5;
+}
+
+function deadlineDaysText(dateStr) {
+    if (!dateStr) return '';
+    const days = Math.floor((new Date(dateStr) - new Date()) / 86400000);
+    if (days < 0) return t('cases.deadlineOverdue', { days: Math.abs(days) });
+    if (days === 0) return t('cases.deadlineToday');
+    return t('cases.deadlineDaysLeft', { days });
 }
 
 function formatDate(dateStr) {

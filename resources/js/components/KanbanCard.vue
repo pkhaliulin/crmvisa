@@ -38,7 +38,8 @@
     </div>
 
     <!-- Deadline (critical_date) -->
-    <div v-else-if="item.critical_date" :class="['flex items-center gap-1 mt-2 text-xs font-medium', urgencyText]">
+    <div v-else-if="item.critical_date" :class="['flex items-center gap-1 mt-2 text-xs font-medium', urgencyText]"
+      :title="item.deadline_info ? `Рассмотрение: ${item.deadline_info.processing_days} дн, ожидание приема: ${item.deadline_info.appointment_wait_days} дн, запас: ${item.deadline_info.buffer_days} дн` : ''">
       <span>{{ urgencyIcon }}</span>
       <span>{{ deadlineLabel }}</span>
     </div>

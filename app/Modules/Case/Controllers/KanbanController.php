@@ -118,6 +118,7 @@ class KanbanController extends Controller
                 'id'   => $case->assignee->id,
                 'name' => $case->assignee->name,
             ] : null,
+            'deadline_info' => VisaCase::deadlineExplanation($case->country_code, $case->visa_type),
             'created_at' => $case->created_at->toDateString(),
         ];
     }

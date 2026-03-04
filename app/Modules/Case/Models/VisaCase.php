@@ -5,11 +5,13 @@ namespace App\Modules\Case\Models;
 use App\Modules\Agency\Models\Agency;
 use App\Modules\Client\Models\Client;
 use App\Modules\Group\Models\CaseGroup;
+use App\Modules\Owner\Models\CountryVisaTypeSetting;
 use App\Modules\User\Models\User;
 use App\Support\Abstracts\BaseModel;
 use App\Support\Traits\HasTenant;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class VisaCase extends BaseModel
@@ -24,7 +26,53 @@ class VisaCase extends BaseModel
             if (! $case->case_number) {
                 $case->case_number = static::generateCaseNumber();
             }
+            // Авто-расчет дедлайна при создании
+            if ($case->travel_date && ! $case->critical_date) {
+                $case->critical_date = static::calcCriticalDate(
+                    $case->country_code, $case->visa_type, $case->travel_date
+                );
+            }
         });
+
+        static::updating(function (self $case) {
+            // Пересчет дедлайна при изменении travel_date (если critical_date не менялась вручную)
+            if ($case->isDirty('travel_date') && ! $case->isDirty('critical_date') && $case->travel_date) {
+                $case->critical_date = static::calcCriticalDate(
+                    $case->country_code, $case->visa_type, $case->travel_date
+                );
+            }
+        });
+    }
+
+    /**
+     * Рассчитать крайний срок подачи документов.
+     * Формула: travel_date - min_days_before_departure (processing_avg + appointment_wait + buffer)
+     */
+    public static function calcCriticalDate(string $countryCode, string $visaType, $travelDate): ?Carbon
+    {
+        $setting = CountryVisaTypeSetting::findSetting($countryCode, $visaType);
+        if (! $setting || ! $setting->min_days_before_departure) {
+            return null;
+        }
+        $date = $travelDate instanceof Carbon ? $travelDate : Carbon::parse($travelDate);
+        return $date->copy()->subDays($setting->min_days_before_departure);
+    }
+
+    /**
+     * Пояснение расчета дедлайна для UI.
+     */
+    public static function deadlineExplanation(string $countryCode, string $visaType): ?array
+    {
+        $setting = CountryVisaTypeSetting::findSetting($countryCode, $visaType);
+        if (! $setting) {
+            return null;
+        }
+        return [
+            'processing_days'           => $setting->processing_days_avg,
+            'appointment_wait_days'     => $setting->appointment_wait_days,
+            'buffer_days'               => $setting->buffer_days,
+            'min_days_before_departure' => $setting->min_days_before_departure,
+        ];
     }
 
     public static function generateCaseNumber(): string

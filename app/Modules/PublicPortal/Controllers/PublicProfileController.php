@@ -279,6 +279,7 @@ class PublicProfileController extends Controller
             'appointment_location' => $case->appointment_location,
             'group_id'             => $case->group_id,
             'notes'                => $case->notes,
+            'deadline_info'        => VisaCase::deadlineExplanation($case->country_code, $case->visa_type),
             'created_at'           => $case->created_at->toDateString(),
             'agency'               => $case->agency ? [
                 'name'             => $case->agency->name,
@@ -350,8 +351,10 @@ class PublicProfileController extends Controller
         $case->update($data);
 
         return ApiResponse::success([
-            'travel_date'  => $case->travel_date?->toDateString(),
-            'return_date'  => $case->return_date?->toDateString(),
+            'travel_date'   => $case->travel_date?->toDateString(),
+            'return_date'   => $case->return_date?->toDateString(),
+            'critical_date' => $case->critical_date?->toDateString(),
+            'deadline_info' => VisaCase::deadlineExplanation($case->country_code, $case->visa_type),
         ], 'Обновлено');
     }
 
