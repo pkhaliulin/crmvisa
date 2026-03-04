@@ -1286,6 +1286,11 @@ async function submitAgencySelection() {
         uploadToast.value = t('agencies.sent');
         setTimeout(() => { uploadToast.value = ''; }, 3000);
     } catch (e) {
+        // 409 = дубликат — уже есть заявка в это агентство, перенаправляем
+        if (e?.response?.status === 409 && e.response.data?.case_id) {
+            router.push({ name: 'me.cases.show', params: { id: e.response.data.case_id } });
+            return;
+        }
         alert(e?.response?.data?.message ?? t('agencies.sendError'));
     } finally {
         agencySubmitting.value = false;

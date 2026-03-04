@@ -16,6 +16,21 @@
           Всего: <strong>{{ casesStore.stats.total }}</strong>
         </span>
       </div>
+      <!-- Поиск по номеру заявки / клиенту -->
+      <div class="relative ml-4">
+        <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="m21 21-4.35-4.35"/>
+        </svg>
+        <input v-model="searchQuery" type="text"
+          class="pl-8 pr-8 py-1.5 w-56 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+          placeholder="VB-XXXXXX / имя клиента..." />
+        <button v-if="searchQuery" @click="searchQuery = ''"
+          class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
       <div class="ml-auto">
         <RouterLink :to="{ name: 'cases.create' }">
           <AppButton size="sm">+ Новая заявка</AppButton>
@@ -61,7 +76,7 @@
 </template>
 
 <script setup>
-import { reactive, computed, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted } from 'vue';
 import { useRouter, RouterLink } from 'vue-router';
 import { useCasesStore } from '@/stores/cases';
 import KanbanColumn from '@/components/KanbanColumn.vue';
@@ -149,13 +164,25 @@ const casesStore = useCasesStore();
 const router     = useRouter();
 const stageOptions = STAGES.map(s => ({ value: s.value, label: `${s.icon} ${s.label}` }));
 
-// Обогащаем колонки метаданными (иконка, tooltip, sla_hours)
+const searchQuery = ref('');
+
+// Обогащаем колонки метаданными + фильтрация по поисковому запросу
 const boardWithMeta = computed(() => {
   if (!casesStore.board) return [];
+  const q = searchQuery.value.trim().toLowerCase();
   return casesStore.board.map(col => {
     const meta = STAGES.find(s => s.value === col.key) ?? {};
+    const filtered = q
+      ? col.cases.filter(c =>
+          (c.case_number && c.case_number.toLowerCase().includes(q)) ||
+          (c.client?.name && c.client.name.toLowerCase().includes(q)) ||
+          (c.client?.phone && c.client.phone.includes(q))
+        )
+      : col.cases;
     return {
       ...col,
+      cases: filtered,
+      count: filtered.length,
       icon: meta.icon ?? '📌',
       tooltip: col.tooltip || meta.tooltip || '',
       sla_hours: col.sla_hours ?? meta.sla_hours ?? null,
