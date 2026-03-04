@@ -121,10 +121,10 @@ class GroupService
             throw new \InvalidArgumentException('Максимум 10 участников в группе.');
         }
 
-        // Проверка: дубль
+        // Проверка: дубль (phone зашифрован через encrypted cast — сравниваем через accessor)
         $existing = CaseGroupMember::where('group_id', $group->id)
             ->get()
-            ->first(fn ($m) => app('encrypter')->decrypt($m->getRawOriginal('phone')) === $phone);
+            ->first(fn ($m) => $m->phone === $phone);
 
         if ($existing) {
             throw new \InvalidArgumentException('Участник с таким номером уже в группе.');
@@ -192,7 +192,7 @@ class GroupService
         // Ищем все CaseGroupMember где phone совпадает и status=invited
         $pendingMembers = CaseGroupMember::where('status', 'invited')
             ->get()
-            ->filter(fn ($m) => app('encrypter')->decrypt($m->getRawOriginal('phone')) === $phone);
+            ->filter(fn ($m) => $m->phone === $phone);
 
         foreach ($pendingMembers as $member) {
             $member->update([
