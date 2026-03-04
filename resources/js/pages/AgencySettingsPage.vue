@@ -83,29 +83,12 @@
         </div>
       </section>
 
-      <!-- Страны работы -->
-      <section class="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
-        <div>
-          <h2 class="font-semibold text-gray-700 text-sm uppercase tracking-wide">Рабочие направления</h2>
-          <p class="text-xs text-gray-400 mt-1">Выберите страны, с визами которых работает ваше агентство</p>
-        </div>
-
-        <div class="grid grid-cols-3 gap-3">
-          <label v-for="c in allCountries" :key="c.code"
-            :class="[
-              'flex items-center gap-2 cursor-pointer p-2 rounded-lg border transition-colors',
-              selectedCountries.includes(c.code)
-                ? 'border-blue-300 bg-blue-50'
-                : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50',
-            ]">
-            <input type="checkbox" :value="c.code" v-model="selectedCountries"
-              class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500" />
-            <span class="text-sm text-gray-700">{{ c.flag }} {{ c.name }}</span>
-          </label>
-        </div>
-
-        <p class="text-xs text-gray-400">
-          Выбрано: {{ selectedCountries.length }} из {{ allCountries.length }}
+      <!-- Рабочие направления — перенесены в раздел "Страны" -->
+      <section class="bg-white rounded-xl border border-gray-200 p-6">
+        <h2 class="font-semibold text-gray-700 text-sm uppercase tracking-wide">Рабочие направления</h2>
+        <p class="text-sm text-gray-500 mt-2">
+          Управление рабочими направлениями перенесено в раздел
+          <router-link :to="{ name: 'countries' }" class="text-blue-600 font-medium hover:underline">Страны</router-link>.
         </p>
       </section>
 
@@ -172,8 +155,6 @@ import { ref, onMounted } from 'vue';
 import api from '@/api/index';
 import AppInput from '@/components/AppInput.vue';
 import AppTextarea from '@/components/AppTextarea.vue';
-import { codeToFlag, countryName } from '@/utils/countries';
-
 const loading    = ref(true);
 const saving     = ref(false);
 const successMsg = ref('');
@@ -194,44 +175,15 @@ const form = ref({
   longitude: '',
 });
 
-const selectedCountries = ref([]);
-const allCountries = ref([]);
 
 onMounted(async () => {
   try {
-    const [settingsRes, countriesRes] = await Promise.all([
-      api.get('/agency/settings'),
-      api.get('/countries').catch(() => null),
-    ]);
-
-    // Страны из API (portal_countries), или фолбэк на встроенный список
-    if (countriesRes?.data?.data?.length) {
-      allCountries.value = countriesRes.data.data.map(c => {
-        const cc = c.country_code ?? c.code;
-        return {
-          code: cc,
-          name: countryName(cc) || c.name || cc,
-          flag: codeToFlag(cc),
-        };
-      }).sort((a, b) => a.name.localeCompare(b.name, 'ru'));
-    } else {
-      // Фолбэк: популярные направления
-      const codes = ['AT','AE','BE','BG','CA','CH','CN','CY','CZ','DE','DK',
-                     'EE','ES','FI','FR','GB','GR','HR','HU','IE','IS','IT',
-                     'JP','KR','KZ','LT','LU','LV','MT','NL','NO','PL','PT',
-                     'RO','RU','SE','SI','SK','TR','US'];
-      allCountries.value = codes.map(code => ({
-        code, flag: codeToFlag(code), name: countryName(code),
-      })).sort((a, b) => a.name.localeCompare(b.name, 'ru'));
-    }
+    const settingsRes = await api.get('/agency/settings');
 
     const data = settingsRes.data.data;
     Object.keys(form.value).forEach(key => {
       if (data[key] !== undefined && data[key] !== null) form.value[key] = data[key];
     });
-    selectedCountries.value = (data.work_countries || [])
-      .filter(c => c.is_active)
-      .map(c => c.country_code);
   } catch {
     // ignore
   } finally {
@@ -249,17 +201,6 @@ async function save() {
       Object.entries(form.value).map(([k, v]) => [k, v === '' ? null : v])
     );
     await api.patch('/agency/settings', payload);
-
-    const currentRes = await api.get('/agency/work-countries');
-    const current = (currentRes.data.data || []).map(c => c.country_code);
-
-    const toAdd    = selectedCountries.value.filter(c => !current.includes(c));
-    const toRemove = current.filter(c => !selectedCountries.value.includes(c));
-
-    await Promise.all([
-      ...toAdd.map(c => api.post('/agency/work-countries', { country_code: c })),
-      ...toRemove.map(c => api.delete(`/agency/work-countries/${c}`)),
-    ]);
 
     successMsg.value = 'Настройки успешно сохранены';
     setTimeout(() => { successMsg.value = ''; }, 3000);

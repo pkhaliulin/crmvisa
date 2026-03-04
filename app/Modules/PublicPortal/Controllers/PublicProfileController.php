@@ -3,10 +3,12 @@
 namespace App\Modules\PublicPortal\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Agency\Models\Agency;
 use App\Modules\Case\Models\VisaCase;
 use App\Modules\Client\Models\Client;
 use App\Modules\Document\Models\CaseChecklist;
 use App\Modules\Document\Services\ChecklistService;
+use App\Modules\PublicPortal\Models\PublicLead;
 use App\Support\Helpers\ApiResponse;
 use App\Support\Rules\ReferenceExists;
 use Illuminate\Http\JsonResponse;
@@ -245,6 +247,7 @@ class PublicProfileController extends Controller
             'priority'             => $case->priority,
             'critical_date'        => $case->critical_date?->toDateString(),
             'travel_date'          => $case->travel_date?->toDateString(),
+            'payment_status'       => $case->payment_status ?? 'unpaid',
             'notes'                => $case->notes,
             'created_at'           => $case->created_at->toDateString(),
             'agency'               => $case->agency ? [
@@ -314,6 +317,97 @@ class PublicProfileController extends Controller
         ]);
 
         return ApiResponse::success(['status' => 'uploaded'], 'Документ загружен и отправлен на проверку');
+    }
+
+    /**
+     * GET /public/me/cases/{id}/agencies
+     * Агентства, работающие со страной кейса.
+     */
+    public function caseAgencies(Request $request, string $id): JsonResponse
+    {
+        $publicUser = $request->get('_public_user');
+        $locale     = $request->input('lang') ?? $request->header('X-Locale', 'ru');
+        $locale     = in_array($locale, ['uz', 'ru']) ? $locale : 'ru';
+
+        $case = VisaCase::whereHas('client', fn ($q) => $q->where('public_user_id', $publicUser->id))
+            ->findOrFail($id);
+
+        $cc       = $case->country_code;
+        $visaType = $case->visa_type;
+
+        $agencies = Agency::where('is_active', true)
+            ->whereNull('blocked_at')
+            ->whereHas('workCountries', fn ($wq) =>
+                $wq->where('country_code', $cc)->where('is_active', true)
+            )
+            ->with(['packages' => function ($q) use ($cc, $visaType) {
+                $q->where('is_active', true);
+                if ($cc)       $q->where('country_code', $cc);
+                if ($visaType) $q->where('visa_type', $visaType);
+            }])
+            ->select([
+                'id', 'name', 'city', 'rating', 'reviews_count',
+                'description', 'description_uz',
+                'experience_years', 'logo_url', 'is_verified',
+            ])
+            ->orderByDesc('rating')
+            ->get()
+            ->filter(fn ($a) => $a->packages->isNotEmpty())
+            ->map(fn ($a) => [
+                'id'               => $a->id,
+                'name'             => $a->name,
+                'city'             => $a->city,
+                'rating'           => $a->rating,
+                'reviews_count'    => $a->reviews_count,
+                'experience_years' => $a->experience_years,
+                'logo_url'         => $a->logo_url,
+                'is_verified'      => $a->is_verified,
+                'description'      => $locale === 'uz' && $a->description_uz ? $a->description_uz : $a->description,
+                'package'          => $a->packages->first() ? [
+                    'id'              => $a->packages->first()->id,
+                    'name'            => $locale === 'uz' && $a->packages->first()->name_uz
+                        ? $a->packages->first()->name_uz
+                        : $a->packages->first()->name,
+                    'price'           => $a->packages->first()->price,
+                    'currency'        => $a->packages->first()->currency ?? 'USD',
+                    'processing_days' => $a->packages->first()->processing_days,
+                ] : null,
+            ])
+            ->values();
+
+        return ApiResponse::success(['agencies' => $agencies]);
+    }
+
+    /**
+     * POST /public/me/cases/{id}/change-agency
+     * Сменить агентство (до оплаты).
+     */
+    public function changeAgency(Request $request, string $id): JsonResponse
+    {
+        $publicUser = $request->get('_public_user');
+
+        $case = VisaCase::whereHas('client', fn ($q) => $q->where('public_user_id', $publicUser->id))
+            ->findOrFail($id);
+
+        if (($case->payment_status ?? 'unpaid') === 'paid') {
+            return ApiResponse::error('Невозможно сменить агентство после оплаты.', null, 403);
+        }
+
+        DB::transaction(function () use ($case, $publicUser) {
+            // Архивируем старые лиды
+            PublicLead::where('case_id', $case->id)
+                ->whereIn('status', ['new', 'contacted', 'assigned'])
+                ->update(['status' => 'cancelled']);
+
+            // Возвращаем кейс в draft
+            $case->update([
+                'agency_id'      => null,
+                'public_status'  => 'draft',
+                'payment_status' => 'unpaid',
+            ]);
+        });
+
+        return ApiResponse::success(['message' => 'Агентство откреплено. Выберите новое.']);
     }
 
     /**

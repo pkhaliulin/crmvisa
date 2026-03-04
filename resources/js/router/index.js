@@ -50,6 +50,21 @@ const routes = [
                 name: 'me.agencies.show',
                 redirect: { name: 'me.agencies' },
             },
+            {
+                path: 'billing',
+                name: 'me.billing',
+                component: () => import('@/pages/public/PublicBillingPage.vue'),
+            },
+            {
+                path: 'countries',
+                name: 'me.countries',
+                component: () => import('@/pages/public/PublicCountriesPage.vue'),
+            },
+            {
+                path: 'countries/:code',
+                name: 'me.countries.show',
+                component: () => import('@/pages/public/PublicCountryDetailPage.vue'),
+            },
         ],
     },
 
@@ -243,6 +258,18 @@ const routes = [
                 name: 'billing',
                 component: () => import('@/pages/BillingPage.vue'),
                 meta: { roles: ['owner', 'superadmin'] },
+            },
+            {
+                path: 'countries',
+                name: 'countries',
+                component: () => import('@/pages/AgencyCountriesPage.vue'),
+                meta: { roles: ['owner', 'manager', 'superadmin'] },
+            },
+            {
+                path: 'countries/:code',
+                name: 'countries.show',
+                component: () => import('@/pages/AgencyCountryDetailPage.vue'),
+                meta: { roles: ['owner', 'manager', 'superadmin'] },
             },
         ],
     },

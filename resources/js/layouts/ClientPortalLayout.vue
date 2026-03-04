@@ -107,6 +107,19 @@
                             {{ publicAuth.profilePercent }}%
                         </span>
                     </router-link>
+
+                    <div class="pt-2 mt-2 border-t border-gray-100">
+                        <router-link v-for="item in sidebarExtraItems" :key="item.name" :to="{ name: item.name }"
+                            class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors"
+                            :class="$route.name === item.name
+                                ? 'bg-[#1BA97F]/10 text-[#1BA97F]'
+                                : 'text-gray-600 hover:bg-gray-50 hover:text-[#0A1F44]'">
+                            <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" :d="item.iconPath"/>
+                            </svg>
+                            <span>{{ item.label }}</span>
+                        </router-link>
+                    </div>
                 </nav>
 
                 <!-- Telegram help -->
@@ -318,9 +331,9 @@ const navItems = computed(() => [
         iconPath: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
     },
     {
-        name: 'me.agencies',
-        label: t('nav.agencies'),
-        iconPath: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4',
+        name: 'me.countries',
+        label: t('landing.countriesNav'),
+        iconPath: 'M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9',
     },
     {
         name: 'me.scoring',
@@ -334,11 +347,26 @@ const navItems = computed(() => [
     },
 ]);
 
+const sidebarExtraItems = computed(() => [
+    {
+        name: 'me.agencies',
+        label: t('nav.agencies'),
+        iconPath: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4',
+    },
+    {
+        name: 'me.billing',
+        label: t('billing.title'),
+        iconPath: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z',
+    },
+]);
+
 const TITLES = computed(() => ({
     'me.cases': t('nav.cases'),
     'me.agencies': t('nav.agencies'),
     'me.scoring': t('nav.scoring'),
     'me.profile': t('nav.profile'),
+    'me.countries': t('landing.countriesNav'),
+    'me.billing': t('billing.title'),
 }));
 
 const currentTitle = computed(() => TITLES.value[route.name] ?? t('portal.cabinet'));

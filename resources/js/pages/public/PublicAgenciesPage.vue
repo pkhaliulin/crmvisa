@@ -926,7 +926,7 @@ async function submitLead() {
     try {
         const payload = {
             agency_id:    confirm.value.agency.id,
-            country_code: countryCode.value || confirm.value.pkg?.country_code || 'UZ',
+            country_code: countryCode.value || confirm.value.pkg?.country_code || route.query.country_code || '',
             visa_type:    confirm.value.pkg?.visa_type || selectedVisaType.value || 'tourist',
             package_id:   confirm.value.pkg?.id ?? null,
         };

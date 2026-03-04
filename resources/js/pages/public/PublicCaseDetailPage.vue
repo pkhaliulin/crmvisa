@@ -92,29 +92,76 @@
                 </div>
             </div>
 
-            <!-- === Выбрать агентство (draft без агентства) === -->
-            <div v-if="caseData.public_status === 'draft' && !caseData.agency"
-                class="bg-gradient-to-br from-[#0A1F44] to-[#1a3a6e] rounded-2xl shadow-sm overflow-hidden text-white">
-                <div class="p-5">
-                    <div class="flex items-start gap-4">
-                        <div class="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center shrink-0">
-                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-                            </svg>
-                        </div>
-                        <div class="flex-1">
-                            <h2 class="font-bold text-base">{{ $t('cases.draftNoAgency') }}</h2>
-                            <p class="text-sm text-white/70 mt-1 leading-relaxed">{{ $t('cases.draftNoAgencyDesc') }}</p>
-                        </div>
-                    </div>
-                    <button @click="goChooseAgency"
-                        class="w-full mt-4 py-3 bg-[#1BA97F] hover:bg-[#17956f] text-white text-sm font-semibold rounded-xl transition-colors flex items-center justify-center gap-2">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z"/>
+            <!-- === Inline-выбор агентства (draft без агентства) === -->
+            <div v-if="caseData.public_status === 'draft' && !caseData.agency" class="space-y-4">
+                <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+                    <h2 class="font-bold text-[#0A1F44] text-base mb-1">{{ $t('agencySelection.title') }}</h2>
+                    <p class="text-sm text-gray-400 mb-4">{{ $t('cases.draftNoAgencyDesc') }}</p>
+
+                    <div v-if="agenciesLoading" class="flex items-center justify-center py-8">
+                        <svg class="w-6 h-6 animate-spin text-gray-300" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
                         </svg>
-                        {{ $t('cases.chooseAgencyBtn') }}
-                    </button>
+                    </div>
+                    <div v-else-if="inlineAgencies.length" class="grid gap-3 sm:grid-cols-2">
+                        <AgencyCard v-for="a in inlineAgencies" :key="a.id" :agency="a" @select="confirmSelectAgency" />
+                    </div>
+                    <div v-else class="text-center py-6 text-sm text-gray-400">
+                        {{ $t('agencies.emptyTitle') }}
+                    </div>
                 </div>
+            </div>
+
+            <!-- === Оплата услуги (submitted, unpaid) === -->
+            <div v-if="caseData.agency && caseData.public_status !== 'draft' && (caseData.payment_status === 'unpaid' || caseData.payment_status === 'pending')"
+                class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                <div class="px-5 py-4 border-b border-gray-50">
+                    <h2 class="font-bold text-[#0A1F44] text-sm">{{ $t('payment.title') }}</h2>
+                    <p class="text-xs text-gray-400 mt-0.5">{{ $t('payment.selectProvider') }}</p>
+                </div>
+                <div class="p-5">
+                    <div v-if="caseData.payment_status === 'pending'" class="flex items-center gap-3 p-4 bg-amber-50 rounded-xl">
+                        <svg class="w-5 h-5 text-amber-500 shrink-0 animate-pulse" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span class="text-sm font-medium text-amber-700">{{ $t('payment.pending') }}</span>
+                    </div>
+                    <div v-else class="grid grid-cols-3 gap-3">
+                        <button v-for="p in PAYMENT_PROVIDERS" :key="p.id"
+                            @click="initiatePayment(p.id)"
+                            :disabled="paymentLoading"
+                            class="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-gray-100 hover:border-[#1BA97F] transition-colors disabled:opacity-50">
+                            <div class="w-12 h-12 rounded-lg flex items-center justify-center text-2xl font-bold"
+                                :class="p.bgClass">
+                                {{ p.icon }}
+                            </div>
+                            <span class="text-xs font-semibold text-[#0A1F44]">{{ p.label }}</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- === Оплачено === -->
+            <div v-if="caseData.payment_status === 'paid'"
+                class="bg-[#1BA97F]/5 border border-[#1BA97F]/20 rounded-2xl p-5 flex items-center gap-3">
+                <div class="w-10 h-10 bg-[#1BA97F] rounded-xl flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="text-sm font-semibold text-[#1BA97F]">{{ $t('payment.paid') }}</div>
+                </div>
+            </div>
+
+            <!-- === Сменить агентство (до оплаты) === -->
+            <div v-if="caseData.agency && caseData.payment_status !== 'paid' && caseData.public_status !== 'draft'"
+                class="flex justify-end">
+                <button @click="showChangeAgencyModal = true"
+                    class="text-xs text-gray-400 hover:text-red-500 transition-colors underline underline-offset-2">
+                    {{ $t('agencySelection.changeAgency') }}
+                </button>
             </div>
 
             <!-- === Чек-лист документов === -->
@@ -464,6 +511,54 @@
 
         </template>
 
+        <!-- Модал подтверждения выбора агентства -->
+        <div v-if="confirmAgency"
+            class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center sm:p-4"
+            @click.self="confirmAgency = null">
+            <div class="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl shadow-xl p-6">
+                <h3 class="text-base font-bold text-[#0A1F44] mb-3">{{ $t('agencies.confirmTitle') }}</h3>
+                <div class="space-y-2 mb-4">
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-400">{{ $t('agencies.confirmAgency') }}</span>
+                        <span class="font-semibold text-[#0A1F44]">{{ confirmAgency.name }}</span>
+                    </div>
+                    <div v-if="confirmAgency.package" class="flex justify-between text-sm">
+                        <span class="text-gray-400">{{ $t('agencies.confirmPrice') }}</span>
+                        <span class="font-semibold text-[#0A1F44]">{{ confirmAgency.package.price }} {{ confirmAgency.package.currency }}</span>
+                    </div>
+                </div>
+                <p class="text-xs text-gray-400 mb-4">{{ $t('agencies.confirmDesc') }}</p>
+                <div class="flex gap-3">
+                    <button @click="confirmAgency = null" class="flex-1 py-2.5 border border-gray-200 text-sm font-semibold rounded-xl text-gray-600 hover:bg-gray-50 transition-colors">
+                        {{ $t('common.cancel') }}
+                    </button>
+                    <button @click="submitAgencySelection" :disabled="agencySubmitting"
+                        class="flex-1 py-2.5 bg-[#1BA97F] hover:bg-[#17956f] text-white text-sm font-semibold rounded-xl transition-colors disabled:opacity-50">
+                        {{ agencySubmitting ? $t('agencies.sending') : $t('agencies.send') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Модал подтверждения смены агентства -->
+        <div v-if="showChangeAgencyModal"
+            class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center sm:p-4"
+            @click.self="showChangeAgencyModal = false">
+            <div class="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl shadow-xl p-6">
+                <h3 class="text-base font-bold text-[#0A1F44] mb-2">{{ $t('common.confirmDeleteTitle') }}</h3>
+                <p class="text-sm text-gray-500 mb-5">{{ $t('agencySelection.confirmChange') }}</p>
+                <div class="flex gap-3">
+                    <button @click="showChangeAgencyModal = false" class="flex-1 py-2.5 border border-gray-200 text-sm font-semibold rounded-xl text-gray-600 hover:bg-gray-50 transition-colors">
+                        {{ $t('common.cancel') }}
+                    </button>
+                    <button @click="doChangeAgency" :disabled="changingAgency"
+                        class="flex-1 py-2.5 bg-red-500 hover:bg-red-600 text-white text-sm font-semibold rounded-xl transition-colors disabled:opacity-50">
+                        {{ changingAgency ? $t('common.loading') : $t('common.yes') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- Ошибка / не найдено -->
         <div v-else-if="!loading" class="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center">
             <div class="text-3xl mb-3">404</div>
@@ -483,6 +578,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { publicPortalApi } from '@/api/public';
 import { codeToFlag } from '@/utils/countries';
+import AgencyCard from '@/components/AgencyCard.vue';
 import i18n from '@/i18n';
 
 const { t } = useI18n();
@@ -493,6 +589,24 @@ const loading     = ref(true);
 const caseData    = ref(null);
 const uploading   = ref({});
 const uploadToast = ref('');
+
+// --- Inline-агентства ---
+const inlineAgencies  = ref([]);
+const agenciesLoading = ref(false);
+const confirmAgency   = ref(null);
+const agencySubmitting = ref(false);
+
+// --- Оплата ---
+const paymentLoading = ref(false);
+const PAYMENT_PROVIDERS = [
+    { id: 'click', label: 'Click', icon: 'C', bgClass: 'bg-blue-100 text-blue-600' },
+    { id: 'payme', label: 'Payme', icon: 'P', bgClass: 'bg-cyan-100 text-cyan-600' },
+    { id: 'uzum',  label: 'Uzum',  icon: 'U', bgClass: 'bg-purple-100 text-purple-600' },
+];
+
+// --- Смена агентства ---
+const showChangeAgencyModal = ref(false);
+const changingAgency = ref(false);
 
 // Критерии оценки агентства
 const REVIEW_CRITERIA = computed(() => [
@@ -566,6 +680,81 @@ function goChooseAgency() {
             visa_type: caseData.value.visa_type,
         },
     });
+}
+
+async function loadInlineAgencies() {
+    agenciesLoading.value = true;
+    try {
+        const res = await publicPortalApi.caseAgencies(route.params.id);
+        inlineAgencies.value = res.data.data?.agencies ?? [];
+    } catch { /* ignore */ } finally {
+        agenciesLoading.value = false;
+    }
+}
+
+function confirmSelectAgency(agency) {
+    confirmAgency.value = agency;
+}
+
+async function submitAgencySelection() {
+    if (!confirmAgency.value || agencySubmitting.value) return;
+    agencySubmitting.value = true;
+    try {
+        await publicPortalApi.submitLead({
+            agency_id:    confirmAgency.value.id,
+            country_code: caseData.value.country_code,
+            visa_type:    caseData.value.visa_type,
+            package_id:   confirmAgency.value.package?.id ?? null,
+            case_id:      route.params.id,
+        });
+        confirmAgency.value = null;
+        // Перезагрузить данные кейса
+        const { data } = await publicPortalApi.caseDetail(route.params.id);
+        caseData.value = data.data;
+        uploadToast.value = t('agencies.sent');
+        setTimeout(() => { uploadToast.value = ''; }, 3000);
+    } catch (e) {
+        alert(e?.response?.data?.message ?? t('agencies.sendError'));
+    } finally {
+        agencySubmitting.value = false;
+    }
+}
+
+async function initiatePayment(provider) {
+    paymentLoading.value = true;
+    try {
+        const res = await publicPortalApi.initiatePayment({
+            case_id:  route.params.id,
+            provider,
+        });
+        const url = res.data.data?.payment_url;
+        if (url && url !== '#') {
+            window.open(url, '_blank');
+        }
+        // Обновить статус
+        caseData.value.payment_status = 'pending';
+    } catch (e) {
+        alert(e?.response?.data?.message ?? t('common.error'));
+    } finally {
+        paymentLoading.value = false;
+    }
+}
+
+async function doChangeAgency() {
+    changingAgency.value = true;
+    try {
+        await publicPortalApi.changeAgency(route.params.id);
+        showChangeAgencyModal.value = false;
+        // Перезагрузить данные кейса
+        const { data } = await publicPortalApi.caseDetail(route.params.id);
+        caseData.value = data.data;
+        // Загрузить агентства для inline-выбора
+        loadInlineAgencies();
+    } catch (e) {
+        alert(e?.response?.data?.message ?? t('common.error'));
+    } finally {
+        changingAgency.value = false;
+    }
 }
 
 async function uploadDoc(itemId, event) {
@@ -670,6 +859,10 @@ onMounted(async () => {
         // Загружаем статус отзыва для агентства
         if (caseData.value?.agency?.id) {
             await loadCanReview(caseData.value.agency.id);
+        }
+        // Загружаем inline-агентства для draft без агентства
+        if (caseData.value?.public_status === 'draft' && !caseData.value?.agency) {
+            loadInlineAgencies();
         }
     } catch {
         caseData.value = null;

@@ -692,6 +692,39 @@
     "filesCount": "fayl",
     "selectFile": "Chapdan faylni tanlang"
   },
+  "payment": {
+    "title": "Xizmat uchun to'lov",
+    "selectProvider": "To'lov usulini tanlang",
+    "click": "Click",
+    "payme": "Payme",
+    "uzum": "Uzum",
+    "pending": "Tasdiqlash kutilmoqda",
+    "paid": "To'langan",
+    "amount": "Summa",
+    "date": "To'lov sanasi",
+    "receipt": "Kvitansiya",
+    "paymentPending": "To'lov tasdiqlash kutilmoqda",
+    "error": "To'lovni boshlashda xatolik"
+  },
+  "billing": {
+    "title": "Hisob-kitoblar",
+    "empty": "Hali to'lovlar yo'q",
+    "service": "Xizmat",
+    "provider": "To'lov usuli",
+    "status": "Holat"
+  },
+  "agencySelection": {
+    "title": "Agentlikni tanlang",
+    "selectBtn": "Tanlash",
+    "changeAgency": "Agentlikni almashtirish",
+    "confirmChange": "Ishonchingiz komilmi? Joriy agentlik ajratiladi va ariza qoralamaga qaytadi.",
+    "locked": "To'lovdan keyin agentlikni almashtirib bo'lmaydi",
+    "confirmTitle": "Tanlashni tasdiqlash",
+    "confirmDesc": "Agentlik sizning arizangiz va aloqa ma'lumotlaringizni oladi. Mutaxassis siz bilan bog'lanadi.",
+    "confirm": "Tanlashni tasdiqlash",
+    "submitting": "Yuborilmoqda...",
+    "noAgencies": "Bu yo'nalish uchun agentliklar hali topilmadi"
+  },
   "visaRegime": {
     "visa_free": "Vizasiz",
     "visa_on_arrival": "Kelganda viza",

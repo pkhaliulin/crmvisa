@@ -24,6 +24,7 @@ class VisaCase extends BaseModel
         'visa_type',
         'stage',
         'public_status',
+        'payment_status',
         'priority',
         'critical_date',
         'travel_date',

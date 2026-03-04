@@ -57,7 +57,7 @@ import SidebarLink from './SidebarLink.vue';
 import {
   HomeIcon, ViewColumnsIcon, ClipboardDocumentListIcon,
   UsersIcon, UserGroupIcon, ArrowRightOnRectangleIcon,
-  ChartBarIcon, BriefcaseIcon, ExclamationTriangleIcon, Cog6ToothIcon, CreditCardIcon
+  ChartBarIcon, BriefcaseIcon, ExclamationTriangleIcon, Cog6ToothIcon, CreditCardIcon, GlobeAltIcon
 } from '@heroicons/vue/24/outline';
 
 defineProps({ collapsed: Boolean });
@@ -77,6 +77,11 @@ const navItems = computed(() => {
     { to: { name: 'clients' },   icon: UsersIcon,                   label: 'Клиенты' },
     { to: { name: 'overdue' },   icon: ExclamationTriangleIcon,     label: 'Просрочки' },
   ];
+
+  // Страны — для owner и manager
+  items.push(
+    { to: { name: 'countries' }, icon: GlobeAltIcon, label: 'Страны' },
+  );
 
   if (isOwner.value) {
     items.push(

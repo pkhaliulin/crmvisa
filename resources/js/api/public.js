@@ -52,8 +52,15 @@ export const publicPortalApi = {
         }),
 
     // Agencies & Leads
-    agencies:   (params) => publicApi.get('/agencies', { params }),
-    submitLead: (data)   => publicApi.post('/leads', data),
+    agencies:       (params) => publicApi.get('/agencies', { params }),
+    submitLead:     (data)   => publicApi.post('/leads', data),
+    caseAgencies:   (caseId) => publicApi.get(`/me/cases/${caseId}/agencies`),
+    changeAgency:   (caseId) => publicApi.post(`/me/cases/${caseId}/change-agency`),
+
+    // Payments
+    initiatePayment: (data)   => publicApi.post('/me/payments/initiate', data),
+    paymentStatus:   (caseId) => publicApi.get(`/me/cases/${caseId}/payment`),
+    billingHistory:  (params) => publicApi.get('/me/billing', { params }),
 
     // Reviews
     agencyReviews:  (agencyId, params) => publicApi.get(`/agencies/${agencyId}/reviews`, { params }),
