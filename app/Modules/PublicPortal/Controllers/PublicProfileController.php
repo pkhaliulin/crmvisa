@@ -153,7 +153,7 @@ class PublicProfileController extends Controller
         $caseStatuses  = config('case_statuses');
 
         $cases = VisaCase::whereHas('client', fn ($q) => $q->where('public_user_id', $publicUser->id))
-            ->with(['agency:id,name,city', 'assignee:id,name'])
+            ->with(['agency:id,name,city', 'assignee:id,name', 'stageHistory'])
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function (VisaCase $case) use ($stages, $caseStatuses) {
@@ -163,6 +163,13 @@ class PublicProfileController extends Controller
                 $totalDocs          = CaseChecklist::where('case_id', $case->id)->count();
                 $uploadedDocs       = CaseChecklist::where('case_id', $case->id)
                     ->whereIn('status', ['uploaded', 'approved'])->count();
+
+                // SLA deadline текущего этапа
+                $currentStage = $case->stageHistory
+                    ->where('stage', $case->stage)
+                    ->whereNull('exited_at')
+                    ->last();
+
                 return [
                     'id'                   => $case->id,
                     'country_code'         => $case->country_code,
@@ -184,6 +191,8 @@ class PublicProfileController extends Controller
                     'assignee'             => $case->assignee ? ['name' => $case->assignee->name] : null,
                     'docs_total'           => $totalDocs,
                     'docs_uploaded'        => $uploadedDocs,
+                    'payment_status'       => $case->payment_status ?? 'unpaid',
+                    'payment_deadline'     => $currentStage?->sla_due_at?->toIso8601String(),
                 ];
             });
 

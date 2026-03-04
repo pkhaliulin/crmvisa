@@ -407,6 +407,35 @@
     "uploadError": "Fayl yuklashda xatolik",
     "reviewError": "Sharh yuborishda xatolik"
   },
+  "caseStatus": {
+    "step": {
+      "draft": "Qoralama",
+      "submitted": "Yuborildi",
+      "manager_assigned": "Menejer",
+      "document_collection": "Hujjatlar",
+      "submitted_to_embassy": "Topshirildi",
+      "decision_pending": "Ko'rib chiq.",
+      "completed": "Tasdiqlandi",
+      "rejected": "Rad etildi"
+    },
+    "desc": {
+      "draft": "Viza arizangizni topshirish uchun agentlikni tanlang. Biz siz uchun eng yaxshi mutaxassislarni tanlaymiz.",
+      "submitted": "Ariza agentlik tomonidan qabul qilindi. Eng tajribali menejerni tanlashmoqda — belgilangandan so'ng u siz bilan bog'lanadi.",
+      "manager_assigned": "Shaxsiy menejeringiz tayinlandi va tafsilotlarni aniqlash hamda hujjatlarni tayyorlash uchun tez orada siz bilan bog'lanadi.",
+      "document_collection": "Menejer hujjatlar ro'yxatini tuzdi. Ularni shaxsiy kabinetingiz orqali yuklang — menejer har bir faylni tekshiradi.",
+      "submitted_to_embassy": "Hujjatlaringiz elchixonaga topshirildi. Ko'rib chiqilishini kutmoqdamiz — menejer jarayonni nazorat qilmoqda.",
+      "decision_pending": "Elchixona arizangizni ko'rib chiqmoqda. Odatda bu 5–15 ish kuni davom etadi. Natija chiqqanda xabar beramiz.",
+      "completed": "Tabriklaymiz! Vizangiz tasdiqlandi. Pasportni olish uchun menejer bilan bog'laning.",
+      "rejected": "Afsuski, viza rad etildi. Sabablarni bilish va keyingi qadamlarni muhokama qilish uchun menejer bilan bog'laning."
+    },
+    "awaitingPayment": "To'lovni kutmoqdamiz",
+    "paymentOverdue": "To'lov muddati tugadi",
+    "paid": "To'langan",
+    "unpaid": "To'lanmagan",
+    "daysShort": "k",
+    "hoursShort": "s",
+    "minutesShort": "daq"
+  },
   "agencies": {
     "title": "Agentliklar",
     "agenciesFor": "{country} uchun agentliklar",

@@ -42,7 +42,7 @@
                        hover:border-[#1BA97F]/30 hover:shadow-md active:scale-[0.99] transition-all cursor-pointer">
 
                 <!-- Card header -->
-                <div class="px-5 pt-4 pb-3 flex items-start justify-between gap-3">
+                <div class="px-5 pt-4 pb-2 flex items-start justify-between gap-3">
                     <div class="flex items-center gap-3 min-w-0">
                         <span class="text-2xl shrink-0">{{ codeToFlag(c.country_code) }}</span>
                         <div class="min-w-0">
@@ -58,10 +58,8 @@
                     </div>
 
                     <div class="flex items-center gap-2 shrink-0">
-                        <!-- Public status badge with tooltip -->
                         <span class="text-xs font-semibold px-2.5 py-1 rounded-full"
-                            :class="publicStatusBadge(c.public_status)"
-                            :title="c.public_status_tooltip">
+                            :class="publicStatusBadge(c.public_status)">
                             {{ c.public_status_label }}
                         </span>
                         <svg class="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -70,22 +68,75 @@
                     </div>
                 </div>
 
-                <!-- Public status progress bar (8 steps) -->
-                <div class="px-5 pb-3">
-                    <div class="flex items-center gap-0.5 mb-1.5">
-                        <div v-for="(s, i) in PUBLIC_STATUSES" :key="s.key"
-                            class="flex-1 h-1.5 rounded-full transition-colors"
-                            :class="getProgressColor(i, c.public_status, c.public_status_order)">
+                <!-- Progress stepper with labels -->
+                <div class="px-5 py-2">
+                    <!-- Bar segments -->
+                    <div class="flex items-center gap-0.5">
+                        <div v-for="(s, i) in getVisibleStatuses(c)" :key="s.key"
+                            class="flex-1 h-2 rounded-full transition-colors relative overflow-hidden"
+                            :class="progressColor(i, c)">
+                            <div v-if="i === currentStepIndex(c) && !isTerminal(c)"
+                                class="absolute inset-0 rounded-full bg-[#1BA97F] animate-pulse opacity-40"></div>
                         </div>
                     </div>
-                    <p class="text-xs font-medium" :class="statusTextColor(c.public_status)">
-                        {{ c.public_status_tooltip || c.public_status_label }}
-                    </p>
+                    <!-- Step labels -->
+                    <div class="flex mt-1">
+                        <div v-for="(s, i) in getVisibleStatuses(c)" :key="'l'+s.key"
+                            class="flex-1 text-center">
+                            <span class="text-[7px] sm:text-[9px] leading-tight block truncate px-0.5"
+                                :class="i === currentStepIndex(c) ? 'text-[#1BA97F] font-bold' : i < currentStepIndex(c) ? 'text-gray-500' : 'text-gray-300'">
+                                {{ $t('caseStatus.step.' + s.key) }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Status description (VB message) -->
+                <div class="px-5 pb-2">
+                    <div class="flex items-start gap-2 px-3 py-2.5 rounded-xl"
+                        :class="statusDescBg(c.public_status)">
+                        <div class="w-5 h-5 rounded-full bg-gradient-to-br from-[#1BA97F] to-[#0d7a5c] flex items-center justify-center shrink-0 mt-0.5">
+                            <span class="text-[7px] font-bold text-white">VB</span>
+                        </div>
+                        <p class="text-xs leading-relaxed"
+                            :class="statusDescText(c.public_status)">
+                            {{ $t('caseStatus.desc.' + c.public_status) }}
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Payment countdown -->
+                <div v-if="showPaymentBlock(c)" class="px-5 pb-2">
+                    <div class="rounded-xl p-3 flex items-center gap-3"
+                        :class="isPaymentOverdue(c) ? 'bg-red-50 border border-red-200' : 'bg-amber-50 border border-amber-200'">
+                        <div class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                            :class="isPaymentOverdue(c) ? 'bg-red-100' : 'bg-amber-100'">
+                            <svg class="w-5 h-5"
+                                :class="isPaymentOverdue(c) ? 'text-red-500' : 'text-amber-600'"
+                                fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="text-[10px] font-semibold uppercase tracking-wide"
+                                :class="isPaymentOverdue(c) ? 'text-red-600' : 'text-amber-600'">
+                                {{ $t('caseStatus.awaitingPayment') }}
+                            </div>
+                            <div class="text-base font-bold tabular-nums"
+                                :class="isPaymentOverdue(c) ? 'text-red-700' : 'text-amber-700'">
+                                {{ getCountdownText(c) }}
+                            </div>
+                        </div>
+                        <span class="text-[10px] font-bold px-2.5 py-1 rounded-lg shrink-0"
+                            :class="isPaymentOverdue(c) ? 'bg-red-200 text-red-700' : 'bg-amber-200 text-amber-700'">
+                            {{ c.payment_status === 'paid' ? $t('caseStatus.paid') : $t('caseStatus.unpaid') }}
+                        </span>
+                    </div>
                 </div>
 
                 <!-- Footer stats -->
                 <div class="px-5 py-3 border-t border-gray-50 flex items-center gap-4 text-xs text-gray-400 flex-wrap">
-                    <!-- Менеджер -->
+                    <!-- Manager -->
                     <span v-if="c.assignee" class="flex items-center gap-1.5">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
@@ -93,7 +144,7 @@
                         <span class="text-gray-600 font-medium">{{ c.assignee.name }}</span>
                     </span>
 
-                    <!-- Документы -->
+                    <!-- Documents -->
                     <span v-if="c.docs_total > 0" class="flex items-center gap-1.5"
                         :class="c.docs_uploaded >= c.docs_total ? 'text-[#1BA97F]' : c.docs_uploaded > 0 ? 'text-amber-500' : 'text-gray-400'">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -102,7 +153,15 @@
                         {{ $t('cases.docs', { uploaded: c.docs_uploaded, total: c.docs_total }) }}
                     </span>
 
-                    <!-- Дедлайн -->
+                    <!-- Travel date -->
+                    <span v-if="c.travel_date" class="flex items-center gap-1.5 text-gray-500">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                        </svg>
+                        {{ formatDate(c.travel_date) }}
+                    </span>
+
+                    <!-- Deadline / Created -->
                     <span v-if="c.critical_date" class="flex items-center gap-1.5 ml-auto"
                         :class="deadlineClass(c.critical_date, c.public_status)">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -113,11 +172,11 @@
                     <span v-else class="ml-auto text-gray-300">{{ formatDate(c.created_at) }}</span>
                 </div>
 
-                <!-- Кнопка выбора агентства для draft -->
+                <!-- Choose agency button -->
                 <div v-if="c.public_status === 'draft' && !c.agency"
                     class="px-5 py-3 border-t border-gray-50">
                     <button @click.stop="goChooseAgency(c)"
-                        class="w-full py-2.5 bg-[#0A1F44] hover:bg-[#0d2a5e] text-white text-xs font-semibold rounded-xl transition-colors flex items-center justify-center gap-2">
+                        class="w-full py-2.5 bg-[#1BA97F] hover:bg-[#0d7a5c] text-white text-xs font-semibold rounded-xl transition-colors flex items-center justify-center gap-2">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z"/>
                         </svg>
@@ -181,7 +240,7 @@
                 </div>
 
                 <router-link :to="nextStepRoute"
-                    class="inline-flex items-center gap-2 bg-[#0A1F44] hover:bg-[#0d2a5e] text-white px-6 py-3 rounded-xl text-sm font-semibold transition-colors">
+                    class="inline-flex items-center gap-2 bg-[#1BA97F] hover:bg-[#0d7a5c] text-white px-6 py-3 rounded-xl text-sm font-semibold transition-colors">
                     {{ nextStepLabel }}
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
@@ -194,7 +253,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { usePublicAuthStore } from '@/stores/publicAuth';
@@ -209,7 +268,13 @@ const loading = ref(true);
 const cases   = ref([]);
 const groupsCount = ref(0);
 
-// 8 клиентских статусов для прогресс-бара
+// Таймер для обратного отсчёта оплаты (обновляется каждые 30 сек)
+const now = ref(new Date());
+let timerInterval = null;
+onMounted(() => { timerInterval = setInterval(() => { now.value = new Date(); }, 30000); });
+onUnmounted(() => { clearInterval(timerInterval); });
+
+// 8 клиентских статусов
 const PUBLIC_STATUSES = [
     { key: 'draft',                 order: 0 },
     { key: 'submitted',             order: 1 },
@@ -220,6 +285,24 @@ const PUBLIC_STATUSES = [
     { key: 'completed',             order: 6 },
     { key: 'rejected',              order: 7 },
 ];
+
+// Показываем 7 шагов: 6 основных + финальный (одобрено ИЛИ отказ)
+function getVisibleStatuses(c) {
+    const base = PUBLIC_STATUSES.slice(0, 6); // draft..decision_pending
+    if (c.public_status === 'rejected') {
+        return [...base, { key: 'rejected', order: 6 }];
+    }
+    return [...base, { key: 'completed', order: 6 }];
+}
+
+function currentStepIndex(c) {
+    if (c.public_status === 'completed' || c.public_status === 'rejected') return 6;
+    return c.public_status_order;
+}
+
+function isTerminal(c) {
+    return c.public_status === 'completed' || c.public_status === 'rejected';
+}
 
 function countryName(code) { return t(`countries.${code}`) !== `countries.${code}` ? t(`countries.${code}`) : code; }
 
@@ -237,20 +320,52 @@ function publicStatusBadge(status) {
     return map[status] || 'bg-gray-100 text-gray-600';
 }
 
-function statusTextColor(status) {
-    if (status === 'completed') return 'text-[#1BA97F]';
-    if (status === 'rejected')  return 'text-red-500';
-    return 'text-gray-500';
-}
-
-function getProgressColor(index, status, order) {
-    if (status === 'rejected') {
-        return index < order ? 'bg-red-300' : index === order ? 'bg-red-500' : 'bg-gray-100';
+function progressColor(index, c) {
+    const current = currentStepIndex(c);
+    if (c.public_status === 'completed') return 'bg-[#1BA97F]';
+    if (c.public_status === 'rejected') {
+        return index < current ? 'bg-red-300' : index === current ? 'bg-red-500' : 'bg-gray-100';
     }
-    if (status === 'completed') return 'bg-[#1BA97F]';
-    return index < order ? 'bg-[#1BA97F]' : index === order ? 'bg-[#1BA97F]/50' : 'bg-gray-100';
+    return index < current ? 'bg-[#1BA97F]' : index === current ? 'bg-[#1BA97F]/60' : 'bg-gray-100';
 }
 
+function statusDescBg(status) {
+    if (status === 'completed') return 'bg-green-50';
+    if (status === 'rejected') return 'bg-red-50';
+    return 'bg-gray-50';
+}
+
+function statusDescText(status) {
+    if (status === 'completed') return 'text-green-700';
+    if (status === 'rejected') return 'text-red-700';
+    return 'text-gray-600';
+}
+
+// --- Payment countdown ---
+function showPaymentBlock(c) {
+    return c.payment_status !== 'paid' && c.public_status !== 'draft' && c.payment_deadline;
+}
+
+function isPaymentOverdue(c) {
+    if (!c.payment_deadline) return false;
+    return new Date(c.payment_deadline) <= now.value;
+}
+
+function getCountdownText(c) {
+    if (!c.payment_deadline) return '';
+    const diff = new Date(c.payment_deadline) - now.value;
+    if (diff <= 0) return t('caseStatus.paymentOverdue');
+    const d = Math.floor(diff / 86400000);
+    const h = Math.floor((diff % 86400000) / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const parts = [];
+    if (d > 0) parts.push(`${d}${t('caseStatus.daysShort')}`);
+    if (h > 0) parts.push(`${h}${t('caseStatus.hoursShort')}`);
+    parts.push(`${m}${t('caseStatus.minutesShort')}`);
+    return parts.join(' ');
+}
+
+// --- Date / Deadline ---
 function formatDate(dateStr) {
     if (!dateStr) return '';
     const d = new Date(dateStr);
@@ -266,7 +381,7 @@ function deadlineClass(dateStr, status) {
     return 'text-gray-500';
 }
 
-// Empty state
+// --- Empty state ---
 const profileDone = computed(() => publicAuth.profilePercent >= 60);
 
 const steps = computed(() => [
