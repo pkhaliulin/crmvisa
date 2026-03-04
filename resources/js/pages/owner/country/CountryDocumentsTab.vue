@@ -93,14 +93,19 @@
         <h3 class="font-bold text-[#0A1F44] text-lg mb-4">{{ $t('countryDetail.addDocTitle') }}</h3>
 
         <div class="space-y-3">
-          <!-- Тип визы -->
+          <!-- Тип визы — мультивыбор -->
           <div>
-            <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.visaTypeLabel') }}</label>
-            <select v-model="form.visa_type"
-              class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]">
-              <option value="*">{{ $t('countryDetail.allVisaTypes') }}</option>
-              <option v-for="vt in visaTypes" :key="vt" :value="vt">{{ vt }}</option>
-            </select>
+            <label class="text-xs text-gray-500 mb-2 block">{{ $t('countryDetail.visaTypeLabel') }}</label>
+            <div class="space-y-1.5">
+              <label class="flex items-center gap-2 text-sm p-2 rounded-lg hover:bg-gray-50 cursor-pointer">
+                <input type="checkbox" v-model="form.allTypes" @change="onAllTypesToggle" class="rounded" />
+                <span class="font-medium">{{ $t('countryDetail.allVisaTypes') }}</span>
+              </label>
+              <label v-for="vt in visaTypes" :key="vt" class="flex items-center gap-2 text-sm p-2 rounded-lg hover:bg-gray-50 cursor-pointer">
+                <input type="checkbox" :value="vt" v-model="form.selectedTypes" class="rounded" />
+                {{ vt }}
+              </label>
+            </div>
           </div>
 
           <!-- Шаблон документа -->
@@ -135,7 +140,7 @@
         </div>
 
         <div class="flex gap-3 mt-4">
-          <button @click="saveDoc" :disabled="!form.document_template_id || saving"
+          <button @click="saveDoc" :disabled="!form.document_template_id || saving || (!form.allTypes && !form.selectedTypes.length)"
             class="flex-1 py-2.5 bg-[#0A1F44] text-white font-semibold rounded-xl hover:bg-[#0d2a5e] disabled:opacity-60">
             {{ saving ? $t('common.loading') : $t('common.add') }}
           </button>
@@ -184,11 +189,18 @@ const saving       = ref(false);
 const showModal    = ref(false);
 
 const form = reactive({
-  visa_type: '*',
+  allTypes: true,
+  selectedTypes: [],
   document_template_id: '',
   requirement_level: 'required',
   notes: '',
 });
+
+function onAllTypesToggle() {
+  if (form.allTypes) {
+    form.selectedTypes = [];
+  }
+}
 
 // --- Computed ---
 
@@ -212,8 +224,10 @@ function countByLevel(level) {
 }
 
 const filteredTemplates = computed(() => {
+  // Показываем шаблоны, которых нет ещё ни в одном выбранном типе
+  const targetTypes = form.allTypes ? ['*'] : form.selectedTypes;
   const existing = requirements.value
-    .filter(r => r.visa_type === form.visa_type)
+    .filter(r => targetTypes.includes(r.visa_type))
     .map(r => r.document_template_id);
   return templates.value.filter(t => t.is_active && !existing.includes(t.id));
 });
@@ -237,7 +251,8 @@ async function loadData() {
 }
 
 function openAdd() {
-  form.visa_type = '*';
+  form.allTypes = true;
+  form.selectedTypes = [];
   form.document_template_id = '';
   form.requirement_level = 'required';
   form.notes = '';
@@ -247,14 +262,24 @@ function openAdd() {
 async function saveDoc() {
   saving.value = true;
   try {
-    await ownerCountriesApi.requirementStore({
-      country_code: props.countryCode,
-      visa_type: form.visa_type,
-      document_template_id: form.document_template_id,
-      requirement_level: form.requirement_level,
-      notes: form.notes || null,
-      is_active: true,
-    });
+    // Определяем для каких типов виз создавать
+    const targetTypes = form.allTypes
+      ? ['*', ...visaTypes.value]  // Для всех: * + каждый тип отдельно
+      : form.selectedTypes;
+
+    // Создаём записи для каждого типа
+    const promises = targetTypes.map(vt =>
+      ownerCountriesApi.requirementStore({
+        country_code: props.countryCode,
+        visa_type: vt,
+        document_template_id: form.document_template_id,
+        requirement_level: form.requirement_level,
+        notes: form.notes || null,
+        is_active: true,
+      }).catch(() => {}) // Игнорируем дубликаты
+    );
+    await Promise.all(promises);
+
     showModal.value = false;
     await loadData();
     emit('updated');

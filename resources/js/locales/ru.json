@@ -620,7 +620,15 @@
     "parameter": "Параметр",
     "weight": "Вес",
     "weightsSumWarning": "Сумма должна быть равна 1.00",
-    "scoringEmptyRule": "Правило при незаполненных данных"
+    "scoringEmptyRule": "Правило при незаполненных данных",
+    "visaRegime": "Визовый режим",
+    "visaRequired": "Виза обязательна",
+    "visaFreeRegime": "Безвизовый",
+    "visaOnArrivalRegime": "Виза по прибытию",
+    "evisaRegime": "Электронная виза (e-visa)",
+    "visaFreeDays": "Дней безвизового пребывания",
+    "visaOnArrivalDays": "Дней визы по прибытию",
+    "evisaDays": "Дней обработки e-visa"
   },
   "visaTypes": {
     "description": "Единый справочник типов виз. Используется во всех разделах платформы как источник истины.",

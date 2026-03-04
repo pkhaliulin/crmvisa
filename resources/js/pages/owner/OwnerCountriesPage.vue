@@ -101,11 +101,12 @@
                         </td>
                         <td class="px-3 py-3 text-center text-gray-500">{{ c.view_count || 0 }}</td>
                         <td class="px-3 py-3 text-center text-gray-500">{{ c.case_count || 0 }}</td>
-                        <td class="px-3 py-3 text-center">
-                            <span class="text-xs px-2 py-1 rounded-full font-medium"
-                                :class="c.is_active ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'">
+                        <td class="px-3 py-3 text-center" @click.stop>
+                            <button @click="toggleActive(c)"
+                                class="text-xs px-2.5 py-1 rounded-full font-medium transition-colors"
+                                :class="c.is_active ? 'bg-green-50 text-green-700 hover:bg-green-100' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'">
                                 {{ c.is_active ? $t('countryDetail.active') : $t('countryDetail.inactive') }}
-                            </span>
+                            </button>
                         </td>
                     </tr>
                 </tbody>
@@ -257,6 +258,13 @@ function riskClass(level) {
 
 function goToDetail(code) {
     router.push({ name: 'owner.country.detail', params: { code } });
+}
+
+async function toggleActive(c) {
+    try {
+        await api.patch(`/owner/countries/${c.country_code}`, { is_active: !c.is_active });
+        c.is_active = !c.is_active;
+    } catch { /* ignore */ }
 }
 
 async function load() {

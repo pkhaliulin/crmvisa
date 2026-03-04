@@ -620,7 +620,15 @@
     "parameter": "Parametr",
     "weight": "Og'irlik",
     "weightsSumWarning": "Yig'indi 1.00 ga teng bo'lishi kerak",
-    "scoringEmptyRule": "To'ldirilmagan ma'lumotlar uchun qoida"
+    "scoringEmptyRule": "To'ldirilmagan ma'lumotlar uchun qoida",
+    "visaRegime": "Viza rejimi",
+    "visaRequired": "Viza majburiy",
+    "visaFreeRegime": "Vizasiz",
+    "visaOnArrivalRegime": "Kelganda viza",
+    "evisaRegime": "Elektron viza (e-viza)",
+    "visaFreeDays": "Vizasiz yashash kunlari",
+    "visaOnArrivalDays": "Kelganda viza kunlari",
+    "evisaDays": "E-viza ko'rib chiqish kunlari"
   },
   "visaTypes": {
     "description": "Viza turlari uchun yagona ma'lumotnoma. Platformaning barcha bo'limlarida ishlatiladi.",
