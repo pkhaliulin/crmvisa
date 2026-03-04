@@ -38,14 +38,15 @@
                     </div>
                 </div>
 
-                <!-- Logout icon -->
-                <button @click="logout"
-                    class="text-gray-400 hover:text-red-500 transition-colors p-1.5 rounded-lg hover:bg-red-50"
-                    :title="$t('common.logout')">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-                    </svg>
-                </button>
+                <!-- User name + profile link -->
+                <router-link :to="{ name: 'me.profile' }"
+                    class="text-right hover:opacity-80 transition-opacity">
+                    <div class="text-sm font-semibold text-[#0A1F44] leading-tight">{{ displayName }}</div>
+                    <div class="text-xs font-medium leading-tight"
+                         :class="publicAuth.profilePercent >= 80 ? 'text-[#1BA97F]' : publicAuth.profilePercent >= 40 ? 'text-amber-500' : 'text-gray-400'">
+                        {{ $t('common.profilePercent', { percent: publicAuth.profilePercent }) }}
+                    </div>
+                </router-link>
 
                 <!-- Language switcher -->
                 <button @click="toggleLocale"
@@ -56,15 +57,14 @@
                         :class="currentLocale() === 'uz' ? 'bg-[#0A1F44] text-white' : 'text-gray-400 hover:text-gray-600'">UZ</span>
                 </button>
 
-                <!-- User name + profile link -->
-                <router-link :to="{ name: 'me.profile' }"
-                    class="text-right hover:opacity-80 transition-opacity">
-                    <div class="text-sm font-semibold text-[#0A1F44] leading-tight">{{ displayName }}</div>
-                    <div class="text-xs font-medium leading-tight"
-                         :class="publicAuth.profilePercent >= 80 ? 'text-[#1BA97F]' : publicAuth.profilePercent >= 40 ? 'text-amber-500' : 'text-gray-400'">
-                        {{ $t('common.profilePercent', { percent: publicAuth.profilePercent }) }}
-                    </div>
-                </router-link>
+                <!-- Logout icon -->
+                <button @click="logout"
+                    class="text-gray-400 hover:text-red-500 transition-colors p-1.5 rounded-lg hover:bg-red-50"
+                    :title="$t('common.logout')">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                    </svg>
+                </button>
             </div>
 
             <!-- Mobile: lang switch + logout -->
