@@ -110,30 +110,24 @@ class PublicUser extends Model
         return $this->pin_hash && Hash::check($pin, $this->pin_hash);
     }
 
-    /** Количество заполненных полей профиля (0–100%) */
+    /** Количество заполненных полей профиля (0–100%) — каждое поле с индивидуальным весом */
     public function profileCompleteness(): int
     {
-        // Обязательные поля — 60 баллов (по 10 каждое)
-        $required = ['name', 'dob', 'citizenship', 'employment_type', 'monthly_income_usd', 'marital_status'];
-        $filled   = collect($required)->filter(fn ($f) => ! empty($this->$f))->count();
-        $percent  = $filled * 10; // max 60
+        // Каждое поле — индивидуальный вес, сумма = 100
+        $weights = [
+            ['w' => 12, 'filled' => ! empty($this->name)],
+            ['w' => 10, 'filled' => ! empty($this->dob)],
+            ['w' => 10, 'filled' => ! empty($this->citizenship)],
+            ['w' =>  6, 'filled' => ! empty($this->gender)],
+            ['w' => 10, 'filled' => ! empty($this->passport_number)],
+            ['w' =>  7, 'filled' => ! empty($this->passport_expires_at)],
+            ['w' => 10, 'filled' => ! empty($this->employment_type)],
+            ['w' =>  6, 'filled' => $this->employed_years !== null],
+            ['w' => 10, 'filled' => $this->monthly_income_usd !== null && $this->monthly_income_usd > 0],
+            ['w' => 10, 'filled' => ! empty($this->marital_status)],
+            ['w' =>  9, 'filled' => $this->visas_obtained_count !== null],
+        ];
 
-        // Занятость — стаж
-        if ($this->employed_years !== null && $this->employed_years >= 0) $percent += 5;
-
-        // Семья
-        if ($this->has_property || $this->has_car) $percent += 5;
-
-        // Визовая история — явно указана (даже если нет виз = уже заполнено)
-        if ($this->visas_obtained_count !== null) $percent += 5;
-        if ($this->refusals_count !== null)       $percent += 5;
-
-        // Сильные визы — бонус
-        if ($this->has_schengen_visa || $this->has_us_visa) $percent += 10;
-
-        // Данные паспорта
-        if ($this->passport_number) $percent += 10;
-
-        return min(100, $percent);
+        return collect($weights)->sum(fn ($f) => $f['filled'] ? $f['w'] : 0);
     }
 }

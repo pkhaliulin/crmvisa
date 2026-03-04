@@ -9,13 +9,22 @@ export const usePublicAuthStore = defineStore('publicAuth', () => {
     const isLoggedIn     = computed(() => !!token.value);
     const profilePercent = computed(() => {
         if (!user.value) return 0;
-        const fields = ['name', 'dob', 'citizenship', 'employment_type', 'monthly_income_usd', 'marital_status'];
-        const filled = fields.filter(f => user.value[f]).length;
-        let pct = Math.round(filled / fields.length * 100);
-        if (user.value.has_property || user.value.has_car) pct += 10;
-        if (user.value.has_schengen_visa || user.value.has_us_visa) pct += 10;
-        if (user.value.passport_number) pct += 10;
-        return Math.min(100, pct);
+        const u = user.value;
+        // Каждое поле — индивидуальный вес, сумма = 100
+        const weights = [
+            { w: 12, filled: !!u.name },
+            { w: 10, filled: !!u.dob },
+            { w: 10, filled: !!u.citizenship },
+            { w:  6, filled: !!u.gender },
+            { w: 10, filled: !!u.passport_number },
+            { w:  7, filled: !!u.passport_expires_at },
+            { w: 10, filled: !!u.employment_type },
+            { w:  6, filled: u.employed_years !== null && u.employed_years !== undefined && u.employed_years !== '' },
+            { w: 10, filled: u.monthly_income_usd !== null && u.monthly_income_usd !== undefined && u.monthly_income_usd !== '' && u.monthly_income_usd > 0 },
+            { w: 10, filled: !!u.marital_status },
+            { w:  9, filled: u.visas_obtained_count !== null && u.visas_obtained_count !== undefined && u.visas_obtained_count !== '' },
+        ];
+        return weights.reduce((sum, f) => sum + (f.filled ? f.w : 0), 0);
     });
 
     function setSession(userData, plainToken) {
