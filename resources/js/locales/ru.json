@@ -1011,6 +1011,33 @@
     "payForAllDesc": "Оплатите за всех участников группы одним платежом.",
     "youAreInGroup": "Эта заявка в группе",
     "groupCaseHint": "Перейдите в группу, чтобы увидеть других участников",
-    "viewGroup": "Открыть группу"
+    "viewGroup": "Открыть группу",
+    "memberDetailStage": "Этап",
+    "memberDetailPayment": "Оплата",
+    "memberDetailCreated": "Создана",
+    "memberDetailDocs": "Документы",
+    "memberNoCaseYet": "Заявка ещё не создана",
+    "docStatus_pending": "Ожидает",
+    "docStatus_uploaded": "Загружено",
+    "docStatus_approved": "Одобрено",
+    "docStatus_rejected": "Отклонено",
+    "docStatus_not_required": "Не требуется"
+  },
+  "kanban": {
+    "stage_lead": "Лид",
+    "stage_qualification": "Квалификация",
+    "stage_awaiting_payment": "Ожидание оплаты",
+    "stage_documents": "Сбор документов",
+    "stage_translation": "Перевод",
+    "stage_appointment": "Запись",
+    "stage_review": "Рассмотрение",
+    "stage_result": "Результат",
+    "slaOverdue": "Просрочено",
+    "slaHoursLeft": "Осталось {hours} ч",
+    "slaExpiring": "SLA истекает",
+    "paymentPaid": "Оплачено",
+    "paymentPending": "Ожидает оплаты",
+    "paymentUnpaid": "Не оплачено",
+    "paymentRequired": "Оплата не получена — переход заблокирован"
   }
 }

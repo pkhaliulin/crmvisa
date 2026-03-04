@@ -74,6 +74,8 @@ export const publicPortalApi = {
     addGroupMember:    (id, data)      => publicApi.post(`/me/groups/${id}/members`, data),
     removeGroupMember: (id, mid)       => publicApi.delete(`/me/groups/${id}/members/${mid}`),
     setGroupAgency:    (id, agencyId)  => publicApi.post(`/me/groups/${id}/agency`, { agency_id: agencyId }),
+    groupAgencies:     (id)            => publicApi.get(`/me/groups/${id}/agencies`),
+    memberCaseDetail:  (id, memberId)  => publicApi.get(`/me/groups/${id}/members/${memberId}/case`),
     payForGroup:       (id, provider)  => publicApi.post(`/me/groups/${id}/pay`, { provider }),
 
     // Scoring

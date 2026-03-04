@@ -1011,6 +1011,33 @@
     "payForAllDesc": "Guruhdagi barcha ishtirokchilar uchun bitta to'lov qiling.",
     "youAreInGroup": "Bu ariza guruhda",
     "groupCaseHint": "Boshqa ishtirokchilarni ko'rish uchun guruhga o'ting",
-    "viewGroup": "Guruhni ochish"
+    "viewGroup": "Guruhni ochish",
+    "memberDetailStage": "Bosqich",
+    "memberDetailPayment": "To'lov",
+    "memberDetailCreated": "Yaratilgan",
+    "memberDetailDocs": "Hujjatlar",
+    "memberNoCaseYet": "Ariza hali yaratilmagan",
+    "docStatus_pending": "Kutilmoqda",
+    "docStatus_uploaded": "Yuklangan",
+    "docStatus_approved": "Tasdiqlangan",
+    "docStatus_rejected": "Rad etilgan",
+    "docStatus_not_required": "Talab qilinmaydi"
+  },
+  "kanban": {
+    "stage_lead": "Lid",
+    "stage_qualification": "Kvalifikatsiya",
+    "stage_awaiting_payment": "To'lov kutilmoqda",
+    "stage_documents": "Hujjatlar yig'ish",
+    "stage_translation": "Tarjima",
+    "stage_appointment": "Yozilish",
+    "stage_review": "Ko'rib chiqish",
+    "stage_result": "Natija",
+    "slaOverdue": "Muddati o'tgan",
+    "slaHoursLeft": "{hours} soat qoldi",
+    "slaExpiring": "SLA tugayapti",
+    "paymentPaid": "To'langan",
+    "paymentPending": "To'lov kutilmoqda",
+    "paymentUnpaid": "To'lanmagan",
+    "paymentRequired": "To'lov olinmagan — o'tish bloklangan"
   }
 }

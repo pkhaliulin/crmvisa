@@ -123,6 +123,13 @@ class CaseService extends BaseService
 
     public function moveToStage(VisaCase $case, string $newStage, ?string $notes = null): VisaCase
     {
+        // Payment gate: нельзя перейти из awaiting_payment в documents без оплаты
+        if ($case->stage === 'awaiting_payment' && $newStage === 'documents' && $case->payment_status !== 'paid') {
+            throw ValidationException::withMessages([
+                'payment' => 'Невозможно перейти к сбору документов без оплаты.',
+            ]);
+        }
+
         $previousStage = $case->stage;
 
         $result = DB::transaction(function () use ($case, $newStage, $notes) {
@@ -185,5 +192,37 @@ class CaseService extends BaseService
     public function critical(): Collection
     {
         return $this->caseRepository()->critical();
+    }
+
+    /**
+     * Системный переход этапа (из cron/payment callback — без Auth::id()).
+     */
+    public function moveToStageSystem(VisaCase $case, string $newStage, ?string $notes = null): VisaCase
+    {
+        $previousStage = $case->stage;
+
+        $result = DB::transaction(function () use ($case, $newStage, $notes) {
+            CaseStage::where('case_id', $case->id)
+                ->whereNull('exited_at')
+                ->update(['exited_at' => now()]);
+
+            $newCaseStage = CaseStage::create([
+                'case_id'    => $case->id,
+                'user_id'    => null,
+                'stage'      => $newStage,
+                'entered_at' => now(),
+                'notes'      => $notes,
+            ]);
+
+            $this->slaService->applyStageSla($newCaseStage, $case);
+
+            $case->update(['stage' => $newStage]);
+
+            return $case->fresh(['client', 'assignee', 'stageHistory']);
+        });
+
+        CaseStatusChanged::dispatch($result, $previousStage, $newStage, null);
+
+        return $result;
     }
 }

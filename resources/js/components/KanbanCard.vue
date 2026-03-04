@@ -3,7 +3,7 @@
     :data-id="item.id"
     :class="[
       'bg-white rounded-lg p-3 shadow-sm border cursor-pointer hover:shadow-md transition-shadow select-none',
-      urgencyBorder,
+      cardBorder,
     ]"
     @click="$emit('click', item.id)"
   >
@@ -23,10 +23,25 @@
     </p>
     <p class="text-xs text-gray-400">{{ item.client?.phone }}</p>
 
-    <!-- Deadline -->
-    <div v-if="item.critical_date" :class="['flex items-center gap-1 mt-2 text-xs font-medium', urgencyText]">
+    <!-- SLA Stage timer -->
+    <div v-if="item.stage_sla_hours_left !== null && item.stage_sla_hours_left !== undefined"
+      :class="['flex items-center gap-1 mt-2 text-xs font-medium', slaTextColor]">
+      <span>{{ slaIcon }}</span>
+      <span>{{ slaLabel }}</span>
+    </div>
+
+    <!-- Deadline (critical_date) -->
+    <div v-else-if="item.critical_date" :class="['flex items-center gap-1 mt-2 text-xs font-medium', urgencyText]">
       <span>{{ urgencyIcon }}</span>
       <span>{{ deadlineLabel }}</span>
+    </div>
+
+    <!-- Payment badge (for awaiting_payment stage) -->
+    <div v-if="item.payment_status" class="mt-2">
+      <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
+        :class="paymentBadgeClass">
+        {{ paymentLabel }}
+      </span>
     </div>
 
     <!-- Assignee -->
@@ -61,11 +76,15 @@ const priorityMap   = {
 };
 const priorityColor = computed(() => priorityMap[props.item.priority]?.color ?? 'gray');
 const priorityLabel = computed(() => priorityMap[props.item.priority]?.label ?? '');
-const urgencyBorder = computed(() => {
+
+// Border: SLA overdue (red bg) > urgency overdue > critical > normal
+const cardBorder = computed(() => {
+  if (props.item.stage_sla_overdue) return 'border-red-400 bg-red-50/50';
   if (props.item.urgency === 'overdue')  return 'border-red-300';
   if (props.item.urgency === 'critical') return 'border-yellow-300';
   return 'border-gray-100';
 });
+
 const urgencyText = computed(() => {
   if (props.item.urgency === 'overdue')  return 'text-red-600';
   if (props.item.urgency === 'critical') return 'text-yellow-600';
@@ -82,5 +101,38 @@ const deadlineLabel = computed(() => {
   if (d < 0)  return `Просрочено на ${Math.abs(d)} дн.`;
   if (d === 0) return 'Сегодня дедлайн!';
   return `${d} дн. до дедлайна`;
+});
+
+// SLA stage timer
+const slaTextColor = computed(() => {
+  if (props.item.stage_sla_overdue) return 'text-red-600';
+  if (props.item.stage_sla_hours_left <= 2) return 'text-orange-500';
+  return 'text-blue-500';
+});
+const slaIcon = computed(() => {
+  if (props.item.stage_sla_overdue) return '🔴';
+  if (props.item.stage_sla_hours_left <= 2) return '🟠';
+  return '⏱️';
+});
+const slaLabel = computed(() => {
+  const h = props.item.stage_sla_hours_left;
+  if (h === null || h === undefined) return '';
+  if (h < 0) return `Просрочено на ${Math.abs(h)} ч`;
+  if (h === 0) return 'SLA истекает сейчас!';
+  return `SLA: ${h} ч осталось`;
+});
+
+// Payment badge
+const paymentBadgeClass = computed(() => {
+  const s = props.item.payment_status;
+  if (s === 'paid') return 'bg-green-50 text-green-700';
+  if (s === 'pending') return 'bg-amber-50 text-amber-600';
+  return 'bg-gray-50 text-gray-400';
+});
+const paymentLabel = computed(() => {
+  const s = props.item.payment_status;
+  if (s === 'paid') return 'Оплачено';
+  if (s === 'pending') return 'Ожидает оплаты';
+  return 'Не оплачено';
 });
 </script>

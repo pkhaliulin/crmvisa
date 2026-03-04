@@ -71,6 +71,18 @@ class SlaService
      */
     public function applyStageSla(CaseStage $caseStage, VisaCase $case): void
     {
+        $stage = $caseStage->stage;
+
+        // Приоритет 1: sla_hours из config/stages.php
+        $configHours = config("stages.{$stage}.sla_hours");
+        if ($configHours && $configHours > 0) {
+            $caseStage->update([
+                'sla_due_at' => Carbon::now()->addHours($configHours),
+            ]);
+            return;
+        }
+
+        // Приоритет 2: fallback на SlaRule из БД (stage_sla_days)
         $rule = SlaRule::findRule($case->country_code, $case->visa_type);
 
         if (! $rule || empty($rule->stage_sla_days)) {
@@ -78,7 +90,6 @@ class SlaService
         }
 
         $stageSla = $rule->stage_sla_days;
-        $stage    = $caseStage->stage;
 
         if (isset($stageSla[$stage]) && $stageSla[$stage] > 0) {
             $caseStage->update([

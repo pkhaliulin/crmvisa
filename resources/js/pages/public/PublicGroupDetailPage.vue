@@ -98,7 +98,8 @@
                 </div>
 
                 <div v-for="m in groupData.members" :key="m.id"
-                    class="px-5 py-3 border-t border-gray-50 flex items-center gap-3">
+                    class="px-5 py-3 border-t border-gray-50 flex items-center gap-3 cursor-pointer hover:bg-gray-50/50 transition-colors"
+                    @click="isInitiator && m.case_id ? openMemberDetail(m) : null">
                     <!-- Avatar -->
                     <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
                         :class="m.status === 'joined' ? 'bg-[#1BA97F]/10 text-[#1BA97F]' : 'bg-gray-100 text-gray-400'">
@@ -114,7 +115,7 @@
                         <div class="text-xs text-gray-400">{{ m.phone_masked }}</div>
                     </div>
                     <!-- Status & progress -->
-                    <div class="flex items-center gap-3 shrink-0">
+                    <div class="flex items-center gap-3 shrink-0" @click.stop>
                         <div class="text-right">
                             <div class="text-xs font-medium"
                                 :class="m.status === 'joined' ? 'text-[#1BA97F]' : 'text-amber-500'">
@@ -229,6 +230,66 @@
             </div>
         </div>
 
+        <!-- Member Detail Modal -->
+        <div v-if="memberDetail"
+            class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center sm:p-4"
+            @click.self="memberDetail = null">
+            <div class="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl shadow-xl max-h-[80vh] overflow-y-auto">
+                <div class="p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-base font-bold text-[#0A1F44]">{{ memberDetail.member?.name || $t('group.unknown') }}</h3>
+                        <button @click="memberDetail = null" class="text-gray-400 hover:text-gray-600 transition-colors p-1">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div v-if="memberDetailLoading" class="flex justify-center py-8">
+                        <div class="w-6 h-6 border-2 border-[#1BA97F] border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+
+                    <template v-else>
+                        <!-- Case info -->
+                        <div v-if="memberDetail.case" class="space-y-3 mb-4">
+                            <div class="flex items-center justify-between text-sm">
+                                <span class="text-gray-500">{{ $t('group.memberDetailStage') }}</span>
+                                <span class="font-medium text-[#0A1F44]">{{ stageLabel(memberDetail.case.stage) }}</span>
+                            </div>
+                            <div class="flex items-center justify-between text-sm">
+                                <span class="text-gray-500">{{ $t('group.memberDetailPayment') }}</span>
+                                <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                                    :class="memberDetail.case.payment_status === 'paid' ? 'bg-green-50 text-green-700' : memberDetail.case.payment_status === 'pending' ? 'bg-amber-50 text-amber-600' : 'bg-gray-50 text-gray-400'">
+                                    {{ $t('group.payment_' + (memberDetail.case.payment_status || 'unpaid')) }}
+                                </span>
+                            </div>
+                            <div class="flex items-center justify-between text-sm">
+                                <span class="text-gray-500">{{ $t('group.memberDetailCreated') }}</span>
+                                <span class="text-gray-600">{{ memberDetail.case.created_at }}</span>
+                            </div>
+                        </div>
+
+                        <!-- Checklist -->
+                        <div v-if="memberDetail.checklist?.length" class="border-t border-gray-100 pt-3">
+                            <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">{{ $t('group.memberDetailDocs') }}</div>
+                            <div v-for="doc in memberDetail.checklist" :key="doc.id"
+                                class="flex items-center justify-between py-1.5 text-sm">
+                                <span class="text-[#0A1F44] truncate">{{ doc.name }}</span>
+                                <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0"
+                                    :class="doc.status === 'approved' ? 'bg-green-50 text-green-700' : doc.status === 'uploaded' ? 'bg-blue-50 text-blue-600' : 'bg-gray-50 text-gray-400'">
+                                    {{ $t('group.docStatus_' + doc.status) }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div v-if="!memberDetail.case" class="text-center py-4 text-sm text-gray-400">
+                            {{ $t('group.memberNoCaseYet') }}
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+
         <!-- Agency selection modal (reuses case agencies pattern) -->
         <div v-if="showAgencyPicker"
             class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center sm:p-4"
@@ -303,6 +364,10 @@ const showAgencyPicker = ref(false);
 const agenciesLoading = ref(false);
 const agencies = ref([]);
 
+// Member detail
+const memberDetail = ref(null);
+const memberDetailLoading = ref(false);
+
 // Payment
 const paying = ref(false);
 
@@ -370,16 +435,31 @@ async function doRemoveMember() {
     }
 }
 
+function stageLabel(stage) {
+    const key = `kanban.stage_${stage}`;
+    const val = t(key);
+    return val !== key ? val : stage;
+}
+
+async function openMemberDetail(member) {
+    memberDetail.value = { member: { id: member.id, name: member.name } };
+    memberDetailLoading.value = true;
+    try {
+        const { data } = await publicPortalApi.memberCaseDetail(route.params.id, member.id);
+        memberDetail.value = data.data;
+    } catch {
+        memberDetail.value = null;
+    } finally {
+        memberDetailLoading.value = false;
+    }
+}
+
 async function goChooseAgency() {
     showAgencyPicker.value = true;
     agenciesLoading.value = true;
     try {
-        // Используем первый case_id из members для получения агентств по стране
-        const initiatorMember = groupData.value?.members?.find(m => m.role === 'initiator');
-        if (initiatorMember?.case_id) {
-            const { data } = await publicPortalApi.caseAgencies(initiatorMember.case_id);
-            agencies.value = data.data?.agencies ?? [];
-        }
+        const { data } = await publicPortalApi.groupAgencies(route.params.id);
+        agencies.value = data.data?.agencies ?? [];
     } catch {
         agencies.value = [];
     } finally {

@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col w-64 shrink-0 bg-gray-100 rounded-xl">
+  <div class="flex flex-col w-64 shrink-0 bg-gray-100 rounded-xl" :data-stage="column.key">
     <!-- Column header -->
     <div class="px-3 py-3 flex items-center gap-2">
       <div class="flex items-center gap-1.5 flex-1 min-w-0">
@@ -18,6 +18,9 @@
         </div>
       </div>
 
+      <span v-if="column.sla_hours" class="text-[10px] text-gray-400 font-medium shrink-0">
+        SLA: {{ column.sla_hours }}ч
+      </span>
       <span class="bg-gray-200 text-gray-600 text-xs rounded-full px-2 py-0.5 font-medium shrink-0">
         {{ column.count }}
       </span>

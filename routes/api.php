@@ -364,6 +364,8 @@ Route::prefix('v1')->group(function () {
         Route::post('me/groups/{id}/members',       [PublicGroupController::class, 'addMember']);
         Route::delete('me/groups/{id}/members/{mid}', [PublicGroupController::class, 'removeMember']);
         Route::post('me/groups/{id}/agency',        [PublicGroupController::class, 'setAgency']);
+        Route::get('me/groups/{id}/agencies',       [PublicGroupController::class, 'agencies']);
+        Route::get('me/groups/{id}/members/{memberId}/case', [PublicGroupController::class, 'memberCaseDetail']);
         Route::post('me/groups/{id}/pay',           [PublicGroupController::class, 'payForGroup']);
 
         // Оплата клиента

@@ -21,11 +21,15 @@ class CaseStage extends Model
         'entered_at',
         'exited_at',
         'notes',
+        'sla_due_at',
+        'is_overdue',
     ];
 
     protected $casts = [
         'entered_at' => 'datetime',
         'exited_at'  => 'datetime',
+        'sla_due_at' => 'datetime',
+        'is_overdue' => 'boolean',
     ];
 
     public function case(): BelongsTo

@@ -14,6 +14,6 @@ class CaseStatusChanged
         public readonly VisaCase $case,
         public readonly string $previousStage,
         public readonly string $newStage,
-        public readonly string $changedBy,
+        public readonly ?string $changedBy,
     ) {}
 }

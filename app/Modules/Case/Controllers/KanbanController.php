@@ -3,6 +3,7 @@
 namespace App\Modules\Case\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Case\Models\CaseStage;
 use App\Modules\Case\Models\VisaCase;
 use App\Support\Helpers\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -21,6 +22,7 @@ class KanbanController extends Controller
             ->with([
                 'client:id,name,phone,nationality',
                 'assignee:id,name',
+                'stageHistory' => fn ($q) => $q->whereNull('exited_at'),
             ]);
 
         // Менеджер видит только свои заявки
@@ -44,6 +46,8 @@ class KanbanController extends Controller
                 'label'      => $stage['label'],
                 'order'      => $stage['order'],
                 'client_msg' => $stage['client_msg'],
+                'sla_hours'  => $stage['sla_hours'] ?? null,
+                'tooltip'    => $stage['tooltip'] ?? '',
                 'count'      => $stageCases->count(),
                 'cases'      => $stageCases,
             ];
@@ -70,17 +74,30 @@ class KanbanController extends Controller
             $daysLeft = (int) Carbon::now()->diffInDays($case->critical_date, false);
         }
 
+        // SLA данные из текущего CaseStage
+        $currentStage    = $case->stageHistory->first();
+        $stageSlaOverdue = false;
+        $stageSlaHoursLeft = null;
+
+        if ($currentStage && $currentStage->sla_due_at) {
+            $stageSlaOverdue   = $currentStage->is_overdue || $currentStage->sla_due_at->isPast();
+            $stageSlaHoursLeft = (int) Carbon::now()->diffInHours($currentStage->sla_due_at, false);
+        }
+
         return [
-            'id'           => $case->id,
-            'priority'     => $case->priority,
-            'country_code' => $case->country_code,
-            'visa_type'    => $case->visa_type,
-            'travel_date'  => $case->travel_date?->toDateString(),
-            'critical_date'=> $case->critical_date?->toDateString(),
-            'days_left'    => $daysLeft,
-            'is_overdue'   => $isOverdue,
-            'is_critical'  => $isCritical,
-            'urgency'      => $isOverdue ? 'overdue' : ($isCritical ? 'critical' : 'normal'),
+            'id'                  => $case->id,
+            'priority'            => $case->priority,
+            'country_code'        => $case->country_code,
+            'visa_type'           => $case->visa_type,
+            'travel_date'         => $case->travel_date?->toDateString(),
+            'critical_date'       => $case->critical_date?->toDateString(),
+            'days_left'           => $daysLeft,
+            'is_overdue'          => $isOverdue,
+            'is_critical'         => $isCritical,
+            'urgency'             => $isOverdue ? 'overdue' : ($isCritical ? 'critical' : 'normal'),
+            'stage_sla_overdue'   => $stageSlaOverdue,
+            'stage_sla_hours_left'=> $stageSlaHoursLeft,
+            'payment_status'      => $case->payment_status,
             'client' => [
                 'id'          => $case->client?->id,
                 'name'        => $case->client?->name,

@@ -3,7 +3,11 @@
 namespace App\Modules\Group\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Agency\Models\Agency;
+use App\Modules\Case\Models\VisaCase;
+use App\Modules\Document\Models\CaseChecklist;
 use App\Modules\Group\Models\CaseGroup;
+use App\Modules\Group\Models\CaseGroupMember;
 use App\Modules\Group\Services\GroupService;
 use App\Modules\Payment\Services\ClientPaymentService;
 use App\Support\Helpers\ApiResponse;
@@ -181,6 +185,112 @@ class PublicGroupController extends Controller
             'currency'    => $payment->currency,
             'payment_url' => $paymentUrl,
         ], 'Платёж создан.');
+    }
+
+    /**
+     * GET /public/me/groups/{id}/agencies — агентства для страны/визы группы.
+     */
+    public function agencies(Request $request, string $id): JsonResponse
+    {
+        $user   = $request->get('_public_user');
+        $locale = $request->input('lang') ?? $request->header('X-Locale', 'ru');
+        $locale = in_array($locale, ['uz', 'ru']) ? $locale : 'ru';
+
+        $group = $this->findGroupForUser($id, $user->id);
+
+        $cc       = $group->country_code;
+        $visaType = $group->visa_type;
+
+        $agencies = Agency::where('is_active', true)
+            ->whereNull('blocked_at')
+            ->whereHas('workCountries', fn ($wq) =>
+                $wq->where('country_code', $cc)->where('is_active', true)
+            )
+            ->with(['packages' => function ($q) use ($cc, $visaType) {
+                $q->where('is_active', true);
+                if ($cc)       $q->where('country_code', $cc);
+                if ($visaType) $q->where('visa_type', $visaType);
+            }])
+            ->select([
+                'id', 'name', 'city', 'rating', 'reviews_count',
+                'description', 'description_uz',
+                'experience_years', 'logo_url', 'is_verified',
+            ])
+            ->orderByDesc('rating')
+            ->get()
+            ->filter(fn ($a) => $a->packages->isNotEmpty())
+            ->map(fn ($a) => [
+                'id'               => $a->id,
+                'name'             => $a->name,
+                'city'             => $a->city,
+                'rating'           => $a->rating,
+                'reviews_count'    => $a->reviews_count,
+                'experience_years' => $a->experience_years,
+                'logo_url'         => $a->logo_url,
+                'is_verified'      => $a->is_verified,
+                'description'      => $locale === 'uz' && $a->description_uz ? $a->description_uz : $a->description,
+                'package'          => $a->packages->first() ? [
+                    'id'              => $a->packages->first()->id,
+                    'name'            => $locale === 'uz' && $a->packages->first()->name_uz
+                        ? $a->packages->first()->name_uz
+                        : $a->packages->first()->name,
+                    'price'           => $a->packages->first()->price,
+                    'currency'        => $a->packages->first()->currency ?? 'USD',
+                    'processing_days' => $a->packages->first()->processing_days,
+                ] : null,
+            ])
+            ->values();
+
+        return ApiResponse::success(['agencies' => $agencies]);
+    }
+
+    /**
+     * GET /public/me/groups/{id}/members/{memberId}/case — детали заявки участника.
+     */
+    public function memberCaseDetail(Request $request, string $id, string $memberId): JsonResponse
+    {
+        $user  = $request->get('_public_user');
+        $group = CaseGroup::where('id', $id)
+            ->where('initiator_public_user_id', $user->id)
+            ->firstOrFail();
+
+        $member = CaseGroupMember::where('group_id', $group->id)
+            ->where('id', $memberId)
+            ->firstOrFail();
+
+        $case = $member->case_id ? VisaCase::find($member->case_id) : null;
+
+        $checklist = [];
+        if ($case) {
+            $checklist = CaseChecklist::where('case_id', $case->id)
+                ->orderBy('sort_order')
+                ->get()
+                ->map(fn ($item) => [
+                    'id'        => $item->id,
+                    'name'      => $item->document_name,
+                    'status'    => $item->status,
+                    'file_url'  => $item->file_url,
+                ]);
+        }
+
+        return ApiResponse::success([
+            'member' => [
+                'id'     => $member->id,
+                'name'   => $member->name,
+                'role'   => $member->role,
+                'status' => $member->status,
+            ],
+            'case' => $case ? [
+                'id'             => $case->id,
+                'stage'          => $case->stage,
+                'public_status'  => $case->public_status,
+                'payment_status' => $case->payment_status ?? 'unpaid',
+                'country_code'   => $case->country_code,
+                'visa_type'      => $case->visa_type,
+                'created_at'     => $case->created_at->toDateString(),
+            ] : null,
+            'checklist' => $checklist,
+        ]);
     }
 
     /**

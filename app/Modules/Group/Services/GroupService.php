@@ -239,11 +239,26 @@ class GroupService
     public function setGroupAgency(CaseGroup $group, string $agencyId): void
     {
         DB::transaction(function () use ($group, $agencyId) {
-            $group->update(['agency_id' => $agencyId]);
+            $group->update([
+                'agency_id' => $agencyId,
+                'status'    => 'active',
+            ]);
 
             VisaCase::where('group_id', $group->id)->update([
-                'agency_id' => $agencyId,
+                'agency_id'     => $agencyId,
+                'public_status' => 'submitted',
             ]);
+
+            // Обновить agency_id у всех клиентов группы
+            $clientIds = CaseGroupMember::where('group_id', $group->id)
+                ->whereNotNull('client_id')
+                ->pluck('client_id');
+
+            if ($clientIds->isNotEmpty()) {
+                Client::withoutTenant()
+                    ->whereIn('id', $clientIds)
+                    ->update(['agency_id' => $agencyId]);
+            }
         });
     }
 

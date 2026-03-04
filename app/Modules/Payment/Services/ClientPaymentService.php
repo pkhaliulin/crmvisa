@@ -3,6 +3,7 @@
 namespace App\Modules\Payment\Services;
 
 use App\Modules\Case\Models\VisaCase;
+use App\Modules\Case\Services\CaseService;
 use App\Modules\Group\Services\GroupService;
 use App\Modules\Payment\Models\ClientPayment;
 use App\Modules\PublicPortal\Models\PublicUser;
@@ -85,6 +86,12 @@ class ClientPaymentService
                 VisaCase::where('id', $payment->case_id)->update([
                     'payment_status' => 'paid',
                 ]);
+
+                // Авто-переход: если кейс на этапе awaiting_payment → documents
+                $case = VisaCase::find($payment->case_id);
+                if ($case && $case->stage === 'awaiting_payment') {
+                    app(CaseService::class)->moveToStageSystem($case, 'documents', 'Автопереход: оплата получена');
+                }
             }
         });
     }
