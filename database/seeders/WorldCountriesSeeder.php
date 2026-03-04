@@ -17,10 +17,24 @@ class WorldCountriesSeeder extends Seeder
             $this->visaRequiredCountries(),
         );
 
-        // Установить sort_order автоматически
+        // Нормализовать все записи к единому набору ключей (PostgreSQL upsert требует)
+        $defaults = [
+            'country_code' => '', 'name' => '', 'name_uz' => null, 'flag_emoji' => '🌍',
+            'visa_regime' => 'visa_required', 'visa_free_days' => null, 'visa_on_arrival_days' => null,
+            'evisa_available' => false, 'evisa_url' => null, 'evisa_processing_days' => null,
+            'invitation_required' => false, 'hotel_booking_required' => false,
+            'insurance_required' => false, 'bank_statement_required' => true,
+            'return_ticket_required' => false,
+            'visa_fee_usd' => null, 'evisa_fee_usd' => null,
+            'avg_flight_cost_usd' => null, 'avg_hotel_per_night_usd' => null,
+            'is_popular' => false, 'is_high_approval' => false, 'is_high_refusal' => false,
+            'continent' => null, 'risk_level' => 'medium',
+            'sort_order' => 0, 'is_active' => true,
+        ];
+
         foreach ($countries as $i => &$c) {
-            $c['sort_order'] = $c['sort_order'] ?? ($i + 1);
-            $c['is_active'] = $c['is_active'] ?? true;
+            $c = array_merge($defaults, $c);
+            $c['sort_order'] = $c['sort_order'] ?: ($i + 1);
             $c['created_at'] = $now;
             $c['updated_at'] = $now;
         }
