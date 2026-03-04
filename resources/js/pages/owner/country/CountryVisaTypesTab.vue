@@ -17,7 +17,9 @@
           <tr>
             <th class="text-left px-5 py-3 font-medium">{{ $t('countryDetail.name') }}</th>
             <th class="text-left px-5 py-3 font-medium">{{ $t('countryDetail.status') }}</th>
-            <th class="text-left px-5 py-3 font-medium">{{ $t('countryDetail.description') }}</th>
+            <th class="text-left px-5 py-3 font-medium">{{ $t('countryDetail.processingTime') }}</th>
+            <th class="text-left px-5 py-3 font-medium">{{ $t('countryDetail.minDaysBefore') }}</th>
+            <th class="text-left px-5 py-3 font-medium">{{ $t('countryDetail.fees') }}</th>
             <th class="px-5 py-3 font-medium w-24"></th>
           </tr>
         </thead>
@@ -30,7 +32,18 @@
                 {{ s.is_active ? $t('countryDetail.active') : $t('countryDetail.inactive') }}
               </span>
             </td>
-            <td class="px-5 py-3 text-gray-500 max-w-xs truncate">{{ s.description || '---' }}</td>
+            <td class="px-5 py-3 text-gray-600">
+              <span v-if="s.processing_days_avg">{{ s.processing_days_avg }} {{ $t('countryDetail.days') }}</span>
+              <span v-else class="text-gray-300">---</span>
+            </td>
+            <td class="px-5 py-3 text-gray-600">
+              <span v-if="s.min_days_before_departure" class="font-semibold">{{ s.min_days_before_departure }} {{ $t('countryDetail.days') }}</span>
+              <span v-else class="text-gray-300">---</span>
+            </td>
+            <td class="px-5 py-3 text-gray-600">
+              <span v-if="s.consular_fee_usd">${{ s.consular_fee_usd }}</span>
+              <span v-else class="text-gray-300">---</span>
+            </td>
             <td class="px-5 py-3">
               <div class="flex gap-2 justify-end">
                 <button @click="startEdit(s)" class="text-xs px-2.5 py-1 border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-600">
@@ -50,35 +63,157 @@
       {{ $t('countryDetail.noVisaSettings') }}
     </div>
 
-    <!-- Modal: Add / Edit -->
-    <div v-if="showModal" class="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-      <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+    <!-- Modal: Add / Edit (full form) -->
+    <div v-if="showModal" class="fixed inset-0 z-50 bg-black/40 flex items-start justify-center p-4 overflow-y-auto">
+      <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl p-6 my-8">
         <h3 class="font-bold text-[#0A1F44] text-lg mb-4">
           {{ editingSetting ? $t('countryDetail.editVisaSetting') : $t('countryDetail.addVisaSetting') }}
         </h3>
-        <form @submit.prevent="saveForm" class="space-y-4">
-          <div v-if="!editingSetting">
-            <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.visaTypeSlug') }}</label>
-            <select v-model="formData.visa_type" required
-              class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]">
-              <option value="" disabled>{{ $t('countryDetail.selectVisaType') }}</option>
-              <option v-for="vt in availableVisaTypes" :key="vt.slug" :value="vt.slug">
-                {{ vt.name_ru }} ({{ vt.slug }})
-              </option>
-            </select>
+        <form @submit.prevent="saveForm" class="space-y-6">
+
+          <!-- Тип визы + статус -->
+          <div class="grid grid-cols-2 gap-4">
+            <div v-if="!editingSetting">
+              <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.visaTypeSlug') }}</label>
+              <select v-model="formData.visa_type" required
+                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]">
+                <option value="" disabled>{{ $t('countryDetail.selectVisaType') }}</option>
+                <option v-for="vt in availableVisaTypes" :key="vt.slug" :value="vt.slug">
+                  {{ vt.name_ru }} ({{ vt.slug }})
+                </option>
+              </select>
+            </div>
+            <div v-else>
+              <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.visaTypeSlug') }}</label>
+              <div class="text-sm font-semibold text-gray-800 py-2">{{ formData.visa_type }}</div>
+            </div>
+            <div>
+              <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.status') }}</label>
+              <label class="flex items-center gap-2 text-sm mt-2">
+                <input type="checkbox" v-model="formData.is_active" class="rounded" />
+                {{ $t('countryDetail.active') }}
+              </label>
+            </div>
           </div>
-          <div>
-            <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.status') }}</label>
-            <label class="flex items-center gap-2 text-sm">
-              <input type="checkbox" v-model="formData.is_active" class="rounded" />
-              {{ $t('countryDetail.active') }}
-            </label>
+
+          <!-- Сроки обработки -->
+          <fieldset class="border border-gray-200 rounded-xl p-4">
+            <legend class="text-xs font-semibold text-gray-500 uppercase px-2">{{ $t('countryDetail.processingTimeline') }}</legend>
+            <div class="grid grid-cols-3 gap-3 mt-2">
+              <div>
+                <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.preparationDays') }}</label>
+                <input v-model.number="formData.preparation_days" type="number" min="0" max="365"
+                  class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]" />
+              </div>
+              <div>
+                <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.appointmentWaitDays') }}</label>
+                <input v-model.number="formData.appointment_wait_days" type="number" min="0" max="365"
+                  class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]" />
+              </div>
+              <div>
+                <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.bufferDays') }}</label>
+                <input v-model.number="formData.buffer_days" type="number" min="0" max="365"
+                  class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]" />
+              </div>
+              <div>
+                <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.processingMin') }}</label>
+                <input v-model.number="formData.processing_days_min" type="number" min="0" max="365"
+                  class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]" />
+              </div>
+              <div>
+                <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.processingAvg') }}</label>
+                <input v-model.number="formData.processing_days_avg" type="number" min="0" max="365"
+                  class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]" />
+              </div>
+              <div>
+                <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.processingMax') }}</label>
+                <input v-model.number="formData.processing_days_max" type="number" min="0" max="365"
+                  class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]" />
+              </div>
+            </div>
+            <div class="mt-3 p-3 bg-blue-50 rounded-lg text-xs text-blue-600">
+              {{ $t('countryDetail.autoCalcNote') }}
+              <span v-if="calcMinDays" class="font-semibold">{{ calcMinDays }} {{ $t('countryDetail.days') }}</span>
+            </div>
+          </fieldset>
+
+          <!-- Требования к подаче -->
+          <fieldset class="border border-gray-200 rounded-xl p-4">
+            <legend class="text-xs font-semibold text-gray-500 uppercase px-2">{{ $t('countryDetail.submissionReqs') }}</legend>
+            <div class="grid grid-cols-2 gap-3 mt-2">
+              <label class="flex items-center gap-2 text-sm">
+                <input type="checkbox" v-model="formData.biometrics_required" class="rounded" />
+                {{ $t('countryDetail.biometricsRequired') }}
+              </label>
+              <label class="flex items-center gap-2 text-sm">
+                <input type="checkbox" v-model="formData.personal_visit_required" class="rounded" />
+                {{ $t('countryDetail.personalVisitRequired') }}
+              </label>
+              <label class="flex items-center gap-2 text-sm">
+                <input type="checkbox" v-model="formData.interview_required" class="rounded" />
+                {{ $t('countryDetail.interviewRequired') }}
+              </label>
+              <label class="flex items-center gap-2 text-sm">
+                <input type="checkbox" v-model="formData.parallel_docs_allowed" class="rounded" />
+                {{ $t('countryDetail.parallelDocsAllowed') }}
+              </label>
+            </div>
+            <div class="grid grid-cols-2 gap-3 mt-3">
+              <div>
+                <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.appointmentPattern') }}</label>
+                <select v-model="formData.appointment_pattern"
+                  class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]">
+                  <option value="">---</option>
+                  <option value="fixed_schedule">{{ $t('countryDetail.patternFixed') }}</option>
+                  <option value="random_wave">{{ $t('countryDetail.patternRandom') }}</option>
+                  <option value="daily_slots">{{ $t('countryDetail.patternDaily') }}</option>
+                  <option value="no_appointment">{{ $t('countryDetail.patternNoAppt') }}</option>
+                </select>
+              </div>
+              <div>
+                <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.avgRefusalRate') }} (%)</label>
+                <input v-model.number="formData.avg_refusal_rate" type="number" min="0" max="100" step="0.1"
+                  class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]" />
+              </div>
+            </div>
+            <div class="mt-3">
+              <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.appointmentNotes') }}</label>
+              <textarea v-model="formData.appointment_notes" rows="2"
+                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F] resize-none"></textarea>
+            </div>
+          </fieldset>
+
+          <!-- Стоимость -->
+          <fieldset class="border border-gray-200 rounded-xl p-4">
+            <legend class="text-xs font-semibold text-gray-500 uppercase px-2">{{ $t('countryDetail.feesTitle') }}</legend>
+            <div class="grid grid-cols-2 gap-3 mt-2">
+              <div>
+                <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.consularFee') }} ($)</label>
+                <input v-model.number="formData.consular_fee_usd" type="number" min="0" step="0.01"
+                  class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]" />
+              </div>
+              <div>
+                <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.serviceFee') }} ($)</label>
+                <input v-model.number="formData.service_fee_usd" type="number" min="0" step="0.01"
+                  class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]" />
+              </div>
+            </div>
+          </fieldset>
+
+          <!-- Описание + Заметки -->
+          <div class="grid grid-cols-1 gap-3">
+            <div>
+              <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.description') }}</label>
+              <textarea v-model="formData.description" rows="2"
+                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F] resize-none"></textarea>
+            </div>
+            <div>
+              <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.notes') }}</label>
+              <textarea v-model="formData.notes" rows="2"
+                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F] resize-none"></textarea>
+            </div>
           </div>
-          <div>
-            <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.description') }}</label>
-            <textarea v-model="formData.description" rows="3"
-              class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F] resize-none"></textarea>
-          </div>
+
           <div class="flex gap-3 pt-2">
             <button type="submit" :disabled="saving"
               class="flex-1 py-2.5 bg-[#0A1F44] text-white font-semibold rounded-xl hover:bg-[#0d2a5e] disabled:opacity-60">
@@ -137,25 +272,54 @@ const availableVisaTypes = computed(() => {
   return allVisaTypes.value.filter(vt => vt.is_active && !usedSlugs.includes(vt.slug));
 });
 
-const formData = reactive({
-  visa_type: '',
-  is_active: true,
-  description: '',
+const defaultForm = {
+  visa_type: '', is_active: true, description: '', notes: '',
+  preparation_days: 5, appointment_wait_days: 10,
+  processing_days_min: 5, processing_days_max: 30, processing_days_avg: 15,
+  buffer_days: 7, parallel_docs_allowed: true,
+  biometrics_required: false, personal_visit_required: false, interview_required: false,
+  appointment_pattern: '', appointment_notes: '',
+  consular_fee_usd: null, service_fee_usd: null, avg_refusal_rate: null,
+};
+
+const formData = reactive({ ...defaultForm });
+
+const calcMinDays = computed(() => {
+  const avg = formData.processing_days_avg || 0;
+  const wait = formData.appointment_wait_days || 0;
+  const buf = formData.buffer_days || 0;
+  return avg + wait + buf;
 });
 
 function openAdd() {
   editingSetting.value = null;
-  formData.visa_type = '';
-  formData.is_active = true;
-  formData.description = '';
+  Object.assign(formData, { ...defaultForm });
   showModal.value = true;
 }
 
 function startEdit(s) {
   editingSetting.value = s;
-  formData.visa_type = s.visa_type;
-  formData.is_active = s.is_active;
-  formData.description = s.description ?? '';
+  Object.assign(formData, {
+    visa_type: s.visa_type,
+    is_active: s.is_active ?? true,
+    description: s.description ?? '',
+    notes: s.notes ?? '',
+    preparation_days: s.preparation_days ?? 5,
+    appointment_wait_days: s.appointment_wait_days ?? 10,
+    processing_days_min: s.processing_days_min ?? 5,
+    processing_days_max: s.processing_days_max ?? 30,
+    processing_days_avg: s.processing_days_avg ?? 15,
+    buffer_days: s.buffer_days ?? 7,
+    parallel_docs_allowed: s.parallel_docs_allowed ?? true,
+    biometrics_required: s.biometrics_required ?? false,
+    personal_visit_required: s.personal_visit_required ?? false,
+    interview_required: s.interview_required ?? false,
+    appointment_pattern: s.appointment_pattern ?? '',
+    appointment_notes: s.appointment_notes ?? '',
+    consular_fee_usd: s.consular_fee_usd ?? null,
+    service_fee_usd: s.service_fee_usd ?? null,
+    avg_refusal_rate: s.avg_refusal_rate ?? null,
+  });
   showModal.value = true;
 }
 
@@ -176,13 +340,12 @@ async function loadSettings() {
 async function saveForm() {
   saving.value = true;
   try {
+    const payload = { ...formData };
     if (editingSetting.value) {
-      await ownerCountriesApi.visaSettingUpdate(props.countryCode, editingSetting.value.id, {
-        is_active: formData.is_active,
-        description: formData.description,
-      });
+      delete payload.visa_type;
+      await ownerCountriesApi.visaSettingUpdate(props.countryCode, editingSetting.value.id, payload);
     } else {
-      await ownerCountriesApi.visaSettingStore(props.countryCode, formData);
+      await ownerCountriesApi.visaSettingStore(props.countryCode, payload);
     }
     editingSetting.value = null;
     showModal.value = false;
