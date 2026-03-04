@@ -1,6 +1,25 @@
 <template>
     <div>
 
+        <!-- Баннер: выбор агентства для существующей заявки -->
+        <div v-if="caseId"
+            class="mb-4 bg-blue-50 border border-blue-200 rounded-2xl px-4 py-3 flex items-center gap-3">
+            <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center shrink-0">
+                <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </div>
+            <p class="text-sm text-blue-800 font-medium flex-1">
+                {{ $t('cases.choosingForCase', { country: countryName(countryCode), visa: visaTypeLabel(route.query.visa_type) }) }}
+            </p>
+            <button @click="cancelCaseLink"
+                class="text-blue-400 hover:text-blue-600 p-1 shrink-0">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+
         <!-- Хедер страницы -->
         <div class="mb-5 sm:mb-6">
             <h1 class="text-xl sm:text-2xl font-bold text-[#0A1F44]">
@@ -544,12 +563,13 @@ const { t } = useI18n();
 const route  = useRoute();
 const router = useRouter();
 
+const caseId = ref(route.query.case_id ?? null);
 const selectedCountryCode = ref((route.query.country_code ?? '').toUpperCase());
 const countryCode = computed(() => selectedCountryCode.value);
 
 const agencies     = ref([]);
 const loading      = ref(false);
-const selectedVisaType = ref('');
+const selectedVisaType = ref(route.query.visa_type ?? '');
 const priceSort   = ref('none'); // 'none' | 'asc' | 'desc'
 const reviewsSort = ref('none'); // 'none' | 'count' | 'rating'
 const submitting  = ref(false);
@@ -889,20 +909,41 @@ function openConfirm(agency, pkg) {
     confirm.value = { show: true, agency, pkg };
 }
 
+function cancelCaseLink() {
+    caseId.value = null;
+    router.replace({ name: 'me.agencies', query: { country_code: route.query.country_code } });
+}
+
+const VISA_TYPE_LABELS_MAP = computed(() => ({
+    tourist: t('portal.touristVisa'), business: t('portal.businessVisa'),
+    student: t('portal.studentVisaFull'), work: t('portal.workVisa'),
+    transit: t('portal.transitVisa'), immigrant: t('portal.immigrantVisa'),
+}));
+function visaTypeLabel(type) { return VISA_TYPE_LABELS_MAP.value[type] || type || ''; }
+
 async function submitLead() {
     submitting.value = true;
     try {
-        await publicPortalApi.submitLead({
+        const payload = {
             agency_id:    confirm.value.agency.id,
             country_code: countryCode.value || confirm.value.pkg?.country_code || 'UZ',
             visa_type:    confirm.value.pkg?.visa_type || selectedVisaType.value || 'tourist',
             package_id:   confirm.value.pkg?.id ?? null,
-        });
+        };
+        if (caseId.value) {
+            payload.case_id = caseId.value;
+        }
+        const res = await publicPortalApi.submitLead(payload);
         confirm.value.show = false;
         showToast(t('agencies.sent'), t('agencies.sentDesc', { name: confirm.value.agency?.name ?? '' }));
+        const targetCaseId = res.data?.data?.case_id ?? caseId.value;
         setTimeout(() => {
             toast.value = '';
-            router.push({ name: 'me.cases' });
+            if (targetCaseId) {
+                router.push({ name: 'me.cases.show', params: { id: targetCaseId } });
+            } else {
+                router.push({ name: 'me.cases' });
+            }
         }, 2500);
     } catch (e) {
         if (e?.response?.status === 409) {

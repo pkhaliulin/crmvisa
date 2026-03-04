@@ -92,6 +92,18 @@
                     </span>
                     <span v-else class="ml-auto text-gray-300">{{ formatDate(c.created_at) }}</span>
                 </div>
+
+                <!-- Кнопка выбора агентства для draft -->
+                <div v-if="c.public_status === 'draft' && !c.agency"
+                    class="px-5 py-3 border-t border-gray-50">
+                    <button @click.stop="goChooseAgency(c)"
+                        class="w-full py-2.5 bg-[#0A1F44] hover:bg-[#0d2a5e] text-white text-xs font-semibold rounded-xl transition-colors flex items-center justify-center gap-2">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z"/>
+                        </svg>
+                        {{ $t('cases.chooseAgencyBtn') }}
+                    </button>
+                </div>
             </button>
         </template>
 
@@ -264,6 +276,17 @@ const nextStepRoute = computed(() =>
 const nextStepLabel = computed(() =>
     profileDone.value ? t('cases.selectAgency') : t('cases.fillProfileBtn')
 );
+
+function goChooseAgency(c) {
+    router.push({
+        name: 'me.agencies',
+        query: {
+            case_id: c.id,
+            country_code: c.country_code,
+            visa_type: c.visa_type,
+        },
+    });
+}
 
 onMounted(async () => {
     try {

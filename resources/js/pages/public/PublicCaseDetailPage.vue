@@ -92,6 +92,31 @@
                 </div>
             </div>
 
+            <!-- === Выбрать агентство (draft без агентства) === -->
+            <div v-if="caseData.public_status === 'draft' && !caseData.agency"
+                class="bg-gradient-to-br from-[#0A1F44] to-[#1a3a6e] rounded-2xl shadow-sm overflow-hidden text-white">
+                <div class="p-5">
+                    <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center shrink-0">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                            </svg>
+                        </div>
+                        <div class="flex-1">
+                            <h2 class="font-bold text-base">{{ $t('cases.draftNoAgency') }}</h2>
+                            <p class="text-sm text-white/70 mt-1 leading-relaxed">{{ $t('cases.draftNoAgencyDesc') }}</p>
+                        </div>
+                    </div>
+                    <button @click="goChooseAgency"
+                        class="w-full mt-4 py-3 bg-[#1BA97F] hover:bg-[#17956f] text-white text-sm font-semibold rounded-xl transition-colors flex items-center justify-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z"/>
+                        </svg>
+                        {{ $t('cases.chooseAgencyBtn') }}
+                    </button>
+                </div>
+            </div>
+
             <!-- === Чек-лист документов === -->
             <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                 <div class="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
@@ -530,6 +555,17 @@ async function submitCaseReview() {
     } finally {
         reviewState.submitting = false;
     }
+}
+
+function goChooseAgency() {
+    router.push({
+        name: 'me.agencies',
+        query: {
+            case_id: route.params.id,
+            country_code: caseData.value.country_code,
+            visa_type: caseData.value.visa_type,
+        },
+    });
 }
 
 async function uploadDoc(itemId, event) {
