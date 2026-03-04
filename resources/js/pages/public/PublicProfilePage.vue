@@ -3,7 +3,7 @@
 
         <!-- Приветственный баннер для новых пользователей -->
         <div v-if="!publicAuth.user?.name"
-            class="bg-gradient-to-r from-[#0A1F44] to-[#1a3a6e] rounded-2xl p-5 sm:p-6 text-white">
+            class="bg-gradient-to-r from-[#1BA97F] to-[#0d7a5c] rounded-2xl p-5 sm:p-6 text-white">
             <h2 class="text-lg font-bold mb-1">{{ $t('profile.welcomeTitle') }}</h2>
             <p class="text-sm text-white/70 mb-4">{{ $t('profile.welcomeDesc') }}</p>
             <button @click="showWizard = true"
@@ -64,6 +64,9 @@
                         <input v-model="form.dob" type="date" :max="maxDob"
                             class="w-full border rounded-xl px-3 py-2.5 text-sm outline-none transition-colors"
                             :class="form.dob ? 'border-[#1BA97F]' : 'border-gray-200 focus:border-[#1BA97F]'"/>
+                        <div v-if="ageMessage" class="mt-2 p-2.5 rounded-xl bg-[#1BA97F]/10 border border-[#1BA97F]/20">
+                            <p class="text-xs text-[#0A1F44] leading-relaxed">{{ ageMessage }}</p>
+                        </div>
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.citizenship') }} <span class="text-red-500">*</span></label>
@@ -438,7 +441,7 @@
 
     <!-- Quick Wizard Modal -->
     <div v-if="showWizard"
-        class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center sm:p-4"
+        class="fixed inset-0 bg-[#0A1F44]/40 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center sm:p-4"
         @click.self="showWizard = false">
         <div class="bg-white w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl shadow-xl">
             <!-- Progress bar -->
@@ -509,6 +512,7 @@ import { useI18n } from 'vue-i18n';
 import { publicPortalApi } from '@/api/public';
 import { usePublicAuthStore } from '@/stores/publicAuth';
 import { usePublicReferences } from '@/composables/usePublicReferences';
+import { ageMessages } from '@/data/ageMessages';
 
 const { t, locale } = useI18n();
 const router     = useRouter();
@@ -614,6 +618,23 @@ const passportExpiryColor = computed(() => {
         msg: t('profile.passportGreat'),
         textClass: 'text-[#1BA97F]',
     };
+});
+
+// Возраст и сообщение о возрасте
+const userAge = computed(() => {
+    if (!form.dob) return null;
+    const birth = new Date(form.dob);
+    const today = new Date();
+    let age = today.getFullYear() - birth.getFullYear();
+    const m = today.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+    return age >= 1 && age <= 100 ? age : null;
+});
+
+const ageMessage = computed(() => {
+    if (!userAge.value) return '';
+    const lang = locale.value === 'uz' ? 'uz' : 'ru';
+    return ageMessages[lang]?.[userAge.value] ?? '';
 });
 
 // Паспорт — раздельный ввод серии и номера
