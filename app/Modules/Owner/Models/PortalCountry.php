@@ -34,6 +34,30 @@ class PortalCountry extends Model
         'appointment_wait_days'     => 'integer',
         'buffer_days_recommended'   => 'integer',
         'destination_score_bonus'   => 'integer',
+        // Визовый режим
+        'visa_free_days'            => 'integer',
+        'visa_on_arrival_days'      => 'integer',
+        'evisa_available'           => 'boolean',
+        'evisa_processing_days'     => 'integer',
+        // Требования
+        'invitation_required'       => 'boolean',
+        'hotel_booking_required'    => 'boolean',
+        'insurance_required'        => 'boolean',
+        'bank_statement_required'   => 'boolean',
+        'return_ticket_required'    => 'boolean',
+        // Стоимости
+        'visa_fee_usd'              => 'float',
+        'evisa_fee_usd'             => 'float',
+        'avg_flight_cost_usd'       => 'integer',
+        'avg_hotel_per_night_usd'   => 'integer',
+        // Аналитика
+        'view_count'                => 'integer',
+        'lead_count'                => 'integer',
+        'case_count'                => 'integer',
+        // Флаги
+        'is_popular'                => 'boolean',
+        'is_high_approval'          => 'boolean',
+        'is_high_refusal'           => 'boolean',
     ];
 
     public function getVisaTypesAttribute($value)
@@ -67,5 +91,22 @@ class PortalCountry extends Model
     public function slaRules(): HasMany
     {
         return $this->hasMany(\App\Modules\Workflow\Models\SlaRule::class, 'country_code', 'country_code');
+    }
+
+    // Scopes
+
+    public function scopeByRegime($query, string $regime)
+    {
+        return $query->where('visa_regime', $regime);
+    }
+
+    public function scopePopular($query)
+    {
+        return $query->where('is_popular', true);
+    }
+
+    public function scopeByContinent($query, string $continent)
+    {
+        return $query->where('continent', $continent);
     }
 }

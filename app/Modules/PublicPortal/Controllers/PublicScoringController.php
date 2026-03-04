@@ -3,6 +3,7 @@
 namespace App\Modules\PublicPortal\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Owner\Models\PortalCountry;
 use App\Modules\PublicPortal\Services\PublicScoringService;
 use App\Support\Helpers\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -10,29 +11,36 @@ use Illuminate\Http\Request;
 
 class PublicScoringController extends Controller
 {
-    // Страны, доступные для скоринга (где для граждан УЗ нужна виза)
-    public const COUNTRIES = [
-        ['code' => 'DE', 'name' => 'Германия',       'flag' => '🇩🇪', 'visa_type' => 'tourist'],
-        ['code' => 'ES', 'name' => 'Испания',         'flag' => '🇪🇸', 'visa_type' => 'tourist'],
-        ['code' => 'FR', 'name' => 'Франция',         'flag' => '🇫🇷', 'visa_type' => 'tourist'],
-        ['code' => 'IT', 'name' => 'Италия',          'flag' => '🇮🇹', 'visa_type' => 'tourist'],
-        ['code' => 'PL', 'name' => 'Польша',          'flag' => '🇵🇱', 'visa_type' => 'tourist'],
-        ['code' => 'CZ', 'name' => 'Чехия',           'flag' => '🇨🇿', 'visa_type' => 'tourist'],
-        ['code' => 'GB', 'name' => 'Великобритания',  'flag' => '🇬🇧', 'visa_type' => 'tourist'],
-        ['code' => 'US', 'name' => 'США',             'flag' => '🇺🇸', 'visa_type' => 'tourist'],
-        ['code' => 'CA', 'name' => 'Канада',          'flag' => '🇨🇦', 'visa_type' => 'tourist'],
-        ['code' => 'KR', 'name' => 'Южная Корея',     'flag' => '🇰🇷', 'visa_type' => 'tourist'],
-    ];
-
     public function __construct(private PublicScoringService $scoring) {}
 
     /**
      * GET /public/countries
      * Список стран для лендинга (без авторизации).
+     * Фильтры: ?visa_regime=visa_free&continent=Europe
      */
-    public function countries(): JsonResponse
+    public function countries(Request $request): JsonResponse
     {
-        return ApiResponse::success(self::COUNTRIES);
+        $query = PortalCountry::where('is_active', true)
+            ->when($request->visa_regime, fn ($q, $r) => $q->byRegime($r))
+            ->when($request->continent, fn ($q, $c) => $q->byContinent($c))
+            ->orderBy('sort_order');
+
+        return ApiResponse::success($query->get());
+    }
+
+    /**
+     * GET /public/countries/{code}
+     * Просмотр страны + инкремент view_count.
+     */
+    public function countryView(string $code): JsonResponse
+    {
+        $country = PortalCountry::where('country_code', strtoupper($code))
+            ->where('is_active', true)
+            ->firstOrFail();
+
+        $country->increment('view_count');
+
+        return ApiResponse::success($country);
     }
 
     /**

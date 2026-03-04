@@ -236,11 +236,16 @@ class OwnerController extends Controller
     // Страны (portal_countries)
     // =========================================================================
 
-    public function countries(): JsonResponse
+    public function countries(Request $request): JsonResponse
     {
-        $countries = DB::table('portal_countries')->orderBy('sort_order')->get();
-        // Декодировать visa_types из JSON-строки в массив
-        $countries = $countries->map(function ($c) {
+        $query = DB::table('portal_countries')
+            ->when($request->visa_regime, fn ($q, $r) => $q->where('visa_regime', $r))
+            ->when($request->continent, fn ($q, $c) => $q->where('continent', $c))
+            ->when($request->boolean('is_popular'), fn ($q) => $q->where('is_popular', true))
+            ->when($request->search, fn ($q, $s) => $q->where('name', 'ilike', "%{$s}%"))
+            ->orderBy('sort_order');
+
+        $countries = $query->get()->map(function ($c) {
             $c->visa_types = is_string($c->visa_types) ? json_decode($c->visa_types, true) : ($c->visa_types ?? []);
             return $c;
         });
@@ -251,6 +256,7 @@ class OwnerController extends Controller
     {
         $data = $request->validate([
             'name'                       => 'sometimes|string|max:100',
+            'name_uz'                    => 'sometimes|nullable|string|max:100',
             'flag_emoji'                 => 'sometimes|string|max:10',
             'is_active'                  => 'sometimes|boolean',
             'weight_finance'             => 'sometimes|numeric|min:0|max:1',
@@ -272,6 +278,31 @@ class OwnerController extends Controller
             'processing_days_expedited'  => 'sometimes|nullable|integer|min:0',
             'appointment_wait_days'      => 'sometimes|nullable|integer|min:0',
             'buffer_days_recommended'    => 'sometimes|nullable|integer|min:0',
+            // Визовый режим
+            'visa_regime'                => 'sometimes|in:visa_free,visa_on_arrival,evisa,visa_required',
+            'visa_free_days'             => 'sometimes|nullable|integer|min:0',
+            'visa_on_arrival_days'       => 'sometimes|nullable|integer|min:0',
+            'evisa_available'            => 'sometimes|boolean',
+            'evisa_url'                  => 'sometimes|nullable|url|max:500',
+            'evisa_processing_days'      => 'sometimes|nullable|integer|min:0',
+            // Требования
+            'invitation_required'        => 'sometimes|boolean',
+            'hotel_booking_required'     => 'sometimes|boolean',
+            'insurance_required'         => 'sometimes|boolean',
+            'bank_statement_required'    => 'sometimes|boolean',
+            'return_ticket_required'     => 'sometimes|boolean',
+            // Стоимости
+            'visa_fee_usd'               => 'sometimes|nullable|numeric|min:0',
+            'evisa_fee_usd'              => 'sometimes|nullable|numeric|min:0',
+            'avg_flight_cost_usd'        => 'sometimes|nullable|integer|min:0',
+            'avg_hotel_per_night_usd'    => 'sometimes|nullable|integer|min:0',
+            // Флаги
+            'is_popular'                 => 'sometimes|boolean',
+            'is_high_approval'           => 'sometimes|boolean',
+            'is_high_refusal'            => 'sometimes|boolean',
+            // Доп.
+            'notes'                      => 'sometimes|nullable|string|max:5000',
+            'continent'                  => 'sometimes|nullable|string|max:30',
         ]);
 
         if (isset($data['visa_types'])) {
@@ -294,6 +325,7 @@ class OwnerController extends Controller
         $data = $request->validate([
             'country_code'            => 'required|string|size:2|uppercase',
             'name'                    => 'required|string|max:100',
+            'name_uz'                 => 'sometimes|nullable|string|max:100',
             'flag_emoji'              => 'sometimes|string|max:10',
             'is_active'               => 'sometimes|boolean',
             'weight_finance'          => 'sometimes|numeric|min:0|max:1',
@@ -304,6 +336,31 @@ class OwnerController extends Controller
             'min_score'               => 'sometimes|integer|min:0|max:100',
             'visa_types'              => 'sometimes|array',
             'visa_types.*'            => 'string|max:50',
+            // Визовый режим
+            'visa_regime'             => 'sometimes|in:visa_free,visa_on_arrival,evisa,visa_required',
+            'visa_free_days'          => 'sometimes|nullable|integer|min:0',
+            'visa_on_arrival_days'    => 'sometimes|nullable|integer|min:0',
+            'evisa_available'         => 'sometimes|boolean',
+            'evisa_url'               => 'sometimes|nullable|url|max:500',
+            'evisa_processing_days'   => 'sometimes|nullable|integer|min:0',
+            // Требования
+            'invitation_required'     => 'sometimes|boolean',
+            'hotel_booking_required'  => 'sometimes|boolean',
+            'insurance_required'      => 'sometimes|boolean',
+            'bank_statement_required' => 'sometimes|boolean',
+            'return_ticket_required'  => 'sometimes|boolean',
+            // Стоимости
+            'visa_fee_usd'            => 'sometimes|nullable|numeric|min:0',
+            'evisa_fee_usd'           => 'sometimes|nullable|numeric|min:0',
+            'avg_flight_cost_usd'     => 'sometimes|nullable|integer|min:0',
+            'avg_hotel_per_night_usd' => 'sometimes|nullable|integer|min:0',
+            // Флаги
+            'is_popular'              => 'sometimes|boolean',
+            'is_high_approval'        => 'sometimes|boolean',
+            'is_high_refusal'         => 'sometimes|boolean',
+            // Доп.
+            'notes'                   => 'sometimes|nullable|string|max:5000',
+            'continent'               => 'sometimes|nullable|string|max:30',
         ]);
 
         abort_if(DB::table('portal_countries')->where('country_code', $data['country_code'])->exists(), 422,
