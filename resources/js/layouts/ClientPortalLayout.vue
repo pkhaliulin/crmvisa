@@ -11,9 +11,43 @@
             <!-- Mobile page title -->
             <span class="sm:hidden flex-1 text-center text-sm font-semibold text-[#0A1F44]">{{ currentTitle }}</span>
 
-            <!-- Desktop: user info -->
-            <div class="hidden sm:flex items-center ml-auto gap-4">
-                <!-- Переключатель языка -->
+            <!-- Desktop: status bar + controls -->
+            <div class="hidden sm:flex items-center ml-auto gap-3">
+                <!-- Status badges -->
+                <div v-if="publicAuth.isLoggedIn" class="flex items-center gap-2 mr-2">
+                    <div v-if="statusSummary.activeCases > 0"
+                        class="flex items-center gap-1 px-2 py-1 rounded-lg bg-blue-50 text-blue-600 text-xs font-medium">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        {{ statusSummary.activeCases }}
+                    </div>
+                    <div v-if="statusSummary.docsNeeded > 0"
+                        class="flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-50 text-amber-600 text-xs font-medium">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                        </svg>
+                        {{ $t('portal.docsNeeded', { count: statusSummary.docsNeeded }) }}
+                    </div>
+                    <div v-if="statusSummary.awaitingResult > 0"
+                        class="flex items-center gap-1 px-2 py-1 rounded-lg bg-green-50 text-green-600 text-xs font-medium">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        {{ $t('portal.awaitingResult') }}
+                    </div>
+                </div>
+
+                <!-- Logout icon -->
+                <button @click="logout"
+                    class="text-gray-400 hover:text-red-500 transition-colors p-1.5 rounded-lg hover:bg-red-50"
+                    :title="$t('common.logout')">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                    </svg>
+                </button>
+
+                <!-- Language switcher -->
                 <button @click="toggleLocale"
                     class="flex items-center rounded-lg border border-gray-200 text-xs font-semibold overflow-hidden shrink-0">
                     <span class="px-2 py-1.5 transition-colors"
@@ -21,20 +55,16 @@
                     <span class="px-2 py-1.5 transition-colors"
                         :class="currentLocale() === 'uz' ? 'bg-[#0A1F44] text-white' : 'text-gray-400 hover:text-gray-600'">UZ</span>
                 </button>
-                <div class="text-right">
+
+                <!-- User name + profile link -->
+                <router-link :to="{ name: 'me.profile' }"
+                    class="text-right hover:opacity-80 transition-opacity">
                     <div class="text-sm font-semibold text-[#0A1F44] leading-tight">{{ displayName }}</div>
                     <div class="text-xs font-medium leading-tight"
                          :class="publicAuth.profilePercent >= 80 ? 'text-[#1BA97F]' : publicAuth.profilePercent >= 40 ? 'text-amber-500' : 'text-gray-400'">
                         {{ $t('common.profilePercent', { percent: publicAuth.profilePercent }) }}
                     </div>
-                </div>
-                <button @click="logout"
-                    class="flex items-center gap-1.5 text-xs text-gray-500 hover:text-red-500 transition-colors border border-gray-200 hover:border-red-200 rounded-lg px-2.5 py-1.5">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-                    </svg>
-                    {{ $t('common.logout') }}
-                </button>
+                </router-link>
             </div>
 
             <!-- Mobile: lang switch + logout -->
@@ -57,16 +87,22 @@
             <!-- Desktop Sidebar -->
             <aside class="hidden md:flex flex-col fixed top-14 left-0 bottom-0 w-64 bg-white border-r border-gray-100">
 
-                <!-- User card -->
-                <div class="p-5 border-b border-gray-50">
+                <!-- User card — clickable, links to profile -->
+                <router-link :to="{ name: 'me.profile' }"
+                    class="block p-5 border-b border-gray-50 rounded-b-none transition-colors hover:bg-gray-50/70 group cursor-pointer"
+                    :class="$route.name === 'me.profile' ? 'bg-[#1BA97F]/5' : ''">
                     <div class="flex items-center gap-3 mb-3">
-                        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-[#1BA97F] to-[#0d7a5c] flex items-center justify-center text-white font-bold text-lg shrink-0">
+                        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-[#1BA97F] to-[#0d7a5c] flex items-center justify-center text-white font-bold text-lg shrink-0
+                                    ring-2 ring-transparent group-hover:ring-[#1BA97F]/30 transition-all">
                             {{ initials }}
                         </div>
                         <div class="min-w-0 flex-1">
-                            <div class="font-semibold text-[#0A1F44] text-sm leading-tight truncate">{{ displayName }}</div>
+                            <div class="font-semibold text-[#0A1F44] text-sm leading-tight truncate group-hover:text-[#1BA97F] transition-colors">{{ displayName }}</div>
                             <div class="text-xs text-gray-400 leading-tight mt-0.5 truncate">{{ publicAuth.user?.phone }}</div>
                         </div>
+                        <svg class="w-4 h-4 text-gray-300 group-hover:text-[#1BA97F] transition-colors shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                        </svg>
                     </div>
                     <!-- Profile progress -->
                     <div class="flex items-center gap-2 mb-0.5">
@@ -78,7 +114,7 @@
                         <span class="text-xs font-bold text-[#0A1F44] shrink-0">{{ publicAuth.profilePercent }}%</span>
                     </div>
                     <div class="text-xs text-gray-400">{{ $t('common.profileFilled') }}</div>
-                </div>
+                </router-link>
 
                 <!-- New application CTA -->
                 <div class="p-3 border-b border-gray-50">
@@ -95,31 +131,19 @@
                 <nav class="flex-1 p-3 space-y-0.5">
                     <router-link v-for="item in navItems" :key="item.name" :to="{ name: item.name }"
                         class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors"
-                        :class="$route.name === item.name
+                        :class="isActiveNav(item.name)
                             ? 'bg-[#1BA97F]/10 text-[#1BA97F]'
                             : 'text-gray-600 hover:bg-gray-50 hover:text-[#0A1F44]'">
                         <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" :d="item.iconPath"/>
                         </svg>
                         <span>{{ item.label }}</span>
-                        <span v-if="item.name === 'me.profile' && publicAuth.profilePercent < 80"
-                            class="ml-auto text-xs bg-amber-100 text-amber-600 px-1.5 py-0.5 rounded-full font-medium shrink-0">
-                            {{ publicAuth.profilePercent }}%
+                        <span v-if="item.badge"
+                            class="ml-auto text-xs px-1.5 py-0.5 rounded-full font-medium shrink-0"
+                            :class="item.badgeClass">
+                            {{ item.badge }}
                         </span>
                     </router-link>
-
-                    <div class="pt-2 mt-2 border-t border-gray-100">
-                        <router-link v-for="item in sidebarExtraItems" :key="item.name" :to="{ name: item.name }"
-                            class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors"
-                            :class="$route.name === item.name
-                                ? 'bg-[#1BA97F]/10 text-[#1BA97F]'
-                                : 'text-gray-600 hover:bg-gray-50 hover:text-[#0A1F44]'">
-                            <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" :d="item.iconPath"/>
-                            </svg>
-                            <span>{{ item.label }}</span>
-                        </router-link>
-                    </div>
                 </nav>
 
                 <!-- Telegram help -->
@@ -146,9 +170,9 @@
         <nav class="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white border-t border-gray-100">
             <div class="flex items-stretch h-16">
                 <!-- Left nav items -->
-                <router-link v-for="item in navItems.slice(0, 2)" :key="item.name" :to="{ name: item.name }"
+                <router-link v-for="item in mobileNavItems.slice(0, 2)" :key="item.name" :to="{ name: item.name }"
                     class="flex-1 flex flex-col items-center justify-center gap-0.5 text-xs transition-colors"
-                    :class="$route.name === item.name ? 'text-[#1BA97F]' : 'text-gray-400'">
+                    :class="isActiveNav(item.name) ? 'text-[#1BA97F]' : 'text-gray-400'">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" :d="item.iconPath"/>
                     </svg>
@@ -166,9 +190,9 @@
                 </button>
 
                 <!-- Right nav items -->
-                <router-link v-for="item in navItems.slice(2)" :key="item.name" :to="{ name: item.name }"
+                <router-link v-for="item in mobileNavItems.slice(2)" :key="item.name" :to="{ name: item.name }"
                     class="flex-1 flex flex-col items-center justify-center gap-0.5 text-xs transition-colors"
-                    :class="$route.name === item.name ? 'text-[#1BA97F]' : 'text-gray-400'">
+                    :class="isActiveNav(item.name) ? 'text-[#1BA97F]' : 'text-gray-400'">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" :d="item.iconPath"/>
                     </svg>
@@ -217,17 +241,7 @@
                             <select v-model="newCaseForm.country_code"
                                 class="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-[#0A1F44] focus:outline-none focus:border-[#1BA97F] transition-colors bg-white">
                                 <option value="">{{ $t('profile.selectCountry') }}</option>
-                                <option value="DE">{{ $t('countries.DE') }}</option>
-                                <option value="ES">{{ $t('countries.ES') }}</option>
-                                <option value="FR">{{ $t('countries.FR') }}</option>
-                                <option value="IT">{{ $t('countries.IT') }}</option>
-                                <option value="PL">{{ $t('countries.PL') }}</option>
-                                <option value="CZ">{{ $t('countries.CZ') }}</option>
-                                <option value="GB">{{ $t('countries.GB') }}</option>
-                                <option value="US">{{ $t('countries.US') }}</option>
-                                <option value="CA">{{ $t('countries.CA') }}</option>
-                                <option value="KR">{{ $t('countries.KR') }}</option>
-                                <option value="AE">{{ $t('countries.AE') }}</option>
+                                <option v-for="c in TOP_COUNTRIES" :key="c" :value="c">{{ $t('countries.' + c) }}</option>
                             </select>
                         </div>
                         <div>
@@ -262,7 +276,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { setLocale, currentLocale } from '@/i18n';
@@ -284,6 +298,30 @@ const showNewCase = ref(false);
 const newCaseForm = ref({ country_code: '', visa_type: '' });
 const newCaseSubmitting = ref(false);
 const newCaseError = ref('');
+
+// Топ-30 стран для граждан Узбекистана
+const TOP_COUNTRIES = [
+    'DE', 'FR', 'IT', 'ES', 'GB', 'US', 'CA', 'KR', 'AE', 'TR',
+    'PL', 'CZ', 'JP', 'CN', 'SA', 'RU', 'KZ', 'IN', 'TH', 'MY',
+    'AU', 'NL', 'AT', 'CH', 'SE', 'HU', 'GR', 'PT', 'BE', 'SG',
+];
+
+// Status summary для верхнего бара
+const statusSummary = ref({ activeCases: 0, docsNeeded: 0, awaitingResult: 0 });
+
+async function loadStatusSummary() {
+    try {
+        const { data } = await publicPortalApi.cases();
+        const cases = data?.data ?? [];
+        statusSummary.value = {
+            activeCases: cases.filter(c => c.stage !== 'result').length,
+            docsNeeded: cases.filter(c => c.stage === 'documents').length,
+            awaitingResult: cases.filter(c => c.stage === 'review').length,
+        };
+    } catch {
+        // ignore
+    }
+}
 
 function closeNewCase() {
     showNewCase.value = false;
@@ -324,11 +362,22 @@ const displayName = computed(() =>
     publicAuth.user?.name || publicAuth.user?.phone || t('common.guest')
 );
 
+// Active nav helper (highlights groups pages under cases too)
+function isActiveNav(name) {
+    if (name === 'me.cases') {
+        return ['me.cases', 'me.cases.show', 'me.groups', 'me.groups.show'].includes(route.name);
+    }
+    return route.name === name;
+}
+
+// Sidebar navigation — no separate "Profile" and "Groups"
 const navItems = computed(() => [
     {
         name: 'me.cases',
         label: t('nav.cases'),
         iconPath: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
+        badge: statusSummary.value.activeCases > 0 ? statusSummary.value.activeCases : null,
+        badgeClass: 'bg-blue-50 text-blue-600',
     },
     {
         name: 'me.countries',
@@ -341,19 +390,6 @@ const navItems = computed(() => [
         iconPath: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z',
     },
     {
-        name: 'me.profile',
-        label: t('nav.profile'),
-        iconPath: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z',
-    },
-]);
-
-const sidebarExtraItems = computed(() => [
-    {
-        name: 'me.groups',
-        label: t('group.navTitle'),
-        iconPath: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z',
-    },
-    {
         name: 'me.agencies',
         label: t('nav.agencies'),
         iconPath: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4',
@@ -362,6 +398,18 @@ const sidebarExtraItems = computed(() => [
         name: 'me.billing',
         label: t('billing.title'),
         iconPath: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z',
+    },
+]);
+
+// Mobile bottom nav (4 items + central button)
+const mobileNavItems = computed(() => [
+    navItems.value[0], // Заявки
+    navItems.value[1], // Страны
+    navItems.value[2], // Скоринг
+    {
+        name: 'me.profile',
+        label: t('nav.profile'),
+        iconPath: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z',
     },
 ]);
 
@@ -381,4 +429,10 @@ function logout() {
     publicAuth.logout();
     router.push({ name: 'landing' });
 }
+
+onMounted(() => {
+    if (publicAuth.isLoggedIn) {
+        loadStatusSummary();
+    }
+});
 </script>

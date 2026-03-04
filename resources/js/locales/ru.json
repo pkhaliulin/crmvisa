@@ -468,6 +468,8 @@
     "createApplication": "Создать заявку",
     "createError": "Ошибка создания заявки. Попробуйте снова.",
     "cabinet": "Кабинет",
+    "docsNeeded": "Документы: {count}",
+    "awaitingResult": "Ожидание решения",
     "touristVisa": "Туристическая виза",
     "businessVisa": "Бизнес-виза",
     "studentVisaFull": "Студенческая виза",

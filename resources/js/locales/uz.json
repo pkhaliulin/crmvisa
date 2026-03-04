@@ -468,6 +468,8 @@
     "createApplication": "Ariza yaratish",
     "createError": "Ariza yaratishda xatolik. Qaytadan urinib ko'ring.",
     "cabinet": "Kabinet",
+    "docsNeeded": "Hujjatlar: {count}",
+    "awaitingResult": "Natija kutilmoqda",
     "touristVisa": "Turistik viza",
     "businessVisa": "Biznes-viza",
     "studentVisaFull": "Talaba vizasi",
