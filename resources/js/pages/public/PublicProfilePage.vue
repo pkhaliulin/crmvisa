@@ -64,8 +64,19 @@
                         <input v-model="form.dob" type="date" :max="maxDob"
                             class="w-full border rounded-xl px-3 py-2.5 text-sm outline-none transition-colors"
                             :class="form.dob ? 'border-[#1BA97F]' : 'border-gray-200 focus:border-[#1BA97F]'"/>
-                        <div v-if="ageMessage" class="mt-2 p-2.5 rounded-xl bg-[#1BA97F]/10 border border-[#1BA97F]/20">
-                            <p class="text-xs text-[#0A1F44] leading-relaxed">{{ ageMessage }}</p>
+                        <!-- Чат-сообщение от VisaBor о возрасте -->
+                        <div v-if="ageMessage" class="relative mt-3">
+                            <!-- Хвостик пузыря -->
+                            <div class="absolute -top-1.5 left-4 w-3 h-3 bg-gradient-to-br from-violet-50 to-indigo-50 border-l border-t border-violet-200 rotate-45"></div>
+                            <div class="relative bg-gradient-to-br from-violet-50 via-indigo-50 to-purple-50 border border-violet-200 rounded-2xl p-3.5 shadow-sm">
+                                <div class="flex items-center gap-1.5 mb-1.5">
+                                    <div class="w-5 h-5 rounded-full bg-gradient-to-br from-[#1BA97F] to-[#0d7a5c] flex items-center justify-center shrink-0">
+                                        <span class="text-[8px] font-bold text-white">VB</span>
+                                    </div>
+                                    <span class="text-[10px] font-semibold text-violet-500">VisaBor</span>
+                                </div>
+                                <p class="text-xs text-[#0A1F44] leading-relaxed">{{ ageMessage }}</p>
+                            </div>
                         </div>
                     </div>
                     <div>
@@ -162,10 +173,21 @@
                     <input v-model="form.passport_expires_at" type="date" :min="minPassportExpiry"
                         class="w-full border rounded-xl px-3 py-2.5 text-sm outline-none transition-colors"
                         :class="passportExpiryColor.border"/>
-                    <p v-if="form.passport_expires_at && passportExpiryColor.msg" class="text-xs mt-1.5 leading-relaxed"
-                       :class="passportExpiryColor.textClass">
-                        {{ passportExpiryColor.msg }}
-                    </p>
+                    <!-- Чат-сообщение от VisaBor о паспорте -->
+                    <div v-if="form.passport_expires_at && passportExpiryColor.msg" class="relative mt-3">
+                        <div class="absolute -top-1.5 left-4 w-3 h-3 rotate-45 border-l border-t"
+                             :class="passportExpiryColor.bubbleBg + ' ' + passportExpiryColor.bubbleBorder"></div>
+                        <div class="relative rounded-2xl p-3.5 shadow-sm border"
+                             :class="passportExpiryColor.bubbleBg + ' ' + passportExpiryColor.bubbleBorder">
+                            <div class="flex items-center gap-1.5 mb-1.5">
+                                <div class="w-5 h-5 rounded-full bg-gradient-to-br from-[#1BA97F] to-[#0d7a5c] flex items-center justify-center shrink-0">
+                                    <span class="text-[8px] font-bold text-white">VB</span>
+                                </div>
+                                <span class="text-[10px] font-semibold" :class="passportExpiryColor.labelColor">VisaBor</span>
+                            </div>
+                            <p class="text-xs text-[#0A1F44] leading-relaxed">{{ passportExpiryColor.msg }}</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -596,27 +618,39 @@ const minPassportExpiry = computed(() => {
 
 // Цветовая логика срока паспорта
 const passportExpiryColor = computed(() => {
-    if (!form.passport_expires_at) return { border: 'border-gray-200 focus:border-[#1BA97F]', msg: '', textClass: '' };
+    if (!form.passport_expires_at) return { border: 'border-gray-200 focus:border-[#1BA97F]', msg: '', textClass: '', bubbleBg: '', bubbleBorder: '', labelColor: '' };
     const days = Math.floor((new Date(form.passport_expires_at) - new Date()) / 86400000);
     if (days < 0) return {
         border: 'border-red-500',
         msg: t('profile.passportExpired'),
         textClass: 'text-red-600',
+        bubbleBg: 'bg-gradient-to-br from-red-50 to-rose-50',
+        bubbleBorder: 'border-red-200',
+        labelColor: 'text-red-500',
     };
     if (days < 180) return {
         border: 'border-red-500',
         msg: t('profile.passportCritical'),
         textClass: 'text-red-600',
+        bubbleBg: 'bg-gradient-to-br from-red-50 to-rose-50',
+        bubbleBorder: 'border-red-200',
+        labelColor: 'text-red-500',
     };
     if (days < 365) return {
         border: 'border-amber-400',
         msg: t('profile.passportWarning'),
         textClass: 'text-amber-600',
+        bubbleBg: 'bg-gradient-to-br from-amber-50 to-orange-50',
+        bubbleBorder: 'border-amber-200',
+        labelColor: 'text-amber-500',
     };
     return {
         border: 'border-[#1BA97F]',
         msg: t('profile.passportGreat'),
         textClass: 'text-[#1BA97F]',
+        bubbleBg: 'bg-gradient-to-br from-emerald-50 to-teal-50',
+        bubbleBorder: 'border-emerald-200',
+        labelColor: 'text-emerald-500',
     };
 });
 
@@ -817,3 +851,11 @@ onMounted(async () => {
     } catch { /* ignore */ }
 });
 </script>
+
+<style scoped>
+/* Принудительно светлая тема для нативных select (macOS dark mode fix) */
+select {
+    color-scheme: light;
+    background-color: white;
+}
+</style>
