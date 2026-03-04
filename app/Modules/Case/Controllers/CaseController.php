@@ -116,7 +116,10 @@ class CaseController extends Controller
             'priority'     => ['sometimes', 'in:low,normal,high,urgent'],
             'critical_date'=> ['sometimes', 'nullable', 'date'],
             'travel_date'  => ['sometimes', 'nullable', 'date'],
-            'notes'        => ['sometimes', 'nullable', 'string'],
+            'notes'                => ['sometimes', 'nullable', 'string'],
+            'appointment_date'     => ['sometimes', 'nullable', 'date'],
+            'appointment_time'     => ['sometimes', 'nullable', 'string', 'max:10'],
+            'appointment_location' => ['sometimes', 'nullable', 'string', 'max:255'],
         ]);
 
         $case = $this->service->updateCase($id, $data);

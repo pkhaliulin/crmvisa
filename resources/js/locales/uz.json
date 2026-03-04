@@ -410,26 +410,30 @@
   "caseStatus": {
     "step": {
       "draft": "Qoralama",
+      "awaiting_payment": "To'lov",
       "submitted": "Yuborildi",
       "manager_assigned": "Menejer",
       "document_collection": "Hujjatlar",
-      "submitted_to_embassy": "Topshirildi",
-      "decision_pending": "Ko'rib chiq.",
+      "translation": "Tarjima",
+      "ready_for_submission": "Topshirish",
+      "under_review": "Ko'rib chiq.",
       "completed": "Tasdiqlandi",
       "rejected": "Rad etildi"
     },
     "desc": {
       "draft": "Viza arizangizni topshirish uchun agentlikni tanlang. Biz siz uchun eng yaxshi mutaxassislarni tanlaymiz.",
-      "submitted": "Ariza agentlik tomonidan qabul qilindi. Eng tajribali menejerni tanlashmoqda — belgilangandan so'ng u siz bilan bog'lanadi.",
+      "awaiting_payment": "Agentlik tanlandi. Ariza agentlikka yuborilishi uchun xizmat uchun to'lang. To'lovsiz agentlik ishni boshlamaydi.",
+      "submitted": "Ariza to'langan va agentlik tomonidan qabul qilindi. Eng tajribali menejerni tanlashmoqda — belgilangandan so'ng u siz bilan bog'lanadi.",
       "manager_assigned": "Shaxsiy menejeringiz tayinlandi va tafsilotlarni aniqlash hamda hujjatlarni tayyorlash uchun tez orada siz bilan bog'lanadi.",
       "document_collection": "Menejer hujjatlar ro'yxatini tuzdi. Ularni shaxsiy kabinetingiz orqali yuklang — menejer har bir faylni tekshiradi.",
-      "submitted_to_embassy": "Hujjatlaringiz elchixonaga topshirildi. Ko'rib chiqilishini kutmoqdamiz — menejer jarayonni nazorat qilmoqda.",
-      "decision_pending": "Elchixona arizangizni ko'rib chiqmoqda. Odatda bu 5–15 ish kuni davom etadi. Natija chiqqanda xabar beramiz.",
+      "translation": "Hujjatlar tarjima va notarial tasdiqlash jarayonida. Menejer jarayonni nazorat qilmoqda.",
+      "ready_for_submission": "Hujjatlar to'plami tayyor. Menejer sizni elchixona/viza markaziga yozmoqda.",
+      "under_review": "Elchixona arizangizni ko'rib chiqmoqda. Odatda bu 5–15 ish kuni davom etadi. Natija chiqqanda xabar beramiz.",
       "completed": "Tabriklaymiz! Vizangiz tasdiqlandi. Pasportni olish uchun menejer bilan bog'laning.",
       "rejected": "Afsuski, viza rad etildi. Sabablarni bilish va keyingi qadamlarni muhokama qilish uchun menejer bilan bog'laning."
     },
     "awaitingPayment": "To'lovni kutmoqdamiz",
-    "paymentRequired": "Ariza davom etishi uchun xizmat uchun to'lang. To'lovsiz menejer ishga kirishmaydi.",
+    "paymentRequired": "Ariza agentlikka yuborilishi uchun xizmat uchun to'lang. To'lovsiz agentlik ishni boshlamaydi.",
     "payNow": "Hozir to'lash",
     "paymentOverdue": "To'lov muddati tugadi",
     "paid": "To'langan",
@@ -437,6 +441,12 @@
     "daysShort": "k",
     "hoursShort": "s",
     "minutesShort": "daq"
+  },
+  "appointment": {
+    "title": "Elchixonaga qabul sanasi",
+    "date": "Qabul sanasi",
+    "notAssigned": "Qabul sanasi hali belgilanmagan",
+    "location": "Qabul joyi"
   },
   "agencies": {
     "title": "Agentliklar",
@@ -1084,10 +1094,10 @@
   "kanban": {
     "stage_lead": "Lid",
     "stage_qualification": "Kvalifikatsiya",
-    "stage_awaiting_payment": "To'lov kutilmoqda",
     "stage_documents": "Hujjatlar yig'ish",
+    "stage_doc_review": "Hujjatlarni tekshirish",
     "stage_translation": "Tarjima",
-    "stage_appointment": "Yozilish",
+    "stage_ready": "Topshirishga tayyor",
     "stage_review": "Ko'rib chiqish",
     "stage_result": "Natija",
     "slaOverdue": "Muddati o'tgan",
@@ -1096,6 +1106,6 @@
     "paymentPaid": "To'langan",
     "paymentPending": "To'lov kutilmoqda",
     "paymentUnpaid": "To'lanmagan",
-    "paymentRequired": "To'lov olinmagan — o'tish bloklangan"
+    "appointmentNotSet": "Qabul sanasi belgilanmagan"
   }
 }

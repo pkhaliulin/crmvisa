@@ -30,7 +30,7 @@ class ClientPaymentController extends Controller
         ]);
 
         $case = VisaCase::whereHas('client', fn ($q) => $q->where('public_user_id', $publicUser->id))
-            ->where('public_status', 'submitted')
+            ->where('public_status', 'awaiting_payment')
             ->findOrFail($data['case_id']);
 
         if ($case->payment_status === 'paid') {

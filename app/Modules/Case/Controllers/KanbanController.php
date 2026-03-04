@@ -25,6 +25,12 @@ class KanbanController extends Controller
                 'stageHistory' => fn ($q) => $q->whereNull('exited_at'),
             ]);
 
+        // Агентство видит ТОЛЬКО оплаченные cases (awaiting_payment — клиентский статус, не видим в канбане)
+        $query->where(function ($q) {
+            $q->where('public_status', '!=', 'awaiting_payment')
+              ->orWhereNull('public_status');
+        });
+
         // Менеджер видит только свои заявки
         if (! $isOwner) {
             $query->where('assigned_to', $user->id);
@@ -98,6 +104,9 @@ class KanbanController extends Controller
             'stage_sla_overdue'   => $stageSlaOverdue,
             'stage_sla_hours_left'=> $stageSlaHoursLeft,
             'payment_status'      => $case->payment_status,
+            'appointment_date'    => $case->appointment_date?->toDateString(),
+            'appointment_time'    => $case->appointment_time,
+            'appointment_location'=> $case->appointment_location,
             'client' => [
                 'id'          => $case->client?->id,
                 'name'        => $case->client?->name,

@@ -36,12 +36,22 @@
       <span>{{ deadlineLabel }}</span>
     </div>
 
-    <!-- Payment badge (for awaiting_payment stage) -->
+    <!-- Payment badge -->
     <div v-if="item.payment_status" class="mt-2">
       <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
         :class="paymentBadgeClass">
         {{ paymentLabel }}
       </span>
+    </div>
+
+    <!-- Appointment date (дата приема) -->
+    <div v-if="item.appointment_date" class="flex items-center gap-1 mt-2 text-xs font-medium text-green-600">
+      <span>📅</span>
+      <span>{{ item.appointment_date }}{{ item.appointment_time ? ' ' + item.appointment_time : '' }}</span>
+    </div>
+    <div v-else class="flex items-center gap-1 mt-2 text-xs font-medium text-red-500">
+      <span>🔴</span>
+      <span>Дата приема не назначена</span>
     </div>
 
     <!-- Assignee -->

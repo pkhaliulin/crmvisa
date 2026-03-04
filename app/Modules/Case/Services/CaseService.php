@@ -107,6 +107,11 @@ class CaseService extends BaseService
         /** @var VisaCase $case */
         $case = $this->repository->findOrFail($id);
 
+        // Авто-маппинг: первое назначение менеджера -> public_status = 'manager_assigned'
+        if (isset($data['assigned_to']) && $data['assigned_to'] && ! $case->assigned_to) {
+            $data['public_status'] = 'manager_assigned';
+        }
+
         // Авторасчёт critical_date при изменении travel_date (per-visa-type → fallback)
         if (isset($data['travel_date']) && !array_key_exists('critical_date', $data)) {
             $travelDate   = \Illuminate\Support\Carbon::parse($data['travel_date']);
@@ -123,13 +128,6 @@ class CaseService extends BaseService
 
     public function moveToStage(VisaCase $case, string $newStage, ?string $notes = null): VisaCase
     {
-        // Payment gate: нельзя перейти из awaiting_payment в documents без оплаты
-        if ($case->stage === 'awaiting_payment' && $newStage === 'documents' && $case->payment_status !== 'paid') {
-            throw ValidationException::withMessages([
-                'payment' => 'Невозможно перейти к сбору документов без оплаты.',
-            ]);
-        }
-
         $previousStage = $case->stage;
 
         $result = DB::transaction(function () use ($case, $newStage, $notes) {
@@ -150,7 +148,13 @@ class CaseService extends BaseService
             // Устанавливаем SLA дедлайн для нового этапа
             $this->slaService->applyStageSla($newCaseStage, $case);
 
-            $case->update(['stage' => $newStage]);
+            // Авто-маппинг stage -> public_status
+            $updateData = ['stage' => $newStage];
+            $mappedStatus = $this->mapStageToPublicStatus($newStage);
+            if ($mappedStatus) {
+                $updateData['public_status'] = $mappedStatus;
+            }
+            $case->update($updateData);
 
             return $case->fresh(['client', 'assignee', 'stageHistory']);
         });
@@ -216,7 +220,13 @@ class CaseService extends BaseService
 
             $this->slaService->applyStageSla($newCaseStage, $case);
 
-            $case->update(['stage' => $newStage]);
+            // Авто-маппинг stage -> public_status
+            $updateData = ['stage' => $newStage];
+            $mappedStatus = $this->mapStageToPublicStatus($newStage);
+            if ($mappedStatus) {
+                $updateData['public_status'] = $mappedStatus;
+            }
+            $case->update($updateData);
 
             return $case->fresh(['client', 'assignee', 'stageHistory']);
         });
@@ -224,5 +234,24 @@ class CaseService extends BaseService
         CaseStatusChanged::dispatch($result, $previousStage, $newStage, null);
 
         return $result;
+    }
+
+    /**
+     * Маппинг этапа канбана -> клиентский public_status.
+     */
+    private function mapStageToPublicStatus(string $stage): ?string
+    {
+        $map = [
+            'lead'          => 'submitted',
+            'qualification' => 'submitted',
+            'documents'     => 'document_collection',
+            'doc_review'    => 'document_collection',
+            'translation'   => 'translation',
+            'ready'         => 'ready_for_submission',
+            'review'        => 'under_review',
+            'result'        => null, // зависит от результата (completed/rejected)
+        ];
+
+        return $map[$stage] ?? null;
     }
 }

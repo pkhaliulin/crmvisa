@@ -111,18 +111,17 @@ class PublicAgencyController extends Controller
         $cc       = strtoupper($data['country_code']);
         $agencyId = $data['agency_id'];
 
-        // Проверка дублей: заявка в то же агентство по той же стране
-        $existing = PublicLead::where('public_user_id', $publicUser->id)
+        // Проверка дублей: уже есть awaiting_payment/submitted case в это же агентство
+        $existingCase = VisaCase::whereHas('client', fn ($q) => $q->where('public_user_id', $publicUser->id))
+            ->where('agency_id', $agencyId)
             ->where('country_code', $cc)
-            ->where('assigned_agency_id', $agencyId)
-            ->whereIn('status', ['new', 'contacted', 'assigned'])
+            ->whereIn('public_status', ['awaiting_payment', 'submitted', 'manager_assigned', 'document_collection'])
             ->first();
 
-        if ($existing) {
+        if ($existingCase) {
             return response()->json([
                 'message' => __('public.lead_duplicate'),
-                'lead_id' => $existing->id,
-                'case_id' => $existing->case_id,
+                'case_id' => $existingCase->id,
             ], 409);
         }
 
@@ -154,7 +153,7 @@ class PublicAgencyController extends Controller
                 $client->update(['name' => $publicUser->name]);
             }
 
-            // 2. Создать или обновить заявку
+            // 2. Создать или обновить заявку — ставим awaiting_payment (НЕ submitted)
             $packageId   = $data['package_id'] ?? null;
             $packageNote = $packageId
                 ? 'Выбранный пакет: ' . \DB::table('agency_service_packages')->where('id', $packageId)->value('name')
@@ -170,7 +169,7 @@ class PublicAgencyController extends Controller
                     $case->update([
                         'agency_id'     => $agency->id,
                         'client_id'     => $client->id,
-                        'public_status' => 'submitted',
+                        'public_status' => 'awaiting_payment',
                         'notes'         => implode("\n", array_filter([
                             'Лид с портала VisaBor.',
                             $packageNote,
@@ -190,7 +189,7 @@ class PublicAgencyController extends Controller
                     'country_code'  => $cc,
                     'visa_type'     => $data['visa_type'],
                     'stage'         => 'lead',
-                    'public_status' => 'submitted',
+                    'public_status' => 'awaiting_payment',
                     'priority'      => 'normal',
                     'notes'         => implode("\n", array_filter([
                         'Лид с портала VisaBor.',
@@ -204,27 +203,9 @@ class PublicAgencyController extends Controller
                 app(ChecklistService::class)->createForCase($case);
             }
 
-            // 3. Получить скор по стране из кеша
-            $score = (int) \DB::table('public_score_cache')
-                ->where('public_user_id', $publicUser->id)
-                ->where('country_code', $cc)
-                ->value('score');
-
-            // 4. Создать запись лида
-            $lead = PublicLead::create([
-                'public_user_id'     => $publicUser->id,
-                'country_code'       => $cc,
-                'visa_type'          => $data['visa_type'],
-                'score'              => $score,
-                'status'             => 'new',
-                'assigned_agency_id' => $agency->id,
-                'case_id'            => $case->id,
-                'client_id'          => $client->id,
-                'notes'              => $packageNote,
-            ]);
+            // PublicLead НЕ создаётся здесь — создаётся после оплаты в ClientPaymentService
 
             return ApiResponse::created([
-                'lead_id' => $lead->id,
                 'case_id' => $case->id,
             ], __('public.lead_sent', ['name' => $agency->name]));
         });

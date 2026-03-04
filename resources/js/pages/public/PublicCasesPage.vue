@@ -170,6 +170,26 @@
                     </div>
                 </div>
 
+                <!-- Appointment date -->
+                <div v-if="c.appointment_date" class="px-5 pb-2">
+                    <div class="flex items-center gap-2 px-3 py-2 rounded-xl bg-green-50">
+                        <svg class="w-4 h-4 text-green-600 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                        <span class="text-xs font-semibold text-green-700">
+                            {{ $t('appointment.date') }}: {{ formatDate(c.appointment_date) }}{{ c.appointment_time ? ', ' + c.appointment_time : '' }}
+                        </span>
+                    </div>
+                </div>
+                <div v-else-if="c.public_status !== 'draft' && c.public_status !== 'awaiting_payment' && c.public_status !== 'completed' && c.public_status !== 'rejected'" class="px-5 pb-2">
+                    <div class="flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-50">
+                        <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                        <span class="text-xs text-gray-400">{{ $t('appointment.notAssigned') }}</span>
+                    </div>
+                </div>
+
                 <!-- Footer stats -->
                 <div class="px-5 py-3 border-t border-gray-50 flex items-center gap-4 text-xs text-gray-400 flex-wrap">
                     <!-- Manager -->
@@ -310,29 +330,31 @@ let timerInterval = null;
 onMounted(() => { timerInterval = setInterval(() => { now.value = new Date(); }, 30000); });
 onUnmounted(() => { clearInterval(timerInterval); });
 
-// 8 клиентских статусов
+// 10 клиентских статусов
 const PUBLIC_STATUSES = [
-    { key: 'draft',                 order: 0 },
-    { key: 'submitted',             order: 1 },
-    { key: 'manager_assigned',      order: 2 },
-    { key: 'document_collection',   order: 3 },
-    { key: 'submitted_to_embassy',  order: 4 },
-    { key: 'decision_pending',      order: 5 },
-    { key: 'completed',             order: 6 },
-    { key: 'rejected',              order: 7 },
+    { key: 'draft',                  order: 0 },
+    { key: 'awaiting_payment',       order: 1 },
+    { key: 'submitted',              order: 2 },
+    { key: 'manager_assigned',       order: 3 },
+    { key: 'document_collection',    order: 4 },
+    { key: 'translation',            order: 5 },
+    { key: 'ready_for_submission',   order: 6 },
+    { key: 'under_review',           order: 7 },
+    { key: 'completed',              order: 8 },
+    { key: 'rejected',               order: 9 },
 ];
 
-// Показываем 7 шагов: 6 основных + финальный (одобрено ИЛИ отказ)
+// Показываем 9 шагов: 8 основных + финальный (одобрено ИЛИ отказ)
 function getVisibleStatuses(c) {
-    const base = PUBLIC_STATUSES.slice(0, 6); // draft..decision_pending
+    const base = PUBLIC_STATUSES.slice(0, 8); // draft..under_review
     if (c.public_status === 'rejected') {
-        return [...base, { key: 'rejected', order: 6 }];
+        return [...base, { key: 'rejected', order: 8 }];
     }
-    return [...base, { key: 'completed', order: 6 }];
+    return [...base, { key: 'completed', order: 8 }];
 }
 
 function currentStepIndex(c) {
-    if (c.public_status === 'completed' || c.public_status === 'rejected') return 6;
+    if (c.public_status === 'completed' || c.public_status === 'rejected') return 8;
     return c.public_status_order;
 }
 
@@ -345,11 +367,13 @@ function countryName(code) { return t(`countries.${code}`) !== `countries.${code
 function publicStatusBadge(status) {
     const map = {
         draft:                 'bg-gray-100 text-gray-600',
+        awaiting_payment:      'bg-amber-50 text-amber-700',
         submitted:             'bg-blue-50 text-blue-600',
         manager_assigned:      'bg-indigo-50 text-indigo-700',
         document_collection:   'bg-amber-50 text-amber-700',
-        submitted_to_embassy:  'bg-orange-50 text-orange-700',
-        decision_pending:      'bg-purple-50 text-purple-700',
+        translation:           'bg-cyan-50 text-cyan-700',
+        ready_for_submission:  'bg-orange-50 text-orange-700',
+        under_review:          'bg-purple-50 text-purple-700',
         completed:             'bg-green-50 text-green-700',
         rejected:              'bg-red-50 text-red-700',
     };
@@ -379,7 +403,7 @@ function statusDescText(status) {
 
 // --- Payment countdown ---
 function showPaymentBlock(c) {
-    return c.payment_status !== 'paid' && c.public_status !== 'draft' && c.agency;
+    return c.public_status === 'awaiting_payment' && c.payment_status !== 'paid' && c.agency;
 }
 
 function isPaymentOverdue(c) {

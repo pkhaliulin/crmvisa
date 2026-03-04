@@ -193,6 +193,9 @@ class PublicProfileController extends Controller
                     'docs_uploaded'        => $uploadedDocs,
                     'payment_status'       => $case->payment_status ?? 'unpaid',
                     'payment_deadline'     => $currentStage?->sla_due_at?->toIso8601String(),
+                    'appointment_date'     => $case->appointment_date?->toDateString(),
+                    'appointment_time'     => $case->appointment_time,
+                    'appointment_location' => $case->appointment_location,
                 ];
             });
 
@@ -257,6 +260,9 @@ class PublicProfileController extends Controller
             'critical_date'        => $case->critical_date?->toDateString(),
             'travel_date'          => $case->travel_date?->toDateString(),
             'payment_status'       => $case->payment_status ?? 'unpaid',
+            'appointment_date'     => $case->appointment_date?->toDateString(),
+            'appointment_time'     => $case->appointment_time,
+            'appointment_location' => $case->appointment_location,
             'group_id'             => $case->group_id,
             'notes'                => $case->notes,
             'created_at'           => $case->created_at->toDateString(),

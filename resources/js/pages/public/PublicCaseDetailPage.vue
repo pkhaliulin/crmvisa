@@ -54,15 +54,24 @@
                     </span>
                 </div>
 
-                <!-- Прогресс по public_status (8 шагов) -->
+                <!-- Прогресс по public_status (10 шагов) -->
                 <div class="mb-3">
-                    <div class="flex items-center gap-0.5 mb-2">
-                        <div v-for="(s, i) in PUBLIC_STATUSES" :key="s.key"
+                    <div class="flex items-center gap-0.5 mb-1">
+                        <div v-for="(s, i) in getVisibleStatuses(caseData)" :key="s.key"
                             class="flex-1 h-2 rounded-full transition-colors"
-                            :class="getProgressColor(i, caseData.public_status, caseData.public_status_order)">
+                            :class="getProgressColor(i, caseData.public_status, currentStepIdx)">
                         </div>
                     </div>
-                    <p class="text-sm font-medium" :class="statusTextColor(caseData.public_status)">
+                    <div class="flex mt-1">
+                        <div v-for="(s, i) in getVisibleStatuses(caseData)" :key="'l'+s.key"
+                            class="flex-1 text-center">
+                            <span class="text-[7px] sm:text-[9px] leading-tight block truncate px-0.5"
+                                :class="i === currentStepIdx ? 'text-[#1BA97F] font-bold' : i < currentStepIdx ? 'text-gray-500' : 'text-gray-300'">
+                                {{ $t('caseStatus.step.' + s.key) }}
+                            </span>
+                        </div>
+                    </div>
+                    <p class="text-sm font-medium mt-2" :class="statusTextColor(caseData.public_status)">
                         {{ caseData.public_status_tooltip || caseData.public_status_label }}
                     </p>
                 </div>
@@ -133,8 +142,8 @@
                 </div>
             </div>
 
-            <!-- === Оплата услуги (submitted, unpaid) === -->
-            <div v-if="caseData.agency && caseData.public_status !== 'draft' && (caseData.payment_status === 'unpaid' || caseData.payment_status === 'pending')"
+            <!-- === Оплата услуги (awaiting_payment) === -->
+            <div v-if="caseData.agency && caseData.public_status === 'awaiting_payment' && (caseData.payment_status === 'unpaid' || caseData.payment_status === 'pending')"
                 class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                 <div class="px-5 py-4 border-b border-gray-50">
                     <h2 class="font-bold text-[#0A1F44] text-sm">{{ $t('payment.title') }}</h2>
@@ -172,6 +181,29 @@
                 </div>
                 <div>
                     <div class="text-sm font-semibold text-[#1BA97F]">{{ $t('payment.paid') }}</div>
+                </div>
+            </div>
+
+            <!-- === Дата приема в посольство === -->
+            <div v-if="caseData.public_status !== 'draft' && caseData.public_status !== 'awaiting_payment'"
+                class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+                <h2 class="font-bold text-[#0A1F44] text-sm mb-3">{{ $t('appointment.title') }}</h2>
+                <div v-if="caseData.appointment_date" class="space-y-2">
+                    <div class="flex items-center gap-3 p-3 rounded-xl bg-green-50">
+                        <svg class="w-5 h-5 text-green-600 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                        <div>
+                            <div class="text-sm font-semibold text-green-700">{{ formatDate(caseData.appointment_date) }}{{ caseData.appointment_time ? ', ' + caseData.appointment_time : '' }}</div>
+                            <div v-if="caseData.appointment_location" class="text-xs text-green-600 mt-0.5">{{ caseData.appointment_location }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div v-else class="flex items-center gap-3 p-3 rounded-xl bg-gray-50">
+                    <svg class="w-5 h-5 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                    <span class="text-sm text-gray-400">{{ $t('appointment.notAssigned') }}</span>
                 </div>
             </div>
 
@@ -799,15 +831,32 @@ async function uploadDoc(itemId, event) {
 }
 
 const PUBLIC_STATUSES = [
-    { key: 'draft' },
-    { key: 'submitted' },
-    { key: 'manager_assigned' },
-    { key: 'document_collection' },
-    { key: 'submitted_to_embassy' },
-    { key: 'decision_pending' },
-    { key: 'completed' },
-    { key: 'rejected' },
+    { key: 'draft',                order: 0 },
+    { key: 'awaiting_payment',     order: 1 },
+    { key: 'submitted',            order: 2 },
+    { key: 'manager_assigned',     order: 3 },
+    { key: 'document_collection',  order: 4 },
+    { key: 'translation',          order: 5 },
+    { key: 'ready_for_submission', order: 6 },
+    { key: 'under_review',         order: 7 },
+    { key: 'completed',            order: 8 },
+    { key: 'rejected',             order: 9 },
 ];
+
+function getVisibleStatuses(c) {
+    const base = PUBLIC_STATUSES.slice(0, 8); // draft..under_review
+    if (c?.public_status === 'rejected') {
+        return [...base, { key: 'rejected', order: 8 }];
+    }
+    return [...base, { key: 'completed', order: 8 }];
+}
+
+const currentStepIdx = computed(() => {
+    if (!caseData.value) return 0;
+    const s = caseData.value.public_status;
+    if (s === 'completed' || s === 'rejected') return 8;
+    return caseData.value.public_status_order ?? 0;
+});
 
 const VISA_TYPE_LABELS = computed(() => ({
     tourist: t('portal.touristVisa'), business: t('portal.businessVisa'),
@@ -827,11 +876,13 @@ function visaTypeLabel(type)  { return VISA_TYPE_LABELS.value[type] || type; }
 function publicStatusBadge(status) {
     const map = {
         draft:                 'bg-gray-100 text-gray-600',
+        awaiting_payment:      'bg-amber-50 text-amber-700',
         submitted:             'bg-blue-50 text-blue-600',
         manager_assigned:      'bg-indigo-50 text-indigo-700',
         document_collection:   'bg-amber-50 text-amber-700',
-        submitted_to_embassy:  'bg-orange-50 text-orange-700',
-        decision_pending:      'bg-purple-50 text-purple-700',
+        translation:           'bg-cyan-50 text-cyan-700',
+        ready_for_submission:  'bg-orange-50 text-orange-700',
+        under_review:          'bg-purple-50 text-purple-700',
         completed:             'bg-green-50 text-green-700',
         rejected:              'bg-red-50 text-red-700',
     };

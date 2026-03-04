@@ -6,6 +6,7 @@ use App\Modules\Case\Models\VisaCase;
 use App\Modules\Case\Services\CaseService;
 use App\Modules\Group\Services\GroupService;
 use App\Modules\Payment\Models\ClientPayment;
+use App\Modules\PublicPortal\Models\PublicLead;
 use App\Modules\PublicPortal\Models\PublicUser;
 use Illuminate\Support\Facades\DB;
 
@@ -83,15 +84,31 @@ class ClientPaymentService
             if ($payment->group_id) {
                 app(GroupService::class)->handleGroupPaymentSuccess($payment);
             } else {
-                VisaCase::where('id', $payment->case_id)->update([
+                $case = VisaCase::find($payment->case_id);
+                if (! $case) return;
+
+                // Обновить payment_status и public_status
+                $case->update([
                     'payment_status' => 'paid',
+                    'public_status'  => 'submitted',
                 ]);
 
-                // Авто-переход: если кейс на этапе awaiting_payment → documents
-                $case = VisaCase::find($payment->case_id);
-                if ($case && $case->stage === 'awaiting_payment') {
-                    app(CaseService::class)->moveToStageSystem($case, 'documents', 'Автопереход: оплата получена');
-                }
+                // Создать PublicLead — лид передаётся агентству только после оплаты
+                $score = (int) DB::table('public_score_cache')
+                    ->where('public_user_id', $case->client?->public_user_id)
+                    ->where('country_code', $case->country_code)
+                    ->value('score');
+
+                PublicLead::create([
+                    'public_user_id'     => $case->client?->public_user_id,
+                    'country_code'       => $case->country_code,
+                    'visa_type'          => $case->visa_type,
+                    'score'              => $score,
+                    'status'             => 'new',
+                    'assigned_agency_id' => $case->agency_id,
+                    'case_id'            => $case->id,
+                    'client_id'          => $case->client_id,
+                ]);
             }
         });
     }

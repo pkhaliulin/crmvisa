@@ -30,12 +30,16 @@ class VisaCase extends BaseModel
         'priority',
         'critical_date',
         'travel_date',
+        'appointment_date',
+        'appointment_time',
+        'appointment_location',
         'notes',
     ];
 
     protected $casts = [
-        'critical_date' => 'date',
-        'travel_date'   => 'date',
+        'critical_date'    => 'date',
+        'travel_date'      => 'date',
+        'appointment_date' => 'date',
     ];
 
     public function agency(): BelongsTo
