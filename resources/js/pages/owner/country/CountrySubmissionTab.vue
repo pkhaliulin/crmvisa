@@ -32,13 +32,27 @@
         </div>
 
         <!-- E-виза -->
-        <div v-if="form.visa_regime === 'evisa'" class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.evisaDays') }}</label>
-            <input v-model.number="form.evisa_processing_days" type="number" min="0"
-              class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]" />
+        <fieldset class="border border-gray-200 rounded-xl p-4">
+          <legend class="text-xs font-semibold text-gray-500 uppercase px-2">{{ $t('countryDetail.evisaSection') }}</legend>
+          <div class="flex items-center gap-4 mt-2">
+            <label class="flex items-center gap-2 text-sm">
+              <input type="checkbox" v-model="form.evisa_available" class="rounded" />
+              {{ $t('countryDetail.evisaAvailable') }}
+            </label>
           </div>
-        </div>
+          <div v-if="form.evisa_available" class="grid grid-cols-2 gap-4 mt-3">
+            <div>
+              <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.evisaDays') }}</label>
+              <input v-model.number="form.evisa_processing_days" type="number" min="0"
+                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]" />
+            </div>
+            <div>
+              <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.evisaUrl') }}</label>
+              <input v-model="form.evisa_url" type="url"
+                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]" />
+            </div>
+          </div>
+        </fieldset>
 
         <!-- Типы подачи (только для визового) -->
         <template v-if="form.visa_regime === 'visa_required'">
@@ -52,10 +66,10 @@
             </div>
           </div>
 
-          <!-- Правила -->
-          <div>
-            <label class="text-xs text-gray-500 mb-3 block">{{ $t('countryDetail.submissionRules') }}</label>
-            <div class="grid grid-cols-2 gap-3">
+          <!-- Правила подачи -->
+          <fieldset class="border border-gray-200 rounded-xl p-4">
+            <legend class="text-xs font-semibold text-gray-500 uppercase px-2">{{ $t('countryDetail.submissionRules') }}</legend>
+            <div class="grid grid-cols-2 gap-3 mt-2">
               <label class="flex items-center gap-2 text-sm p-3 bg-gray-50 rounded-lg">
                 <input type="checkbox" v-model="form.appointment_required" class="rounded" />
                 {{ $t('countryDetail.appointmentRequired') }}
@@ -73,8 +87,35 @@
                 {{ $t('countryDetail.photoRequired') }}
               </label>
             </div>
-          </div>
+          </fieldset>
         </template>
+
+        <!-- Требования к документам -->
+        <fieldset class="border border-gray-200 rounded-xl p-4">
+          <legend class="text-xs font-semibold text-gray-500 uppercase px-2">{{ $t('countryDetail.docRequirements') }}</legend>
+          <div class="grid grid-cols-2 gap-3 mt-2">
+            <label class="flex items-center gap-2 text-sm p-3 bg-gray-50 rounded-lg">
+              <input type="checkbox" v-model="form.invitation_required" class="rounded" />
+              {{ $t('countryDetail.invitationRequired') }}
+            </label>
+            <label class="flex items-center gap-2 text-sm p-3 bg-gray-50 rounded-lg">
+              <input type="checkbox" v-model="form.hotel_booking_required" class="rounded" />
+              {{ $t('countryDetail.hotelRequired') }}
+            </label>
+            <label class="flex items-center gap-2 text-sm p-3 bg-gray-50 rounded-lg">
+              <input type="checkbox" v-model="form.insurance_required" class="rounded" />
+              {{ $t('countryDetail.insuranceRequired') }}
+            </label>
+            <label class="flex items-center gap-2 text-sm p-3 bg-gray-50 rounded-lg">
+              <input type="checkbox" v-model="form.bank_statement_required" class="rounded" />
+              {{ $t('countryDetail.bankStatementRequired') }}
+            </label>
+            <label class="flex items-center gap-2 text-sm p-3 bg-gray-50 rounded-lg">
+              <input type="checkbox" v-model="form.return_ticket_required" class="rounded" />
+              {{ $t('countryDetail.returnTicketRequired') }}
+            </label>
+          </div>
+        </fieldset>
 
         <!-- Примечания -->
         <div>
@@ -121,12 +162,19 @@ const form = reactive({
   visa_free_days: null,
   visa_on_arrival_days: null,
   evisa_processing_days: null,
+  evisa_available: false,
+  evisa_url: '',
   submission_types: [],
   appointment_required: false,
   personal_submission_required: false,
   biometrics_required: false,
   photo_required: false,
   submission_notes: '',
+  invitation_required: false,
+  hotel_booking_required: false,
+  insurance_required: false,
+  bank_statement_required: false,
+  return_ticket_required: false,
 });
 
 function initForm() {
@@ -134,23 +182,37 @@ function initForm() {
   form.visa_free_days = props.country.visa_free_days ?? null;
   form.visa_on_arrival_days = props.country.visa_on_arrival_days ?? null;
   form.evisa_processing_days = props.country.evisa_processing_days ?? null;
+  form.evisa_available = props.country.evisa_available ?? false;
+  form.evisa_url = props.country.evisa_url ?? '';
   form.submission_types = [...(props.country.submission_types || [])];
   form.appointment_required = props.country.appointment_required ?? false;
   form.personal_submission_required = props.country.personal_submission_required ?? false;
   form.biometrics_required = props.country.biometrics_required ?? false;
   form.photo_required = props.country.photo_required ?? false;
   form.submission_notes = props.country.submission_notes ?? '';
+  form.invitation_required = props.country.invitation_required ?? false;
+  form.hotel_booking_required = props.country.hotel_booking_required ?? false;
+  form.insurance_required = props.country.insurance_required ?? false;
+  form.bank_statement_required = props.country.bank_statement_required ?? false;
+  form.return_ticket_required = props.country.return_ticket_required ?? false;
 }
 
 async function save() {
   saving.value = true;
   try {
-    // Сохраняем визовый режим через общий update
+    // Сохраняем визовый режим + e-visa + требования + стоимости через общий update
     await ownerCountriesApi.update(props.country.country_code, {
       visa_regime: form.visa_regime,
       visa_free_days: form.visa_free_days,
       visa_on_arrival_days: form.visa_on_arrival_days,
+      evisa_available: form.evisa_available,
+      evisa_url: form.evisa_url,
       evisa_processing_days: form.evisa_processing_days,
+      invitation_required: form.invitation_required,
+      hotel_booking_required: form.hotel_booking_required,
+      insurance_required: form.insurance_required,
+      bank_statement_required: form.bank_statement_required,
+      return_ticket_required: form.return_ticket_required,
     });
     // Сохраняем данные подачи
     await ownerCountriesApi.updateSubmission(props.country.country_code, {

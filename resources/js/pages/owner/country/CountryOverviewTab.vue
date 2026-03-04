@@ -27,15 +27,37 @@
           </div>
           <InfoItem :label="$t('countryDetail.riskLevel')" :value="riskLabel" />
           <InfoItem :label="$t('countryDetail.countryCode')" :value="country.country_code" mono />
+          <InfoItem :label="$t('countryDetail.sortOrder')" :value="country.sort_order" />
+          <InfoItem :label="$t('countryDetail.commission')" :value="country.commission_rate ? country.commission_rate + '%' : '---'" />
         </dl>
+
+        <!-- Флаги -->
+        <div v-if="country.is_popular || country.is_high_approval || country.is_high_refusal" class="mt-3 flex flex-wrap gap-2">
+          <span v-if="country.is_popular" class="text-xs px-2.5 py-1 rounded-full bg-blue-50 text-blue-700">{{ $t('countryDetail.popular') }}</span>
+          <span v-if="country.is_high_approval" class="text-xs px-2.5 py-1 rounded-full bg-green-50 text-green-700">{{ $t('countryDetail.highApproval') }}</span>
+          <span v-if="country.is_high_refusal" class="text-xs px-2.5 py-1 rounded-full bg-red-50 text-red-700">{{ $t('countryDetail.highRefusal') }}</span>
+        </div>
       </div>
 
-      <form v-else @submit.prevent="saveOverview" class="space-y-3">
+      <form v-else @submit.prevent="saveOverview" class="space-y-4">
+        <!-- Ряд 1: Название -->
         <div class="grid grid-cols-3 gap-4">
           <div>
             <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.name') }}</label>
             <input v-model="form.name" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]" />
           </div>
+          <div>
+            <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.nameUz') }}</label>
+            <input v-model="form.name_uz" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]" />
+          </div>
+          <div>
+            <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.flagEmoji') }}</label>
+            <input v-model="form.flag_emoji" maxlength="10" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]" />
+          </div>
+        </div>
+
+        <!-- Ряд 2: Конт, Статус, Риск -->
+        <div class="grid grid-cols-4 gap-4">
           <div>
             <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.continent') }}</label>
             <select v-model="form.continent" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]">
@@ -44,15 +66,6 @@
             </select>
           </div>
           <div>
-            <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.status') }}</label>
-            <label class="flex items-center gap-2 text-sm mt-1">
-              <input type="checkbox" v-model="form.is_active" class="rounded" />
-              {{ $t('countryDetail.active') }}
-            </label>
-          </div>
-        </div>
-        <div class="grid grid-cols-2 gap-4">
-          <div>
             <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.riskLevel') }}</label>
             <select v-model="form.risk_level" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]">
               <option value="low">{{ $t('countryDetail.riskLow') }}</option>
@@ -60,7 +73,99 @@
               <option value="high">{{ $t('countryDetail.riskHigh') }}</option>
             </select>
           </div>
+          <div>
+            <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.sortOrder') }}</label>
+            <input v-model.number="form.sort_order" type="number" min="0"
+              class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]" />
+          </div>
+          <div>
+            <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.commission') }} (%)</label>
+            <input v-model.number="form.commission_rate" type="number" min="0" max="100" step="0.01"
+              class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]" />
+          </div>
         </div>
+
+        <!-- Чекбоксы -->
+        <div class="flex flex-wrap gap-4">
+          <label class="flex items-center gap-2 text-sm">
+            <input type="checkbox" v-model="form.is_active" class="rounded" />
+            {{ $t('countryDetail.active') }}
+          </label>
+          <label class="flex items-center gap-2 text-sm">
+            <input type="checkbox" v-model="form.is_popular" class="rounded" />
+            {{ $t('countryDetail.popular') }}
+          </label>
+          <label class="flex items-center gap-2 text-sm">
+            <input type="checkbox" v-model="form.is_high_approval" class="rounded" />
+            {{ $t('countryDetail.highApproval') }}
+          </label>
+          <label class="flex items-center gap-2 text-sm">
+            <input type="checkbox" v-model="form.is_high_refusal" class="rounded" />
+            {{ $t('countryDetail.highRefusal') }}
+          </label>
+        </div>
+
+        <!-- Сроки обработки -->
+        <fieldset class="border border-gray-200 rounded-xl p-4">
+          <legend class="text-xs font-semibold text-gray-500 uppercase px-2">{{ $t('countryDetail.generalTimeline') }}</legend>
+          <div class="grid grid-cols-4 gap-3 mt-2">
+            <div>
+              <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.standardDays') }}</label>
+              <input v-model.number="form.processing_days_standard" type="number" min="0"
+                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]" />
+            </div>
+            <div>
+              <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.expeditedDays') }}</label>
+              <input v-model.number="form.processing_days_expedited" type="number" min="0"
+                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]" />
+            </div>
+            <div>
+              <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.appointmentWait') }}</label>
+              <input v-model.number="form.appointment_wait_days" type="number" min="0"
+                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]" />
+            </div>
+            <div>
+              <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.bufferDays') }}</label>
+              <input v-model.number="form.buffer_days_recommended" type="number" min="0"
+                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]" />
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- Стоимость -->
+        <fieldset class="border border-gray-200 rounded-xl p-4">
+          <legend class="text-xs font-semibold text-gray-500 uppercase px-2">{{ $t('countryDetail.costsTitle') }}</legend>
+          <div class="grid grid-cols-4 gap-3 mt-2">
+            <div>
+              <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.visaFee') }} ($)</label>
+              <input v-model.number="form.visa_fee_usd" type="number" min="0" step="0.01"
+                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]" />
+            </div>
+            <div>
+              <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.evisaFee') }} ($)</label>
+              <input v-model.number="form.evisa_fee_usd" type="number" min="0" step="0.01"
+                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]" />
+            </div>
+            <div>
+              <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.avgFlight') }} ($)</label>
+              <input v-model.number="form.avg_flight_cost_usd" type="number" min="0"
+                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]" />
+            </div>
+            <div>
+              <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.avgHotel') }} ($/{{ $t('countryDetail.perNight') }})</label>
+              <input v-model.number="form.avg_hotel_per_night_usd" type="number" min="0"
+                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]" />
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- Заметки -->
+        <div>
+          <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.notes') }}</label>
+          <textarea v-model="form.notes" rows="3"
+            class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F] resize-none"></textarea>
+        </div>
+
         <div class="flex gap-3 pt-2">
           <button type="submit" :disabled="saving"
             class="px-5 py-2 bg-[#0A1F44] text-white text-sm font-semibold rounded-xl hover:bg-[#0d2a5e] disabled:opacity-60">
@@ -74,7 +179,7 @@
       </form>
     </div>
 
-    <!-- Визовый режим и требования -->
+    <!-- Визовый режим и требования (только отображение) -->
     <div class="bg-white rounded-xl border border-gray-100 p-5">
       <h4 class="text-sm font-semibold text-gray-500 mb-4">{{ $t('countryDetail.visaRegime') }}</h4>
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -110,7 +215,7 @@
       </div>
     </div>
 
-    <!-- Сроки обработки -->
+    <!-- Сроки обработки (только отображение) -->
     <div v-if="country.processing_days_standard || country.processing_days_expedited" class="bg-white rounded-xl border border-gray-100 p-5">
       <h4 class="text-sm font-semibold text-gray-500 mb-4">{{ $t('countryDetail.generalTimeline') }}</h4>
       <div class="grid grid-cols-4 gap-4 text-center">
@@ -133,7 +238,7 @@
       </div>
     </div>
 
-    <!-- Стоимость поездки -->
+    <!-- Стоимость поездки (только отображение) -->
     <div v-if="country.avg_flight_cost_usd || country.avg_hotel_per_night_usd" class="bg-white rounded-xl border border-gray-100 p-5">
       <h4 class="text-sm font-semibold text-gray-500 mb-4">{{ $t('countryDetail.travelCosts') }}</h4>
       <div class="grid grid-cols-2 gap-4 text-center">
@@ -163,6 +268,12 @@
         <span>{{ $t('countryDetail.minIncome') }}: <strong>${{ country.min_monthly_income_usd }}</strong></span>
         <span>{{ $t('countryDetail.minScore') }}: <strong>{{ country.min_score }}%</strong></span>
       </div>
+    </div>
+
+    <!-- Заметки -->
+    <div v-if="country.notes" class="bg-white rounded-xl border border-gray-100 p-5">
+      <h4 class="text-sm font-semibold text-gray-500 mb-2">{{ $t('countryDetail.notes') }}</h4>
+      <p class="text-sm text-gray-600 whitespace-pre-wrap">{{ country.notes }}</p>
     </div>
 
     <!-- Индикаторы заполненности -->
@@ -262,9 +373,25 @@ const indicators = computed(() => [
 function startEdit() {
   Object.assign(form, {
     name: props.country.name ?? '',
+    name_uz: props.country.name_uz ?? '',
+    flag_emoji: props.country.flag_emoji ?? '',
     continent: props.country.continent ?? '',
     is_active: props.country.is_active ?? true,
     risk_level: props.country.risk_level ?? 'medium',
+    sort_order: props.country.sort_order ?? 0,
+    commission_rate: props.country.commission_rate ?? null,
+    is_popular: props.country.is_popular ?? false,
+    is_high_approval: props.country.is_high_approval ?? false,
+    is_high_refusal: props.country.is_high_refusal ?? false,
+    processing_days_standard: props.country.processing_days_standard ?? null,
+    processing_days_expedited: props.country.processing_days_expedited ?? null,
+    appointment_wait_days: props.country.appointment_wait_days ?? null,
+    buffer_days_recommended: props.country.buffer_days_recommended ?? null,
+    visa_fee_usd: props.country.visa_fee_usd ?? null,
+    evisa_fee_usd: props.country.evisa_fee_usd ?? null,
+    avg_flight_cost_usd: props.country.avg_flight_cost_usd ?? null,
+    avg_hotel_per_night_usd: props.country.avg_hotel_per_night_usd ?? null,
+    notes: props.country.notes ?? '',
   });
   editing.value = true;
 }
