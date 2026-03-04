@@ -36,10 +36,10 @@
 
       <!-- Tabs -->
       <div class="border-b border-gray-200">
-        <nav class="flex gap-6">
+        <nav class="flex gap-6 overflow-x-auto">
           <button v-for="tab in tabs" :key="tab.id"
             @click="activeTab = tab.id"
-            class="pb-2.5 text-sm font-medium border-b-2 transition-colors"
+            class="pb-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap"
             :class="activeTab === tab.id
               ? 'border-[#0A1F44] text-[#0A1F44]'
               : 'border-transparent text-gray-400 hover:text-gray-600'">
@@ -49,11 +49,14 @@
       </div>
 
       <!-- Tab content -->
-      <CountryOverviewTab v-if="activeTab === 'overview'" :country="country" />
+      <CountryOverviewTab v-if="activeTab === 'overview'" :country="country" :visa-settings="visaSettings" @updated="reload" @go-tab="activeTab = $event" />
+      <CountryVisaTypesTab v-else-if="activeTab === 'visa-types'" :country-code="country.country_code" :visa-settings="visaSettings" @updated="reload" />
+      <CountrySubmissionTab v-else-if="activeTab === 'submission'" :country="country" @updated="reload" />
+      <CountryVisaCenterTab v-else-if="activeTab === 'visa-center'" :country="country" @updated="reload" />
       <CountryEmbassyTab v-else-if="activeTab === 'embassy'" :country="country" @updated="reload" />
-      <CountryVisaTypesTab v-else-if="activeTab === 'visa-types'" :country-code="country.country_code" @updated="reload" />
-      <CountryDocumentsTab v-else-if="activeTab === 'documents'" :country-code="country.country_code" @updated="reload" />
+      <CountryFinanceTab v-else-if="activeTab === 'finance'" :country="country" @updated="reload" />
       <CountryScoringTab v-else-if="activeTab === 'scoring'" :country="country" :country-code="country.country_code" @updated="reload" />
+      <CountryDocumentsTab v-else-if="activeTab === 'documents'" :country-code="country.country_code" @updated="reload" />
       <CountryAnalyticsTab v-else-if="activeTab === 'analytics'" :country-code="country.country_code" />
     </template>
 
@@ -75,6 +78,9 @@ import CountryVisaTypesTab from './country/CountryVisaTypesTab.vue';
 import CountryDocumentsTab from './country/CountryDocumentsTab.vue';
 import CountryScoringTab from './country/CountryScoringTab.vue';
 import CountryAnalyticsTab from './country/CountryAnalyticsTab.vue';
+import CountrySubmissionTab from './country/CountrySubmissionTab.vue';
+import CountryVisaCenterTab from './country/CountryVisaCenterTab.vue';
+import CountryFinanceTab from './country/CountryFinanceTab.vue';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -83,8 +89,9 @@ const loading   = ref(true);
 const detail    = ref(null);
 const activeTab = ref('overview');
 
-const country = computed(() => detail.value?.country ?? {});
-const stats   = computed(() => detail.value?.stats ?? {});
+const country      = computed(() => detail.value?.country ?? {});
+const stats        = computed(() => detail.value?.stats ?? {});
+const visaSettings = computed(() => detail.value?.visa_settings ?? []);
 
 const riskBadge = computed(() => {
   const r = country.value.risk_level;
@@ -100,12 +107,15 @@ const riskColor = computed(() => {
 });
 
 const tabs = computed(() => [
-  { id: 'overview',   label: t('countryDetail.tabOverview') },
-  { id: 'embassy',    label: t('countryDetail.tabEmbassy') },
-  { id: 'visa-types', label: t('countryDetail.tabVisaTypes') },
-  { id: 'documents',  label: t('countryDetail.tabDocuments') },
-  { id: 'scoring',    label: t('countryDetail.tabScoring') },
-  { id: 'analytics',  label: t('countryDetail.tabAnalytics') },
+  { id: 'overview',     label: t('countryDetail.tabOverview') },
+  { id: 'visa-types',   label: t('countryDetail.tabVisaTypes') },
+  { id: 'submission',   label: t('countryDetail.tabSubmission') },
+  { id: 'visa-center',  label: t('countryDetail.tabVisaCenter') },
+  { id: 'embassy',      label: t('countryDetail.tabEmbassy') },
+  { id: 'finance',      label: t('countryDetail.tabFinance') },
+  { id: 'scoring',      label: t('countryDetail.tabScoring') },
+  { id: 'documents',    label: t('countryDetail.tabDocuments') },
+  { id: 'analytics',    label: t('countryDetail.tabAnalytics') },
 ]);
 
 async function loadDetail() {

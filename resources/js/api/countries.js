@@ -18,6 +18,15 @@ export const ownerCountriesApi = {
     // Embassy
     updateEmbassy: (code, data) => api.patch(`/owner/countries/${code}/embassy`, data),
 
+    // Submission
+    updateSubmission: (code, data) => api.patch(`/owner/countries/${code}/submission`, data),
+
+    // Visa Center
+    updateVisaCenter: (code, data) => api.patch(`/owner/countries/${code}/visa-center`, data),
+
+    // Finance
+    updateFinance: (code, data) => api.patch(`/owner/countries/${code}/finance`, data),
+
     // Visa type settings
     visaSettings:       (code) => api.get(`/owner/countries/${code}/visa-settings`),
     visaSettingStore:    (code, data) => api.post(`/owner/countries/${code}/visa-settings`, data),

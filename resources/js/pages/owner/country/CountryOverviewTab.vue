@@ -1,21 +1,18 @@
 <template>
   <div class="space-y-5">
     <!-- Основная информация -->
-    <div class="grid grid-cols-2 gap-4">
-      <div class="bg-white rounded-xl border border-gray-100 p-4">
-        <h4 class="text-sm font-semibold text-gray-500 mb-3">{{ $t('countryDetail.generalInfo') }}</h4>
-        <dl class="space-y-2 text-sm">
-          <div class="flex justify-between">
-            <dt class="text-gray-500">{{ $t('countryDetail.countryCode') }}</dt>
-            <dd class="font-mono font-bold">{{ country.country_code }}</dd>
-          </div>
+    <div class="bg-white rounded-xl border border-gray-100 p-5">
+      <h4 class="text-sm font-semibold text-gray-500 mb-4">{{ $t('countryDetail.generalInfo') }}</h4>
+
+      <div v-if="!editing" class="space-y-3">
+        <dl class="grid grid-cols-3 gap-4 text-sm">
           <div class="flex justify-between">
             <dt class="text-gray-500">{{ $t('countryDetail.name') }}</dt>
             <dd class="font-medium">{{ country.name }}</dd>
           </div>
           <div class="flex justify-between">
-            <dt class="text-gray-500">{{ $t('countryDetail.nameUz') }}</dt>
-            <dd>{{ country.name_uz || '---' }}</dd>
+            <dt class="text-gray-500">{{ $t('countryDetail.continent') }}</dt>
+            <dd class="font-medium">{{ country.continent || '---' }}</dd>
           </div>
           <div class="flex justify-between">
             <dt class="text-gray-500">{{ $t('countryDetail.status') }}</dt>
@@ -26,113 +23,149 @@
               </span>
             </dd>
           </div>
-          <div class="flex justify-between">
-            <dt class="text-gray-500">{{ $t('countryDetail.riskLevel') }}</dt>
-            <dd>
-              <span class="text-xs px-2 py-0.5 rounded-full font-medium"
-                :class="riskClass">
-                {{ riskLabel }}
-              </span>
-            </dd>
-          </div>
-          <div class="flex justify-between">
-            <dt class="text-gray-500">{{ $t('countryDetail.commission') }}</dt>
-            <dd>{{ country.commission_rate ?? 5 }}%</dd>
-          </div>
         </dl>
-      </div>
-
-      <div class="bg-white rounded-xl border border-gray-100 p-4">
-        <h4 class="text-sm font-semibold text-gray-500 mb-3">{{ $t('countryDetail.visaTypes') }}</h4>
-        <div class="flex flex-wrap gap-2 mb-4">
-          <span v-for="vt in (country.visa_types || [])" :key="vt"
-            class="text-xs px-2 py-1 bg-blue-50 text-blue-700 rounded-lg">
-            {{ vt }}
-          </span>
-          <span v-if="!(country.visa_types?.length)" class="text-sm text-gray-400">---</span>
+        <div class="flex items-center gap-4 text-sm pt-1">
+          <span class="text-gray-500">{{ $t('countryDetail.commission') }}:</span>
+          <span class="font-bold">{{ country.commission_rate ?? 5 }}%</span>
+          <span v-if="country.commission_description" class="text-gray-400 text-xs">{{ country.commission_description }}</span>
         </div>
-        <h4 class="text-sm font-semibold text-gray-500 mb-3 mt-4">{{ $t('countryDetail.submissionType') }}</h4>
-        <span class="text-sm">{{ submissionLabel }}</span>
+        <button @click="startEdit" class="text-xs px-3 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-600 mt-2">
+          {{ $t('countryDetail.edit') }}
+        </button>
       </div>
-    </div>
 
-    <!-- Публичный скоринг -->
-    <div class="bg-white rounded-xl border border-gray-100 p-4">
-      <h4 class="text-sm font-semibold text-gray-500 mb-3">{{ $t('countryDetail.publicScoring') }}</h4>
-      <div class="grid grid-cols-4 gap-4 text-center">
-        <div v-for="w in weights" :key="w.key" class="p-3 bg-gray-50 rounded-lg">
-          <div class="text-2xl font-bold" :class="parseFloat(country[w.key]) >= 0.30 ? 'text-blue-700' : 'text-gray-500'">
-            {{ ((parseFloat(country[w.key]) || 0) * 100).toFixed(0) }}%
+      <form v-else @submit.prevent="saveOverview" class="space-y-3">
+        <div class="grid grid-cols-3 gap-4">
+          <div>
+            <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.name') }}</label>
+            <input v-model="form.name" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]" />
           </div>
-          <div class="text-xs text-gray-500 mt-1">{{ w.label }}</div>
+          <div>
+            <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.continent') }}</label>
+            <select v-model="form.continent" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]">
+              <option value="">---</option>
+              <option v-for="c in continents" :key="c" :value="c">{{ c }}</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.status') }}</label>
+            <label class="flex items-center gap-2 text-sm mt-1">
+              <input type="checkbox" v-model="form.is_active" class="rounded" />
+              {{ $t('countryDetail.active') }}
+            </label>
+          </div>
         </div>
-      </div>
-      <div class="mt-3 flex gap-6 text-sm text-gray-600">
-        <span>{{ $t('countryDetail.minIncome') }}: <strong>${{ country.min_monthly_income_usd }}</strong></span>
-        <span>{{ $t('countryDetail.minScore') }}: <strong>{{ country.min_score }}%</strong></span>
-      </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.commission') }} (%)</label>
+            <input v-model.number="form.commission_rate" type="number" min="0" max="100" step="0.1"
+              class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]" />
+          </div>
+          <div>
+            <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.commissionDesc') }}</label>
+            <input v-model="form.commission_description" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]" />
+          </div>
+        </div>
+        <div class="flex gap-3 pt-2">
+          <button type="submit" :disabled="saving"
+            class="px-5 py-2 bg-[#0A1F44] text-white text-sm font-semibold rounded-xl hover:bg-[#0d2a5e] disabled:opacity-60">
+            {{ saving ? $t('common.loading') : $t('common.save') }}
+          </button>
+          <button type="button" @click="editing = false"
+            class="px-5 py-2 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50">
+            {{ $t('common.cancel') }}
+          </button>
+        </div>
+      </form>
     </div>
 
-    <!-- Общие сроки (из portal_countries) -->
-    <div class="bg-white rounded-xl border border-gray-100 p-4">
-      <h4 class="text-sm font-semibold text-gray-500 mb-3">{{ $t('countryDetail.generalTimeline') }}</h4>
-      <div class="grid grid-cols-4 gap-4 text-center">
-        <div class="p-3 bg-blue-50 rounded-lg">
-          <div class="text-xl font-bold text-blue-700">{{ country.processing_days_standard ?? '---' }}</div>
-          <div class="text-xs text-gray-500 mt-1">{{ $t('countryDetail.standardDays') }}</div>
-        </div>
-        <div class="p-3 bg-green-50 rounded-lg">
-          <div class="text-xl font-bold text-green-700">{{ country.processing_days_expedited ?? '---' }}</div>
-          <div class="text-xs text-gray-500 mt-1">{{ $t('countryDetail.expeditedDays') }}</div>
-        </div>
-        <div class="p-3 bg-orange-50 rounded-lg">
-          <div class="text-xl font-bold text-orange-700">{{ country.appointment_wait_days ?? '---' }}</div>
-          <div class="text-xs text-gray-500 mt-1">{{ $t('countryDetail.appointmentWait') }}</div>
-        </div>
-        <div class="p-3 bg-gray-50 rounded-lg">
-          <div class="text-xl font-bold text-gray-700">{{ country.buffer_days_recommended ?? '---' }}</div>
-          <div class="text-xs text-gray-500 mt-1">{{ $t('countryDetail.bufferDays') }}</div>
-        </div>
+    <!-- Индикаторы заполненности -->
+    <div class="bg-white rounded-xl border border-gray-100 p-5">
+      <h4 class="text-sm font-semibold text-gray-500 mb-4">{{ $t('countryDetail.completeness') }}</h4>
+      <div class="grid grid-cols-3 gap-3">
+        <button v-for="ind in indicators" :key="ind.tab"
+          @click="$emit('goTab', ind.tab)"
+          class="flex items-center gap-3 p-3 rounded-lg border transition-colors hover:bg-gray-50 text-left"
+          :class="ind.filled ? 'border-green-200 bg-green-50/50' : 'border-gray-100'">
+          <span class="w-3 h-3 rounded-full flex-shrink-0"
+            :class="ind.filled ? 'bg-green-500' : 'bg-gray-300'"></span>
+          <div>
+            <div class="text-sm font-medium text-gray-800">{{ ind.label }}</div>
+            <div class="text-[11px] text-gray-400">{{ ind.filled ? $t('countryDetail.filled') : $t('countryDetail.notFilled') }}</div>
+          </div>
+        </button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { ref, reactive, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { ownerCountriesApi } from '@/api/countries';
 
 const { t } = useI18n();
-const props = defineProps({ country: Object });
+const props = defineProps({ country: Object, visaSettings: Array });
+const emit = defineEmits(['updated', 'goTab']);
 
-const weights = computed(() => [
-  { key: 'weight_finance', label: t('countryDetail.finances') },
-  { key: 'weight_ties',    label: t('countryDetail.ties') },
-  { key: 'weight_travel',  label: t('countryDetail.travelHistory') },
-  { key: 'weight_profile', label: t('countryDetail.profile') },
+const editing = ref(false);
+const saving  = ref(false);
+const form    = reactive({});
+
+const continents = ['Europe', 'Asia', 'North America', 'South America', 'Africa', 'Oceania'];
+
+const indicators = computed(() => [
+  {
+    tab: 'visa-types',
+    label: t('countryDetail.tabVisaTypes'),
+    filled: (props.visaSettings?.length ?? 0) > 0,
+  },
+  {
+    tab: 'submission',
+    label: t('countryDetail.tabSubmission'),
+    filled: (props.country.submission_types?.length ?? 0) > 0,
+  },
+  {
+    tab: 'embassy',
+    label: t('countryDetail.tabEmbassy'),
+    filled: props.country.has_embassy && !!props.country.embassy_name,
+  },
+  {
+    tab: 'visa-center',
+    label: t('countryDetail.tabVisaCenter'),
+    filled: props.country.has_visa_center && !!props.country.visa_center_name,
+  },
+  {
+    tab: 'finance',
+    label: t('countryDetail.tabFinance'),
+    filled: (props.country.min_monthly_income_usd ?? 0) > 0,
+  },
+  {
+    tab: 'scoring',
+    label: t('countryDetail.tabScoring'),
+    filled: (parseFloat(props.country.weight_finance) || 0) > 0,
+  },
 ]);
 
-const riskClass = computed(() => {
-  const r = props.country.risk_level;
-  if (r === 'low') return 'bg-green-50 text-green-700';
-  if (r === 'high') return 'bg-red-50 text-red-700';
-  return 'bg-yellow-50 text-yellow-700';
-});
+function startEdit() {
+  Object.assign(form, {
+    name: props.country.name ?? '',
+    continent: props.country.continent ?? '',
+    is_active: props.country.is_active ?? true,
+    commission_rate: props.country.commission_rate ?? 5,
+    commission_description: props.country.commission_description ?? '',
+  });
+  editing.value = true;
+}
 
-const riskLabel = computed(() => {
-  const r = props.country.risk_level;
-  if (r === 'low') return t('countryDetail.riskLow');
-  if (r === 'high') return t('countryDetail.riskHigh');
-  return t('countryDetail.riskMedium');
-});
-
-const submissionLabel = computed(() => {
-  const map = {
-    embassy_direct: t('countryDetail.embassyDirect'),
-    visa_center:    t('countryDetail.visaCenter'),
-    both:           t('countryDetail.both'),
-    online:         t('countryDetail.online'),
-  };
-  return map[props.country.submission_type] || props.country.submission_type || '---';
-});
+async function saveOverview() {
+  saving.value = true;
+  try {
+    await ownerCountriesApi.update(props.country.country_code, form);
+    editing.value = false;
+    emit('updated');
+  } finally {
+    saving.value = false;
+  }
+}
 </script>

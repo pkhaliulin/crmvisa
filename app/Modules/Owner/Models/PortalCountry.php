@@ -58,6 +58,18 @@ class PortalCountry extends Model
         'is_popular'                => 'boolean',
         'is_high_approval'          => 'boolean',
         'is_high_refusal'           => 'boolean',
+        // Подача
+        'submission_types'              => 'array',
+        'appointment_required'          => 'boolean',
+        'personal_submission_required'  => 'boolean',
+        'biometrics_required'           => 'boolean',
+        'photo_required'                => 'boolean',
+        // Визовый центр / Посольство
+        'has_visa_center'               => 'boolean',
+        'has_embassy'                   => 'boolean',
+        // Финансы
+        'min_balance_usd'               => 'integer',
+        'finance_threshold'             => 'float',
     ];
 
     public function getVisaTypesAttribute($value)

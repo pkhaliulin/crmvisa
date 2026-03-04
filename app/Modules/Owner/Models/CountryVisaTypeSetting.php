@@ -17,7 +17,7 @@ class CountryVisaTypeSetting extends BaseModel
         'avg_refusal_rate', 'biometrics_required', 'personal_visit_required', 'interview_required',
         'appointment_pattern', 'appointment_notes',
         'consular_fee_usd', 'service_fee_usd',
-        'is_active', 'notes',
+        'is_active', 'notes', 'description',
     ];
 
     protected $casts = [

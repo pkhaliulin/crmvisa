@@ -243,6 +243,9 @@ Route::prefix('v1')->group(function () {
         // Country Operations Center — детальная страница страны
         Route::get('countries/{code}/detail',                  [CountryDetailController::class, 'countryShow']);
         Route::patch('countries/{code}/embassy',               [CountryDetailController::class, 'updateEmbassy']);
+        Route::patch('countries/{code}/submission',            [CountryDetailController::class, 'updateSubmission']);
+        Route::patch('countries/{code}/visa-center',           [CountryDetailController::class, 'updateVisaCenter']);
+        Route::patch('countries/{code}/finance',               [CountryDetailController::class, 'updateFinance']);
         Route::get('countries/{code}/visa-settings',           [CountryDetailController::class, 'visaSettings']);
         Route::post('countries/{code}/visa-settings',          [CountryDetailController::class, 'visaSettingStore']);
         Route::patch('countries/{code}/visa-settings/{id}',    [CountryDetailController::class, 'visaSettingUpdate']);

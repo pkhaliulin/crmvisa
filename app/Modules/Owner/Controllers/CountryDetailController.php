@@ -49,6 +49,7 @@ class CountryDetailController extends Controller
         $country = PortalCountry::where('country_code', strtoupper($code))->firstOrFail();
 
         $data = $request->validate([
+            'has_embassy'          => 'sometimes|boolean',
             'embassy_name'         => 'sometimes|nullable|string|max:255',
             'embassy_address'      => 'sometimes|nullable|string|max:500',
             'embassy_city'         => 'sometimes|nullable|string|max:100',
@@ -58,13 +59,80 @@ class CountryDetailController extends Controller
             'embassy_description'  => 'sometimes|nullable|string|max:5000',
             'embassy_rules'        => 'sometimes|nullable|string|max:5000',
             'appointment_url'      => 'sometimes|nullable|url|max:500',
-            'submission_type'      => 'sometimes|in:embassy_direct,visa_center,both,online',
+            'latitude'             => 'sometimes|nullable|numeric|between:-90,90',
+            'longitude'            => 'sometimes|nullable|numeric|between:-180,180',
+        ]);
+
+        $country->update($data);
+        Cache::forget('portal_countries_weights');
+
+        return ApiResponse::success($country->fresh());
+    }
+
+    // =========================================================================
+    // Подача
+    // =========================================================================
+
+    public function updateSubmission(Request $request, string $code): JsonResponse
+    {
+        $country = PortalCountry::where('country_code', strtoupper($code))->firstOrFail();
+
+        $data = $request->validate([
+            'submission_types'             => 'sometimes|array',
+            'submission_types.*'           => 'string|in:visa_center,embassy,online',
+            'appointment_required'         => 'sometimes|boolean',
+            'personal_submission_required' => 'sometimes|boolean',
+            'biometrics_required'          => 'sometimes|boolean',
+            'photo_required'              => 'sometimes|boolean',
+            'submission_notes'            => 'sometimes|nullable|string|max:5000',
+        ]);
+
+        $country->update($data);
+        Cache::forget('portal_countries_weights');
+
+        return ApiResponse::success($country->fresh());
+    }
+
+    // =========================================================================
+    // Визовый центр
+    // =========================================================================
+
+    public function updateVisaCenter(Request $request, string $code): JsonResponse
+    {
+        $country = PortalCountry::where('country_code', strtoupper($code))->firstOrFail();
+
+        $data = $request->validate([
+            'has_visa_center'      => 'sometimes|boolean',
             'visa_center_name'     => 'sometimes|nullable|string|max:255',
             'visa_center_address'  => 'sometimes|nullable|string|max:500',
             'visa_center_phone'    => 'sometimes|nullable|string|max:50',
             'visa_center_website'  => 'sometimes|nullable|url|max:500',
-            'latitude'             => 'sometimes|nullable|numeric|between:-90,90',
-            'longitude'            => 'sometimes|nullable|numeric|between:-180,180',
+            'visa_center_email'    => 'sometimes|nullable|email|max:255',
+            'visa_center_notes'    => 'sometimes|nullable|string|max:5000',
+        ]);
+
+        $country->update($data);
+        Cache::forget('portal_countries_weights');
+
+        return ApiResponse::success($country->fresh());
+    }
+
+    // =========================================================================
+    // Финансы
+    // =========================================================================
+
+    public function updateFinance(Request $request, string $code): JsonResponse
+    {
+        $country = PortalCountry::where('country_code', strtoupper($code))->firstOrFail();
+
+        $data = $request->validate([
+            'min_monthly_income_usd'   => 'sometimes|nullable|integer|min:0',
+            'min_income_currency'      => 'sometimes|string|in:USD,UZS,EUR',
+            'min_balance_usd'          => 'sometimes|nullable|integer|min:0',
+            'min_balance_currency'     => 'sometimes|string|in:USD,UZS,EUR',
+            'finance_notes'            => 'sometimes|nullable|string|max:5000',
+            'finance_threshold'        => 'sometimes|nullable|numeric|min:0|max:100',
+            'finance_threshold_comment'=> 'sometimes|nullable|string|max:5000',
         ]);
 
         $country->update($data);
@@ -107,6 +175,7 @@ class CountryDetailController extends Controller
             'service_fee_usd'        => 'sometimes|nullable|numeric|min:0',
             'is_active'              => 'sometimes|boolean',
             'notes'                  => 'sometimes|nullable|string|max:5000',
+            'description'            => 'sometimes|nullable|string|max:5000',
         ]);
 
         $data['country_code'] = strtoupper($code);
@@ -139,6 +208,7 @@ class CountryDetailController extends Controller
             'service_fee_usd'        => 'sometimes|nullable|numeric|min:0',
             'is_active'              => 'sometimes|boolean',
             'notes'                  => 'sometimes|nullable|string|max:5000',
+            'description'            => 'sometimes|nullable|string|max:5000',
         ]);
 
         $setting->update($data);
@@ -218,6 +288,7 @@ class CountryDetailController extends Controller
             'min_score'              => 'sometimes|integer|min:0|max:100',
             'risk_level'             => 'sometimes|in:low,medium,high',
             'destination_score_bonus'=> 'sometimes|integer|min:-50|max:50',
+            'scoring_empty_rule'     => 'sometimes|nullable|string|max:5000',
         ]);
 
         DB::table('portal_countries')
