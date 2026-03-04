@@ -35,7 +35,7 @@
         </div>
 
         <!-- Cases list -->
-        <template v-else-if="cases.length">
+        <template v-if="!loading && cases.length">
             <button v-for="c in cases" :key="c.id"
                 @click="router.push({ name: 'me.cases.show', params: { id: c.id } })"
                 class="w-full text-left bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden
@@ -128,7 +128,7 @@
         </template>
 
         <!-- Empty state -->
-        <template v-else>
+        <template v-if="!loading && !cases.length">
             <!-- Profile completion prompt -->
             <div v-if="publicAuth.profilePercent < 60"
                 class="bg-amber-50 border border-amber-200 rounded-2xl p-5 flex items-start gap-4">
