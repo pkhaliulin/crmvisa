@@ -23,21 +23,53 @@
             </div>
 
             <div class="p-5 space-y-4">
+                <!-- Предупреждение: латиница как в загранпаспорте -->
+                <div class="flex items-start gap-2 p-3 rounded-xl bg-blue-50 border border-blue-100">
+                    <svg class="w-4 h-4 text-blue-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <p class="text-xs text-blue-700">{{ $t('profile.latinWarning') }}</p>
+                </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div class="sm:col-span-2">
-                        <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.fullName') }} <span class="text-red-500">*</span></label>
-                        <input v-model="form.name" :placeholder="$t('profile.fullNamePlaceholder')"
-                            class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] transition-colors"/>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.firstName') }} <span class="text-red-500">*</span></label>
+                        <div class="relative">
+                            <input v-model="firstName" @input="onLatinInput('firstName', $event)" :placeholder="$t('profile.firstNamePlaceholder')"
+                                class="w-full border rounded-xl px-3 py-2.5 text-sm outline-none transition-colors pr-8"
+                                :class="firstName && isLatinOnly(firstName) ? 'border-[#1BA97F]' : 'border-gray-200 focus:border-[#1BA97F]'"/>
+                            <div v-if="firstName && isLatinOnly(firstName)" class="absolute right-2.5 top-1/2 -translate-y-1/2">
+                                <div class="w-4 h-4 rounded-full bg-[#1BA97F] flex items-center justify-center">
+                                    <svg class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                                </div>
+                            </div>
+                        </div>
+                        <p v-if="firstName && !isLatinOnly(firstName)" class="text-[11px] text-red-500 mt-1">{{ $t('profile.latinOnly') }}</p>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.lastName') }} <span class="text-red-500">*</span></label>
+                        <div class="relative">
+                            <input v-model="lastName" @input="onLatinInput('lastName', $event)" :placeholder="$t('profile.lastNamePlaceholder')"
+                                class="w-full border rounded-xl px-3 py-2.5 text-sm outline-none transition-colors pr-8"
+                                :class="lastName && isLatinOnly(lastName) ? 'border-[#1BA97F]' : 'border-gray-200 focus:border-[#1BA97F]'"/>
+                            <div v-if="lastName && isLatinOnly(lastName)" class="absolute right-2.5 top-1/2 -translate-y-1/2">
+                                <div class="w-4 h-4 rounded-full bg-[#1BA97F] flex items-center justify-center">
+                                    <svg class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                                </div>
+                            </div>
+                        </div>
+                        <p v-if="lastName && !isLatinOnly(lastName)" class="text-[11px] text-red-500 mt-1">{{ $t('profile.latinOnly') }}</p>
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.dob') }} <span class="text-red-500">*</span></label>
                         <input v-model="form.dob" type="date" :max="maxDob"
-                            class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] transition-colors"/>
+                            class="w-full border rounded-xl px-3 py-2.5 text-sm outline-none transition-colors"
+                            :class="form.dob ? 'border-[#1BA97F]' : 'border-gray-200 focus:border-[#1BA97F]'"/>
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.citizenship') }} <span class="text-red-500">*</span></label>
                         <select v-model="form.citizenship"
-                            class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] transition-colors">
+                            class="w-full border rounded-xl px-3 py-2.5 text-sm outline-none transition-colors"
+                            :class="form.citizenship ? 'border-[#1BA97F]' : 'border-gray-200 focus:border-[#1BA97F]'">
                             <option value="">{{ $t('profile.selectCountry') }}</option>
                             <option value="UZ">🇺🇿 {{ $t('countries.UZ') }}</option>
                             <option value="KZ">🇰🇿 {{ $t('countries.KZ') }}</option>
@@ -57,12 +89,12 @@
                         <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.gender') }}</label>
                         <div class="flex gap-2">
                             <button type="button" @click="form.gender = 'M'"
-                                :class="form.gender === 'M' ? 'bg-[#0A1F44] text-white border-[#0A1F44]' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'"
+                                :class="form.gender === 'M' ? 'bg-[#1BA97F] text-white border-[#1BA97F]' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'"
                                 class="flex-1 px-3 py-2.5 rounded-xl text-sm border transition-colors font-medium">
                                 {{ $t('profile.male') }}
                             </button>
                             <button type="button" @click="form.gender = 'F'"
-                                :class="form.gender === 'F' ? 'bg-[#0A1F44] text-white border-[#0A1F44]' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'"
+                                :class="form.gender === 'F' ? 'bg-[#1BA97F] text-white border-[#1BA97F]' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'"
                                 class="flex-1 px-3 py-2.5 rounded-xl text-sm border transition-colors font-medium">
                                 {{ $t('profile.female') }}
                             </button>
@@ -125,9 +157,11 @@
                 <div>
                     <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.passportExpiry') }}</label>
                     <input v-model="form.passport_expires_at" type="date" :min="minPassportExpiry"
-                        class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] transition-colors"/>
-                    <p v-if="passportExpiringSoon" class="text-xs text-amber-600 mt-1">
-                        {{ $t('profile.passportExpiring') }}
+                        class="w-full border rounded-xl px-3 py-2.5 text-sm outline-none transition-colors"
+                        :class="passportExpiryColor.border"/>
+                    <p v-if="form.passport_expires_at && passportExpiryColor.msg" class="text-xs mt-1.5 leading-relaxed"
+                       :class="passportExpiryColor.textClass">
+                        {{ passportExpiryColor.msg }}
                     </p>
                 </div>
             </div>
@@ -143,7 +177,8 @@
                 <div>
                     <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.employmentStatus') }} <span class="text-red-500">*</span></label>
                     <select v-model="form.employment_type"
-                        class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] transition-colors">
+                        class="w-full border rounded-xl px-3 py-2.5 text-sm outline-none transition-colors"
+                        :class="form.employment_type ? 'border-[#1BA97F]' : 'border-gray-200 focus:border-[#1BA97F]'">
                         <option value="">{{ $t('common.notSpecified') }}</option>
                         <option v-for="et in employmentTypes" :key="et.code" :value="et.code">{{ refLabel(et) }}</option>
                     </select>
@@ -154,7 +189,8 @@
                         <span class="text-gray-400 font-normal">({{ $t('profile.tenureBoost') }})</span>
                     </label>
                     <select v-model="form.employed_years"
-                        class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] transition-colors"
+                        class="w-full border rounded-xl px-3 py-2.5 text-sm outline-none transition-colors"
+                        :class="form.employed_years !== '' ? 'border-[#1BA97F]' : 'border-gray-200 focus:border-[#1BA97F]'"
                         :disabled="form.employment_type === 'unemployed' || form.employment_type === 'student'">
                         <option value="">{{ $t('common.notSpecified') }}</option>
                         <option :value="0">{{ $t('profile.lessThan1') }}</option>
@@ -170,7 +206,8 @@
                         <span class="text-gray-400 font-normal">({{ $t('profile.incomeImportant') }})</span>
                     </label>
                     <select v-model="form.monthly_income_usd"
-                        class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] transition-colors">
+                        class="w-full border rounded-xl px-3 py-2.5 text-sm outline-none transition-colors"
+                        :class="form.monthly_income_usd ? 'border-[#1BA97F]' : 'border-gray-200 focus:border-[#1BA97F]'">
                         <option value="">{{ $t('common.notSpecified') }}</option>
                         <option :value="300">{{ $t('profile.incomeTo500') }}</option>
                         <option :value="800">{{ $t('profile.income5001000') }}</option>
@@ -193,7 +230,8 @@
                 <div>
                     <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.maritalStatus') }} <span class="text-red-500">*</span></label>
                     <select v-model="form.marital_status"
-                        class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] transition-colors">
+                        class="w-full border rounded-xl px-3 py-2.5 text-sm outline-none transition-colors"
+                        :class="form.marital_status ? 'border-[#1BA97F]' : 'border-gray-200 focus:border-[#1BA97F]'">
                         <option value="">{{ $t('common.notSpecified') }}</option>
                         <option v-for="ms in maritalStatuses" :key="ms.code" :value="ms.code">{{ refLabel(ms) }}</option>
                     </select>
@@ -202,12 +240,12 @@
                     <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.children') }}</label>
                     <div class="flex gap-2">
                         <button type="button" @click="form.has_children = false; form.children_count = 0"
-                            :class="!form.has_children ? 'bg-[#0A1F44] text-white border-[#0A1F44]' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'"
+                            :class="!form.has_children ? 'bg-[#1BA97F] text-white border-[#1BA97F]' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'"
                             class="flex-1 px-3 py-2.5 rounded-xl text-sm border transition-colors font-medium">
                             {{ $t('profile.noChildren') }}
                         </button>
                         <button type="button" @click="form.has_children = true; if (!form.children_count) form.children_count = 1"
-                            :class="form.has_children ? 'bg-[#0A1F44] text-white border-[#0A1F44]' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'"
+                            :class="form.has_children ? 'bg-[#1BA97F] text-white border-[#1BA97F]' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'"
                             class="flex-1 px-3 py-2.5 rounded-xl text-sm border transition-colors font-medium">
                             {{ $t('profile.hasChildren') }}
                         </button>
@@ -216,7 +254,7 @@
                 <div v-if="form.has_children">
                     <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.childrenCount') }}</label>
                     <select v-model="form.children_count"
-                        class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] transition-colors">
+                        class="w-full border rounded-xl px-3 py-2.5 text-sm outline-none transition-colors border-[#1BA97F]">
                         <option :value="1">{{ $t('profile.child1') }}</option>
                         <option :value="2">{{ $t('profile.children2') }}</option>
                         <option :value="3">{{ $t('profile.children3') }}</option>
@@ -273,7 +311,7 @@
                         <button v-for="opt in visasObtainedOptions" :key="opt.value" type="button"
                             @click="form.visas_obtained_count = opt.value"
                             :class="form.visas_obtained_count === opt.value
-                                ? 'bg-[#0A1F44] text-white border-[#0A1F44]'
+                                ? 'bg-[#1BA97F] text-white border-[#1BA97F]'
                                 : 'bg-gray-50 text-gray-600 border-gray-200 hover:border-gray-300'"
                             class="px-2 py-2.5 rounded-xl text-sm border transition-colors font-medium text-center">
                             {{ opt.label }}
@@ -326,7 +364,7 @@
                         <button v-for="opt in refusalsOptions" :key="opt.value" type="button"
                             @click="form.refusals_count = opt.value; if (opt.value === 0) form.last_refusal_year = null"
                             :class="form.refusals_count === opt.value
-                                ? (opt.value > 0 ? 'bg-red-600 text-white border-red-600' : 'bg-[#0A1F44] text-white border-[#0A1F44]')
+                                ? (opt.value > 0 ? 'bg-red-600 text-white border-red-600' : 'bg-[#1BA97F] text-white border-[#1BA97F]')
                                 : 'bg-gray-50 text-gray-600 border-gray-200 hover:border-gray-300'"
                             class="px-2 py-2.5 rounded-xl text-sm border transition-colors font-medium text-center">
                             {{ opt.label }}
@@ -449,7 +487,7 @@
                     <button v-if="wizardStep < wizardSteps.length - 1"
                         @click="wizardStep++"
                         :disabled="!wizardAnswers[currentWizardStep.field]"
-                        class="text-sm bg-[#0A1F44] text-white px-4 py-2 rounded-xl font-medium disabled:opacity-40 hover:bg-[#0d2a5e] transition-colors">
+                        class="text-sm bg-[#1BA97F] text-white px-4 py-2 rounded-xl font-medium disabled:opacity-40 hover:bg-[#169B72] transition-colors">
                         {{ $t('common.next') }}
                     </button>
                     <button v-else
@@ -493,6 +531,27 @@ const showWizard = ref(false);
 const wizardStep = ref(0);
 const wizardAnswers = reactive({});
 
+// Имя и Фамилия (Latin only) — хранятся раздельно, объединяются в name при сохранении
+function splitName(fullName) {
+    const parts = (fullName || '').trim().split(/\s+/);
+    return { first: parts[0] || '', last: parts.slice(1).join(' ') || '' };
+}
+const _nameParts = splitName(publicAuth.user?.name);
+const firstName = ref(_nameParts.first);
+const lastName  = ref(_nameParts.last);
+
+function isLatinOnly(val) {
+    return /^[A-Za-z\s\-']+$/.test(val || '');
+}
+
+function onLatinInput(field, e) {
+    // Убираем кириллицу и спецсимволы, оставляем только латиницу, пробелы, дефис, апостроф
+    const clean = e.target.value.replace(/[^A-Za-z\s\-']/g, '');
+    if (field === 'firstName') firstName.value = clean;
+    else lastName.value = clean;
+    e.target.value = clean;
+}
+
 const form = reactive({
     name:                 publicAuth.user?.name ?? '',
     dob:                  publicAuth.user?.dob?.slice(0, 10) ?? '',
@@ -531,10 +590,30 @@ const minPassportExpiry = computed(() => {
     return d.toISOString().slice(0, 10);
 });
 
-const passportExpiringSoon = computed(() => {
-    if (!form.passport_expires_at) return false;
+// Цветовая логика срока паспорта
+const passportExpiryColor = computed(() => {
+    if (!form.passport_expires_at) return { border: 'border-gray-200 focus:border-[#1BA97F]', msg: '', textClass: '' };
     const days = Math.floor((new Date(form.passport_expires_at) - new Date()) / 86400000);
-    return days < 180;
+    if (days < 0) return {
+        border: 'border-red-500',
+        msg: t('profile.passportExpired'),
+        textClass: 'text-red-600',
+    };
+    if (days < 180) return {
+        border: 'border-red-500',
+        msg: t('profile.passportCritical'),
+        textClass: 'text-red-600',
+    };
+    if (days < 365) return {
+        border: 'border-amber-400',
+        msg: t('profile.passportWarning'),
+        textClass: 'text-amber-600',
+    };
+    return {
+        border: 'border-[#1BA97F]',
+        msg: t('profile.passportGreat'),
+        textClass: 'text-[#1BA97F]',
+    };
 });
 
 // Паспорт — раздельный ввод серии и номера
@@ -680,6 +759,8 @@ async function save() {
     saveMsg.value = '';
     saveError.value = false;
     try {
+        // Собираем name из firstName + lastName
+        form.name = [firstName.value, lastName.value].filter(Boolean).join(' ').trim();
         const payload = { ...form };
         if (!payload.monthly_income_usd) delete payload.monthly_income_usd;
         const { data } = await publicPortalApi.updateProfile(payload);
@@ -707,6 +788,10 @@ onMounted(async () => {
                 form[key] = (key === 'passport_expires_at' || key === 'dob') ? val?.slice(0, 10) ?? '' : val;
             }
         });
+        // Разбить name на firstName/lastName
+        const parts = splitName(form.name);
+        firstName.value = parts.first;
+        lastName.value = parts.last;
         initPassportFields(form.passport_number);
     } catch { /* ignore */ }
 });
