@@ -26,7 +26,6 @@
             <span class="text-xs px-2 py-0.5 rounded-full font-medium" :class="regimeClass">{{ regimeLabel }}</span>
           </div>
           <InfoItem :label="$t('countryDetail.riskLevel')" :value="riskLabel" />
-          <InfoItem :label="$t('countryDetail.commission')" :value="(country.commission_rate ?? 5) + '%'" />
           <InfoItem :label="$t('countryDetail.countryCode')" :value="country.country_code" mono />
         </dl>
       </div>
@@ -53,11 +52,6 @@
           </div>
         </div>
         <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.commission') }} (%)</label>
-            <input v-model.number="form.commission_rate" type="number" min="0" max="100" step="0.1"
-              class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]" />
-          </div>
           <div>
             <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.riskLevel') }}</label>
             <select v-model="form.risk_level" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]">
@@ -270,7 +264,6 @@ function startEdit() {
     name: props.country.name ?? '',
     continent: props.country.continent ?? '',
     is_active: props.country.is_active ?? true,
-    commission_rate: props.country.commission_rate ?? 5,
     risk_level: props.country.risk_level ?? 'medium',
   });
   editing.value = true;
