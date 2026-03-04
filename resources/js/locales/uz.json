@@ -243,7 +243,22 @@
     "wizardNoVisa": "Hali bo'lmagan",
     "wizardSchengen": "Shengen bor",
     "wizardUs": "AQSh vizasi bor",
-    "wizardBoth": "Ikkala viza"
+    "wizardBoth": "Ikkala viza",
+    "empBubbleGreat": "Ajoyib profil! Barqaror ish, yaxshi staj va munosib daromad — konsulliklar buni juda qadrlaydi. Imkoniyatlaringiz yuqori.",
+    "empBubbleGood": "Bandlik ko'rsatkichlari yaxshi. Maslahat: ish joyidan lavozim va maosh ko'rsatilgan ma'lumotnoma tayyorlang — bu arizani kuchaytiradi.",
+    "empBubbleAverage": "O'rtacha daromad darajasi. Maslahat: qo'shimcha manbalar bo'lsa (ijara, frilanc, oilaviy biznes) — arizani topshirishda menejerga albatta xabar bering. Har qanday qonuniy daromad imkoniyatlarni yaxshilaydi.",
+    "empBubbleLow": "Diqqat: past daromad va barqaror ishning yo'qligi — viza uchun jiddiy xavf omili. Tavsiyalar: 1) Barcha daromad manbalarini ko'rsating — qarindoshlar biznesi, ijara, frilanc. 2) Ishlaydigan qarindoshdan homiylik xatini ko'rib chiqing. 3) Arizani topshirishda menejerni ogohlantiring — u hujjatlarni to'g'ri rasmiylashtirishi yordam beradi.",
+    "empBubbleStudent": "Talaba — bu viza uchun normal. Maslahat: oliy ta'lim muassasasidan ma'lumotnoma va ota-onadan daromadini tasdiqlovchi homiylik xati tayyorlang.",
+    "empBubbleRetired": "Nafaqaxo'r — konsulliklar ijobiy munosabatda. Maslahat: nafaqa guvohnomasi va, agar mavjud bo'lsa, hisob ko'chirmasi yoki farzandlardan homiylik xati tayyorlang.",
+    "familyBubbleGreat": "Ajoyib! Oila, farzandlar va mulk — mamlakatga bog'liqlikning kuchli dalillari. Konsulliklar ishonch hosil qiladi: siz albatta qaytasiz.",
+    "familyBubbleGood": "Mamlakatga yaxshi bog'liqlik. Maslahat: bankda depozitlar, qo'shimcha ko'chmas mulk yoki biznes bo'lsa — arizani topshirishda eslatib o'ting.",
+    "familyBubbleAverage": "Bog'liqlik o'rtacha. Maslahat: arizani topshirishda menejerga sizni mamlakat bilan bog'laydigan hamma narsani ayting — ota-onaning ishi, oilaviy biznes, mulk.",
+    "familyBubbleLow": "Mamlakatga zaif bog'liqlik — xavf omili. Tavsiyalar: 1) O'zbekistonda yaqin qarindoshlar bo'lsa — bu muhim, menejerga ayting. 2) Bankdagi depozitlar, investitsiyalar, sug'urta — har qanday moliyaviy bog'liqlik yordam beradi. 3) Qaytish chiptasi bronini ko'rib chiqing — bu arizani mustahkamlaydi.",
+    "visaBubbleGreat": "Ajoyib! Shengen va AQSh vizasi — oltin standart. Ko'pchilik mamlakatlar eshiklari siz uchun ochiq. To'plangan viza tarixi — sizning asosiy kozir kartangiz.",
+    "visaBubbleGood": "Yaxshi viza tarixi! Har bir olingan viza profilni kuchaytiradi. Maslahat: sayohat qilishni davom eting — bu kelajakdagi vizalarga eng yaxshi investitsiya.",
+    "visaBubbleFirst": "Vizalar hali yo'q — muammo emas, hamma qachondir boshlagan! Maslahat: sodiqroq mamlakatlardan boshlang (BAA, Turkiya, Malayziya) — tarix to'plang, keyin Shengen osonroq bo'ladi.",
+    "visaBubbleRefusal": "Rad etishlar imkoniyatlarni pasaytiradi, lekin eshikni yopmaydi. Har bir rad etish sababini menejerga albatta xabar bering — arizadagi to'g'ri tushuntirish hamma narsani o'zgartirishi mumkin. Halollik — sizning eng yaxshi ittifoqchingiz.",
+    "visaBubbleViolation": "Viza rejimi buzilishi — jiddiy omil. Juda muhim: buni menejerdan yashirmang. Sharoitlarni savodli tushuntirish bilan halol topshirish — yagona to'g'ri yo'l. Menejer hujjatlarni tayyorlashda yordam beradi."
   },
   "scoring": {
     "title": "Sizning skoringiz",

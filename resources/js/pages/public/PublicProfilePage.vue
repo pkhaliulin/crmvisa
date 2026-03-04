@@ -242,6 +242,21 @@
                     </select>
                     <p class="text-[11px] text-gray-400 mt-1">{{ $t('profile.incomeHint') }}</p>
                 </div>
+                <!-- Чат-пузырь: оценка занятости -->
+                <div v-if="employmentBubble" class="sm:col-span-2 relative mt-1">
+                    <div class="absolute -top-1.5 left-4 w-3 h-3 rotate-45 border-l border-t"
+                         :class="employmentBubble.bubbleBg + ' ' + employmentBubble.bubbleBorder"></div>
+                    <div class="relative rounded-2xl p-3.5 shadow-sm border"
+                         :class="employmentBubble.bubbleBg + ' ' + employmentBubble.bubbleBorder">
+                        <div class="flex items-center gap-1.5 mb-1.5">
+                            <div class="w-5 h-5 rounded-full bg-gradient-to-br from-[#1BA97F] to-[#0d7a5c] flex items-center justify-center shrink-0">
+                                <span class="text-[8px] font-bold text-white">VB</span>
+                            </div>
+                            <span class="text-[10px] font-semibold" :class="employmentBubble.labelColor">VisaBor</span>
+                        </div>
+                        <p class="text-xs text-[#0A1F44] leading-relaxed">{{ employmentBubble.msg }}</p>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -317,6 +332,21 @@
                                 <p class="text-[11px] text-gray-400">{{ $t('profile.carHint') }}</p>
                             </div>
                         </label>
+                    </div>
+                </div>
+                <!-- Чат-пузырь: оценка привязанности -->
+                <div v-if="familyBubble" class="sm:col-span-2 relative mt-1">
+                    <div class="absolute -top-1.5 left-4 w-3 h-3 rotate-45 border-l border-t"
+                         :class="familyBubble.bubbleBg + ' ' + familyBubble.bubbleBorder"></div>
+                    <div class="relative rounded-2xl p-3.5 shadow-sm border"
+                         :class="familyBubble.bubbleBg + ' ' + familyBubble.bubbleBorder">
+                        <div class="flex items-center gap-1.5 mb-1.5">
+                            <div class="w-5 h-5 rounded-full bg-gradient-to-br from-[#1BA97F] to-[#0d7a5c] flex items-center justify-center shrink-0">
+                                <span class="text-[8px] font-bold text-white">VB</span>
+                            </div>
+                            <span class="text-[10px] font-semibold" :class="familyBubble.labelColor">VisaBor</span>
+                        </div>
+                        <p class="text-xs text-[#0A1F44] leading-relaxed">{{ familyBubble.msg }}</p>
                     </div>
                 </div>
             </div>
@@ -440,6 +470,21 @@
                                 <p class="text-[11px]" :class="form.had_deportation ? 'text-red-500' : 'text-gray-400'">{{ $t('profile.deportationHint') }}</p>
                             </div>
                         </label>
+                    </div>
+                </div>
+                <!-- Чат-пузырь: оценка визовой истории -->
+                <div v-if="visaBubble" class="relative mt-1">
+                    <div class="absolute -top-1.5 left-4 w-3 h-3 rotate-45 border-l border-t"
+                         :class="visaBubble.bubbleBg + ' ' + visaBubble.bubbleBorder"></div>
+                    <div class="relative rounded-2xl p-3.5 shadow-sm border"
+                         :class="visaBubble.bubbleBg + ' ' + visaBubble.bubbleBorder">
+                        <div class="flex items-center gap-1.5 mb-1.5">
+                            <div class="w-5 h-5 rounded-full bg-gradient-to-br from-[#1BA97F] to-[#0d7a5c] flex items-center justify-center shrink-0">
+                                <span class="text-[8px] font-bold text-white">VB</span>
+                            </div>
+                            <span class="text-[10px] font-semibold" :class="visaBubble.labelColor">VisaBor</span>
+                        </div>
+                        <p class="text-xs text-[#0A1F44] leading-relaxed">{{ visaBubble.msg }}</p>
                     </div>
                 </div>
             </div>
@@ -669,6 +714,77 @@ const ageMessage = computed(() => {
     if (!userAge.value) return '';
     const lang = locale.value === 'uz' ? 'uz' : 'ru';
     return ageMessages[lang]?.[userAge.value] ?? '';
+});
+
+// Стили пузырей — helper
+const BUBBLE_GREEN  = { bubbleBg: 'bg-gradient-to-br from-emerald-50 to-teal-50', bubbleBorder: 'border-emerald-200', labelColor: 'text-emerald-500' };
+const BUBBLE_YELLOW = { bubbleBg: 'bg-gradient-to-br from-amber-50 to-orange-50', bubbleBorder: 'border-amber-200', labelColor: 'text-amber-500' };
+const BUBBLE_RED    = { bubbleBg: 'bg-gradient-to-br from-red-50 to-rose-50', bubbleBorder: 'border-red-200', labelColor: 'text-red-500' };
+
+// Пузырь: Занятость и доходы
+const employmentBubble = computed(() => {
+    const emp = form.employment_type;
+    const inc = Number(form.monthly_income_usd) || 0;
+    const tenure = Number(form.employed_years);
+    if (!emp && !inc) return null;
+    // Студент
+    if (emp === 'student') return { ...BUBBLE_YELLOW, msg: t('profile.empBubbleStudent') };
+    // Пенсионер
+    if (emp === 'retired') return { ...BUBBLE_YELLOW, msg: t('profile.empBubbleRetired') };
+    // Безработный или нет работы + маленький доход
+    if (emp === 'unemployed' || (!emp && inc <= 300)) return { ...BUBBLE_RED, msg: t('profile.empBubbleLow') };
+    // Есть работа
+    if (emp) {
+        if (inc >= 1500 && tenure >= 3) return { ...BUBBLE_GREEN, msg: t('profile.empBubbleGreat') };
+        if (inc >= 800) return { ...BUBBLE_GREEN, msg: t('profile.empBubbleGood') };
+        if (inc > 0 && inc < 800) return { ...BUBBLE_YELLOW, msg: t('profile.empBubbleAverage') };
+    }
+    // Только доход указан
+    if (inc >= 1500) return { ...BUBBLE_GREEN, msg: t('profile.empBubbleGood') };
+    if (inc > 0) return { ...BUBBLE_YELLOW, msg: t('profile.empBubbleAverage') };
+    return null;
+});
+
+// Пузырь: Семья и привязанность
+const familyBubble = computed(() => {
+    const ms = form.marital_status;
+    const ch = form.has_children;
+    const pr = form.has_property;
+    const car = form.has_car;
+    if (!ms && !ch && !pr && !car) return null;
+    let score = 0;
+    if (ms === 'married') score += 2;
+    else if (ms === 'divorced' || ms === 'widowed') score += 1;
+    if (ch) score += 2;
+    if (pr) score += 2;
+    if (car) score += 1;
+    if (score >= 5) return { ...BUBBLE_GREEN, msg: t('profile.familyBubbleGreat') };
+    if (score >= 3) return { ...BUBBLE_GREEN, msg: t('profile.familyBubbleGood') };
+    if (score >= 1) return { ...BUBBLE_YELLOW, msg: t('profile.familyBubbleAverage') };
+    return { ...BUBBLE_RED, msg: t('profile.familyBubbleLow') };
+});
+
+// Пузырь: Визовая история
+const visaBubble = computed(() => {
+    const visas = form.visas_obtained_count;
+    const sch = form.has_schengen_visa;
+    const us = form.has_us_visa;
+    const ref = form.refusals_count;
+    const overstay = form.had_overstay;
+    const deport = form.had_deportation;
+    // Ничего не заполнено
+    if (!visas && !sch && !us && !ref && !overstay && !deport) return null;
+    // Нарушения — приоритет
+    if (deport || overstay) return { ...BUBBLE_RED, msg: t('profile.visaBubbleViolation') };
+    // Отказы
+    if (ref > 0) return { ...BUBBLE_RED, msg: t('profile.visaBubbleRefusal') };
+    // Шенген + США
+    if (sch && us) return { ...BUBBLE_GREEN, msg: t('profile.visaBubbleGreat') };
+    // Есть визы или одна сильная
+    if (visas >= 3 || sch || us) return { ...BUBBLE_GREEN, msg: t('profile.visaBubbleGood') };
+    if (visas >= 1) return { ...BUBBLE_GREEN, msg: t('profile.visaBubbleGood') };
+    // Нет виз
+    return { ...BUBBLE_YELLOW, msg: t('profile.visaBubbleFirst') };
 });
 
 // Паспорт — раздельный ввод серии и номера
