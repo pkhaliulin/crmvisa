@@ -31,6 +31,13 @@
                 <option v-for="c in continentOptions" :key="c.value" :value="c.value">{{ c.label }}</option>
             </select>
 
+            <!-- Фильтр по визовому режиму -->
+            <select v-model="filterRegime"
+                class="border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]">
+                <option value="">{{ $t('countriesPage.allRegimes') }}</option>
+                <option v-for="r in regimeFilterOptions" :key="r.value" :value="r.value">{{ r.label }}</option>
+            </select>
+
             <!-- Фильтр по статусу -->
             <select v-model="filterStatus"
                 class="border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]">
@@ -180,8 +187,16 @@ const addForm   = ref({ country_code: '', name: '', flag_emoji: '' });
 // Фильтры и поиск
 const search          = ref('');
 const filterContinent = ref('');
+const filterRegime    = ref('');
 const filterStatus    = ref('');
 const sortBy          = ref('name');
+
+const regimeFilterOptions = computed(() => [
+    { value: 'visa_required',   label: t('countriesPage.visaRequired') },
+    { value: 'visa_free',       label: t('countriesPage.visaFree') },
+    { value: 'visa_on_arrival', label: t('countriesPage.visaOnArrival') },
+    { value: 'evisa',           label: t('countriesPage.evisa') },
+]);
 
 const continentOptions = computed(() => [
     { value: 'Europe', label: t('countriesPage.europe') },
@@ -207,6 +222,11 @@ const filteredCountries = computed(() => {
     // Фильтр по континенту
     if (filterContinent.value) {
         list = list.filter(c => c.continent === filterContinent.value);
+    }
+
+    // Фильтр по визовому режиму
+    if (filterRegime.value) {
+        list = list.filter(c => c.visa_regime === filterRegime.value);
     }
 
     // Фильтр по статусу

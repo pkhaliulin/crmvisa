@@ -628,7 +628,17 @@
     "evisaRegime": "Elektron viza (e-viza)",
     "visaFreeDays": "Vizasiz yashash kunlari",
     "visaOnArrivalDays": "Kelganda viza kunlari",
-    "evisaDays": "E-viza ko'rib chiqish kunlari"
+    "evisaDays": "E-viza ko'rib chiqish kunlari",
+    "visaFee": "Viza narxi",
+    "evisaFee": "E-viza narxi",
+    "invitationRequired": "Taklifnoma talab qilinadi",
+    "hotelRequired": "Mehmonxona bron talab qilinadi",
+    "insuranceRequired": "Sug'urta talab qilinadi",
+    "bankStatementRequired": "Bank ko'chirmasi talab qilinadi",
+    "returnTicketRequired": "Qaytish chipti talab qilinadi",
+    "travelCosts": "Sayohat xarajatlari",
+    "avgFlight": "Toshkentdan o'rtacha parvoz",
+    "avgHotel": "O'rtacha mehmonxona / tun"
   },
   "visaTypes": {
     "description": "Viza turlari uchun yagona ma'lumotnoma. Platformaning barcha bo'limlarida ishlatiladi.",
@@ -826,6 +836,7 @@
     "southAmerica": "Janubiy Amerika",
     "africa": "Afrika",
     "oceania": "Okeaniya",
+    "allRegimes": "Barcha viza rejimlari",
     "codeLabel": "Kod (ISO-2) *",
     "flagLabel": "Bayroq",
     "namePlaceholder": "Germaniya",

@@ -628,7 +628,17 @@
     "evisaRegime": "Электронная виза (e-visa)",
     "visaFreeDays": "Дней безвизового пребывания",
     "visaOnArrivalDays": "Дней визы по прибытию",
-    "evisaDays": "Дней обработки e-visa"
+    "evisaDays": "Дней обработки e-visa",
+    "visaFee": "Стоимость визы",
+    "evisaFee": "Стоимость e-visa",
+    "invitationRequired": "Приглашение обязательно",
+    "hotelRequired": "Бронь отеля обязательна",
+    "insuranceRequired": "Страховка обязательна",
+    "bankStatementRequired": "Выписка из банка обязательна",
+    "returnTicketRequired": "Обратный билет обязателен",
+    "travelCosts": "Стоимость поездки",
+    "avgFlight": "Средний перелёт из Ташкента",
+    "avgHotel": "Средний отель / ночь"
   },
   "visaTypes": {
     "description": "Единый справочник типов виз. Используется во всех разделах платформы как источник истины.",
@@ -826,6 +836,7 @@
     "southAmerica": "Южная Америка",
     "africa": "Африка",
     "oceania": "Океания",
+    "allRegimes": "Все визовые режимы",
     "codeLabel": "Код (ISO-2) *",
     "flagLabel": "Флаг",
     "namePlaceholder": "Германия",

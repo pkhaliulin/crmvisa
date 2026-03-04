@@ -1,37 +1,34 @@
 <template>
   <div class="space-y-5">
-    <!-- Основная информация -->
+    <!-- Основная информация + редактирование -->
     <div class="bg-white rounded-xl border border-gray-100 p-5">
-      <h4 class="text-sm font-semibold text-gray-500 mb-4">{{ $t('countryDetail.generalInfo') }}</h4>
-
-      <div v-if="!editing" class="space-y-3">
-        <dl class="grid grid-cols-3 gap-4 text-sm">
-          <div class="flex justify-between">
-            <dt class="text-gray-500">{{ $t('countryDetail.name') }}</dt>
-            <dd class="font-medium">{{ country.name }}</dd>
-          </div>
-          <div class="flex justify-between">
-            <dt class="text-gray-500">{{ $t('countryDetail.continent') }}</dt>
-            <dd class="font-medium">{{ country.continent || '---' }}</dd>
-          </div>
-          <div class="flex justify-between">
-            <dt class="text-gray-500">{{ $t('countryDetail.status') }}</dt>
-            <dd>
-              <span class="text-xs px-2 py-0.5 rounded-full font-medium"
-                :class="country.is_active ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'">
-                {{ country.is_active ? $t('countryDetail.active') : $t('countryDetail.inactive') }}
-              </span>
-            </dd>
-          </div>
-        </dl>
-        <div class="flex items-center gap-4 text-sm pt-1">
-          <span class="text-gray-500">{{ $t('countryDetail.commission') }}:</span>
-          <span class="font-bold">{{ country.commission_rate ?? 5 }}%</span>
-          <span v-if="country.commission_description" class="text-gray-400 text-xs">{{ country.commission_description }}</span>
-        </div>
-        <button @click="startEdit" class="text-xs px-3 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-600 mt-2">
+      <div class="flex items-center justify-between mb-4">
+        <h4 class="text-sm font-semibold text-gray-500">{{ $t('countryDetail.generalInfo') }}</h4>
+        <button v-if="!editing" @click="startEdit" class="text-xs px-3 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-600">
           {{ $t('countryDetail.edit') }}
         </button>
+      </div>
+
+      <div v-if="!editing">
+        <dl class="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-3 text-sm">
+          <InfoItem :label="$t('countryDetail.name')" :value="country.name" />
+          <InfoItem :label="$t('countryDetail.nameUz')" :value="country.name_uz" />
+          <InfoItem :label="$t('countryDetail.continent')" :value="country.continent" />
+          <div class="flex justify-between">
+            <span class="text-gray-500">{{ $t('countryDetail.status') }}</span>
+            <span class="text-xs px-2 py-0.5 rounded-full font-medium"
+              :class="country.is_active ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'">
+              {{ country.is_active ? $t('countryDetail.active') : $t('countryDetail.inactive') }}
+            </span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-500">{{ $t('countryDetail.visaRegime') }}</span>
+            <span class="text-xs px-2 py-0.5 rounded-full font-medium" :class="regimeClass">{{ regimeLabel }}</span>
+          </div>
+          <InfoItem :label="$t('countryDetail.riskLevel')" :value="riskLabel" />
+          <InfoItem :label="$t('countryDetail.commission')" :value="(country.commission_rate ?? 5) + '%'" />
+          <InfoItem :label="$t('countryDetail.countryCode')" :value="country.country_code" mono />
+        </dl>
       </div>
 
       <form v-else @submit.prevent="saveOverview" class="space-y-3">
@@ -62,8 +59,12 @@
               class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]" />
           </div>
           <div>
-            <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.commissionDesc') }}</label>
-            <input v-model="form.commission_description" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]" />
+            <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.riskLevel') }}</label>
+            <select v-model="form.risk_level" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]">
+              <option value="low">{{ $t('countryDetail.riskLow') }}</option>
+              <option value="medium">{{ $t('countryDetail.riskMedium') }}</option>
+              <option value="high">{{ $t('countryDetail.riskHigh') }}</option>
+            </select>
           </div>
         </div>
         <div class="flex gap-3 pt-2">
@@ -77,6 +78,97 @@
           </button>
         </div>
       </form>
+    </div>
+
+    <!-- Визовый режим и требования -->
+    <div class="bg-white rounded-xl border border-gray-100 p-5">
+      <h4 class="text-sm font-semibold text-gray-500 mb-4">{{ $t('countryDetail.visaRegime') }}</h4>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="p-3 rounded-lg text-center" :class="regimeBgClass">
+          <div class="text-lg font-bold" :class="regimeTextClass">{{ regimeLabel }}</div>
+          <div class="text-xs text-gray-500 mt-1">{{ $t('countryDetail.visaRegime') }}</div>
+        </div>
+        <div v-if="country.visa_regime === 'visa_free'" class="p-3 bg-green-50 rounded-lg text-center">
+          <div class="text-lg font-bold text-green-700">{{ country.visa_free_days || '---' }}</div>
+          <div class="text-xs text-gray-500 mt-1">{{ $t('countryDetail.visaFreeDays') }}</div>
+        </div>
+        <div v-if="country.visa_regime === 'visa_on_arrival'" class="p-3 bg-yellow-50 rounded-lg text-center">
+          <div class="text-lg font-bold text-yellow-700">{{ country.visa_on_arrival_days || '---' }}</div>
+          <div class="text-xs text-gray-500 mt-1">{{ $t('countryDetail.visaOnArrivalDays') }}</div>
+        </div>
+        <div v-if="country.visa_fee_usd" class="p-3 bg-gray-50 rounded-lg text-center">
+          <div class="text-lg font-bold text-gray-700">${{ country.visa_fee_usd }}</div>
+          <div class="text-xs text-gray-500 mt-1">{{ $t('countryDetail.visaFee') }}</div>
+        </div>
+        <div v-if="country.evisa_fee_usd" class="p-3 bg-blue-50 rounded-lg text-center">
+          <div class="text-lg font-bold text-blue-700">${{ country.evisa_fee_usd }}</div>
+          <div class="text-xs text-gray-500 mt-1">{{ $t('countryDetail.evisaFee') }}</div>
+        </div>
+      </div>
+
+      <!-- Требования -->
+      <div v-if="hasRequirements" class="mt-4 flex flex-wrap gap-2">
+        <span v-if="country.invitation_required" class="text-xs px-2.5 py-1 rounded-full bg-red-50 text-red-700">{{ $t('countryDetail.invitationRequired') }}</span>
+        <span v-if="country.hotel_booking_required" class="text-xs px-2.5 py-1 rounded-full bg-orange-50 text-orange-700">{{ $t('countryDetail.hotelRequired') }}</span>
+        <span v-if="country.insurance_required" class="text-xs px-2.5 py-1 rounded-full bg-blue-50 text-blue-700">{{ $t('countryDetail.insuranceRequired') }}</span>
+        <span v-if="country.bank_statement_required" class="text-xs px-2.5 py-1 rounded-full bg-purple-50 text-purple-700">{{ $t('countryDetail.bankStatementRequired') }}</span>
+        <span v-if="country.return_ticket_required" class="text-xs px-2.5 py-1 rounded-full bg-gray-100 text-gray-700">{{ $t('countryDetail.returnTicketRequired') }}</span>
+      </div>
+    </div>
+
+    <!-- Сроки обработки -->
+    <div v-if="country.processing_days_standard || country.processing_days_expedited" class="bg-white rounded-xl border border-gray-100 p-5">
+      <h4 class="text-sm font-semibold text-gray-500 mb-4">{{ $t('countryDetail.generalTimeline') }}</h4>
+      <div class="grid grid-cols-4 gap-4 text-center">
+        <div class="p-3 bg-blue-50 rounded-lg">
+          <div class="text-xl font-bold text-blue-700">{{ country.processing_days_standard ?? '---' }}</div>
+          <div class="text-xs text-gray-500 mt-1">{{ $t('countryDetail.standardDays') }}</div>
+        </div>
+        <div class="p-3 bg-green-50 rounded-lg">
+          <div class="text-xl font-bold text-green-700">{{ country.processing_days_expedited ?? '---' }}</div>
+          <div class="text-xs text-gray-500 mt-1">{{ $t('countryDetail.expeditedDays') }}</div>
+        </div>
+        <div class="p-3 bg-orange-50 rounded-lg">
+          <div class="text-xl font-bold text-orange-700">{{ country.appointment_wait_days ?? '---' }}</div>
+          <div class="text-xs text-gray-500 mt-1">{{ $t('countryDetail.appointmentWait') }}</div>
+        </div>
+        <div class="p-3 bg-gray-50 rounded-lg">
+          <div class="text-xl font-bold text-gray-700">{{ country.buffer_days_recommended ?? '---' }}</div>
+          <div class="text-xs text-gray-500 mt-1">{{ $t('countryDetail.bufferDays') }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Стоимость поездки -->
+    <div v-if="country.avg_flight_cost_usd || country.avg_hotel_per_night_usd" class="bg-white rounded-xl border border-gray-100 p-5">
+      <h4 class="text-sm font-semibold text-gray-500 mb-4">{{ $t('countryDetail.travelCosts') }}</h4>
+      <div class="grid grid-cols-2 gap-4 text-center">
+        <div v-if="country.avg_flight_cost_usd" class="p-3 bg-gray-50 rounded-lg">
+          <div class="text-xl font-bold text-gray-700">${{ country.avg_flight_cost_usd }}</div>
+          <div class="text-xs text-gray-500 mt-1">{{ $t('countryDetail.avgFlight') }}</div>
+        </div>
+        <div v-if="country.avg_hotel_per_night_usd" class="p-3 bg-gray-50 rounded-lg">
+          <div class="text-xl font-bold text-gray-700">${{ country.avg_hotel_per_night_usd }}</div>
+          <div class="text-xs text-gray-500 mt-1">{{ $t('countryDetail.avgHotel') }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Скоринг (краткая сводка) -->
+    <div class="bg-white rounded-xl border border-gray-100 p-5">
+      <h4 class="text-sm font-semibold text-gray-500 mb-4">{{ $t('countryDetail.publicScoring') }}</h4>
+      <div class="grid grid-cols-4 gap-4 text-center">
+        <div v-for="w in weights" :key="w.key" class="p-3 bg-gray-50 rounded-lg">
+          <div class="text-2xl font-bold" :class="parseFloat(country[w.key]) >= 0.30 ? 'text-blue-700' : 'text-gray-500'">
+            {{ ((parseFloat(country[w.key]) || 0) * 100).toFixed(0) }}%
+          </div>
+          <div class="text-xs text-gray-500 mt-1">{{ w.label }}</div>
+        </div>
+      </div>
+      <div class="mt-3 flex gap-6 text-sm text-gray-600">
+        <span>{{ $t('countryDetail.minIncome') }}: <strong>${{ country.min_monthly_income_usd }}</strong></span>
+        <span>{{ $t('countryDetail.minScore') }}: <strong>{{ country.min_score }}%</strong></span>
+      </div>
     </div>
 
     <!-- Индикаторы заполненности -->
@@ -114,37 +206,63 @@ const form    = reactive({});
 
 const continents = ['Europe', 'Asia', 'North America', 'South America', 'Africa', 'Oceania'];
 
+const regimeLabel = computed(() => {
+  const map = {
+    visa_required: t('countryDetail.visaRequired'),
+    visa_free: t('countryDetail.visaFreeRegime'),
+    visa_on_arrival: t('countryDetail.visaOnArrivalRegime'),
+    evisa: t('countryDetail.evisaRegime'),
+  };
+  return map[props.country.visa_regime] || props.country.visa_regime || '---';
+});
+
+const regimeClass = computed(() => {
+  if (props.country.visa_regime === 'visa_free') return 'bg-green-50 text-green-700';
+  if (props.country.visa_regime === 'visa_on_arrival') return 'bg-yellow-50 text-yellow-700';
+  if (props.country.visa_regime === 'evisa') return 'bg-blue-50 text-blue-700';
+  return 'bg-gray-100 text-gray-500';
+});
+
+const regimeBgClass = computed(() => {
+  if (props.country.visa_regime === 'visa_free') return 'bg-green-50';
+  if (props.country.visa_regime === 'visa_on_arrival') return 'bg-yellow-50';
+  if (props.country.visa_regime === 'evisa') return 'bg-blue-50';
+  return 'bg-gray-50';
+});
+
+const regimeTextClass = computed(() => {
+  if (props.country.visa_regime === 'visa_free') return 'text-green-700';
+  if (props.country.visa_regime === 'visa_on_arrival') return 'text-yellow-700';
+  if (props.country.visa_regime === 'evisa') return 'text-blue-700';
+  return 'text-gray-700';
+});
+
+const riskLabel = computed(() => {
+  if (props.country.risk_level === 'low') return t('countryDetail.riskLow');
+  if (props.country.risk_level === 'high') return t('countryDetail.riskHigh');
+  return t('countryDetail.riskMedium');
+});
+
+const hasRequirements = computed(() =>
+  props.country.invitation_required || props.country.hotel_booking_required ||
+  props.country.insurance_required || props.country.bank_statement_required ||
+  props.country.return_ticket_required
+);
+
+const weights = computed(() => [
+  { key: 'weight_finance', label: t('countryDetail.finances') },
+  { key: 'weight_ties',    label: t('countryDetail.ties') },
+  { key: 'weight_travel',  label: t('countryDetail.travelHistory') },
+  { key: 'weight_profile', label: t('countryDetail.profile') },
+]);
+
 const indicators = computed(() => [
-  {
-    tab: 'visa-types',
-    label: t('countryDetail.tabVisaTypes'),
-    filled: (props.visaSettings?.length ?? 0) > 0,
-  },
-  {
-    tab: 'submission',
-    label: t('countryDetail.tabSubmission'),
-    filled: (props.country.submission_types?.length ?? 0) > 0,
-  },
-  {
-    tab: 'embassy',
-    label: t('countryDetail.tabEmbassy'),
-    filled: props.country.has_embassy && !!props.country.embassy_name,
-  },
-  {
-    tab: 'visa-center',
-    label: t('countryDetail.tabVisaCenter'),
-    filled: props.country.has_visa_center && !!props.country.visa_center_name,
-  },
-  {
-    tab: 'finance',
-    label: t('countryDetail.tabFinance'),
-    filled: (props.country.min_monthly_income_usd ?? 0) > 0,
-  },
-  {
-    tab: 'scoring',
-    label: t('countryDetail.tabScoring'),
-    filled: (parseFloat(props.country.weight_finance) || 0) > 0,
-  },
+  { tab: 'visa-types', label: t('countryDetail.tabVisaTypes'), filled: (props.visaSettings?.length ?? 0) > 0 },
+  { tab: 'submission', label: t('countryDetail.tabSubmission'), filled: (props.country.submission_types?.length ?? 0) > 0 || props.country.visa_regime !== 'visa_required' },
+  { tab: 'embassy', label: t('countryDetail.tabEmbassy'), filled: props.country.has_embassy && !!props.country.embassy_name },
+  { tab: 'visa-center', label: t('countryDetail.tabVisaCenter'), filled: props.country.has_visa_center && !!props.country.visa_center_name },
+  { tab: 'finance', label: t('countryDetail.tabFinance'), filled: (props.country.min_monthly_income_usd ?? 0) > 0 },
+  { tab: 'scoring', label: t('countryDetail.tabScoring'), filled: (parseFloat(props.country.weight_finance) || 0) > 0 },
 ]);
 
 function startEdit() {
@@ -153,7 +271,7 @@ function startEdit() {
     continent: props.country.continent ?? '',
     is_active: props.country.is_active ?? true,
     commission_rate: props.country.commission_rate ?? 5,
-    commission_description: props.country.commission_description ?? '',
+    risk_level: props.country.risk_level ?? 'medium',
   });
   editing.value = true;
 }
@@ -168,4 +286,15 @@ async function saveOverview() {
     saving.value = false;
   }
 }
+
+// Inline sub-component
+const InfoItem = {
+  props: ['label', 'value', 'mono'],
+  template: `
+    <div class="flex justify-between">
+      <span class="text-gray-500">{{ label }}</span>
+      <span :class="mono ? 'font-mono font-bold' : 'font-medium'" class="text-gray-800">{{ value || '---' }}</span>
+    </div>
+  `,
+};
 </script>
