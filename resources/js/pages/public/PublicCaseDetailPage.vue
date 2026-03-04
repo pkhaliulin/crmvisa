@@ -324,37 +324,49 @@
                 </button>
             </div>
 
-            <!-- === Чек-лист документов === -->
+            <!-- === Чек-лист документов с вкладками === -->
             <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                 <div class="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
                     <div>
                         <h2 class="font-bold text-[#0A1F44] text-sm">{{ $t('cases.documentsTitle') }}</h2>
                         <p class="text-xs text-gray-400 mt-0.5">{{ $t('cases.documentsHint') }}</p>
                     </div>
-                    <div v-if="checklist.length" class="text-right">
+                    <div v-if="allDocsTotal > 0" class="text-right">
                         <div class="text-lg font-bold"
-                            :class="docsUploaded >= checklist.length ? 'text-[#1BA97F]' : 'text-[#0A1F44]'">
-                            {{ docsUploaded }}/{{ checklist.length }}
+                            :class="allDocsUploaded >= allDocsTotal ? 'text-[#1BA97F]' : 'text-[#0A1F44]'">
+                            {{ allDocsUploaded }}/{{ allDocsTotal }}
                         </div>
                         <div class="text-xs text-gray-400">{{ $t('cases.uploaded') }}</div>
                     </div>
                 </div>
 
-                <!-- Прогресс документов -->
-                <div v-if="checklist.length" class="px-5 pt-3 pb-1">
+                <!-- Вкладки: Заявитель + каждый член семьи -->
+                <div v-if="docTabs.length > 1" class="px-5 pt-3 flex gap-1 overflow-x-auto scrollbar-hide">
+                    <button v-for="(tab, idx) in docTabs" :key="tab.key"
+                        @click="activeDocTab = tab.key"
+                        class="shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap"
+                        :class="activeDocTab === tab.key
+                            ? 'bg-[#1BA97F] text-white'
+                            : 'bg-gray-100 text-gray-500 hover:bg-gray-200'">
+                        {{ tab.label }}
+                        <span class="ml-1 text-[10px] opacity-70">{{ tab.uploaded }}/{{ tab.total }}</span>
+                    </button>
+                </div>
+
+                <!-- Прогресс документов текущей вкладки -->
+                <div v-if="activeTabChecklist.length" class="px-5 pt-3 pb-1">
                     <div class="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
                         <div class="h-full rounded-full transition-all duration-500"
-                            :class="docsUploaded >= checklist.length ? 'bg-[#1BA97F]' : 'bg-amber-400'"
-                            :style="{ width: (docsUploaded / checklist.length * 100) + '%' }">
+                            :class="activeTabUploaded >= activeTabChecklist.length ? 'bg-[#1BA97F]' : 'bg-amber-400'"
+                            :style="{ width: (activeTabChecklist.length ? (activeTabUploaded / activeTabChecklist.length * 100) : 0) + '%' }">
                         </div>
                     </div>
                 </div>
 
-                <!-- Список документов -->
-                <div v-if="checklist.length" class="divide-y divide-gray-50 mt-1">
-                    <div v-for="item in checklist" :key="item.id"
+                <!-- Список документов текущей вкладки -->
+                <div v-if="activeTabChecklist.length" class="divide-y divide-gray-50 mt-1">
+                    <div v-for="item in activeTabChecklist" :key="item.id"
                         class="px-5 py-3.5 flex items-start gap-3">
-                        <!-- Статус иконка -->
                         <div class="mt-0.5 shrink-0 w-5 h-5 rounded-full flex items-center justify-center"
                             :class="{
                                 'bg-[#1BA97F]':   item.status === 'approved',
@@ -362,15 +374,12 @@
                                 'bg-amber-100':   item.status === 'pending' && item.is_required,
                                 'bg-gray-100':    item.status === 'pending' && !item.is_required,
                             }">
-                            <!-- Одобрено -->
                             <svg v-if="item.status === 'approved'" class="w-3 h-3 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
                             </svg>
-                            <!-- Загружено, на проверке -->
                             <svg v-else-if="item.status === 'uploaded'" class="w-3 h-3 text-blue-600" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                             </svg>
-                            <!-- Ожидает -->
                             <svg v-else class="w-3 h-3" :class="item.is_required ? 'text-amber-600' : 'text-gray-400'"
                                 fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
@@ -388,7 +397,6 @@
                             <p v-if="item.description" class="text-xs text-gray-400 mt-0.5 leading-relaxed">{{ item.description }}</p>
                             <p v-if="item.notes" class="text-xs text-blue-600 mt-0.5">{{ item.notes }}</p>
 
-                            <!-- Статус текст -->
                             <div class="mt-1 text-xs font-medium"
                                 :class="{
                                     'text-[#1BA97F]': item.status === 'approved',
@@ -399,7 +407,6 @@
                                 {{ statusLabel(item.status, item.is_required) }}
                             </div>
 
-                            <!-- Кнопка загрузки: только для responsibility=client и не approved -->
                             <label v-if="item.responsibility !== 'agency' && item.status !== 'approved'"
                                 class="inline-flex items-center gap-1.5 text-xs text-[#1BA97F] font-medium
                                        cursor-pointer hover:text-[#169B72] mt-1.5 select-none"
@@ -416,7 +423,6 @@
                                     accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
                                     @change="(e) => uploadDoc(item.id, e)"/>
                             </label>
-                            <!-- Для agency responsibility — только статус -->
                             <div v-else-if="item.responsibility === 'agency' && item.status !== 'approved'"
                                 class="mt-1 text-xs text-gray-400 italic">
                                 {{ item.status === 'done' ? $t('cases.doneByAgency') : $t('cases.waitingAgency') }}
@@ -425,7 +431,6 @@
                     </div>
                 </div>
 
-                <!-- Нет документов -->
                 <div v-else class="px-5 py-6 text-center">
                     <div class="text-sm text-gray-400">{{ $t('cases.noDocsList') }}</div>
                 </div>
@@ -449,57 +454,32 @@
 
                 <!-- Привязанные к заявке -->
                 <div v-if="caseFamilyMembers.length" class="divide-y divide-gray-50">
-                    <div v-for="fm in caseFamilyMembers" :key="fm.id" class="px-5 py-4">
-                        <div class="flex items-center justify-between mb-2">
-                            <div class="flex items-center gap-2">
-                                <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+                    <div v-for="fm in caseFamilyMembers" :key="fm.id" class="px-5 py-3.5">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
                                     :class="fm.is_minor ? 'bg-amber-100 text-amber-700' : 'bg-[#0A1F44]/10 text-[#0A1F44]'">
                                     {{ fm.name?.[0]?.toUpperCase() }}
                                 </div>
                                 <div>
                                     <div class="text-sm font-semibold text-[#0A1F44]">{{ fm.name }}</div>
-                                    <div class="text-xs text-gray-400">
-                                        {{ $t('family.rel.' + fm.relationship) }}
-                                        <span v-if="fm.is_minor" class="text-amber-600 font-medium ml-1">{{ $t('family.minor') }}</span>
+                                    <div class="text-xs text-gray-400 flex items-center gap-2 flex-wrap">
+                                        <span>{{ $t('family.rel.' + fm.relationship) }}</span>
+                                        <span v-if="fm.is_minor" class="text-amber-600 font-medium">{{ $t('family.minor') }}</span>
+                                        <span v-if="fm.dob" class="text-gray-300">{{ formatDate(fm.dob) }}</span>
+                                        <span v-if="fm.citizenship" class="text-gray-300">{{ codeToFlag(fm.citizenship) }} {{ fm.citizenship }}</span>
+                                    </div>
+                                    <div v-if="fm.passport_number" class="text-[11px] text-gray-400 font-mono mt-0.5">
+                                        {{ $t('family.passportShort') }}: {{ fm.passport_number }}
                                     </div>
                                 </div>
                             </div>
                             <button @click="detachFamilyFromCase(fm)"
-                                class="text-xs text-gray-400 hover:text-red-500 transition-colors">
+                                class="text-xs text-gray-400 hover:text-red-500 transition-colors shrink-0">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
                                 </svg>
                             </button>
-                        </div>
-                        <!-- Чеклист документов члена семьи -->
-                        <div v-if="fm.checklist?.length" class="ml-10 space-y-1.5">
-                            <div v-for="doc in fm.checklist" :key="doc.id"
-                                class="flex items-center gap-2 text-xs">
-                                <div class="w-4 h-4 rounded-full flex items-center justify-center shrink-0"
-                                    :class="{
-                                        'bg-[#1BA97F]':  doc.status === 'approved',
-                                        'bg-blue-100':   doc.status === 'uploaded',
-                                        'bg-amber-100':  doc.status === 'pending' && doc.is_required,
-                                        'bg-gray-100':   doc.status === 'pending' && !doc.is_required,
-                                    }">
-                                    <svg v-if="doc.status === 'approved'" class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-                                    </svg>
-                                    <svg v-else-if="doc.status === 'uploaded'" class="w-2.5 h-2.5 text-blue-600" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                    </svg>
-                                </div>
-                                <span class="text-gray-700">{{ doc.name }}</span>
-                                <span class="ml-auto font-medium"
-                                    :class="{
-                                        'text-[#1BA97F]': doc.status === 'approved',
-                                        'text-blue-600':  doc.status === 'uploaded',
-                                        'text-amber-600': doc.status === 'pending' && doc.is_required,
-                                        'text-gray-400':  doc.status === 'pending' && !doc.is_required,
-                                    }">
-                                    {{ statusLabel(doc.status, doc.is_required) }}
-                                </span>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -551,14 +531,29 @@
 
                         <!-- Добавить нового -->
                         <div class="border-t border-gray-100 pt-4">
-                            <div class="text-xs font-semibold text-gray-400 uppercase mb-3">{{ $t('family.addNew') }}</div>
+                            <div class="text-xs font-semibold text-gray-400 uppercase mb-2">{{ $t('family.addNew') }}</div>
+                            <p class="text-xs text-amber-600 bg-amber-50 rounded-lg px-3 py-2 mb-3">
+                                {{ $t('family.latinWarning') }}
+                            </p>
                             <div class="space-y-3">
-                                <div>
-                                    <label class="text-xs text-gray-500 mb-1 block">{{ $t('family.name') }} *</label>
-                                    <input v-model="newFamilyForm.name" type="text"
-                                        class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] transition-colors"
-                                        :placeholder="$t('family.namePlaceholder')"/>
+                                <!-- Имя + Фамилия (латиница) -->
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="text-xs text-gray-500 mb-1 block">{{ $t('family.firstName') }} *</label>
+                                        <input v-model="newFamilyForm.first_name" type="text"
+                                            @input="newFamilyForm.first_name = newFamilyForm.first_name.replace(/[^a-zA-Z\s\-']/g, '').toUpperCase()"
+                                            class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] transition-colors font-mono uppercase"
+                                            placeholder="JOHN"/>
+                                    </div>
+                                    <div>
+                                        <label class="text-xs text-gray-500 mb-1 block">{{ $t('family.lastName') }} *</label>
+                                        <input v-model="newFamilyForm.last_name" type="text"
+                                            @input="newFamilyForm.last_name = newFamilyForm.last_name.replace(/[^a-zA-Z\s\-']/g, '').toUpperCase()"
+                                            class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] transition-colors font-mono uppercase"
+                                            placeholder="DOE"/>
+                                    </div>
                                 </div>
+                                <!-- Родство + Дата рождения -->
                                 <div class="grid grid-cols-2 gap-3">
                                     <div>
                                         <label class="text-xs text-gray-500 mb-1 block">{{ $t('family.relationship') }} *</label>
@@ -578,6 +573,7 @@
                                             class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] transition-colors"/>
                                     </div>
                                 </div>
+                                <!-- Пол + Гражданство (searchable dropdown) -->
                                 <div class="grid grid-cols-2 gap-3">
                                     <div>
                                         <label class="text-xs text-gray-500 mb-1 block">{{ $t('family.gender') }}</label>
@@ -588,18 +584,62 @@
                                             <option value="F">{{ $t('family.female') }}</option>
                                         </select>
                                     </div>
-                                    <div>
+                                    <div class="relative">
                                         <label class="text-xs text-gray-500 mb-1 block">{{ $t('family.citizenship') }}</label>
-                                        <input v-model="newFamilyForm.citizenship" type="text" maxlength="2"
-                                            class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] transition-colors uppercase"
-                                            placeholder="UZ"/>
+                                        <input
+                                            v-model="citizenshipSearch"
+                                            @focus="showCitizenshipDropdown = true"
+                                            @input="showCitizenshipDropdown = true"
+                                            type="text"
+                                            autocomplete="off"
+                                            class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] transition-colors"
+                                            :class="newFamilyForm.citizenship ? 'border-[#1BA97F]' : ''"
+                                            :placeholder="$t('family.citizenshipPlaceholder')"/>
+                                        <div v-if="showCitizenshipDropdown && filteredCountries.length"
+                                            class="absolute z-20 left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                                            <button v-for="c in filteredCountries" :key="c.code"
+                                                @mousedown.prevent="selectCitizenship(c)"
+                                                class="w-full text-left px-3 py-2 text-sm hover:bg-[#1BA97F]/5 flex items-center gap-2 transition-colors">
+                                                <span>{{ c.flag }}</span>
+                                                <span>{{ c.name }}</span>
+                                                <span class="text-gray-400 text-xs ml-auto">{{ c.code }}</span>
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
+                                <!-- Паспорт (формат AA-1234567 как в профиле) -->
                                 <div class="grid grid-cols-2 gap-3">
                                     <div>
                                         <label class="text-xs text-gray-500 mb-1 block">{{ $t('family.passportNumber') }}</label>
-                                        <input v-model="newFamilyForm.passport_number" type="text" maxlength="20"
-                                            class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] transition-colors"/>
+                                        <div class="flex items-stretch rounded-xl border transition-colors overflow-hidden"
+                                            :class="fmPassportValid ? 'border-[#1BA97F]' : 'border-gray-200 focus-within:border-[#1BA97F]'">
+                                            <input
+                                                :value="fmPassportSeries"
+                                                @input="handleFmSeriesInput"
+                                                placeholder="AA"
+                                                maxlength="2"
+                                                autocomplete="off"
+                                                spellcheck="false"
+                                                class="w-12 py-2.5 text-center text-sm font-mono uppercase outline-none bg-gray-50 border-r border-gray-200 tracking-[0.3em] text-[#0A1F44] font-bold"/>
+                                            <div class="flex items-center px-1.5 text-gray-300 text-xs select-none">—</div>
+                                            <input
+                                                ref="fmPassportNumberInput"
+                                                :value="fmPassportDigits"
+                                                @input="handleFmDigitsInput"
+                                                placeholder="1234567"
+                                                maxlength="7"
+                                                inputmode="numeric"
+                                                autocomplete="off"
+                                                class="flex-1 px-1 py-2.5 text-sm font-mono outline-none tracking-[0.15em] text-[#0A1F44]"/>
+                                            <div v-if="fmPassportValid" class="flex items-center pr-2 shrink-0">
+                                                <div class="w-4 h-4 rounded-full bg-[#1BA97F] flex items-center justify-center">
+                                                    <svg class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <p class="text-[10px] text-gray-400 mt-0.5">{{ $t('family.passportFormat') }}</p>
                                     </div>
                                     <div>
                                         <label class="text-xs text-gray-500 mb-1 block">{{ $t('family.passportExpires') }}</label>
@@ -608,7 +648,7 @@
                                     </div>
                                 </div>
                                 <button @click="createAndAttachFamily"
-                                    :disabled="!newFamilyForm.name || !newFamilyForm.relationship || familySaving"
+                                    :disabled="!newFamilyForm.first_name || !newFamilyForm.last_name || !newFamilyForm.relationship || familySaving"
                                     class="w-full py-3 bg-[#1BA97F] hover:bg-[#0d7a5c] text-white text-sm font-semibold rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
                                     <svg v-if="familySaving" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
                                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
@@ -881,11 +921,11 @@
 </template>
 
 <script setup>
-import { ref, computed, reactive, onMounted } from 'vue';
+import { ref, computed, reactive, onMounted, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { publicPortalApi } from '@/api/public';
-import { codeToFlag } from '@/utils/countries';
+import { codeToFlag, ALL_COUNTRIES } from '@/utils/countries';
 import AgencyCard from '@/components/AgencyCard.vue';
 import i18n from '@/i18n';
 
@@ -971,9 +1011,85 @@ const familySaving = ref(false);
 const familyDetaching = ref(false);
 const detachTarget = ref(null);
 const newFamilyForm = ref({
-    name: '', relationship: '', dob: '', gender: '', citizenship: '',
+    first_name: '', last_name: '', relationship: '', dob: '', gender: '', citizenship: '',
     passport_number: '', passport_expires_at: '',
 });
+
+// --- Citizenship search ---
+const citizenshipSearch = ref('');
+const showCitizenshipDropdown = ref(false);
+
+const filteredCountries = computed(() => {
+    const q = citizenshipSearch.value.toLowerCase().trim();
+    if (!q) return ALL_COUNTRIES.slice(0, 20);
+    return ALL_COUNTRIES.filter(c =>
+        c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q)
+    ).slice(0, 15);
+});
+
+function selectCitizenship(country) {
+    newFamilyForm.value.citizenship = country.code;
+    citizenshipSearch.value = `${country.flag} ${country.name}`;
+    showCitizenshipDropdown.value = false;
+}
+
+// --- Family passport split ---
+const fmPassportSeries = ref('');
+const fmPassportDigits = ref('');
+const fmPassportNumberInput = ref(null);
+
+const fmPassportValid = computed(() => /^[A-Z]{2}[0-9]{7}$/.test(newFamilyForm.value.passport_number || ''));
+
+function handleFmSeriesInput(e) {
+    const clean = e.target.value.replace(/[^a-zA-Z]/g, '').toUpperCase().slice(0, 2);
+    fmPassportSeries.value = clean;
+    e.target.value = clean;
+    newFamilyForm.value.passport_number = clean + fmPassportDigits.value;
+    if (clean.length === 2) nextTick(() => fmPassportNumberInput.value?.focus());
+}
+
+function handleFmDigitsInput(e) {
+    const clean = e.target.value.replace(/[^0-9]/g, '').slice(0, 7);
+    fmPassportDigits.value = clean;
+    e.target.value = clean;
+    newFamilyForm.value.passport_number = fmPassportSeries.value + clean;
+}
+
+// --- Document tabs ---
+const activeDocTab = ref('main');
+
+const docTabs = computed(() => {
+    const tabs = [{
+        key: 'main',
+        label: t('family.applicant'),
+        items: checklist.value,
+        uploaded: checklist.value.filter(i => i.status === 'uploaded' || i.status === 'approved').length,
+        total: checklist.value.length,
+    }];
+    for (const fm of caseFamilyMembers.value) {
+        const items = fm.checklist ?? [];
+        tabs.push({
+            key: fm.id,
+            label: fm.name,
+            items,
+            uploaded: items.filter(i => i.status === 'uploaded' || i.status === 'approved').length,
+            total: items.length,
+        });
+    }
+    return tabs;
+});
+
+const activeTabChecklist = computed(() => {
+    const tab = docTabs.value.find(t => t.key === activeDocTab.value);
+    return tab?.items ?? [];
+});
+
+const activeTabUploaded = computed(() => {
+    return activeTabChecklist.value.filter(i => i.status === 'uploaded' || i.status === 'approved').length;
+});
+
+const allDocsTotal = computed(() => docTabs.value.reduce((s, t) => s + t.total, 0));
+const allDocsUploaded = computed(() => docTabs.value.reduce((s, t) => s + t.uploaded, 0));
 
 function isFamilyAttached(fid) {
     return caseFamilyMembers.value.some(fm => fm.id === fid);
@@ -1008,6 +1124,10 @@ async function createAndAttachFamily() {
     familySaving.value = true;
     try {
         const form = { ...newFamilyForm.value };
+        // Конкатенируем имя + фамилию
+        form.name = `${form.first_name} ${form.last_name}`.trim();
+        delete form.first_name;
+        delete form.last_name;
         // Убираем пустые поля
         Object.keys(form).forEach(k => { if (!form[k]) delete form[k]; });
         const res = await publicPortalApi.addFamilyMember(form);
@@ -1015,8 +1135,15 @@ async function createAndAttachFamily() {
         if (newId) {
             await publicPortalApi.attachFamilyToCase(route.params.id, newId);
         }
+        // Перезагрузим весь case чтобы обновить checklist и семью
+        const { data } = await publicPortalApi.caseDetail(route.params.id);
+        caseData.value = data.data;
+        caseFamilyMembers.value = data.data?.family_members ?? [];
         await loadFamilyData();
-        newFamilyForm.value = { name: '', relationship: '', dob: '', gender: '', citizenship: '', passport_number: '', passport_expires_at: '' };
+        newFamilyForm.value = { first_name: '', last_name: '', relationship: '', dob: '', gender: '', citizenship: '', passport_number: '', passport_expires_at: '' };
+        fmPassportSeries.value = '';
+        fmPassportDigits.value = '';
+        citizenshipSearch.value = '';
         showFamilyModal.value = false;
         uploadToast.value = t('family.addedAndAttached');
         setTimeout(() => { uploadToast.value = ''; }, 3000);
@@ -1037,7 +1164,12 @@ async function confirmDetachFamily() {
     try {
         await publicPortalApi.detachFamilyFromCase(route.params.id, detachTarget.value.id);
         detachTarget.value = null;
+        // Перезагрузим case чтобы обновить checklist и семью
+        const { data } = await publicPortalApi.caseDetail(route.params.id);
+        caseData.value = data.data;
+        caseFamilyMembers.value = data.data?.family_members ?? [];
         await loadFamilyData();
+        activeDocTab.value = 'main';
     } catch (e) {
         alert(e?.response?.data?.message ?? t('common.error'));
     } finally {
