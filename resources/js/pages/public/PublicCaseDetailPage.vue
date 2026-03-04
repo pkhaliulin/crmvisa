@@ -76,6 +76,54 @@
                     </p>
                 </div>
 
+                <!-- Менеджер (в header) -->
+                <div v-if="caseData.assignee" class="mt-4 p-3 rounded-xl bg-[#1BA97F]/5 border border-[#1BA97F]/20">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#0A1F44] to-[#1a3a6e] flex items-center justify-center text-white font-bold text-sm shrink-0">
+                            {{ caseData.assignee.name?.[0]?.toUpperCase() ?? '?' }}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="text-sm font-bold text-[#0A1F44]">{{ caseData.assignee.name }}</div>
+                            <div class="text-xs text-gray-400">{{ $t('cases.visaSpecialist') }}</div>
+                        </div>
+                        <div class="flex items-center gap-1.5 shrink-0">
+                            <a v-if="caseData.assignee.telegram_username"
+                                :href="`https://t.me/${caseData.assignee.telegram_username}`" target="_blank" rel="noopener"
+                                class="w-8 h-8 flex items-center justify-center rounded-lg bg-[#229ED9]/10 hover:bg-[#229ED9]/20 transition-colors">
+                                <svg class="w-4 h-4 text-[#229ED9]" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-2.018 9.51c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L6.51 14.617 3.56 13.7c-.657-.204-.671-.657.137-.972l10.905-4.205c.548-.194 1.027.126.96.725z"/>
+                                </svg>
+                            </a>
+                            <a v-if="caseData.assignee.phone"
+                                :href="`tel:${caseData.assignee.phone}`"
+                                class="w-8 h-8 flex items-center justify-center rounded-lg bg-[#1BA97F]/10 hover:bg-[#1BA97F]/20 transition-colors">
+                                <svg class="w-4 h-4 text-[#1BA97F]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                                </svg>
+                            </a>
+                            <a v-if="caseData.assignee.email"
+                                :href="`mailto:${caseData.assignee.email}`"
+                                class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors">
+                                <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                                </svg>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div v-else-if="caseData.agency && caseData.public_status !== 'draft' && caseData.public_status !== 'awaiting_payment'"
+                    class="mt-4 p-3 rounded-xl bg-gray-50 flex items-center gap-3">
+                    <div class="w-8 h-8 bg-gray-200 rounded-lg flex items-center justify-center shrink-0">
+                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="text-xs font-semibold text-gray-500">{{ $t('cases.noManager') }}</div>
+                        <div class="text-[10px] text-gray-400">{{ $t('cases.noManagerHint') }}</div>
+                    </div>
+                </div>
+
                 <!-- Даты -->
                 <div class="grid grid-cols-2 gap-3 mt-4">
                     <div v-if="caseData.critical_date" class="p-3 rounded-xl bg-gray-50">
@@ -84,8 +132,9 @@
                             {{ formatDate(caseData.critical_date) }}
                         </div>
                     </div>
+                    <!-- Дата поездки (туда) -->
                     <div class="p-3 rounded-xl bg-gray-50">
-                        <div class="text-xs text-gray-400 mb-0.5">{{ $t('cases.travelDate') }}</div>
+                        <div class="text-xs text-gray-400 mb-0.5">{{ $t('cases.departureDateLabel') }}</div>
                         <div v-if="!editingTravelDate && caseData.travel_date" class="flex items-center gap-2">
                             <span class="text-sm font-semibold text-[#0A1F44]">{{ formatDate(caseData.travel_date) }}</span>
                             <button @click="startEditTravelDate" class="text-gray-400 hover:text-[#1BA97F] transition-colors">
@@ -97,7 +146,7 @@
                         <div v-else-if="editingTravelDate" class="flex items-center gap-2">
                             <input type="date" v-model="travelDateInput"
                                 class="text-sm border border-gray-200 rounded-lg px-2 py-1 w-full outline-none focus:border-[#1BA97F]"/>
-                            <button @click="saveTravelDate" :disabled="savingTravelDate"
+                            <button @click="saveTravelDates" :disabled="savingTravelDate"
                                 class="text-[#1BA97F] hover:text-[#0d7a5c] transition-colors shrink-0">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
@@ -112,6 +161,38 @@
                         <div v-else>
                             <button @click="startEditTravelDate" class="text-sm text-[#1BA97F] hover:text-[#0d7a5c] font-medium transition-colors">
                                 + {{ $t('cases.setTravelDate') }}
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Дата возвращения (обратно) -->
+                    <div class="p-3 rounded-xl bg-gray-50">
+                        <div class="text-xs text-gray-400 mb-0.5">{{ $t('cases.returnDateLabel') }}</div>
+                        <div v-if="!editingReturnDate && caseData.return_date" class="flex items-center gap-2">
+                            <span class="text-sm font-semibold text-[#0A1F44]">{{ formatDate(caseData.return_date) }}</span>
+                            <button @click="startEditReturnDate" class="text-gray-400 hover:text-[#1BA97F] transition-colors">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <div v-else-if="editingReturnDate" class="flex items-center gap-2">
+                            <input type="date" v-model="returnDateInput"
+                                class="text-sm border border-gray-200 rounded-lg px-2 py-1 w-full outline-none focus:border-[#1BA97F]"/>
+                            <button @click="saveReturnDate" :disabled="savingReturnDate"
+                                class="text-[#1BA97F] hover:text-[#0d7a5c] transition-colors shrink-0">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                                </svg>
+                            </button>
+                            <button @click="editingReturnDate = false" class="text-gray-400 hover:text-red-500 transition-colors shrink-0">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <div v-else>
+                            <button @click="startEditReturnDate" class="text-sm text-[#1BA97F] hover:text-[#0d7a5c] font-medium transition-colors">
+                                + {{ $t('cases.setReturnDate') }}
                             </button>
                         </div>
                     </div>
@@ -667,69 +748,7 @@
                 </div>
             </div>
 
-            <!-- === Менеджер === -->
-            <div v-if="caseData.assignee" class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                <div class="px-5 py-4 border-b border-gray-50">
-                    <h2 class="font-bold text-[#0A1F44] text-sm">{{ $t('cases.managerTitle') }}</h2>
-                    <p class="text-xs text-gray-400 mt-0.5">{{ $t('cases.managerHint') }}</p>
-                </div>
-                <div class="p-5">
-                    <div class="flex items-center gap-4 mb-4">
-                        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-[#0A1F44] to-[#1a3a6e] flex items-center justify-center text-white font-bold text-lg shrink-0">
-                            {{ caseData.assignee.name?.[0]?.toUpperCase() ?? '?' }}
-                        </div>
-                        <div>
-                            <div class="font-bold text-[#0A1F44]">{{ caseData.assignee.name }}</div>
-                            <div class="text-xs text-gray-400 mt-0.5">{{ $t('cases.visaSpecialist') }}</div>
-                        </div>
-                    </div>
-                    <div class="space-y-2">
-                        <a v-if="caseData.assignee.phone"
-                            :href="`tel:${caseData.assignee.phone}`"
-                            class="flex items-center gap-3 p-3 rounded-xl bg-[#1BA97F]/5 hover:bg-[#1BA97F]/10 border border-[#1BA97F]/20 transition-colors">
-                            <svg class="w-4 h-4 text-[#1BA97F] shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
-                            </svg>
-                            <span class="text-sm font-semibold text-[#1BA97F]">{{ caseData.assignee.phone }}</span>
-                        </a>
-                        <a v-if="caseData.assignee.email"
-                            :href="`mailto:${caseData.assignee.email}`"
-                            class="flex items-center gap-3 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors">
-                            <svg class="w-4 h-4 text-gray-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-                            </svg>
-                            <span class="text-sm text-gray-700">{{ caseData.assignee.email }}</span>
-                        </a>
-                        <a v-if="caseData.assignee.telegram_username"
-                            :href="`https://t.me/${caseData.assignee.telegram_username}`" target="_blank" rel="noopener"
-                            class="flex items-center gap-3 p-3 rounded-xl bg-[#229ED9]/5 hover:bg-[#229ED9]/10 border border-[#229ED9]/20 transition-colors">
-                            <svg class="w-4 h-4 text-[#229ED9] shrink-0" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-2.018 9.51c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L6.51 14.617 3.56 13.7c-.657-.204-.671-.657.137-.972l10.905-4.205c.548-.194 1.027.126.96.725z"/>
-                            </svg>
-                            <span class="text-sm font-semibold text-[#229ED9]">@{{ caseData.assignee.telegram_username }}</span>
-                        </a>
-                        <div v-if="!caseData.assignee.phone && !caseData.assignee.email && !caseData.assignee.telegram_username"
-                            class="text-sm text-gray-400 p-3">
-                            {{ $t('cases.managerWillContact') }}
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- === Без менеджера === -->
-            <div v-else class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center shrink-0">
-                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                        </svg>
-                    </div>
-                    <div>
-                        <div class="text-sm font-semibold text-[#0A1F44]">{{ $t('cases.noManager') }}</div>
-                        <p class="text-xs text-gray-400 mt-0.5">{{ $t('cases.noManagerHint') }}</p>
-                    </div>
-                </div>
-            </div>
+            <!-- Менеджер уже отображается в header блоке -->
 
             <!-- === Отзыв об агентстве === -->
             <div v-if="caseData.agency?.id && reviewState.loaded"
@@ -907,7 +926,7 @@ function startEditTravelDate() {
     editingTravelDate.value = true;
 }
 
-async function saveTravelDate() {
+async function saveTravelDates() {
     savingTravelDate.value = true;
     try {
         await publicPortalApi.updateCase(route.params.id, { travel_date: travelDateInput.value || null });
@@ -917,6 +936,29 @@ async function saveTravelDate() {
         alert(e?.response?.data?.message ?? t('common.error'));
     } finally {
         savingTravelDate.value = false;
+    }
+}
+
+// --- Return date edit ---
+const editingReturnDate = ref(false);
+const returnDateInput = ref('');
+const savingReturnDate = ref(false);
+
+function startEditReturnDate() {
+    returnDateInput.value = caseData.value?.return_date ?? '';
+    editingReturnDate.value = true;
+}
+
+async function saveReturnDate() {
+    savingReturnDate.value = true;
+    try {
+        await publicPortalApi.updateCase(route.params.id, { return_date: returnDateInput.value || null });
+        caseData.value.return_date = returnDateInput.value || null;
+        editingReturnDate.value = false;
+    } catch (e) {
+        alert(e?.response?.data?.message ?? t('common.error'));
+    } finally {
+        savingReturnDate.value = false;
     }
 }
 

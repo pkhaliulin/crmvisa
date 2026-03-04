@@ -95,7 +95,8 @@ class PublicProfileController extends Controller
         $data = $request->validate([
             'country_code'        => ['required', 'string', 'size:2'],
             'visa_type'           => ['required', 'string', 'max:50'],
-            'planned_travel_date' => ['nullable', 'date', 'after:today'],
+            'planned_travel_date'  => ['nullable', 'date', 'after:today'],
+            'planned_return_date'  => ['nullable', 'date', 'after:today'],
         ]);
 
         $case = DB::transaction(function () use ($publicUser, $data) {
@@ -128,6 +129,7 @@ class PublicProfileController extends Controller
                 'public_status' => 'draft',
                 'priority'      => 'normal',
                 'travel_date'   => $data['planned_travel_date'] ?? null,
+                'return_date'   => $data['planned_return_date'] ?? null,
             ]);
 
             app(ChecklistService::class)->createForCase($case);
@@ -140,6 +142,8 @@ class PublicProfileController extends Controller
             'country_code'  => $case->country_code,
             'visa_type'     => $case->visa_type,
             'public_status' => $case->public_status,
+            'travel_date'   => $case->travel_date?->toDateString(),
+            'return_date'   => $case->return_date?->toDateString(),
         ], 'Заявка создана. Выберите агентство для подачи.');
     }
 
@@ -154,7 +158,7 @@ class PublicProfileController extends Controller
         $caseStatuses  = config('case_statuses');
 
         $cases = VisaCase::whereHas('client', fn ($q) => $q->where('public_user_id', $publicUser->id))
-            ->with(['agency:id,name,city', 'assignee:id,name', 'stageHistory'])
+            ->with(['agency:id,name,city', 'assignee:id,name,phone,telegram_username', 'stageHistory'])
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function (VisaCase $case) use ($stages, $caseStatuses) {
@@ -187,9 +191,14 @@ class PublicProfileController extends Controller
                     'priority'             => $case->priority,
                     'critical_date'        => $case->critical_date?->toDateString(),
                     'travel_date'          => $case->travel_date?->toDateString(),
+                    'return_date'          => $case->return_date?->toDateString(),
                     'created_at'           => $case->created_at->toDateString(),
                     'agency'               => $case->agency ? ['name' => $case->agency->name, 'city' => $case->agency->city] : null,
-                    'assignee'             => $case->assignee ? ['name' => $case->assignee->name] : null,
+                    'assignee'             => $case->assignee ? [
+                        'name'              => $case->assignee->name,
+                        'phone'             => $case->assignee->phone,
+                        'telegram_username' => $case->assignee->telegram_username,
+                    ] : null,
                     'docs_total'           => $totalDocs,
                     'docs_uploaded'        => $uploadedDocs,
                     'payment_status'       => $case->payment_status ?? 'unpaid',
@@ -216,7 +225,7 @@ class PublicProfileController extends Controller
         $case = VisaCase::whereHas('client', fn ($q) => $q->where('public_user_id', $publicUser->id))
             ->with([
                 'agency:id,name,city,address,description,website_url,logo_url,phone,email,is_verified,rating,experience_years',
-                'assignee:id,name,email,phone',
+                'assignee:id,name,email,phone,telegram_username',
                 'stageHistory',
             ])
             ->findOrFail($id);
@@ -260,6 +269,7 @@ class PublicProfileController extends Controller
             'priority'             => $case->priority,
             'critical_date'        => $case->critical_date?->toDateString(),
             'travel_date'          => $case->travel_date?->toDateString(),
+            'return_date'          => $case->return_date?->toDateString(),
             'payment_status'       => $case->payment_status ?? 'unpaid',
             'appointment_date'     => $case->appointment_date?->toDateString(),
             'appointment_time'     => $case->appointment_time,
@@ -330,12 +340,16 @@ class PublicProfileController extends Controller
             ->findOrFail($id);
 
         $data = $request->validate([
-            'travel_date' => ['sometimes', 'nullable', 'date', 'after:today'],
+            'travel_date'  => ['sometimes', 'nullable', 'date', 'after:today'],
+            'return_date'  => ['sometimes', 'nullable', 'date', 'after:today'],
         ]);
 
         $case->update($data);
 
-        return ApiResponse::success(['travel_date' => $case->travel_date?->toDateString()], 'Обновлено');
+        return ApiResponse::success([
+            'travel_date'  => $case->travel_date?->toDateString(),
+            'return_date'  => $case->return_date?->toDateString(),
+        ], 'Обновлено');
     }
 
     /**
@@ -458,6 +472,11 @@ class PublicProfileController extends Controller
         }
 
         DB::transaction(function () use ($case, $publicUser) {
+            // Устанавливаем tenant context для RLS (позволяет UPDATE agency_id)
+            if ($case->agency_id) {
+                DB::statement("SET LOCAL app.current_tenant_id = '{$case->agency_id}'");
+            }
+
             // Архивируем старые лиды
             PublicLead::where('case_id', $case->id)
                 ->whereIn('status', ['new', 'contacted', 'assigned'])

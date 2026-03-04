@@ -134,6 +134,9 @@ class PublicAgencyController extends Controller
         $agency = Agency::findOrFail($agencyId);
 
         return DB::transaction(function () use ($publicUser, $agency, $data, $cc) {
+            // Устанавливаем tenant context для RLS (позволяет UPDATE agency_id из NULL в UUID)
+            DB::statement("SET LOCAL app.current_tenant_id = '{$agency->id}'");
+
             // 1. Найти или создать клиента в агентстве
             $client = Client::where('public_user_id', $publicUser->id)
                 ->where('agency_id', $agency->id)

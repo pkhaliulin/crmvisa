@@ -30,6 +30,7 @@ class VisaCase extends BaseModel
         'priority',
         'critical_date',
         'travel_date',
+        'return_date',
         'appointment_date',
         'appointment_time',
         'appointment_location',
@@ -39,6 +40,7 @@ class VisaCase extends BaseModel
     protected $casts = [
         'critical_date'    => 'date',
         'travel_date'      => 'date',
+        'return_date'      => 'date',
         'appointment_date' => 'date',
     ];
 
