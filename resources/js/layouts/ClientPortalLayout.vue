@@ -40,12 +40,8 @@
 
                 <!-- User name + profile link -->
                 <router-link :to="{ name: 'me.profile' }"
-                    class="text-right hover:opacity-80 transition-opacity">
-                    <div class="text-sm font-semibold text-[#0A1F44] leading-tight">{{ displayName }}</div>
-                    <div class="text-xs font-medium leading-tight"
-                         :class="publicAuth.profilePercent >= 80 ? 'text-[#1BA97F]' : publicAuth.profilePercent >= 40 ? 'text-amber-500' : 'text-gray-400'">
-                        {{ $t('common.profilePercent', { percent: publicAuth.profilePercent }) }}
-                    </div>
+                    class="text-sm font-semibold text-[#0A1F44] hover:opacity-80 transition-opacity">
+                    {{ displayName }}
                 </router-link>
 
                 <!-- Language switcher -->
