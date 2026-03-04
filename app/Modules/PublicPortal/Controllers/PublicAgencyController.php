@@ -111,24 +111,21 @@ class PublicAgencyController extends Controller
         $cc       = strtoupper($data['country_code']);
         $agencyId = $data['agency_id'];
 
-        // Проверка дублей: уже есть awaiting_payment/submitted case в это же агентство
-        $duplicateQuery = VisaCase::whereHas('client', fn ($q) => $q->where('public_user_id', $publicUser->id))
-            ->where('agency_id', $agencyId)
-            ->where('country_code', $cc)
-            ->whereIn('public_status', ['awaiting_payment', 'submitted', 'manager_assigned', 'document_collection']);
+        // Проверка дублей — только при создании новой заявки (без case_id).
+        // Если case_id передан, пользователь обновляет конкретный draft — не блокируем.
+        if (empty($data['case_id'])) {
+            $existingCase = VisaCase::whereHas('client', fn ($q) => $q->where('public_user_id', $publicUser->id))
+                ->where('agency_id', $agencyId)
+                ->where('country_code', $cc)
+                ->whereIn('public_status', ['awaiting_payment', 'submitted', 'manager_assigned', 'document_collection'])
+                ->first();
 
-        // Исключаем текущий кейс (если обновляем draft)
-        if (!empty($data['case_id'])) {
-            $duplicateQuery->where('id', '!=', $data['case_id']);
-        }
-
-        $existingCase = $duplicateQuery->first();
-
-        if ($existingCase) {
-            return response()->json([
-                'message' => __('public.lead_duplicate'),
-                'case_id' => $existingCase->id,
-            ], 409);
+            if ($existingCase) {
+                return response()->json([
+                    'message' => __('public.lead_duplicate'),
+                    'case_id' => $existingCase->id,
+                ], 409);
+            }
         }
 
         $agency = Agency::findOrFail($agencyId);
