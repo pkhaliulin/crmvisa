@@ -2,6 +2,7 @@
 
 namespace App\Modules\PublicPortal\Services;
 
+use App\Modules\Group\Services\GroupService;
 use App\Modules\PublicPortal\Models\PublicUser;
 use App\Support\Traits\NormalizesPhone;
 use Illuminate\Support\Facades\DB;
@@ -73,6 +74,8 @@ class PhoneAuthService
 
         $user->update(['last_login_at' => now()]);
 
+        app(GroupService::class)->linkPendingInvitations($user);
+
         return ['user' => $user->fresh(), 'token' => $plainToken];
     }
 
@@ -96,6 +99,8 @@ class PhoneAuthService
 
         $plainToken = $this->rotateToken($user);
         $user->update(['last_login_at' => now()]);
+
+        app(GroupService::class)->linkPendingInvitations($user);
 
         return ['user' => $user->fresh(), 'token' => $plainToken];
     }

@@ -4,6 +4,7 @@ namespace App\Modules\Payment\Models;
 
 use App\Modules\Agency\Models\Agency;
 use App\Modules\Case\Models\VisaCase;
+use App\Modules\Group\Models\CaseGroup;
 use App\Modules\PublicPortal\Models\PublicUser;
 use App\Modules\Service\Models\AgencyServicePackage;
 use App\Support\Abstracts\BaseModel;
@@ -15,6 +16,7 @@ class ClientPayment extends BaseModel
 
     protected $fillable = [
         'case_id',
+        'group_id',
         'public_user_id',
         'agency_id',
         'package_id',
@@ -51,5 +53,10 @@ class ClientPayment extends BaseModel
     public function package(): BelongsTo
     {
         return $this->belongsTo(AgencyServicePackage::class, 'package_id');
+    }
+
+    public function group(): BelongsTo
+    {
+        return $this->belongsTo(CaseGroup::class, 'group_id');
     }
 }

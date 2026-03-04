@@ -14,6 +14,26 @@
             <div class="w-8 h-8 border-2 border-[#1BA97F] border-t-transparent rounded-full animate-spin"></div>
         </div>
 
+        <!-- Group applications link -->
+        <div v-if="!loading && groupsCount > 0"
+            class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <button @click="router.push({ name: 'me.groups' })"
+                class="w-full px-5 py-4 flex items-center gap-3 hover:bg-gray-50 transition-colors text-left">
+                <div class="w-10 h-10 bg-[#0A1F44]/5 rounded-xl flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5 text-[#0A1F44]/60" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="font-semibold text-[#0A1F44] text-sm">{{ $t('group.navTitle') }}</div>
+                    <div class="text-xs text-gray-400">{{ $t('group.groupsCount', { count: groupsCount }) }}</div>
+                </div>
+                <svg class="w-4 h-4 text-gray-300 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                </svg>
+            </button>
+        </div>
+
         <!-- Cases list -->
         <template v-else-if="cases.length">
             <button v-for="c in cases" :key="c.id"
@@ -187,6 +207,7 @@ const router = useRouter();
 const publicAuth = usePublicAuthStore();
 const loading = ref(true);
 const cases   = ref([]);
+const groupsCount = ref(0);
 
 // 8 клиентских статусов для прогресс-бара
 const PUBLIC_STATUSES = [
@@ -290,8 +311,12 @@ function goChooseAgency(c) {
 
 onMounted(async () => {
     try {
-        const { data } = await publicPortalApi.cases();
-        cases.value = data.data ?? [];
+        const [casesRes, groupsRes] = await Promise.all([
+            publicPortalApi.cases(),
+            publicPortalApi.groups().catch(() => ({ data: { data: [] } })),
+        ]);
+        cases.value = casesRes.data.data ?? [];
+        groupsCount.value = (groupsRes.data.data ?? []).length;
     } catch {
         cases.value = [];
     } finally {

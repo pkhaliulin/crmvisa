@@ -2,6 +2,8 @@
 
 namespace App\Modules\PublicPortal\Models;
 
+use App\Modules\Group\Models\CaseGroup;
+use App\Modules\Group\Models\CaseGroupMember;
 use App\Support\Traits\HasUuid;
 use App\Support\Traits\NormalizesPhone;
 use Illuminate\Database\Eloquent\Model;
@@ -82,6 +84,16 @@ class PublicUser extends Model
     public function leads(): HasMany
     {
         return $this->hasMany(PublicLead::class);
+    }
+
+    public function initiatedGroups(): HasMany
+    {
+        return $this->hasMany(CaseGroup::class, 'initiator_public_user_id');
+    }
+
+    public function groupMemberships(): HasMany
+    {
+        return $this->hasMany(CaseGroupMember::class, 'public_user_id');
     }
 
     // -------------------------------------------------------------------------

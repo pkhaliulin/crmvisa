@@ -92,6 +92,26 @@
                 </div>
             </div>
 
+            <!-- === Группа (если case.group_id) === -->
+            <div v-if="caseData.group_id"
+                class="bg-white rounded-2xl border border-[#1BA97F]/20 shadow-sm p-5">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-[#1BA97F]/10 rounded-xl flex items-center justify-center shrink-0">
+                        <svg class="w-5 h-5 text-[#1BA97F]" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="font-semibold text-[#0A1F44] text-sm">{{ $t('group.youAreInGroup') }}</div>
+                        <div class="text-xs text-gray-400 mt-0.5">{{ $t('group.groupCaseHint') }}</div>
+                    </div>
+                    <button @click="router.push({ name: 'me.groups.show', params: { id: caseData.group_id } })"
+                        class="text-xs font-semibold text-[#1BA97F] hover:text-[#158a65] transition-colors shrink-0">
+                        {{ $t('group.viewGroup') }}
+                    </button>
+                </div>
+            </div>
+
             <!-- === Inline-выбор агентства (draft без агентства) === -->
             <div v-if="caseData.public_status === 'draft' && !caseData.agency" class="space-y-4">
                 <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">

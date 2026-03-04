@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Group\Controllers\PublicGroupController;
 use App\Modules\Agency\Controllers\AgencySettingsController;
 use App\Modules\Agency\Controllers\ReportController;
 use App\Modules\Auth\Controllers\AuthController;
@@ -355,6 +356,15 @@ Route::prefix('v1')->group(function () {
         // Inline-выбор агентства для кейса + смена агентства
         Route::get('me/cases/{id}/agencies',       [PublicProfileController::class, 'caseAgencies']);
         Route::post('me/cases/{id}/change-agency',  [PublicProfileController::class, 'changeAgency']);
+
+        // Группы
+        Route::get('me/groups',                     [PublicGroupController::class, 'index']);
+        Route::post('me/groups',                    [PublicGroupController::class, 'store']);
+        Route::get('me/groups/{id}',                [PublicGroupController::class, 'show']);
+        Route::post('me/groups/{id}/members',       [PublicGroupController::class, 'addMember']);
+        Route::delete('me/groups/{id}/members/{mid}', [PublicGroupController::class, 'removeMember']);
+        Route::post('me/groups/{id}/agency',        [PublicGroupController::class, 'setAgency']);
+        Route::post('me/groups/{id}/pay',           [PublicGroupController::class, 'payForGroup']);
 
         // Оплата клиента
         Route::post('me/payments/initiate',        [ClientPaymentController::class, 'initiate']);

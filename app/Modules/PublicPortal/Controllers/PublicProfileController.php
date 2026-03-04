@@ -248,6 +248,7 @@ class PublicProfileController extends Controller
             'critical_date'        => $case->critical_date?->toDateString(),
             'travel_date'          => $case->travel_date?->toDateString(),
             'payment_status'       => $case->payment_status ?? 'unpaid',
+            'group_id'             => $case->group_id,
             'notes'                => $case->notes,
             'created_at'           => $case->created_at->toDateString(),
             'agency'               => $case->agency ? [

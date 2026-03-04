@@ -67,6 +67,15 @@ export const publicPortalApi = {
     submitReview:   (agencyId, data)   => publicApi.post(`/agencies/${agencyId}/reviews`, data),
     canReview:      (agencyId)         => publicApi.get(`/me/can-review/${agencyId}`),
 
+    // Groups
+    groups:            ()              => publicApi.get('/me/groups'),
+    createGroup:       (data)          => publicApi.post('/me/groups', data),
+    groupDetail:       (id)            => publicApi.get(`/me/groups/${id}`),
+    addGroupMember:    (id, data)      => publicApi.post(`/me/groups/${id}/members`, data),
+    removeGroupMember: (id, mid)       => publicApi.delete(`/me/groups/${id}/members/${mid}`),
+    setGroupAgency:    (id, agencyId)  => publicApi.post(`/me/groups/${id}/agency`, { agency_id: agencyId }),
+    payForGroup:       (id, provider)  => publicApi.post(`/me/groups/${id}/pay`, { provider }),
+
     // Scoring
     countries:    ()     => publicApi.get('/countries'),
     scoreAll:     ()     => publicApi.get('/scoring'),

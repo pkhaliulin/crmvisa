@@ -4,6 +4,7 @@ namespace App\Modules\Case\Models;
 
 use App\Modules\Agency\Models\Agency;
 use App\Modules\Client\Models\Client;
+use App\Modules\Group\Models\CaseGroup;
 use App\Modules\User\Models\User;
 use App\Support\Abstracts\BaseModel;
 use App\Support\Traits\HasTenant;
@@ -18,6 +19,7 @@ class VisaCase extends BaseModel
 
     protected $fillable = [
         'agency_id',
+        'group_id',
         'client_id',
         'assigned_to',
         'country_code',
@@ -39,6 +41,11 @@ class VisaCase extends BaseModel
     public function agency(): BelongsTo
     {
         return $this->belongsTo(Agency::class);
+    }
+
+    public function group(): BelongsTo
+    {
+        return $this->belongsTo(CaseGroup::class, 'group_id');
     }
 
     public function client(): BelongsTo

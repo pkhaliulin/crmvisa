@@ -3,6 +3,7 @@
 namespace App\Modules\Payment\Services;
 
 use App\Modules\Case\Models\VisaCase;
+use App\Modules\Group\Services\GroupService;
 use App\Modules\Payment\Models\ClientPayment;
 use App\Modules\PublicPortal\Models\PublicUser;
 use Illuminate\Support\Facades\DB;
@@ -78,9 +79,13 @@ class ClientPaymentService
                 'metadata'               => $data,
             ]);
 
-            VisaCase::where('id', $payment->case_id)->update([
-                'payment_status' => 'paid',
-            ]);
+            if ($payment->group_id) {
+                app(GroupService::class)->handleGroupPaymentSuccess($payment);
+            } else {
+                VisaCase::where('id', $payment->case_id)->update([
+                    'payment_status' => 'paid',
+                ]);
+            }
         });
     }
 }

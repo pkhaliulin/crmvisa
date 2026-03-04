@@ -41,6 +41,16 @@ const routes = [
                 component: () => import('@/pages/public/PublicCaseDetailPage.vue'),
             },
             {
+                path: 'groups',
+                name: 'me.groups',
+                component: () => import('@/pages/public/PublicGroupsPage.vue'),
+            },
+            {
+                path: 'groups/:id',
+                name: 'me.groups.show',
+                component: () => import('@/pages/public/PublicGroupDetailPage.vue'),
+            },
+            {
                 path: 'agencies',
                 name: 'me.agencies',
                 component: () => import('@/pages/public/PublicAgenciesPage.vue'),
