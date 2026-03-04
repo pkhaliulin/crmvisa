@@ -16,6 +16,7 @@ class CaseChecklist extends BaseModel
     protected $fillable = [
         'agency_id',
         'case_id',
+        'family_member_id',
         'requirement_id',
         'country_requirement_id',
         'type',

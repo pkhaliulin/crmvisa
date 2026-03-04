@@ -84,9 +84,36 @@
                             {{ formatDate(caseData.critical_date) }}
                         </div>
                     </div>
-                    <div v-if="caseData.travel_date" class="p-3 rounded-xl bg-gray-50">
+                    <div class="p-3 rounded-xl bg-gray-50">
                         <div class="text-xs text-gray-400 mb-0.5">{{ $t('cases.travelDate') }}</div>
-                        <div class="text-sm font-semibold text-[#0A1F44]">{{ formatDate(caseData.travel_date) }}</div>
+                        <div v-if="!editingTravelDate && caseData.travel_date" class="flex items-center gap-2">
+                            <span class="text-sm font-semibold text-[#0A1F44]">{{ formatDate(caseData.travel_date) }}</span>
+                            <button @click="startEditTravelDate" class="text-gray-400 hover:text-[#1BA97F] transition-colors">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <div v-else-if="editingTravelDate" class="flex items-center gap-2">
+                            <input type="date" v-model="travelDateInput"
+                                class="text-sm border border-gray-200 rounded-lg px-2 py-1 w-full outline-none focus:border-[#1BA97F]"/>
+                            <button @click="saveTravelDate" :disabled="savingTravelDate"
+                                class="text-[#1BA97F] hover:text-[#0d7a5c] transition-colors shrink-0">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                                </svg>
+                            </button>
+                            <button @click="editingTravelDate = false" class="text-gray-400 hover:text-red-500 transition-colors shrink-0">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <div v-else>
+                            <button @click="startEditTravelDate" class="text-sm text-[#1BA97F] hover:text-[#0d7a5c] font-medium transition-colors">
+                                + {{ $t('cases.setTravelDate') }}
+                            </button>
+                        </div>
                     </div>
                     <div class="p-3 rounded-xl bg-gray-50">
                         <div class="text-xs text-gray-400 mb-0.5">{{ $t('cases.created') }}</div>
@@ -320,6 +347,216 @@
                 <!-- Нет документов -->
                 <div v-else class="px-5 py-6 text-center">
                     <div class="text-sm text-gray-400">{{ $t('cases.noDocsList') }}</div>
+                </div>
+            </div>
+
+            <!-- === Члены семьи === -->
+            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                <div class="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
+                    <div>
+                        <h2 class="font-bold text-[#0A1F44] text-sm">{{ $t('family.title') }}</h2>
+                        <p class="text-xs text-gray-400 mt-0.5">{{ $t('family.hint') }}</p>
+                    </div>
+                    <button @click="showFamilyModal = true"
+                        class="text-xs font-semibold text-[#1BA97F] hover:text-[#0d7a5c] transition-colors flex items-center gap-1">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+                        </svg>
+                        {{ $t('family.add') }}
+                    </button>
+                </div>
+
+                <!-- Привязанные к заявке -->
+                <div v-if="caseFamilyMembers.length" class="divide-y divide-gray-50">
+                    <div v-for="fm in caseFamilyMembers" :key="fm.id" class="px-5 py-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center gap-2">
+                                <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+                                    :class="fm.is_minor ? 'bg-amber-100 text-amber-700' : 'bg-[#0A1F44]/10 text-[#0A1F44]'">
+                                    {{ fm.name?.[0]?.toUpperCase() }}
+                                </div>
+                                <div>
+                                    <div class="text-sm font-semibold text-[#0A1F44]">{{ fm.name }}</div>
+                                    <div class="text-xs text-gray-400">
+                                        {{ $t('family.rel.' + fm.relationship) }}
+                                        <span v-if="fm.is_minor" class="text-amber-600 font-medium ml-1">{{ $t('family.minor') }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <button @click="detachFamilyFromCase(fm)"
+                                class="text-xs text-gray-400 hover:text-red-500 transition-colors">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <!-- Чеклист документов члена семьи -->
+                        <div v-if="fm.checklist?.length" class="ml-10 space-y-1.5">
+                            <div v-for="doc in fm.checklist" :key="doc.id"
+                                class="flex items-center gap-2 text-xs">
+                                <div class="w-4 h-4 rounded-full flex items-center justify-center shrink-0"
+                                    :class="{
+                                        'bg-[#1BA97F]':  doc.status === 'approved',
+                                        'bg-blue-100':   doc.status === 'uploaded',
+                                        'bg-amber-100':  doc.status === 'pending' && doc.is_required,
+                                        'bg-gray-100':   doc.status === 'pending' && !doc.is_required,
+                                    }">
+                                    <svg v-if="doc.status === 'approved'" class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                                    </svg>
+                                    <svg v-else-if="doc.status === 'uploaded'" class="w-2.5 h-2.5 text-blue-600" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                </div>
+                                <span class="text-gray-700">{{ doc.name }}</span>
+                                <span class="ml-auto font-medium"
+                                    :class="{
+                                        'text-[#1BA97F]': doc.status === 'approved',
+                                        'text-blue-600':  doc.status === 'uploaded',
+                                        'text-amber-600': doc.status === 'pending' && doc.is_required,
+                                        'text-gray-400':  doc.status === 'pending' && !doc.is_required,
+                                    }">
+                                    {{ statusLabel(doc.status, doc.is_required) }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Пусто -->
+                <div v-else class="px-5 py-6 text-center text-sm text-gray-400">
+                    {{ $t('family.empty') }}
+                </div>
+            </div>
+
+            <!-- Модал добавления/привязки семьи -->
+            <div v-if="showFamilyModal"
+                class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center sm:p-4"
+                @click.self="showFamilyModal = false">
+                <div class="bg-white w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl shadow-xl max-h-[85vh] flex flex-col">
+                    <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between shrink-0">
+                        <h3 class="text-base font-bold text-[#0A1F44]">{{ $t('family.modalTitle') }}</h3>
+                        <button @click="showFamilyModal = false" class="text-gray-400 hover:text-gray-600">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="overflow-y-auto flex-1 p-5 space-y-4">
+                        <!-- Существующие (из профиля) -->
+                        <div v-if="profileFamily.length">
+                            <div class="text-xs font-semibold text-gray-400 uppercase mb-2">{{ $t('family.fromProfile') }}</div>
+                            <div class="space-y-2">
+                                <div v-for="fm in profileFamily" :key="fm.id"
+                                    class="flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:border-[#1BA97F]/30 transition-colors">
+                                    <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+                                        :class="fm.is_minor ? 'bg-amber-100 text-amber-700' : 'bg-[#0A1F44]/10 text-[#0A1F44]'">
+                                        {{ fm.name?.[0]?.toUpperCase() }}
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="text-sm font-medium text-[#0A1F44]">{{ fm.name }}</div>
+                                        <div class="text-xs text-gray-400">{{ $t('family.rel.' + fm.relationship) }}</div>
+                                    </div>
+                                    <button v-if="!isFamilyAttached(fm.id)"
+                                        @click="attachFamily(fm.id)"
+                                        :disabled="familyAttaching"
+                                        class="text-xs font-semibold text-[#1BA97F] hover:text-[#0d7a5c] px-3 py-1.5 rounded-lg bg-[#1BA97F]/10 hover:bg-[#1BA97F]/20 transition-colors disabled:opacity-50">
+                                        {{ $t('family.attach') }}
+                                    </button>
+                                    <span v-else class="text-xs text-gray-400 px-3 py-1.5">{{ $t('family.attached') }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Добавить нового -->
+                        <div class="border-t border-gray-100 pt-4">
+                            <div class="text-xs font-semibold text-gray-400 uppercase mb-3">{{ $t('family.addNew') }}</div>
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="text-xs text-gray-500 mb-1 block">{{ $t('family.name') }} *</label>
+                                    <input v-model="newFamilyForm.name" type="text"
+                                        class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] transition-colors"
+                                        :placeholder="$t('family.namePlaceholder')"/>
+                                </div>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="text-xs text-gray-500 mb-1 block">{{ $t('family.relationship') }} *</label>
+                                        <select v-model="newFamilyForm.relationship"
+                                            class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] bg-white transition-colors">
+                                            <option value="">--</option>
+                                            <option value="spouse">{{ $t('family.rel.spouse') }}</option>
+                                            <option value="child">{{ $t('family.rel.child') }}</option>
+                                            <option value="parent">{{ $t('family.rel.parent') }}</option>
+                                            <option value="sibling">{{ $t('family.rel.sibling') }}</option>
+                                            <option value="other">{{ $t('family.rel.other') }}</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="text-xs text-gray-500 mb-1 block">{{ $t('family.dob') }}</label>
+                                        <input v-model="newFamilyForm.dob" type="date"
+                                            class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] transition-colors"/>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="text-xs text-gray-500 mb-1 block">{{ $t('family.gender') }}</label>
+                                        <select v-model="newFamilyForm.gender"
+                                            class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] bg-white transition-colors">
+                                            <option value="">--</option>
+                                            <option value="M">{{ $t('family.male') }}</option>
+                                            <option value="F">{{ $t('family.female') }}</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="text-xs text-gray-500 mb-1 block">{{ $t('family.citizenship') }}</label>
+                                        <input v-model="newFamilyForm.citizenship" type="text" maxlength="2"
+                                            class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] transition-colors uppercase"
+                                            placeholder="UZ"/>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="text-xs text-gray-500 mb-1 block">{{ $t('family.passportNumber') }}</label>
+                                        <input v-model="newFamilyForm.passport_number" type="text" maxlength="20"
+                                            class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] transition-colors"/>
+                                    </div>
+                                    <div>
+                                        <label class="text-xs text-gray-500 mb-1 block">{{ $t('family.passportExpires') }}</label>
+                                        <input v-model="newFamilyForm.passport_expires_at" type="date"
+                                            class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] transition-colors"/>
+                                    </div>
+                                </div>
+                                <button @click="createAndAttachFamily"
+                                    :disabled="!newFamilyForm.name || !newFamilyForm.relationship || familySaving"
+                                    class="w-full py-3 bg-[#1BA97F] hover:bg-[#0d7a5c] text-white text-sm font-semibold rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+                                    <svg v-if="familySaving" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                                    </svg>
+                                    {{ familySaving ? $t('common.loading') : $t('family.addAndAttach') }}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Модал подтверждения открепления семьи -->
+            <div v-if="detachTarget"
+                class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center sm:p-4"
+                @click.self="detachTarget = null">
+                <div class="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl shadow-xl p-6">
+                    <h3 class="text-base font-bold text-[#0A1F44] mb-2">{{ $t('common.confirmDeleteTitle') }}</h3>
+                    <p class="text-sm text-gray-500 mb-5">{{ $t('family.confirmDetach', { name: detachTarget.name }) }}</p>
+                    <div class="flex gap-3">
+                        <button @click="detachTarget = null" class="flex-1 py-2.5 border border-gray-200 text-sm font-semibold rounded-xl text-gray-600 hover:bg-gray-50 transition-colors">
+                            {{ $t('common.cancel') }}
+                        </button>
+                        <button @click="confirmDetachFamily" :disabled="familyDetaching"
+                            class="flex-1 py-2.5 bg-red-500 hover:bg-red-600 text-white text-sm font-semibold rounded-xl transition-colors disabled:opacity-50">
+                            {{ familyDetaching ? $t('common.loading') : $t('common.confirmDeleteBtn') }}
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -612,7 +849,7 @@
         </div>
 
         <!-- Ошибка / не найдено -->
-        <div v-else-if="!loading" class="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center">
+        <div v-if="!loading && !caseData" class="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center">
             <div class="text-3xl mb-3">404</div>
             <div class="font-semibold text-[#0A1F44]">{{ $t('cases.notFound') }}</div>
             <button @click="router.push({ name: 'me.cases' })"
@@ -659,6 +896,112 @@ const PAYMENT_PROVIDERS = [
 // --- Смена агентства ---
 const showChangeAgencyModal = ref(false);
 const changingAgency = ref(false);
+
+// --- Travel date edit ---
+const editingTravelDate = ref(false);
+const travelDateInput = ref('');
+const savingTravelDate = ref(false);
+
+function startEditTravelDate() {
+    travelDateInput.value = caseData.value?.travel_date ?? '';
+    editingTravelDate.value = true;
+}
+
+async function saveTravelDate() {
+    savingTravelDate.value = true;
+    try {
+        await publicPortalApi.updateCase(route.params.id, { travel_date: travelDateInput.value || null });
+        caseData.value.travel_date = travelDateInput.value || null;
+        editingTravelDate.value = false;
+    } catch (e) {
+        alert(e?.response?.data?.message ?? t('common.error'));
+    } finally {
+        savingTravelDate.value = false;
+    }
+}
+
+// --- Семья ---
+const showFamilyModal = ref(false);
+const profileFamily = ref([]);
+const caseFamilyMembers = ref([]);
+const familyAttaching = ref(false);
+const familySaving = ref(false);
+const familyDetaching = ref(false);
+const detachTarget = ref(null);
+const newFamilyForm = ref({
+    name: '', relationship: '', dob: '', gender: '', citizenship: '',
+    passport_number: '', passport_expires_at: '',
+});
+
+function isFamilyAttached(fid) {
+    return caseFamilyMembers.value.some(fm => fm.id === fid);
+}
+
+async function loadFamilyData() {
+    try {
+        const [profileRes, caseRes] = await Promise.all([
+            publicPortalApi.familyMembers(),
+            publicPortalApi.caseFamilyMembers(route.params.id),
+        ]);
+        profileFamily.value = profileRes.data.data ?? [];
+        caseFamilyMembers.value = caseRes.data.data ?? [];
+    } catch { /* ignore */ }
+}
+
+async function attachFamily(fid) {
+    familyAttaching.value = true;
+    try {
+        await publicPortalApi.attachFamilyToCase(route.params.id, fid);
+        await loadFamilyData();
+        uploadToast.value = t('family.attached');
+        setTimeout(() => { uploadToast.value = ''; }, 3000);
+    } catch (e) {
+        alert(e?.response?.data?.message ?? t('common.error'));
+    } finally {
+        familyAttaching.value = false;
+    }
+}
+
+async function createAndAttachFamily() {
+    familySaving.value = true;
+    try {
+        const form = { ...newFamilyForm.value };
+        // Убираем пустые поля
+        Object.keys(form).forEach(k => { if (!form[k]) delete form[k]; });
+        const res = await publicPortalApi.addFamilyMember(form);
+        const newId = res.data.data?.id;
+        if (newId) {
+            await publicPortalApi.attachFamilyToCase(route.params.id, newId);
+        }
+        await loadFamilyData();
+        newFamilyForm.value = { name: '', relationship: '', dob: '', gender: '', citizenship: '', passport_number: '', passport_expires_at: '' };
+        showFamilyModal.value = false;
+        uploadToast.value = t('family.addedAndAttached');
+        setTimeout(() => { uploadToast.value = ''; }, 3000);
+    } catch (e) {
+        alert(e?.response?.data?.message ?? t('common.error'));
+    } finally {
+        familySaving.value = false;
+    }
+}
+
+function detachFamilyFromCase(fm) {
+    detachTarget.value = fm;
+}
+
+async function confirmDetachFamily() {
+    if (!detachTarget.value) return;
+    familyDetaching.value = true;
+    try {
+        await publicPortalApi.detachFamilyFromCase(route.params.id, detachTarget.value.id);
+        detachTarget.value = null;
+        await loadFamilyData();
+    } catch (e) {
+        alert(e?.response?.data?.message ?? t('common.error'));
+    } finally {
+        familyDetaching.value = false;
+    }
+}
 
 // Критерии оценки агентства
 const REVIEW_CRITERIA = computed(() => [
@@ -927,6 +1270,7 @@ onMounted(async () => {
     try {
         const { data } = await publicPortalApi.caseDetail(route.params.id);
         caseData.value = data.data;
+        caseFamilyMembers.value = data.data?.family_members ?? [];
         // Загружаем статус отзыва для агентства
         if (caseData.value?.agency?.id) {
             await loadCanReview(caseData.value.agency.id);
@@ -935,6 +1279,8 @@ onMounted(async () => {
         if (caseData.value?.public_status === 'draft' && !caseData.value?.agency) {
             loadInlineAgencies();
         }
+        // Загружаем семью из профиля (для модала)
+        publicPortalApi.familyMembers().then(r => { profileFamily.value = r.data.data ?? []; }).catch(() => {});
     } catch {
         caseData.value = null;
     } finally {

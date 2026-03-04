@@ -9,6 +9,7 @@ use App\Modules\Client\Models\Client;
 use App\Modules\Document\Models\CaseChecklist;
 use App\Modules\Document\Services\ChecklistService;
 use App\Modules\PublicPortal\Models\PublicLead;
+use App\Modules\Case\Models\CaseFamilyMember;
 use App\Support\Helpers\ApiResponse;
 use App\Support\Rules\ReferenceExists;
 use Illuminate\Http\JsonResponse;
@@ -287,7 +288,54 @@ class PublicProfileController extends Controller
             ] : null,
             'checklist'            => $checklist,
             'timeline'             => $stageTimeline,
+            'family_members'       => CaseFamilyMember::where('case_id', $case->id)
+                ->with('familyMember')
+                ->get()
+                ->map(fn ($cm) => [
+                    'id'                    => $cm->familyMember->id,
+                    'case_family_member_id' => $cm->id,
+                    'name'                  => $cm->familyMember->name,
+                    'relationship'          => $cm->familyMember->relationship,
+                    'dob'                   => $cm->familyMember->dob?->toDateString(),
+                    'gender'                => $cm->familyMember->gender,
+                    'citizenship'           => $cm->familyMember->citizenship,
+                    'passport_number'       => $cm->familyMember->passport_number,
+                    'passport_expires_at'   => $cm->familyMember->passport_expires_at?->toDateString(),
+                    'is_minor'              => $cm->familyMember->isMinor(),
+                    'checklist'             => CaseChecklist::where('case_id', $case->id)
+                        ->where('family_member_id', $cm->familyMember->id)
+                        ->orderBy('sort_order')
+                        ->get()
+                        ->map(fn ($item) => [
+                            'id'          => $item->id,
+                            'name'        => $item->name,
+                            'description' => $item->description,
+                            'is_required' => $item->is_required,
+                            'status'      => $item->status,
+                            'notes'       => $item->notes,
+                        ]),
+                ]),
         ]);
+    }
+
+    /**
+     * PATCH /public/me/cases/{id}
+     * Обновить данные заявки (travel_date и т.д.) — только для draft / awaiting_payment.
+     */
+    public function updateCase(Request $request, string $id): JsonResponse
+    {
+        $publicUser = $request->get('_public_user');
+
+        $case = VisaCase::whereHas('client', fn ($q) => $q->where('public_user_id', $publicUser->id))
+            ->findOrFail($id);
+
+        $data = $request->validate([
+            'travel_date' => ['sometimes', 'nullable', 'date', 'after:today'],
+        ]);
+
+        $case->update($data);
+
+        return ApiResponse::success(['travel_date' => $case->travel_date?->toDateString()], 'Обновлено');
     }
 
     /**

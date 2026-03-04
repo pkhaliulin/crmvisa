@@ -358,6 +358,7 @@
     "backToList": "Вернуться к списку",
     "deadline": "Дедлайн",
     "travelDate": "Дата поездки",
+    "setTravelDate": "Указать дату поездки",
     "created": "Создана",
     "agencyComment": "Комментарий агентства",
     "documentsTitle": "Документы",
@@ -1107,5 +1108,37 @@
     "paymentPending": "Ожидает оплаты",
     "paymentUnpaid": "Не оплачено",
     "appointmentNotSet": "Дата приема не назначена"
+  },
+  "family": {
+    "title": "Члены семьи",
+    "hint": "Родственники, привязанные к заявке",
+    "add": "Добавить",
+    "modalTitle": "Добавить члена семьи",
+    "fromProfile": "Из вашего профиля",
+    "addNew": "Добавить нового",
+    "name": "ФИО",
+    "namePlaceholder": "Иванов Иван Иванович",
+    "relationship": "Родство",
+    "dob": "Дата рождения",
+    "gender": "Пол",
+    "male": "Мужской",
+    "female": "Женский",
+    "citizenship": "Гражданство",
+    "passportNumber": "Номер паспорта",
+    "passportExpires": "Паспорт до",
+    "attach": "Привязать",
+    "attached": "Привязан",
+    "addAndAttach": "Добавить и привязать",
+    "addedAndAttached": "Член семьи добавлен в заявку",
+    "empty": "Нет привязанных членов семьи",
+    "minor": "несовершеннолетний",
+    "confirmDetach": "Открепить {name} от заявки? Документы этого родственника будут удалены.",
+    "rel": {
+      "spouse": "Супруг(а)",
+      "child": "Ребёнок",
+      "parent": "Родитель",
+      "sibling": "Брат/Сестра",
+      "other": "Другой"
+    }
   }
 }

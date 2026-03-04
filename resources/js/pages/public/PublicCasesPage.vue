@@ -474,14 +474,7 @@ const nextStepLabel = computed(() =>
 );
 
 function goChooseAgency(c) {
-    router.push({
-        name: 'me.agencies',
-        query: {
-            case_id: c.id,
-            country_code: c.country_code,
-            visa_type: c.visa_type,
-        },
-    });
+    router.push({ name: 'me.cases.show', params: { id: c.id } });
 }
 
 onMounted(async () => {

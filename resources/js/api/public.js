@@ -46,10 +46,20 @@ export const publicPortalApi = {
     cases:      ()     => publicApi.get('/me/cases'),
     createCase: (data) => publicApi.post('/me/cases', data),
     caseDetail: (id)   => publicApi.get(`/me/cases/${id}`),
+    updateCase: (id, data) => publicApi.patch(`/me/cases/${id}`, data),
     uploadChecklistItem: (caseId, itemId, formData) =>
         publicApi.post(`/me/cases/${caseId}/checklist/${itemId}/upload`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
         }),
+
+    // Family
+    familyMembers:      ()            => publicApi.get('/me/family'),
+    addFamilyMember:    (data)        => publicApi.post('/me/family', data),
+    updateFamilyMember: (id, data)    => publicApi.patch(`/me/family/${id}`, data),
+    deleteFamilyMember: (id)          => publicApi.delete(`/me/family/${id}`),
+    caseFamilyMembers:  (caseId)      => publicApi.get(`/me/cases/${caseId}/family`),
+    attachFamilyToCase: (caseId, fid) => publicApi.post(`/me/cases/${caseId}/family`, { family_member_id: fid }),
+    detachFamilyFromCase: (caseId, fid) => publicApi.delete(`/me/cases/${caseId}/family/${fid}`),
 
     // Agencies & Leads
     agencies:       (params) => publicApi.get('/agencies', { params }),

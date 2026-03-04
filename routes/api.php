@@ -12,6 +12,7 @@ use App\Modules\Client\Controllers\ClientController;
 use App\Modules\Client\Controllers\ClientPortalController;
 use App\Modules\PublicPortal\Controllers\PublicAgencyController;
 use App\Modules\PublicPortal\Controllers\PublicAuthController;
+use App\Modules\PublicPortal\Controllers\PublicFamilyController;
 use App\Modules\PublicPortal\Controllers\PublicProfileController;
 use App\Modules\PublicPortal\Controllers\PublicReviewController;
 use App\Modules\PublicPortal\Controllers\PublicScoringController;
@@ -345,7 +346,19 @@ Route::prefix('v1')->group(function () {
         Route::get('me/cases',                                    [PublicProfileController::class, 'cases']);
         Route::post('me/cases',                                   [PublicProfileController::class, 'createDraftCase']);
         Route::get('me/cases/{id}',                               [PublicProfileController::class, 'caseDetail']);
+        Route::patch('me/cases/{id}',                             [PublicProfileController::class, 'updateCase']);
         Route::post('me/cases/{caseId}/checklist/{itemId}/upload',[PublicProfileController::class, 'uploadChecklistItem']);
+
+        // Семья — профиль
+        Route::get('me/family',                [PublicFamilyController::class, 'index']);
+        Route::post('me/family',               [PublicFamilyController::class, 'store']);
+        Route::patch('me/family/{id}',         [PublicFamilyController::class, 'update']);
+        Route::delete('me/family/{id}',        [PublicFamilyController::class, 'destroy']);
+
+        // Семья — привязка к заявке
+        Route::get('me/cases/{id}/family',     [PublicFamilyController::class, 'caseMembers']);
+        Route::post('me/cases/{id}/family',    [PublicFamilyController::class, 'attachToCase']);
+        Route::delete('me/cases/{id}/family/{fid}', [PublicFamilyController::class, 'detachFromCase']);
 
         Route::get('agencies',              [PublicAgencyController::class, 'index']);
         Route::post('leads',                [PublicAgencyController::class, 'submitLead']);

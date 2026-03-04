@@ -358,6 +358,7 @@
     "backToList": "Ro'yxatga qaytish",
     "deadline": "Muddat",
     "travelDate": "Safar sanasi",
+    "setTravelDate": "Safar sanasini belgilash",
     "created": "Yaratilgan",
     "agencyComment": "Agentlik izohi",
     "documentsTitle": "Hujjatlar",
@@ -1107,5 +1108,37 @@
     "paymentPending": "To'lov kutilmoqda",
     "paymentUnpaid": "To'lanmagan",
     "appointmentNotSet": "Qabul sanasi belgilanmagan"
+  },
+  "family": {
+    "title": "Oila a'zolari",
+    "hint": "Arizaga biriktirilgan qarindoshlar",
+    "add": "Qo'shish",
+    "modalTitle": "Oila a'zosini qo'shish",
+    "fromProfile": "Profilingizdan",
+    "addNew": "Yangi qo'shish",
+    "name": "F.I.Sh.",
+    "namePlaceholder": "Ivanov Ivan Ivanovich",
+    "relationship": "Qarindoshlik",
+    "dob": "Tug'ilgan sana",
+    "gender": "Jinsi",
+    "male": "Erkak",
+    "female": "Ayol",
+    "citizenship": "Fuqarolik",
+    "passportNumber": "Pasport raqami",
+    "passportExpires": "Pasport muddati",
+    "attach": "Biriktirish",
+    "attached": "Biriktirilgan",
+    "addAndAttach": "Qo'shish va biriktirish",
+    "addedAndAttached": "Oila a'zosi arizaga qo'shildi",
+    "empty": "Biriktirilgan oila a'zolari yo'q",
+    "minor": "voyaga yetmagan",
+    "confirmDetach": "{name}ni arizadan ajratish? Bu qarindoshning hujjatlari o'chiriladi.",
+    "rel": {
+      "spouse": "Turmush o'rtog'i",
+      "child": "Farzand",
+      "parent": "Ota-ona",
+      "sibling": "Aka/Opa",
+      "other": "Boshqa"
+    }
   }
 }
