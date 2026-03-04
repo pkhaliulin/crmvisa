@@ -340,6 +340,7 @@
     "title": "Mening arizalarim",
     "subtitle": "Agentliklarga murojaat tarixi",
     "noAgency": "Agentlik tanlanmagan",
+    "caseNumber": "Ariza raqami №",
     "docs": "Hujjatlar {uploaded}/{total}",
     "emptyTitle": "Hali arizalar yo'q",
     "emptyDesc": "Profilni to'ldiring va agentlikni tanlang — viza uchun birga ariza beramiz.",

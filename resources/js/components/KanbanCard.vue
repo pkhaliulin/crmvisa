@@ -17,12 +17,16 @@
       <AppBadge :color="priorityColor">{{ priorityLabel }}</AppBadge>
     </div>
 
+    <!-- Case number -->
+    <div v-if="item.case_number" class="text-[10px] font-mono text-gray-500 mb-1">
+      № {{ item.case_number }}
+    </div>
+
     <!-- Client name -->
     <div class="flex items-center gap-2 mb-1">
       <p class="text-sm font-medium text-gray-900 truncate">
         {{ item.client?.name ?? '—' }}
       </p>
-      <span v-if="item.case_number" class="text-[9px] font-mono text-gray-400 bg-gray-100 px-1 py-0.5 rounded shrink-0">{{ item.case_number }}</span>
     </div>
     <p class="text-xs text-gray-400">{{ item.client?.phone }}</p>
 

@@ -44,10 +44,10 @@
                             <h1 class="text-lg font-bold text-[#0A1F44] leading-tight">
                                 {{ countryName(caseData.country_code) }}
                             </h1>
-                            <div class="flex items-center gap-2 mt-0.5">
-                                <span class="text-sm text-gray-400">{{ visaTypeLabel(caseData.visa_type) }}</span>
-                                <span v-if="caseData.case_number" class="text-[10px] font-mono text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">{{ caseData.case_number }}</span>
-                            </div>
+                            <p class="text-sm text-gray-400 mt-0.5">{{ visaTypeLabel(caseData.visa_type) }}</p>
+                            <p v-if="caseData.case_number" class="text-xs font-mono font-semibold text-[#0A1F44]/60 mt-1">
+                                {{ $t('cases.caseNumber') }} {{ caseData.case_number }}
+                            </p>
                         </div>
                     </div>
                     <span class="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full"

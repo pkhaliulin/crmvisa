@@ -49,7 +49,9 @@
                             <div class="font-bold text-[#0A1F44] text-sm leading-tight">
                                 {{ countryName(c.country_code) }}
                                 <span class="text-gray-400 font-normal"> — {{ c.visa_type }}</span>
-                                <span v-if="c.case_number" class="text-[10px] font-mono text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded ml-1">{{ c.case_number }}</span>
+                            </div>
+                            <div v-if="c.case_number" class="text-[10px] font-mono text-gray-500 mt-0.5">
+                                {{ $t('cases.caseNumber') }} {{ c.case_number }}
                             </div>
                             <div class="text-xs text-gray-400 mt-0.5" v-if="c.agency">
                                 {{ c.agency.name }}<span v-if="c.agency.city">, {{ c.agency.city }}</span>
