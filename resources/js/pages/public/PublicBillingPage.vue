@@ -172,13 +172,18 @@
 
                     <!-- Кнопки -->
                     <div class="flex gap-2">
+                        <router-link v-if="p.case_id && p.status === 'pending'"
+                            :to="{ name: 'me.cases.show', params: { id: p.case_id } }"
+                            class="flex-1 text-center py-2.5 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white transition-colors">
+                            {{ $t('billing.goToPay') }}
+                        </router-link>
                         <router-link v-if="p.case_id"
                             :to="{ name: 'me.cases.show', params: { id: p.case_id } }"
                             class="flex-1 text-center py-2.5 rounded-xl text-xs font-bold transition-colors"
                             :class="p.status === 'pending'
-                                ? 'bg-amber-500 hover:bg-amber-600 text-white'
+                                ? 'bg-[#0A1F44] hover:bg-[#0d2a5e] text-white'
                                 : 'bg-gray-100 hover:bg-gray-200 text-[#0A1F44]'">
-                            {{ p.status === 'pending' ? $t('billing.goToPay') : $t('billing.openCase') }}
+                            {{ $t('billing.checkCase') }}
                         </router-link>
                         <router-link v-if="p.group_id"
                             :to="{ name: 'me.groups.show', params: { id: p.group_id } }"
