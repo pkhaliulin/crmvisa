@@ -1002,6 +1002,7 @@
     "totalInvoices": "Jami hisoblar",
     "paidCount": "To'langan",
     "unpaidCount": "To'lanmagan",
+    "expiredCount": "Bekor qilingan",
     "invoiceNum": "Hisob {num}",
     "caseNum": "Ariza",
     "serviceDetails": "Xizmat tafsilotlari",

@@ -1002,6 +1002,7 @@
     "totalInvoices": "Всего счетов",
     "paidCount": "Оплачено",
     "unpaidCount": "Не оплачено",
+    "expiredCount": "Аннулировано",
     "invoiceNum": "Счет {num}",
     "caseNum": "Заявка",
     "serviceDetails": "Детали услуги",

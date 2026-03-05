@@ -6,7 +6,7 @@
         </div>
 
         <!-- Сводка -->
-        <div v-if="!loading && payments.length" class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <div v-if="!loading && payments.length" class="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 text-center">
                 <div class="text-2xl font-bold text-[#0A1F44]">{{ payments.length }}</div>
                 <div class="text-[10px] text-gray-400 font-medium uppercase tracking-wide mt-0.5">{{ $t('billing.totalInvoices') }}</div>
@@ -15,9 +15,13 @@
                 <div class="text-2xl font-bold text-[#1BA97F]">{{ paidCount }}</div>
                 <div class="text-[10px] text-gray-400 font-medium uppercase tracking-wide mt-0.5">{{ $t('billing.paidCount') }}</div>
             </div>
-            <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 text-center col-span-2 sm:col-span-1">
+            <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 text-center">
                 <div class="text-2xl font-bold" :class="unpaidCount > 0 ? 'text-red-500' : 'text-gray-300'">{{ unpaidCount }}</div>
                 <div class="text-[10px] font-medium uppercase tracking-wide mt-0.5" :class="unpaidCount > 0 ? 'text-red-400' : 'text-gray-400'">{{ $t('billing.unpaidCount') }}</div>
+            </div>
+            <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 text-center">
+                <div class="text-2xl font-bold" :class="expiredCount > 0 ? 'text-gray-500' : 'text-gray-300'">{{ expiredCount }}</div>
+                <div class="text-[10px] font-medium uppercase tracking-wide mt-0.5" :class="expiredCount > 0 ? 'text-gray-500' : 'text-gray-400'">{{ $t('billing.expiredCount') }}</div>
             </div>
         </div>
 
