@@ -587,6 +587,7 @@
     "cabinet": "Kabinet",
     "docsNeeded": "Hujjatlar: {count}",
     "awaitingResult": "Natija kutilmoqda",
+    "unpaidInvoice": "To'lanmagan hisob",
     "touristVisa": "Turistik viza",
     "businessVisa": "Biznes-viza",
     "studentVisaFull": "Talaba vizasi",
@@ -975,7 +976,18 @@
     "chooseMethod": "To'lov usuli",
     "markAsPaid": "To'langan deb belgilash",
     "markAsPaidHint": "Test rejimi — muvaffaqiyatli to'lov imitatsiyasi",
-    "markedAsPaid": "To'lov muvaffaqiyatli deb belgilandi"
+    "markedAsPaid": "To'lov muvaffaqiyatli deb belgilandi",
+    "invoiceTitle": "To'lov hisob-fakturasi",
+    "invoiceNumber": "Hisob {number}",
+    "statusUnpaid": "To'lanmagan",
+    "invoiceFrom": "Ijrochi",
+    "invoiceDate": "Chiqarilgan sana",
+    "invoiceCase": "Ariza",
+    "invoiceService": "Xizmat",
+    "invoiceQty": "Soni",
+    "invoiceAmount": "Summa",
+    "visaService": "Viza xizmati",
+    "securePayment": "Himoyalangan ulanish orqali xavfsiz to'lov"
   },
   "billing": {
     "title": "Hisob-kitoblar",

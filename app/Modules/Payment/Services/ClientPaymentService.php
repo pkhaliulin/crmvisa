@@ -18,6 +18,10 @@ class ClientPaymentService
     public function createPayment(VisaCase $case, PublicUser $publicUser, string $provider): ClientPayment
     {
         return DB::transaction(function () use ($case, $publicUser, $provider) {
+            if ($case->agency_id) {
+                DB::statement("SET LOCAL app.current_tenant_id = '{$case->agency_id}'");
+            }
+
             $package = $case->agency_id
                 ? DB::table('agency_service_packages')
                     ->where('agency_id', $case->agency_id)
@@ -27,7 +31,7 @@ class ClientPaymentService
                     ->first()
                 : null;
 
-            $amount   = $package->price ?? 0;
+            $amount   = (int) ($package->price ?? 0);
             $currency = $package->currency ?? 'USD';
 
             $payment = ClientPayment::create([
@@ -74,6 +78,10 @@ class ClientPaymentService
         if (! $payment) return;
 
         DB::transaction(function () use ($payment, $provider, $data) {
+            if ($payment->agency_id) {
+                DB::statement("SET LOCAL app.current_tenant_id = '{$payment->agency_id}'");
+            }
+
             $payment->update([
                 'status'                 => 'succeeded',
                 'provider_transaction_id' => $data['provider_transaction_id'] ?? null,

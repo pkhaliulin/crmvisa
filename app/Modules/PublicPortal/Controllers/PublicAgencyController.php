@@ -11,6 +11,7 @@ use App\Modules\PublicPortal\Models\PublicLead;
 use App\Support\Helpers\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use App\Modules\Payment\Models\ClientPayment;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
@@ -348,6 +349,33 @@ class PublicAgencyController extends Controller
             }
 
             // PublicLead НЕ создаётся здесь — создаётся после оплаты в ClientPaymentService
+
+            // Создать pending-счёт, чтобы он отображался в "Счета и оплаты"
+            $existingPayment = ClientPayment::where('case_id', $case->id)
+                ->whereIn('status', ['pending', 'succeeded'])
+                ->first();
+
+            if (! $existingPayment) {
+                $package = $packageId
+                    ? DB::table('agency_service_packages')->where('id', $packageId)->first()
+                    : DB::table('agency_service_packages')
+                        ->where('agency_id', $agency->id)
+                        ->where('country_code', $cc)
+                        ->where('visa_type', $data['visa_type'])
+                        ->where('is_active', true)
+                        ->first();
+
+                ClientPayment::create([
+                    'case_id'        => $case->id,
+                    'public_user_id' => $publicUser->id,
+                    'agency_id'      => $agency->id,
+                    'package_id'     => $package->id ?? null,
+                    'amount'         => (int) ($package->price ?? 0),
+                    'currency'       => $package->currency ?? 'USD',
+                    'provider'       => 'pending',
+                    'status'         => 'pending',
+                ]);
+            }
 
             return ApiResponse::created([
                 'case_id' => $case->id,

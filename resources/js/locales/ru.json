@@ -587,6 +587,7 @@
     "cabinet": "Кабинет",
     "docsNeeded": "Документы: {count}",
     "awaitingResult": "Ожидание решения",
+    "unpaidInvoice": "Неоплаченный счет",
     "touristVisa": "Туристическая виза",
     "businessVisa": "Бизнес-виза",
     "studentVisaFull": "Студенческая виза",
@@ -975,7 +976,18 @@
     "chooseMethod": "Способ оплаты",
     "markAsPaid": "Отметить как оплачено",
     "markAsPaidHint": "Тестовый режим — имитация успешной оплаты",
-    "markedAsPaid": "Оплата отмечена как выполненная"
+    "markedAsPaid": "Оплата отмечена как выполненная",
+    "invoiceTitle": "Счет на оплату",
+    "invoiceNumber": "Счет {number}",
+    "statusUnpaid": "Не оплачен",
+    "invoiceFrom": "Исполнитель",
+    "invoiceDate": "Дата выставления",
+    "invoiceCase": "Заявка",
+    "invoiceService": "Услуга",
+    "invoiceQty": "Кол-во",
+    "invoiceAmount": "Сумма",
+    "visaService": "Визовая услуга",
+    "securePayment": "Безопасная оплата через защищённое соединение"
   },
   "billing": {
     "title": "Счета и оплаты",

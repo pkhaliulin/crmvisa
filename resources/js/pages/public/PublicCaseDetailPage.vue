@@ -279,49 +279,88 @@
                 </div>
             </div>
 
-            <!-- === Оплата услуги (awaiting_payment) === -->
+            <!-- === СЧЕТ НА ОПЛАТУ (awaiting_payment) === -->
             <div v-if="caseData.agency && caseData.public_status === 'awaiting_payment' && (caseData.payment_status === 'unpaid' || caseData.payment_status === 'pending')"
                 ref="paymentSection"
-                class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                <div class="px-5 py-4 border-b border-gray-50">
-                    <h2 class="font-bold text-[#0A1F44] text-sm">{{ $t('payment.title') }}</h2>
-                    <p class="text-xs text-gray-400 mt-0.5">{{ $t('payment.selectProvider') }}</p>
+                class="bg-white rounded-2xl border-2 border-amber-200 shadow-sm overflow-hidden">
+
+                <!-- Шапка счета -->
+                <div class="bg-[#0A1F44] px-5 py-4 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 bg-white/10 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="text-white font-bold text-sm">{{ $t('payment.invoiceTitle') }}</div>
+                            <div class="text-white/60 text-[10px]">{{ $t('payment.invoiceNumber', { number: invoiceNumber }) }}</div>
+                        </div>
+                    </div>
+                    <div class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-400 text-amber-900">
+                        {{ $t('payment.statusUnpaid') }}
+                    </div>
                 </div>
+
                 <div class="p-5 space-y-4">
+                    <!-- Стороны: от кого / кому -->
+                    <div class="grid grid-cols-2 gap-4 text-xs">
+                        <div>
+                            <div class="text-gray-400 font-medium uppercase tracking-wide mb-1">{{ $t('payment.invoiceFrom') }}</div>
+                            <div class="font-semibold text-[#0A1F44]">{{ caseData.agency?.name }}</div>
+                            <div v-if="caseData.agency?.city" class="text-gray-400">{{ caseData.agency.city }}</div>
+                        </div>
+                        <div>
+                            <div class="text-gray-400 font-medium uppercase tracking-wide mb-1">{{ $t('payment.invoiceDate') }}</div>
+                            <div class="font-semibold text-[#0A1F44]">{{ formatDate(caseData.created_at) }}</div>
+                            <div class="text-gray-400 mt-0.5">{{ $t('payment.invoiceCase') }} {{ caseData.case_number || '—' }}</div>
+                        </div>
+                    </div>
 
-                    <!-- Детали пакета / услуги -->
-                    <div v-if="caseData.package" class="space-y-3">
-                        <div class="p-4 rounded-xl bg-[#0A1F44]/5 border border-[#0A1F44]/10">
-                            <div class="flex items-start justify-between gap-3 mb-3">
-                                <div>
-                                    <div class="text-sm font-bold text-[#0A1F44]">{{ caseData.package.name }}</div>
-                                    <div v-if="caseData.package.description" class="text-xs text-gray-500 mt-0.5">{{ caseData.package.description }}</div>
-                                </div>
-                                <div class="text-right shrink-0">
-                                    <div class="text-xl font-bold text-[#1BA97F]">{{ formatPrice(caseData.package.price, caseData.package.currency) }}</div>
-                                    <div v-if="caseData.package.processing_days" class="text-[10px] text-gray-400 mt-0.5">
-                                        {{ $t('payment.processingDays', { days: caseData.package.processing_days }) }}
-                                    </div>
+                    <!-- Визовая услуга -->
+                    <div class="border border-gray-100 rounded-xl overflow-hidden">
+                        <div class="bg-gray-50 px-4 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider grid grid-cols-12 gap-2">
+                            <div class="col-span-7">{{ $t('payment.invoiceService') }}</div>
+                            <div class="col-span-2 text-center">{{ $t('payment.invoiceQty') }}</div>
+                            <div class="col-span-3 text-right">{{ $t('payment.invoiceAmount') }}</div>
+                        </div>
+                        <!-- Строка пакета -->
+                        <div v-if="caseData.package" class="px-4 py-3 grid grid-cols-12 gap-2 items-start">
+                            <div class="col-span-7">
+                                <div class="text-sm font-semibold text-[#0A1F44]">{{ caseData.package.name }}</div>
+                                <div v-if="caseData.package.description" class="text-[11px] text-gray-400 mt-0.5 leading-snug">{{ caseData.package.description }}</div>
+                                <div v-if="caseData.package.processing_days" class="text-[10px] text-gray-400 mt-1">
+                                    {{ $t('payment.processingDays', { days: caseData.package.processing_days }) }}
                                 </div>
                             </div>
-                            <!-- Услуги в пакете -->
-                            <div v-if="caseData.package.services?.length" class="space-y-1.5">
-                                <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide">{{ $t('payment.includedServices') }}</div>
-                                <div v-for="(s, si) in caseData.package.services" :key="si"
-                                    class="flex items-center gap-2 text-xs text-[#0A1F44]">
-                                    <svg class="w-3.5 h-3.5 text-[#1BA97F] shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-                                    </svg>
-                                    {{ s.name }}
-                                </div>
+                            <div class="col-span-2 text-center text-sm text-gray-600">1</div>
+                            <div class="col-span-3 text-right text-sm font-bold text-[#0A1F44]">{{ formatPrice(caseData.package.price, caseData.package.currency) }}</div>
+                        </div>
+                        <div v-else class="px-4 py-3 grid grid-cols-12 gap-2">
+                            <div class="col-span-7 text-sm text-[#0A1F44]">{{ $t('payment.visaService') }}</div>
+                            <div class="col-span-2 text-center text-sm text-gray-600">1</div>
+                            <div class="col-span-3 text-right text-sm text-gray-400">—</div>
+                        </div>
+                    </div>
+
+                    <!-- Что включено -->
+                    <div v-if="caseData.package?.services?.length" class="space-y-1.5">
+                        <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{{ $t('payment.includedServices') }}</div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-1">
+                            <div v-for="(s, si) in caseData.package.services" :key="si"
+                                class="flex items-center gap-1.5 text-xs text-[#0A1F44]">
+                                <svg class="w-3 h-3 text-[#1BA97F] shrink-0" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                {{ s.name }}
                             </div>
                         </div>
+                    </div>
 
-                        <!-- Итого -->
-                        <div class="flex items-center justify-between p-3 rounded-xl bg-[#1BA97F]/5 border border-[#1BA97F]/20">
-                            <span class="text-sm font-semibold text-[#0A1F44]">{{ $t('payment.total') }}</span>
-                            <span class="text-lg font-bold text-[#1BA97F]">{{ formatPrice(caseData.package.price, caseData.package.currency) }}</span>
-                        </div>
+                    <!-- ИТОГО -->
+                    <div v-if="caseData.package" class="flex items-center justify-between p-4 rounded-xl bg-[#0A1F44] text-white">
+                        <span class="text-sm font-semibold">{{ $t('payment.total') }}</span>
+                        <span class="text-xl font-bold">{{ formatPrice(caseData.package.price, caseData.package.currency) }}</span>
                     </div>
 
                     <!-- Статус pending -->
@@ -334,7 +373,7 @@
 
                     <!-- Способы оплаты -->
                     <div v-else>
-                        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{{ $t('payment.chooseMethod') }}</div>
+                        <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">{{ $t('payment.chooseMethod') }}</div>
                         <div class="grid grid-cols-3 gap-3">
                             <button v-for="p in PAYMENT_PROVIDERS" :key="p.id"
                                 @click="initiatePayment(p.id)"
@@ -348,7 +387,7 @@
                             </button>
                         </div>
 
-                        <!-- Тестовая кнопка: отметить как оплачено -->
+                        <!-- Тестовая кнопка -->
                         <div class="mt-3 pt-3 border-t border-dashed border-gray-200">
                             <button @click="testMarkAsPaid"
                                 :disabled="markingPaid"
@@ -366,6 +405,14 @@
                             </button>
                             <p class="text-[10px] text-gray-400 text-center mt-1">{{ $t('payment.markAsPaidHint') }}</p>
                         </div>
+                    </div>
+
+                    <!-- Безопасность -->
+                    <div class="flex items-center gap-2 pt-2 border-t border-gray-100">
+                        <svg class="w-4 h-4 text-gray-300 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                        </svg>
+                        <span class="text-[10px] text-gray-400">{{ $t('payment.securePayment') }}</span>
                     </div>
                 </div>
             </div>
@@ -1442,6 +1489,13 @@ async function testMarkAsPaid() {
         markingPaid.value = false;
     }
 }
+
+const invoiceNumber = computed(() => {
+    const cn = caseData.value?.case_number;
+    if (cn) return 'INV-' + cn;
+    const id = caseData.value?.id;
+    return id ? 'INV-' + id.slice(0, 8).toUpperCase() : 'INV-000';
+});
 
 function formatPrice(amount, currency) {
     if (!amount && amount !== 0) return '';
