@@ -90,6 +90,7 @@ export const publicPortalApi = {
 
     // Scoring
     countries:    ()     => publicApi.get('/countries'),
+    countryDetail:(code) => publicApi.get(`/countries/${code}`),
     scoreAll:     ()     => publicApi.get('/scoring'),
     scoreCountry: (code) => publicApi.get(`/scoring/${code}`),
 
