@@ -16,6 +16,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
+use App\Modules\Service\Models\AgencyServicePackage;
 
 class PublicProfileController extends Controller
 {
@@ -256,6 +257,35 @@ class PublicProfileController extends Controller
             'entered_at'  => $s->entered_at?->toDateString(),
         ]);
 
+        // Пакет услуг (для отображения цены и состава)
+        $package = null;
+        if ($case->agency_id) {
+            $pkg = AgencyServicePackage::withoutTenant()
+                ->where('agency_id', $case->agency_id)
+                ->where('country_code', $case->country_code)
+                ->where('visa_type', $case->visa_type)
+                ->where('is_active', true)
+                ->with(['items.service:id,name,category'])
+                ->first();
+
+            if ($pkg) {
+                $locale = $request->input('lang') ?? $request->header('X-Locale', 'ru');
+                $locale = in_array($locale, ['uz', 'ru']) ? $locale : 'ru';
+                $package = [
+                    'id'              => $pkg->id,
+                    'name'            => ($locale === 'uz' && $pkg->name_uz) ? $pkg->name_uz : $pkg->name,
+                    'description'     => ($locale === 'uz' && $pkg->description_uz) ? $pkg->description_uz : $pkg->description,
+                    'price'           => $pkg->price,
+                    'currency'        => $pkg->currency ?? 'USD',
+                    'processing_days' => $pkg->processing_days,
+                    'services'        => $pkg->items->map(fn ($item) => [
+                        'name'     => $item->service?->name ?? '',
+                        'category' => $item->service?->category ?? '',
+                    ])->filter(fn ($s) => $s['name'])->values(),
+                ];
+            }
+        }
+
         return ApiResponse::success([
             'id'                   => $case->id,
             'case_number'          => $case->case_number,
@@ -305,6 +335,7 @@ class PublicProfileController extends Controller
                 'phone'             => $case->assignee->phone,
                 'telegram_username' => $case->assignee->telegram_username,
             ] : null,
+            'package'              => $package,
             'checklist'            => $checklist,
             'timeline'             => $stageTimeline,
             'family_members'       => CaseFamilyMember::where('case_id', $case->id)

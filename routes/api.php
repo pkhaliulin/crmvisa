@@ -386,6 +386,7 @@ Route::prefix('v1')->group(function () {
 
         // Оплата клиента
         Route::post('me/payments/initiate',        [ClientPaymentController::class, 'initiate']);
+        Route::post('me/payments/mark-paid',       [ClientPaymentController::class, 'markAsPaid']);
         Route::get('me/cases/{id}/payment',        [ClientPaymentController::class, 'status']);
         Route::get('me/billing',                   [ClientPaymentController::class, 'history']);
 

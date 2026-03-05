@@ -35,6 +35,29 @@
 
         <template v-else-if="caseData">
 
+            <!-- === Баннер: неоплаченный счет === -->
+            <div v-if="caseData.agency && caseData.public_status === 'awaiting_payment' && caseData.payment_status !== 'paid'"
+                class="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3">
+                <div class="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="text-sm font-bold text-amber-800">{{ $t('payment.invoiceBannerTitle') }}</div>
+                    <div class="text-xs text-amber-600 mt-0.5">
+                        {{ $t('payment.invoiceBannerDesc', { agency: caseData.agency?.name }) }}
+                    </div>
+                    <div v-if="caseData.package" class="text-sm font-bold text-amber-800 mt-1">
+                        {{ formatPrice(caseData.package.price, caseData.package.currency) }}
+                    </div>
+                </div>
+                <button @click="scrollToPayment"
+                    class="shrink-0 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl transition-colors">
+                    {{ $t('payment.payNow') }}
+                </button>
+            </div>
+
             <!-- === Заголовок заявки === -->
             <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
                 <div class="flex items-start justify-between gap-3 mb-4">
@@ -258,29 +281,91 @@
 
             <!-- === Оплата услуги (awaiting_payment) === -->
             <div v-if="caseData.agency && caseData.public_status === 'awaiting_payment' && (caseData.payment_status === 'unpaid' || caseData.payment_status === 'pending')"
+                ref="paymentSection"
                 class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                 <div class="px-5 py-4 border-b border-gray-50">
                     <h2 class="font-bold text-[#0A1F44] text-sm">{{ $t('payment.title') }}</h2>
                     <p class="text-xs text-gray-400 mt-0.5">{{ $t('payment.selectProvider') }}</p>
                 </div>
-                <div class="p-5">
+                <div class="p-5 space-y-4">
+
+                    <!-- Детали пакета / услуги -->
+                    <div v-if="caseData.package" class="space-y-3">
+                        <div class="p-4 rounded-xl bg-[#0A1F44]/5 border border-[#0A1F44]/10">
+                            <div class="flex items-start justify-between gap-3 mb-3">
+                                <div>
+                                    <div class="text-sm font-bold text-[#0A1F44]">{{ caseData.package.name }}</div>
+                                    <div v-if="caseData.package.description" class="text-xs text-gray-500 mt-0.5">{{ caseData.package.description }}</div>
+                                </div>
+                                <div class="text-right shrink-0">
+                                    <div class="text-xl font-bold text-[#1BA97F]">{{ formatPrice(caseData.package.price, caseData.package.currency) }}</div>
+                                    <div v-if="caseData.package.processing_days" class="text-[10px] text-gray-400 mt-0.5">
+                                        {{ $t('payment.processingDays', { days: caseData.package.processing_days }) }}
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Услуги в пакете -->
+                            <div v-if="caseData.package.services?.length" class="space-y-1.5">
+                                <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide">{{ $t('payment.includedServices') }}</div>
+                                <div v-for="(s, si) in caseData.package.services" :key="si"
+                                    class="flex items-center gap-2 text-xs text-[#0A1F44]">
+                                    <svg class="w-3.5 h-3.5 text-[#1BA97F] shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                                    </svg>
+                                    {{ s.name }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Итого -->
+                        <div class="flex items-center justify-between p-3 rounded-xl bg-[#1BA97F]/5 border border-[#1BA97F]/20">
+                            <span class="text-sm font-semibold text-[#0A1F44]">{{ $t('payment.total') }}</span>
+                            <span class="text-lg font-bold text-[#1BA97F]">{{ formatPrice(caseData.package.price, caseData.package.currency) }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Статус pending -->
                     <div v-if="caseData.payment_status === 'pending'" class="flex items-center gap-3 p-4 bg-amber-50 rounded-xl">
                         <svg class="w-5 h-5 text-amber-500 shrink-0 animate-pulse" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                         </svg>
                         <span class="text-sm font-medium text-amber-700">{{ $t('payment.pending') }}</span>
                     </div>
-                    <div v-else class="grid grid-cols-3 gap-3">
-                        <button v-for="p in PAYMENT_PROVIDERS" :key="p.id"
-                            @click="initiatePayment(p.id)"
-                            :disabled="paymentLoading"
-                            class="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-gray-100 hover:border-[#1BA97F] transition-colors disabled:opacity-50">
-                            <div class="w-12 h-12 rounded-lg flex items-center justify-center text-2xl font-bold"
-                                :class="p.bgClass">
-                                {{ p.icon }}
-                            </div>
-                            <span class="text-xs font-semibold text-[#0A1F44]">{{ p.label }}</span>
-                        </button>
+
+                    <!-- Способы оплаты -->
+                    <div v-else>
+                        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{{ $t('payment.chooseMethod') }}</div>
+                        <div class="grid grid-cols-3 gap-3">
+                            <button v-for="p in PAYMENT_PROVIDERS" :key="p.id"
+                                @click="initiatePayment(p.id)"
+                                :disabled="paymentLoading"
+                                class="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-gray-100 hover:border-[#1BA97F] transition-colors disabled:opacity-50">
+                                <div class="w-12 h-12 rounded-lg flex items-center justify-center text-2xl font-bold"
+                                    :class="p.bgClass">
+                                    {{ p.icon }}
+                                </div>
+                                <span class="text-xs font-semibold text-[#0A1F44]">{{ p.label }}</span>
+                            </button>
+                        </div>
+
+                        <!-- Тестовая кнопка: отметить как оплачено -->
+                        <div class="mt-3 pt-3 border-t border-dashed border-gray-200">
+                            <button @click="testMarkAsPaid"
+                                :disabled="markingPaid"
+                                class="w-full py-2.5 px-4 rounded-xl text-xs font-semibold transition-colors
+                                    bg-gray-100 text-gray-600 hover:bg-[#1BA97F]/10 hover:text-[#1BA97F]
+                                    disabled:opacity-50 flex items-center justify-center gap-2">
+                                <svg v-if="markingPaid" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                                </svg>
+                                <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                {{ $t('payment.markAsPaid') }}
+                            </button>
+                            <p class="text-[10px] text-gray-400 text-center mt-1">{{ $t('payment.markAsPaidHint') }}</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -952,6 +1037,8 @@ const agencySubmitting = ref(false);
 
 // --- Оплата ---
 const paymentLoading = ref(false);
+const markingPaid = ref(false);
+const paymentSection = ref(null);
 const PAYMENT_PROVIDERS = [
     { id: 'click', label: 'Click', icon: 'C', bgClass: 'bg-blue-100 text-blue-600' },
     { id: 'payme', label: 'Payme', icon: 'P', bgClass: 'bg-cyan-100 text-cyan-600' },
@@ -1334,6 +1421,34 @@ async function initiatePayment(provider) {
     } finally {
         paymentLoading.value = false;
     }
+}
+
+function scrollToPayment() {
+    paymentSection.value?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+async function testMarkAsPaid() {
+    markingPaid.value = true;
+    try {
+        await publicPortalApi.markAsPaid({ case_id: route.params.id });
+        // Перезагрузить данные кейса
+        const { data } = await publicPortalApi.caseDetail(route.params.id);
+        caseData.value = data.data;
+        uploadToast.value = t('payment.markedAsPaid');
+        setTimeout(() => { uploadToast.value = ''; }, 3000);
+    } catch (e) {
+        alert(e?.response?.data?.message ?? t('common.error'));
+    } finally {
+        markingPaid.value = false;
+    }
+}
+
+function formatPrice(amount, currency) {
+    if (!amount && amount !== 0) return '';
+    const cur = currency || 'USD';
+    if (cur === 'UZS') return amount.toLocaleString('ru-RU') + ' UZS';
+    if (cur === 'USD') return '$' + amount.toLocaleString('ru-RU');
+    return amount.toLocaleString('ru-RU') + ' ' + cur;
 }
 
 async function doChangeAgency() {

@@ -70,6 +70,7 @@ export const publicPortalApi = {
 
     // Payments
     initiatePayment: (data)   => publicApi.post('/me/payments/initiate', data),
+    markAsPaid:      (data)   => publicApi.post('/me/payments/mark-paid', data),
     paymentStatus:   (caseId) => publicApi.get(`/me/cases/${caseId}/payment`),
     billingHistory:  (params) => publicApi.get('/me/billing', { params }),
 

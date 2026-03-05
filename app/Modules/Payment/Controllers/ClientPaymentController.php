@@ -101,6 +101,42 @@ class ClientPaymentController extends Controller
     }
 
     /**
+     * POST /public/me/payments/mark-paid
+     * Тестовая заглушка — отметить как оплачено (имитация callback).
+     */
+    public function markAsPaid(Request $request): JsonResponse
+    {
+        $publicUser = $request->get('_public_user');
+
+        $data = $request->validate([
+            'case_id' => ['required', 'uuid', 'exists:cases,id'],
+        ]);
+
+        $case = VisaCase::whereHas('client', fn ($q) => $q->where('public_user_id', $publicUser->id))
+            ->where('public_status', 'awaiting_payment')
+            ->findOrFail($data['case_id']);
+
+        // Найти или создать pending-платёж
+        $payment = ClientPayment::where('case_id', $case->id)
+            ->where('status', 'pending')
+            ->first();
+
+        if (! $payment) {
+            $payment = $this->paymentService->createPayment($case, $publicUser, 'test');
+        }
+
+        // Имитация callback
+        $this->paymentService->handleCallback('test', [
+            'payment_id' => $payment->id,
+            'provider_transaction_id' => 'TEST-' . now()->timestamp,
+        ]);
+
+        return ApiResponse::success([
+            'message' => 'Оплата отмечена как выполненная (тестовый режим)',
+        ]);
+    }
+
+    /**
      * GET /public/me/billing
      * История оплат клиента.
      */

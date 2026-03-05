@@ -965,7 +965,17 @@
     "date": "To'lov sanasi",
     "receipt": "Kvitansiya",
     "paymentPending": "To'lov tasdiqlash kutilmoqda",
-    "error": "To'lovni boshlashda xatolik"
+    "error": "To'lovni boshlashda xatolik",
+    "invoiceBannerTitle": "To'lov hisob-fakturasi chiqarildi",
+    "invoiceBannerDesc": "{agency} agentligi xizmati uchun to'lang",
+    "payNow": "To'lash",
+    "includedServices": "Nima kiradi",
+    "total": "Jami to'lov",
+    "processingDays": "Muddat: {days} kun",
+    "chooseMethod": "To'lov usuli",
+    "markAsPaid": "To'langan deb belgilash",
+    "markAsPaidHint": "Test rejimi — muvaffaqiyatli to'lov imitatsiyasi",
+    "markedAsPaid": "To'lov muvaffaqiyatli deb belgilandi"
   },
   "billing": {
     "title": "Hisob-kitoblar",
