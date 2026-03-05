@@ -66,50 +66,94 @@
 
         <!-- ===== ACTION CARD ===== -->
         <div :class="['rounded-xl border-2 p-5 transition-all duration-300', actionCardClass]">
-          <div class="flex items-start justify-between gap-4">
-            <div class="flex-1 min-w-0">
-              <!-- Stage label -->
-              <div class="flex items-center gap-2 mb-2">
-                <div :class="['w-2 h-2 rounded-full animate-pulse', actionDotClass]"></div>
-                <span :class="['text-[10px] font-bold uppercase tracking-widest', actionLabelClass]">
-                  {{ STAGE_LABELS[caseData.stage] }}
+
+          <!-- === OWNER: Assign manager block (if no assignee) === -->
+          <div v-if="!caseData.assignee && isOwner" class="mb-4">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></div>
+              <span class="text-[10px] font-bold uppercase tracking-widest text-orange-500">Требуется действие руководителя</span>
+            </div>
+            <h2 class="text-base font-bold text-gray-900 mb-3">Назначьте менеджера на заявку</h2>
+            <p class="text-sm text-gray-500 mb-4">Пока менеджер не назначен, работа по заявке не может начаться. Выберите ответственного менеджера из списка.</p>
+
+            <div class="flex items-end gap-3">
+              <div class="flex-1 max-w-xs">
+                <label class="text-xs text-gray-500 font-medium mb-1 block">Менеджер</label>
+                <select v-model="assignForm.manager_id"
+                  class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                  <option value="">Выберите менеджера...</option>
+                  <option v-for="m in managers" :key="m.id" :value="m.id">{{ m.name }}</option>
+                </select>
+              </div>
+              <button @click="doAssign" :disabled="!assignForm.manager_id || assignForm.loading"
+                class="px-5 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white text-sm font-semibold shadow-md shadow-blue-200 hover:shadow-lg active:scale-[0.98] transition-all duration-200 disabled:opacity-50">
+                {{ assignForm.loading ? 'Назначение...' : 'Назначить' }}
+              </button>
+            </div>
+
+            <!-- SLA/deadline info for owner -->
+            <div v-if="caseData.critical_date || slaInfo" class="mt-4 pt-3 border-t border-orange-100 flex items-center gap-4 flex-wrap">
+              <div v-if="slaInfo" class="flex items-center gap-2">
+                <span :class="['text-xs font-bold', slaInfo.value]">SLA: {{ slaInfo.display }}</span>
+                <span :class="['text-xs', slaInfo.sub]">{{ slaInfo.subText }}</span>
+              </div>
+              <div v-if="caseData.critical_date" class="flex items-center gap-2">
+                <span class="text-xs text-gray-400">Дедлайн:</span>
+                <span :class="['text-xs font-bold', deadlineClass]">{{ fmtShort(caseData.critical_date) }}</span>
+              </div>
+              <div v-if="caseData.days_left != null" class="flex items-center gap-2">
+                <span :class="['text-xs font-bold', caseData.days_left < 0 ? 'text-red-600' : caseData.days_left <= 7 ? 'text-yellow-600' : 'text-green-600']">
+                  {{ caseData.days_left < 0 ? 'Просрочено на ' + Math.abs(caseData.days_left) + ' дн.' : caseData.days_left + ' дн. осталось' }}
                 </span>
               </div>
-              <!-- Goal -->
-              <h2 class="text-base font-bold text-gray-900 leading-snug">{{ currentStageConfig?.manager_goal }}</h2>
             </div>
+          </div>
 
-            <!-- SLA Timer -->
-            <div v-if="slaInfo" class="shrink-0">
-              <div :class="['rounded-xl px-4 py-3 text-center min-w-[80px]', slaInfo.bg]">
-                <p :class="['text-[9px] uppercase tracking-widest font-bold', slaInfo.label]">SLA</p>
-                <p :class="['text-2xl font-black tabular-nums leading-tight', slaInfo.value]">{{ slaInfo.display }}</p>
-                <p :class="['text-[10px]', slaInfo.sub]">{{ slaInfo.subText }}</p>
+          <!-- === NORMAL: Stage tasks (when manager assigned OR user is manager) === -->
+          <template v-if="caseData.assignee || !isOwner">
+            <div class="flex items-start justify-between gap-4">
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 mb-2">
+                  <div :class="['w-2 h-2 rounded-full animate-pulse', actionDotClass]"></div>
+                  <span :class="['text-[10px] font-bold uppercase tracking-widest', actionLabelClass]">
+                    {{ STAGE_LABELS[caseData.stage] }}
+                  </span>
+                </div>
+                <h2 class="text-base font-bold text-gray-900 leading-snug">{{ currentStageConfig?.manager_goal }}</h2>
+              </div>
+
+              <!-- SLA Timer -->
+              <div v-if="slaInfo" class="shrink-0">
+                <div :class="['rounded-xl px-4 py-3 text-center min-w-[80px]', slaInfo.bg]">
+                  <p :class="['text-[9px] uppercase tracking-widest font-bold', slaInfo.label]">SLA</p>
+                  <p :class="['text-2xl font-black tabular-nums leading-tight', slaInfo.value]">{{ slaInfo.display }}</p>
+                  <p :class="['text-[10px]', slaInfo.sub]">{{ slaInfo.subText }}</p>
+                </div>
               </div>
             </div>
-          </div>
 
-          <!-- Tasks -->
-          <div class="mt-3 space-y-1.5">
-            <div v-for="(task, ti) in currentStageConfig?.manager_tasks ?? []" :key="ti"
-              class="flex items-start gap-2.5 group">
-              <div class="w-4 h-4 rounded border border-gray-200 flex items-center justify-center shrink-0 mt-0.5 group-hover:border-blue-300 transition-colors">
-                <span class="text-[9px] text-gray-300 group-hover:text-blue-400">{{ ti + 1 }}</span>
+            <!-- Tasks -->
+            <div class="mt-3 space-y-1.5">
+              <div v-for="(task, ti) in currentStageConfig?.manager_tasks ?? []" :key="ti"
+                class="flex items-start gap-2.5 group">
+                <div class="w-4 h-4 rounded border border-gray-200 flex items-center justify-center shrink-0 mt-0.5 group-hover:border-blue-300 transition-colors">
+                  <span class="text-[9px] text-gray-300 group-hover:text-blue-400">{{ ti + 1 }}</span>
+                </div>
+                <span class="text-sm text-gray-600 leading-snug">{{ task }}</span>
               </div>
-              <span class="text-sm text-gray-600 leading-snug">{{ task }}</span>
             </div>
-          </div>
 
-          <!-- Result hint -->
-          <div v-if="currentStageConfig?.manager_result" class="mt-3 pt-3 border-t border-dashed" :class="actionBorderClass">
-            <div class="flex items-center gap-2">
-              <svg class="w-3.5 h-3.5 text-gray-300 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
-              <p class="text-xs text-gray-400">{{ currentStageConfig.manager_result }}</p>
+            <!-- Result hint -->
+            <div v-if="currentStageConfig?.manager_result" class="mt-3 pt-3 border-t border-dashed" :class="actionBorderClass">
+              <div class="flex items-center gap-2">
+                <svg class="w-3.5 h-3.5 text-gray-300 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+                <p class="text-xs text-gray-400">{{ currentStageConfig.manager_result }}</p>
+              </div>
             </div>
-          </div>
+          </template>
 
           <!-- ===== STAGE-SPECIFIC CTA ===== -->
-          <div class="mt-4 pt-4 border-t" :class="actionBorderClass">
+          <div v-if="caseData.assignee || !isOwner" class="mt-4 pt-4 border-t" :class="actionBorderClass">
 
             <!-- lead -->
             <button v-if="caseData.stage === 'lead'" @click="quickMove('qualification')"
@@ -326,7 +370,7 @@
             </div>
             <div class="flex items-center justify-between">
               <span class="text-xs text-gray-400">Дедлайн</span>
-              <span :class="['text-xs font-semibold', deadlineClass]">{{ caseData.critical_date ?? '---' }}</span>
+              <span :class="['text-xs font-semibold', deadlineClass]">{{ caseData.critical_date ? fmtShort(caseData.critical_date) : '---' }}</span>
             </div>
             <div v-if="caseData.days_left != null" class="flex items-center justify-between">
               <span class="text-xs text-gray-400">Дней осталось</span>
@@ -334,7 +378,13 @@
             </div>
             <div class="flex items-center justify-between">
               <span class="text-xs text-gray-400">Менеджер</span>
-              <span class="text-xs text-gray-700 font-medium">{{ caseData.assignee?.name ?? '---' }}</span>
+              <div class="flex items-center gap-1.5">
+                <span class="text-xs text-gray-700 font-medium">{{ caseData.assignee?.name ?? '---' }}</span>
+                <button v-if="isOwner" @click="showAssignModal = true"
+                  class="text-[10px] text-blue-500 hover:text-blue-700 font-medium">
+                  {{ caseData.assignee ? 'изм.' : 'назначить' }}
+                </button>
+              </div>
             </div>
             <div v-if="caseData.appointment_date" class="flex items-center justify-between">
               <span class="text-xs text-gray-400">Прием</span>
@@ -462,6 +512,24 @@
     </div>
   </AppModal>
 
+  <!-- Assign manager modal -->
+  <AppModal v-model="showAssignModal" title="Назначить менеджера">
+    <div class="space-y-4">
+      <div>
+        <label class="text-sm text-gray-600 font-medium mb-1 block">Менеджер</label>
+        <select v-model="assignForm.manager_id"
+          class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+          <option value="">Выберите менеджера...</option>
+          <option v-for="m in managers" :key="m.id" :value="m.id">{{ m.name }} ({{ m.email }})</option>
+        </select>
+      </div>
+      <div class="flex gap-2 justify-end">
+        <AppButton variant="outline" @click="showAssignModal = false">Отмена</AppButton>
+        <AppButton :loading="assignForm.loading" :disabled="!assignForm.manager_id" @click="doAssignFromModal">Назначить</AppButton>
+      </div>
+    </div>
+  </AppModal>
+
   <!-- File preview -->
   <div v-if="preview" class="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" @click.self="preview = null">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
@@ -495,8 +563,12 @@ import AppModal  from '@/components/AppModal.vue';
 import AppSelect from '@/components/AppSelect.vue';
 import AppInput  from '@/components/AppInput.vue';
 import DocItem   from '@/components/DocItem.vue';
+import { useAuthStore } from '@/stores/auth';
+import { usersApi } from '@/api/users';
 
 const { countryName, countryFlag, visaTypeName } = useCountries();
+const auth = useAuthStore();
+const isOwner = computed(() => auth.isOwner);
 const route  = useRoute();
 const router = useRouter();
 const id     = route.params.id;
@@ -518,6 +590,9 @@ const translationItem = ref(null);
 const preview = ref(null);
 const zipLoading = ref(false);
 
+const managers = ref([]);
+const showAssignModal = ref(false);
+const assignForm = reactive({ manager_id: '', loading: false });
 const moveForm = reactive({ stage: '', notes: '', loading: false });
 const newSlot = reactive({ name: '', description: '', is_required: false, loading: false });
 const translationForm = reactive({ pages: 1, notes: '' });
@@ -762,7 +837,35 @@ async function doMoveStage() {
 
 async function confirmDelete() { if (!confirm('Удалить заявку?')) return; await casesApi.remove(id); router.push({ name: 'cases' }); }
 
-onMounted(load);
+async function loadManagers() {
+  if (!auth.isOwner) return;
+  try {
+    const { data } = await usersApi.list();
+    const list = Array.isArray(data.data) ? data.data : (data.data?.data ?? []);
+    managers.value = list.filter(u => u.role === 'manager' || u.role === 'owner');
+  } catch {}
+}
+
+async function doAssign() {
+  if (!assignForm.manager_id) return;
+  assignForm.loading = true;
+  try {
+    await casesApi.update(id, { assigned_to: assignForm.manager_id });
+    await reloadAll();
+  } finally { assignForm.loading = false; }
+}
+
+async function doAssignFromModal() {
+  if (!assignForm.manager_id) return;
+  assignForm.loading = true;
+  try {
+    await casesApi.update(id, { assigned_to: assignForm.manager_id });
+    showAssignModal.value = false;
+    await reloadAll();
+  } finally { assignForm.loading = false; }
+}
+
+onMounted(() => { load(); loadManagers(); });
 </script>
 
 <style scoped>
