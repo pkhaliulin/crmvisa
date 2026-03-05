@@ -322,13 +322,17 @@ const creatingCase = ref(false);
 // --- Компонент чат-пузырь ---
 const ChatBubble = (props, { slots }) => {
     const colors = {
-        green:  { bg: 'bg-gradient-to-br from-emerald-50 to-teal-50', border: 'border-emerald-200', label: 'text-emerald-500' },
-        yellow: { bg: 'bg-gradient-to-br from-amber-50 to-orange-50', border: 'border-amber-200', label: 'text-amber-500' },
-        blue:   { bg: 'bg-gradient-to-br from-blue-50 to-indigo-50', border: 'border-blue-200', label: 'text-blue-500' },
+        green:  { bg: 'bg-gradient-to-br from-emerald-50 to-teal-50', border: 'border-emerald-200', label: 'text-emerald-500', solid: 'bg-emerald-50' },
+        yellow: { bg: 'bg-gradient-to-br from-amber-50 to-orange-50', border: 'border-amber-200', label: 'text-amber-500', solid: 'bg-amber-50' },
+        blue:   { bg: 'bg-gradient-to-br from-blue-50 to-indigo-50', border: 'border-blue-200', label: 'text-blue-500', solid: 'bg-blue-50' },
     };
     const cl = colors[props.color] || colors.green;
-    return h('div', { class: 'relative mt-2' }, [
-        h('div', { class: `absolute -top-[7px] left-5 w-3.5 h-3.5 rotate-45 border-l border-t ${cl.bg} ${cl.border} z-10` }),
+    return h('div', { class: 'relative mt-3' }, [
+        // Треугольник-хвостик: только внешний контур (border-l + border-t)
+        h('div', { class: `absolute -top-[6px] left-5 w-3 h-3 rotate-45 border-l border-t ${cl.solid} ${cl.border} z-10` }),
+        // Заплатка: закрывает бордер пузыря под треугольником, чтобы контур был один
+        h('div', { class: `absolute top-[-1px] left-[22px] w-[10px] h-[2px] ${cl.solid} z-10` }),
+        // Основной пузырь
         h('div', { class: `relative rounded-2xl p-3.5 shadow-sm border ${cl.bg} ${cl.border}` }, [
             h('div', { class: 'flex items-center gap-1.5 mb-1.5' }, [
                 h('div', { class: 'w-5 h-5 rounded-full bg-gradient-to-br from-[#1BA97F] to-[#0d7a5c] flex items-center justify-center shrink-0' }, [
