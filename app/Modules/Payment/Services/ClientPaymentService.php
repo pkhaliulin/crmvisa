@@ -117,7 +117,7 @@ class ClientPaymentService
                 'status'                 => 'succeeded',
                 'provider_transaction_id' => $data['provider_transaction_id'] ?? null,
                 'paid_at'                => now(),
-                'metadata'               => $data,
+                'metadata'               => array_merge($payment->metadata ?? [], $data),
             ]);
 
             if ($payment->group_id) {

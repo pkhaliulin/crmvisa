@@ -211,6 +211,12 @@
                                 </div>
                             </div>
                         </template>
+                        <!-- Строка ИТОГО -->
+                        <div v-if="p.total_persons > 1" class="grid grid-cols-12 gap-2 px-4 py-2.5 items-center border-t-2 border-gray-200 bg-gray-50">
+                            <div class="col-span-6 text-xs font-bold text-[#0A1F44] uppercase">{{ $t('payment.total') }}</div>
+                            <div class="col-span-3 text-center text-[10px] text-gray-400">{{ p.total_persons }} {{ $t('billing.persons') }}</div>
+                            <div class="col-span-3 text-right text-sm font-bold text-[#0A1F44]">{{ formatPrice(p.amount, p.currency) }}</div>
+                        </div>
                     </div>
 
                     <!-- Что включено -->
