@@ -66,8 +66,8 @@
                             :class="form.dob ? 'border-[#1BA97F]' : 'border-gray-200 focus:border-[#1BA97F]'"/>
                         <!-- Чат-сообщение от VisaBor о возрасте -->
                         <div v-if="ageMessage" class="relative mt-3">
-                            <!-- Хвостик пузыря -->
-                            <div class="absolute -top-1.5 left-4 w-3 h-3 bg-gradient-to-br from-violet-50 to-indigo-50 border-l border-t border-violet-200 rotate-45"></div>
+                            <div class="absolute -top-[6px] left-5 w-3 h-3 rotate-45 border-l border-t bg-violet-50 border-violet-200 z-10"></div>
+                            <div class="absolute top-[-1px] left-[22px] w-[10px] h-[2px] bg-violet-50 z-10"></div>
                             <div class="relative bg-gradient-to-br from-violet-50 via-indigo-50 to-purple-50 border border-violet-200 rounded-2xl p-3.5 shadow-sm">
                                 <div class="flex items-center gap-1.5 mb-1.5">
                                     <div class="w-5 h-5 rounded-full bg-gradient-to-br from-[#1BA97F] to-[#0d7a5c] flex items-center justify-center shrink-0">
@@ -175,8 +175,10 @@
                         :class="passportExpiryColor.border"/>
                     <!-- Чат-сообщение от VisaBor о паспорте -->
                     <div v-if="form.passport_expires_at && passportExpiryColor.msg" class="relative mt-3">
-                        <div class="absolute -top-1.5 left-4 w-3 h-3 rotate-45 border-l border-t"
-                             :class="passportExpiryColor.bubbleBg + ' ' + passportExpiryColor.bubbleBorder"></div>
+                        <div class="absolute -top-[6px] left-5 w-3 h-3 rotate-45 border-l border-t z-10"
+                             :class="passportExpiryColor.solidBg + ' ' + passportExpiryColor.bubbleBorder"></div>
+                        <div class="absolute top-[-1px] left-[22px] w-[10px] h-[2px] z-10"
+                             :class="passportExpiryColor.solidBg"></div>
                         <div class="relative rounded-2xl p-3.5 shadow-sm border"
                              :class="passportExpiryColor.bubbleBg + ' ' + passportExpiryColor.bubbleBorder">
                             <div class="flex items-center gap-1.5 mb-1.5">
@@ -257,8 +259,10 @@
                 </div>
                 <!-- Чат-пузырь: оценка занятости -->
                 <div v-if="employmentBubble" class="sm:col-span-2 relative mt-1">
-                    <div class="absolute -top-1.5 left-4 w-3 h-3 rotate-45 border-l border-t"
-                         :class="employmentBubble.bubbleBg + ' ' + employmentBubble.bubbleBorder"></div>
+                    <div class="absolute -top-[6px] left-5 w-3 h-3 rotate-45 border-l border-t z-10"
+                         :class="employmentBubble.solidBg + ' ' + employmentBubble.bubbleBorder"></div>
+                    <div class="absolute top-[-1px] left-[22px] w-[10px] h-[2px] z-10"
+                         :class="employmentBubble.solidBg"></div>
                     <div class="relative rounded-2xl p-3.5 shadow-sm border"
                          :class="employmentBubble.bubbleBg + ' ' + employmentBubble.bubbleBorder">
                         <div class="flex items-center gap-1.5 mb-1.5">
@@ -349,8 +353,10 @@
                 </div>
                 <!-- Чат-пузырь: оценка привязанности -->
                 <div v-if="familyBubble" class="sm:col-span-2 relative mt-1">
-                    <div class="absolute -top-1.5 left-4 w-3 h-3 rotate-45 border-l border-t"
-                         :class="familyBubble.bubbleBg + ' ' + familyBubble.bubbleBorder"></div>
+                    <div class="absolute -top-[6px] left-5 w-3 h-3 rotate-45 border-l border-t z-10"
+                         :class="familyBubble.solidBg + ' ' + familyBubble.bubbleBorder"></div>
+                    <div class="absolute top-[-1px] left-[22px] w-[10px] h-[2px] z-10"
+                         :class="familyBubble.solidBg"></div>
                     <div class="relative rounded-2xl p-3.5 shadow-sm border"
                          :class="familyBubble.bubbleBg + ' ' + familyBubble.bubbleBorder">
                         <div class="flex items-center gap-1.5 mb-1.5">
@@ -487,8 +493,10 @@
                 </div>
                 <!-- Чат-пузырь: оценка визовой истории -->
                 <div v-if="visaBubble" class="relative mt-1">
-                    <div class="absolute -top-1.5 left-4 w-3 h-3 rotate-45 border-l border-t"
-                         :class="visaBubble.bubbleBg + ' ' + visaBubble.bubbleBorder"></div>
+                    <div class="absolute -top-[6px] left-5 w-3 h-3 rotate-45 border-l border-t z-10"
+                         :class="visaBubble.solidBg + ' ' + visaBubble.bubbleBorder"></div>
+                    <div class="absolute top-[-1px] left-[22px] w-[10px] h-[2px] z-10"
+                         :class="visaBubble.solidBg"></div>
                     <div class="relative rounded-2xl p-3.5 shadow-sm border"
                          :class="visaBubble.bubbleBg + ' ' + visaBubble.bubbleBorder">
                         <div class="flex items-center gap-1.5 mb-1.5">
@@ -687,6 +695,7 @@ const passportExpiryColor = computed(() => {
         bubbleBg: 'bg-gradient-to-br from-red-50 to-rose-50',
         bubbleBorder: 'border-red-200',
         labelColor: 'text-red-500',
+        solidBg: 'bg-red-50',
     };
     if (days < 180) return {
         border: 'border-red-500',
@@ -695,6 +704,7 @@ const passportExpiryColor = computed(() => {
         bubbleBg: 'bg-gradient-to-br from-red-50 to-rose-50',
         bubbleBorder: 'border-red-200',
         labelColor: 'text-red-500',
+        solidBg: 'bg-red-50',
     };
     if (days < 365) return {
         border: 'border-amber-400',
@@ -703,6 +713,7 @@ const passportExpiryColor = computed(() => {
         bubbleBg: 'bg-gradient-to-br from-amber-50 to-orange-50',
         bubbleBorder: 'border-amber-200',
         labelColor: 'text-amber-500',
+        solidBg: 'bg-amber-50',
     };
     return {
         border: 'border-[#1BA97F]',
@@ -711,6 +722,7 @@ const passportExpiryColor = computed(() => {
         bubbleBg: 'bg-gradient-to-br from-emerald-50 to-teal-50',
         bubbleBorder: 'border-emerald-200',
         labelColor: 'text-emerald-500',
+        solidBg: 'bg-emerald-50',
     };
 });
 
@@ -732,9 +744,9 @@ const ageMessage = computed(() => {
 });
 
 // Стили пузырей — helper
-const BUBBLE_GREEN  = { bubbleBg: 'bg-gradient-to-br from-emerald-50 to-teal-50', bubbleBorder: 'border-emerald-200', labelColor: 'text-emerald-500' };
-const BUBBLE_YELLOW = { bubbleBg: 'bg-gradient-to-br from-amber-50 to-orange-50', bubbleBorder: 'border-amber-200', labelColor: 'text-amber-500' };
-const BUBBLE_RED    = { bubbleBg: 'bg-gradient-to-br from-red-50 to-rose-50', bubbleBorder: 'border-red-200', labelColor: 'text-red-500' };
+const BUBBLE_GREEN  = { bubbleBg: 'bg-gradient-to-br from-emerald-50 to-teal-50', bubbleBorder: 'border-emerald-200', labelColor: 'text-emerald-500', solidBg: 'bg-emerald-50' };
+const BUBBLE_YELLOW = { bubbleBg: 'bg-gradient-to-br from-amber-50 to-orange-50', bubbleBorder: 'border-amber-200', labelColor: 'text-amber-500', solidBg: 'bg-amber-50' };
+const BUBBLE_RED    = { bubbleBg: 'bg-gradient-to-br from-red-50 to-rose-50', bubbleBorder: 'border-red-200', labelColor: 'text-red-500', solidBg: 'bg-red-50' };
 
 // Пузырь: Занятость и доходы
 const employmentBubble = computed(() => {
