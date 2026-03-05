@@ -467,42 +467,75 @@
 
     </div>
 
-    <!-- Модал подтверждения -->
+    <!-- Модал заявки -->
     <div v-if="confirm.show"
         class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center sm:p-4"
         @click.self="confirm.show = false">
         <div class="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl shadow-xl">
             <div class="p-6">
                 <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-base font-bold text-[#0A1F44]">{{ t('agencies.confirmTitle') }}</h3>
+                    <h3 class="text-base font-bold text-[#0A1F44]">{{ t('agencyDetail.newApplication') }}</h3>
                     <button @click="confirm.show = false" class="text-gray-400 hover:text-gray-600 p-1">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
                         </svg>
                     </button>
                 </div>
-                <div class="bg-gray-50 rounded-xl p-4 mb-4 space-y-2.5 text-sm">
-                    <div class="flex justify-between gap-3">
-                        <span class="text-gray-400 shrink-0">{{ t('agencies.confirmAgency') }}</span>
-                        <span class="font-semibold text-[#0A1F44] text-right">{{ agency.name }}</span>
+
+                <!-- Агентство -->
+                <div class="bg-gray-50 rounded-xl p-4 mb-4 flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-[#0A1F44] to-[#1a3a6e] flex items-center justify-center shrink-0 overflow-hidden">
+                        <img v-if="agency.logo_url" :src="agency.logo_url" class="w-full h-full object-cover"/>
+                        <span v-else class="text-white text-sm font-bold">{{ agency.name?.charAt(0) }}</span>
                     </div>
-                    <div v-if="confirm.pkg" class="flex justify-between gap-3">
-                        <span class="text-gray-400 shrink-0">{{ t('agencies.confirmPackage') }}</span>
-                        <span class="font-semibold text-[#0A1F44] text-right">{{ confirm.pkg.name }}</span>
-                    </div>
-                    <div v-if="confirm.pkg?.price" class="flex justify-between gap-3">
-                        <span class="text-gray-400 shrink-0">{{ t('agencies.confirmPrice') }}</span>
-                        <span class="font-bold text-[#0A1F44]">{{ formatPriceSom(confirm.pkg.price) }}</span>
+                    <div>
+                        <div class="font-semibold text-[#0A1F44] text-sm">{{ agency.name }}</div>
+                        <div v-if="confirm.pkg" class="text-xs text-gray-400">{{ confirm.pkg.name }}</div>
                     </div>
                 </div>
-                <p class="text-xs text-gray-400 mb-5 leading-relaxed">{{ t('agencies.confirmDesc') }}</p>
+
+                <!-- Страна -->
+                <div class="mb-3">
+                    <label class="block text-sm font-medium text-[#0A1F44] mb-1.5">{{ t('agencyDetail.selectCountry') }}</label>
+                    <select v-model="confirmCountry"
+                        class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-[#0A1F44] bg-white focus:outline-none focus:ring-2 focus:ring-[#1BA97F]/30 focus:border-[#1BA97F]">
+                        <option value="" disabled>{{ t('agencyDetail.chooseCountry') }}</option>
+                        <option v-for="code in agency.countries" :key="code" :value="code">
+                            {{ codeToFlag(code) }}  {{ countryName(code) }}
+                        </option>
+                    </select>
+                </div>
+
+                <!-- Тип визы -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-[#0A1F44] mb-1.5">{{ t('agencyDetail.selectVisaType') }}</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button v-for="vt in visaTypeOptions" :key="vt.value"
+                            @click="confirmVisaType = vt.value"
+                            class="px-3 py-2.5 rounded-xl text-sm font-medium border transition-all text-center"
+                            :class="confirmVisaType === vt.value
+                                ? 'bg-[#0A1F44] text-white border-[#0A1F44]'
+                                : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'">
+                            {{ vt.label }}
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Пакет если выбран -->
+                <div v-if="confirm.pkg?.price" class="bg-green-50 rounded-xl p-3 mb-4 flex items-center justify-between">
+                    <span class="text-sm text-gray-600">{{ t('agencies.confirmPrice') }}</span>
+                    <span class="font-bold text-[#0A1F44]">{{ formatPriceSom(confirm.pkg.price) }}</span>
+                </div>
+
+                <p class="text-xs text-gray-400 mb-4 leading-relaxed">{{ t('agencies.confirmDesc') }}</p>
+
                 <div class="flex gap-3">
                     <button @click="confirm.show = false"
                         class="flex-1 py-3 border border-gray-200 text-gray-600 text-sm font-semibold rounded-xl hover:bg-gray-50">
                         {{ t('common.cancel') }}
                     </button>
-                    <button @click="submitLead" :disabled="submitting"
-                        class="flex-1 py-3 bg-[#1BA97F] hover:bg-[#17956f] text-white text-sm font-semibold rounded-xl disabled:opacity-60 flex items-center justify-center gap-2">
+                    <button @click="submitLead" :disabled="submitting || !confirmCountry || !confirmVisaType"
+                        class="flex-1 py-3 bg-[#1BA97F] hover:bg-[#17956f] text-white text-sm font-semibold rounded-xl disabled:opacity-40 flex items-center justify-center gap-2 transition-colors">
                         <svg v-if="submitting" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
@@ -549,6 +582,16 @@ const submitting     = ref(false);
 const toast          = ref('');
 const toastTitle     = ref('');
 const confirm        = ref({ show: false, pkg: null });
+const confirmCountry   = ref('');
+const confirmVisaType  = ref('');
+
+const visaTypeOptions = computed(() => [
+    { value: 'tourist',   label: t('agencies.tourist') },
+    { value: 'business',  label: t('agencies.business') },
+    { value: 'student',   label: t('agencies.student') },
+    { value: 'work',      label: t('agencies.work') },
+    { value: 'transit',   label: t('agencies.transit') },
+]);
 
 const reviewTabs = computed(() => [
     { value: 'latest',   label: t('agencies.latest') },
@@ -619,17 +662,19 @@ function formatPriceSom(price) {
 }
 
 function openConfirm(pkg) {
+    confirmCountry.value   = pkg?.country_code || '';
+    confirmVisaType.value  = pkg?.visa_type || '';
     confirm.value = { show: true, pkg };
 }
 
 async function submitLead() {
+    if (!confirmCountry.value || !confirmVisaType.value) return;
     submitting.value = true;
     try {
-        const firstPkg = confirm.value.pkg ?? agency.value.packages?.[0];
         const payload = {
             agency_id:    agency.value.id,
-            country_code: firstPkg?.country_code || '',
-            visa_type:    firstPkg?.visa_type || 'tourist',
+            country_code: confirmCountry.value,
+            visa_type:    confirmVisaType.value,
             package_id:   confirm.value.pkg?.id ?? null,
         };
         const res = await publicPortalApi.submitLead(payload);

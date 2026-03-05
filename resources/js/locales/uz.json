@@ -561,7 +561,11 @@
     "critQuality": "Sifat",
     "critCommunication": "Muloqot",
     "critProfessionalism": "Professionallik",
-    "critPriceQuality": "Narx/sifat"
+    "critPriceQuality": "Narx/sifat",
+    "newApplication": "Yangi ariza",
+    "selectCountry": "Manzil davlati",
+    "chooseCountry": "Davlatni tanlang...",
+    "selectVisaType": "Viza turi"
   },
   "portal": {
     "newApplication": "Vizaga yangi ariza",

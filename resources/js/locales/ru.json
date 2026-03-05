@@ -561,7 +561,11 @@
     "critQuality": "Качество",
     "critCommunication": "Коммуникация",
     "critProfessionalism": "Профессионализм",
-    "critPriceQuality": "Цена/качество"
+    "critPriceQuality": "Цена/качество",
+    "newApplication": "Новая заявка",
+    "selectCountry": "Страна назначения",
+    "chooseCountry": "Выберите страну...",
+    "selectVisaType": "Тип визы"
   },
   "portal": {
     "newApplication": "Новая заявка на визу",
