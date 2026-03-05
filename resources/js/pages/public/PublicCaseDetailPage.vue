@@ -37,25 +37,39 @@
 
             <!-- === Баннер: неоплаченный счет === -->
             <div v-if="caseData.agency && caseData.public_status === 'awaiting_payment' && caseData.payment_status !== 'paid'"
-                class="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3">
-                <div class="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center shrink-0">
-                    <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                class="bg-amber-50 border border-amber-200 rounded-2xl p-4 space-y-3">
+                <div class="flex items-start gap-3">
+                    <div class="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center shrink-0">
+                        <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                        </svg>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="text-sm font-bold text-amber-800">{{ $t('payment.invoiceBannerTitle') }}</div>
+                        <div class="text-xs text-amber-600 mt-0.5">
+                            {{ $t('payment.invoiceBannerDesc', { agency: caseData.agency?.name }) }}
+                        </div>
+                        <div v-if="caseData.package" class="text-sm font-bold text-amber-800 mt-1">
+                            {{ formatPrice(caseData.package.price, caseData.package.currency) }}
+                        </div>
+                    </div>
+                    <button @click="scrollToPayment"
+                        class="shrink-0 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl transition-colors">
+                        {{ $t('payment.payNow') }}
+                    </button>
+                </div>
+                <!-- Таймер аннулирования в баннере -->
+                <div v-if="caseData.payment_expires_at && invoiceHoursLeft > 0"
+                    class="flex items-center gap-2 px-3 py-2 rounded-xl"
+                    :class="invoiceHoursLeft <= 24 ? 'bg-red-100' : 'bg-amber-100'">
+                    <svg class="w-4 h-4 shrink-0" :class="invoiceHoursLeft <= 24 ? 'text-red-500 animate-pulse' : 'text-amber-500'"
+                        fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                     </svg>
+                    <span class="text-xs font-semibold" :class="invoiceHoursLeft <= 24 ? 'text-red-700' : 'text-amber-700'">
+                        {{ $t('payment.invoiceExpiresIn', { time: invoiceExpiresFormatted }) }}
+                    </span>
                 </div>
-                <div class="flex-1 min-w-0">
-                    <div class="text-sm font-bold text-amber-800">{{ $t('payment.invoiceBannerTitle') }}</div>
-                    <div class="text-xs text-amber-600 mt-0.5">
-                        {{ $t('payment.invoiceBannerDesc', { agency: caseData.agency?.name }) }}
-                    </div>
-                    <div v-if="caseData.package" class="text-sm font-bold text-amber-800 mt-1">
-                        {{ formatPrice(caseData.package.price, caseData.package.currency) }}
-                    </div>
-                </div>
-                <button @click="scrollToPayment"
-                    class="shrink-0 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl transition-colors">
-                    {{ $t('payment.payNow') }}
-                </button>
             </div>
 
             <!-- === Заголовок заявки === -->
@@ -298,9 +312,33 @@
                             <div class="text-white/60 text-[10px]">{{ $t('payment.invoiceNumber', { number: invoiceNumber }) }}</div>
                         </div>
                     </div>
-                    <div class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-400 text-amber-900">
-                        {{ $t('payment.statusUnpaid') }}
+                    <div class="flex items-center gap-2">
+                        <div v-if="caseData.payment_expires_at && invoiceHoursLeft > 0"
+                            class="flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-full"
+                            :class="invoiceHoursLeft <= 24 ? 'bg-red-500 text-white' : 'bg-white/20 text-white/90'">
+                            <svg class="w-3 h-3" :class="invoiceHoursLeft <= 24 ? 'animate-pulse' : ''"
+                                fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            {{ invoiceExpiresFormatted }}
+                        </div>
+                        <div class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-400 text-amber-900">
+                            {{ $t('payment.statusUnpaid') }}
+                        </div>
                     </div>
+                </div>
+
+                <!-- Предупреждение об аннулировании -->
+                <div v-if="caseData.payment_expires_at && invoiceHoursLeft > 0"
+                    class="mx-5 mb-0 -mt-1 flex items-center gap-2 px-4 py-2.5 rounded-xl"
+                    :class="invoiceHoursLeft <= 24 ? 'bg-red-50 border border-red-200' : 'bg-amber-50 border border-amber-200'">
+                    <svg class="w-4 h-4 shrink-0" :class="invoiceHoursLeft <= 24 ? 'text-red-400' : 'text-amber-400'"
+                        fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/>
+                    </svg>
+                    <span class="text-xs" :class="invoiceHoursLeft <= 24 ? 'text-red-600' : 'text-amber-600'">
+                        {{ $t('payment.invoiceWillExpire', { time: invoiceExpiresFormatted }) }}
+                    </span>
                 </div>
 
                 <div class="p-5 space-y-4">
@@ -1496,6 +1534,22 @@ const invoiceNumber = computed(() => {
     if (cn) return 'INV-' + cn;
     const id = caseData.value?.id;
     return id ? 'INV-' + id.slice(0, 8).toUpperCase() : 'INV-000';
+});
+
+const invoiceHoursLeft = computed(() => {
+    const exp = caseData.value?.payment_expires_at;
+    if (!exp) return 999;
+    return Math.max(0, (new Date(exp) - new Date()) / (1000 * 60 * 60));
+});
+
+const invoiceExpiresFormatted = computed(() => {
+    const h = invoiceHoursLeft.value;
+    if (h <= 0) return t('billing.expired');
+    const days = Math.floor(h / 24);
+    const hours = Math.floor(h % 24);
+    if (days > 0) return t('billing.daysAndHours', { days, hours });
+    if (hours > 0) return t('billing.hoursLeft', { hours });
+    return t('billing.lessThanHour');
 });
 
 function formatPrice(amount, currency) {

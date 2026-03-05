@@ -971,6 +971,8 @@
     "invoiceBannerTitle": "To'lov hisob-fakturasi chiqarildi",
     "invoiceBannerDesc": "{agency} agentligi xizmati uchun to'lang",
     "payNow": "To'lash",
+    "invoiceExpiresIn": "Hisob-faktura yana {time} amal qiladi. Muddati tugagach bekor qilinadi.",
+    "invoiceWillExpire": "Hisob-faktura {time} dan keyin bekor qilinadi. Bekor qilingandan keyin yangi hisob-faktura chiqarish kerak.",
     "includedServices": "Nima kiradi",
     "total": "Jami to'lov",
     "processingDays": "Muddat: {days} kun",

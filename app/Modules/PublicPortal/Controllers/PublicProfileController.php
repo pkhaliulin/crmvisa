@@ -16,6 +16,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
+use App\Modules\Payment\Models\ClientPayment;
 use App\Modules\Service\Models\AgencyServicePackage;
 
 class PublicProfileController extends Controller
@@ -305,6 +306,10 @@ class PublicProfileController extends Controller
             'travel_date'          => $case->travel_date?->toDateString(),
             'return_date'          => $case->return_date?->toDateString(),
             'payment_status'       => $case->payment_status ?? 'unpaid',
+            'payment_expires_at'   => ClientPayment::where('case_id', $case->id)
+                ->where('status', 'pending')
+                ->whereNotNull('expires_at')
+                ->value('expires_at'),
             'appointment_date'     => $case->appointment_date?->toDateString(),
             'appointment_time'     => $case->appointment_time,
             'appointment_location' => $case->appointment_location,
