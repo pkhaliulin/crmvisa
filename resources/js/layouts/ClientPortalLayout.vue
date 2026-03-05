@@ -315,15 +315,19 @@ const statusSummary = ref({ activeCases: 0, docsNeeded: 0, awaitingResult: 0, un
 
 async function loadStatusSummary() {
     try {
-        const { data } = await publicPortalApi.cases();
-        const cases = data?.data ?? [];
-        const unpaid = cases.filter(c => c.public_status === 'awaiting_payment' && c.payment_status !== 'paid');
+        const [casesRes, billingRes] = await Promise.all([
+            publicPortalApi.cases(),
+            publicPortalApi.billingHistory(),
+        ]);
+        const cases = casesRes?.data?.data ?? [];
+        const payments = billingRes?.data?.data?.payments ?? [];
+        const unpaidPayments = payments.filter(p => p.status === 'pending');
         statusSummary.value = {
             activeCases: cases.filter(c => c.stage !== 'result').length,
             docsNeeded: cases.filter(c => c.stage === 'documents').length,
             awaitingResult: cases.filter(c => c.stage === 'review').length,
-            unpaidCases: unpaid.length,
-            unpaidCaseId: unpaid[0]?.id ?? null,
+            unpaidCases: unpaidPayments.length,
+            unpaidCaseId: null,
         };
     } catch {
         // ignore
@@ -405,6 +409,8 @@ const navItems = computed(() => [
         name: 'me.billing',
         label: t('billing.title'),
         iconPath: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z',
+        badge: statusSummary.value.unpaidCases > 0 ? statusSummary.value.unpaidCases : null,
+        badgeClass: 'bg-red-50 text-red-600',
     },
 ]);
 
