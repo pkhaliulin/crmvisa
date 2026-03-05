@@ -115,7 +115,7 @@
                 <!-- New application CTA -->
                 <div class="p-3 border-b border-gray-50">
                     <button @click="showNewCase = true"
-                        class="w-full flex items-center justify-center gap-2 bg-[#1BA97F] hover:bg-[#169B72] text-white rounded-xl px-4 py-3 text-sm font-semibold transition-colors">
+                        class="w-full flex items-center justify-center gap-2 bg-[#0A1F44] hover:bg-[#0d2a5e] text-white rounded-xl px-4 py-3 text-sm font-semibold transition-colors">
                         <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
                         </svg>
@@ -177,7 +177,7 @@
 
                 <!-- Central new case button -->
                 <button @click="showNewCase = true" class="flex-1 flex flex-col items-center justify-center gap-0.5">
-                    <div class="w-11 h-11 bg-[#1BA97F] rounded-xl flex items-center justify-center -mt-2 shadow-lg">
+                    <div class="w-11 h-11 bg-[#0A1F44] rounded-xl flex items-center justify-center -mt-2 shadow-lg">
                         <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
                         </svg>
