@@ -146,7 +146,7 @@ class ClientPaymentController extends Controller
 
         $payments = ClientPayment::where('public_user_id', $publicUser->id)
             ->with([
-                'case:id,case_number,country_code,visa_type,public_status,client_id,group_id',
+                'case:id,case_number,country_code,visa_type,public_status,client_id,group_id,critical_date',
                 'case.client:id,name',
                 'agency:id,name,city,logo_url',
                 'package:id,name,description,processing_days',
@@ -214,6 +214,7 @@ class ClientPaymentController extends Controller
                 'group_name'      => $p->group?->name,
                 'group_members'   => $groupMembers,
                 'total_persons'   => $totalPersons,
+                'critical_date'   => $p->case?->critical_date?->toDateString(),
             ];
         });
 

@@ -137,6 +137,58 @@
                         <span class="text-xl font-bold">{{ formatPrice(p.amount, p.currency) }}</span>
                     </div>
 
+                    <!-- Обратный отсчёт: крайний срок -->
+                    <div v-if="p.status === 'pending' && p.critical_date && daysLeft(p.critical_date) >= 0"
+                        class="rounded-xl overflow-hidden"
+                        :class="daysLeft(p.critical_date) <= 7
+                            ? 'bg-red-50 border border-red-200'
+                            : daysLeft(p.critical_date) <= 21
+                                ? 'bg-amber-50 border border-amber-200'
+                                : 'bg-orange-50 border border-orange-200'">
+                        <div class="px-4 py-3 flex items-start gap-3">
+                            <div class="shrink-0 mt-0.5">
+                                <svg class="w-5 h-5 animate-pulse" :class="daysLeft(p.critical_date) <= 7 ? 'text-red-500' : 'text-amber-500'"
+                                    fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
+                                </svg>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="text-xs font-bold uppercase tracking-wider"
+                                    :class="daysLeft(p.critical_date) <= 7 ? 'text-red-600' : 'text-amber-600'">
+                                    {{ $t('billing.urgentTitle') }}
+                                </div>
+                                <div class="text-sm font-semibold mt-1"
+                                    :class="daysLeft(p.critical_date) <= 7 ? 'text-red-800' : 'text-amber-800'">
+                                    {{ $t('billing.deadlineWarning', { days: daysLeft(p.critical_date), date: formatDeadline(p.critical_date) }) }}
+                                </div>
+                                <div class="text-xs mt-1"
+                                    :class="daysLeft(p.critical_date) <= 7 ? 'text-red-600' : 'text-amber-600'">
+                                    {{ $t('billing.payToStart') }}
+                                </div>
+                            </div>
+                            <div class="text-right shrink-0">
+                                <div class="text-2xl font-black"
+                                    :class="daysLeft(p.critical_date) <= 7 ? 'text-red-600' : 'text-amber-600'">
+                                    {{ daysLeft(p.critical_date) }}
+                                </div>
+                                <div class="text-[10px] font-bold uppercase"
+                                    :class="daysLeft(p.critical_date) <= 7 ? 'text-red-400' : 'text-amber-400'">
+                                    {{ $t('billing.daysShort') }}
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Прогресс-бар времени -->
+                        <div class="px-4 pb-3">
+                            <div class="h-1.5 bg-white/60 rounded-full overflow-hidden">
+                                <div class="h-full rounded-full transition-all duration-500"
+                                    :class="daysLeft(p.critical_date) <= 7 ? 'bg-red-500' : daysLeft(p.critical_date) <= 21 ? 'bg-amber-500' : 'bg-orange-400'"
+                                    :style="{ width: Math.max(5, 100 - (daysLeft(p.critical_date) / 90 * 100)) + '%' }">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Оплата: pending -->
                     <template v-if="p.status === 'pending'">
                         <!-- Способы оплаты -->
@@ -284,6 +336,21 @@ function paymentStatusLabel(status) {
 }
 
 function formatDateTime(dateStr) {
+    if (!dateStr) return '';
+    const locale = i18n.global.locale.value === 'uz' ? 'uz-UZ' : 'ru-RU';
+    return new Date(dateStr).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+function daysLeft(dateStr) {
+    if (!dateStr) return -1;
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const target = new Date(dateStr);
+    target.setHours(0, 0, 0, 0);
+    return Math.ceil((target - now) / (1000 * 60 * 60 * 24));
+}
+
+function formatDeadline(dateStr) {
     if (!dateStr) return '';
     const locale = i18n.global.locale.value === 'uz' ? 'uz-UZ' : 'ru-RU';
     return new Date(dateStr).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' });
