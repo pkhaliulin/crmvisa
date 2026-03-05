@@ -129,7 +129,7 @@
                         <span class="text-lg">{{ codeToFlag(p.country_code) }}</span>
                         <div>
                             <div class="text-sm font-semibold text-[#0A1F44]">
-                                {{ p.package_name || (visaTypeLabel(p.visa_type) + ' — ' + (p.country_code || '')) }}
+                                {{ p.package_name || (visaTypeLabel(p.visa_type) + ' — ' + countryName(p.country_code)) }}
                             </div>
                             <div v-if="p.package_desc" class="text-[11px] text-gray-400 leading-tight">{{ p.package_desc }}</div>
                             <div v-if="p.package_days" class="text-[10px] text-gray-400">
@@ -234,7 +234,9 @@
                     </div>
 
                     <!-- Обратный отсчёт: крайний срок -->
-                    <div v-if="p.status === 'pending' && p.critical_date"
+                    <div v-if="p.status === 'pending' && p.critical_date" class="space-y-2">
+                    <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{{ $t('billing.deadlineTitle') }}</div>
+                    <div
                         class="rounded-xl overflow-hidden"
                         :class="daysLeft(p.critical_date) <= 0
                             ? 'bg-red-50 border-2 border-red-300'
@@ -288,6 +290,7 @@
                                 </div>
                             </div>
                         </div>
+                    </div>
                     </div>
 
                     <!-- Оплата: pending -->

@@ -1019,6 +1019,7 @@
     "openCase": "Arizani ochish",
     "checkCase": "Arizani tekshirish",
     "viewCase": "Arizaga o'tish",
+    "deadlineTitle": "Hujjatlarni topshirish muddati",
     "urgentTitle": "Diqqat! Vaqt tugamoqda",
     "deadlineWarning": "Hujjatlarni topshirish muddati: {date} ({days} kun qoldi). Vaqt kamaymoqda!",
     "payToStart": "Menejer faqat to'lovdan keyin ishni boshlaydi. Kechiktirmang — har bir kun muhim!",
