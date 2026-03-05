@@ -372,6 +372,7 @@
     "departureDateLabel": "Jo'nash (borish)",
     "returnDateLabel": "Qaytish (orqaga)",
     "setReturnDate": "Qaytish sanasini belgilash",
+    "travelDateRequired": "Jo'nash sanasini kiriting — bu majburiy",
     "setDepartureFirst": "Avval jo'nash sanasini belgilang",
     "tripDuration": "Yashash muddati",
     "maxStayDays": "maks. {days} kun",

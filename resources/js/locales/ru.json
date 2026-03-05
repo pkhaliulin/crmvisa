@@ -372,6 +372,7 @@
     "departureDateLabel": "Вылет (туда)",
     "returnDateLabel": "Возврат (обратно)",
     "setReturnDate": "Указать дату возврата",
+    "travelDateRequired": "Укажите дату вылета — это обязательно",
     "setDepartureFirst": "Сначала укажите дату вылета",
     "tripDuration": "Срок пребывания",
     "maxStayDays": "макс. {days} дн.",

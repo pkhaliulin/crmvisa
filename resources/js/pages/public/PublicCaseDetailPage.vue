@@ -189,7 +189,7 @@
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M5 17h14M3.5 13.5L12 5l8.5 8.5"/>
                             </svg>
-                            {{ $t('cases.departureDateLabel') }}
+                            {{ $t('cases.departureDateLabel') }} <span class="text-red-500">*</span>
                         </div>
                         <input type="date" :value="caseData.travel_date || ''" @change="onTravelDateChange($event)"
                             :min="todayStr"
@@ -197,6 +197,7 @@
                             class="text-sm border rounded-lg px-2 py-1.5 w-full outline-none transition-colors cursor-pointer"
                             :class="savingTravelDate ? 'border-gray-100 bg-gray-100 text-gray-400' : 'border-gray-200 focus:border-[#1BA97F] hover:border-[#1BA97F]'"/>
                         <div v-if="savingTravelDate" class="text-[10px] text-[#1BA97F] mt-1">{{ $t('common.saving') }}...</div>
+                        <div v-else-if="!caseData.travel_date" class="text-[10px] text-red-400 mt-1">{{ $t('cases.travelDateRequired') }}</div>
                     </div>
                     <!-- Дата возврата (обратно) -->
                     <div class="p-3 rounded-xl bg-gray-50">
