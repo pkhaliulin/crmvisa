@@ -110,9 +110,10 @@
                         <td class="px-3 py-3 text-center text-gray-500">{{ c.case_count || 0 }}</td>
                         <td class="px-3 py-3 text-center" @click.stop>
                             <button @click="toggleActive(c)"
-                                class="text-xs px-2.5 py-1 rounded-full font-medium transition-colors"
-                                :class="c.is_active ? 'bg-green-50 text-green-700 hover:bg-green-100' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'">
-                                {{ c.is_active ? $t('countryDetail.active') : $t('countryDetail.inactive') }}
+                                class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none"
+                                :class="c.is_active ? 'bg-[#1BA97F]' : 'bg-gray-300'">
+                                <span class="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform duration-200"
+                                    :class="c.is_active ? 'translate-x-6' : 'translate-x-1'"></span>
                             </button>
                         </td>
                     </tr>

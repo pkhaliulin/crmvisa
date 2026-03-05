@@ -222,6 +222,16 @@ class PublicScoringService
         // Занятость как доп. привязка
         if (in_array($user->employment_type, ['employed', 'business_owner'])) $score += 5;
 
+        // Образование — подтверждает квалификацию и социальную стабильность
+        $score += match ($user->education_level) {
+            'phd'        => 15,
+            'master'     => 12,
+            'bachelor'   => 10,
+            'vocational' => 6,
+            'secondary'  => 3,
+            default      => 0,
+        };
+
         // Возраст — ключевой фактор для консульств
         if ($user->dob) {
             $age = now()->diffInYears($user->dob);
@@ -402,6 +412,9 @@ class PublicScoringService
         if ($blocks['social_ties'] < 50) {
             if (! $user->has_property) $recs[] = 'Укажите наличие недвижимости (квартира, земля)';
             if (! $user->has_car)      $recs[] = 'Укажите наличие автомобиля';
+            if (! $user->education_level || $user->education_level === 'none') {
+                $recs[] = 'Укажите уровень образования — высшее образование повышает доверие консульства';
+            }
         }
 
         if (in_array($cc, ['US', 'CA']) && ! $user->has_us_visa) {

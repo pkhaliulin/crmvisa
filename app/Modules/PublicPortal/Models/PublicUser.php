@@ -45,6 +45,7 @@ class PublicUser extends Model
         'refusal_countries',
         'last_refusal_year',
         'employed_years',
+        'education_level',
         'last_login_at',
     ];
 
@@ -117,15 +118,16 @@ class PublicUser extends Model
         $weights = [
             ['w' => 12, 'filled' => ! empty($this->name)],
             ['w' => 10, 'filled' => ! empty($this->dob)],
-            ['w' => 10, 'filled' => ! empty($this->citizenship)],
-            ['w' =>  6, 'filled' => ! empty($this->gender)],
+            ['w' =>  9, 'filled' => ! empty($this->citizenship)],
+            ['w' =>  5, 'filled' => ! empty($this->gender)],
             ['w' => 10, 'filled' => ! empty($this->passport_number)],
             ['w' =>  7, 'filled' => ! empty($this->passport_expires_at)],
-            ['w' => 10, 'filled' => ! empty($this->employment_type)],
-            ['w' =>  6, 'filled' => $this->employed_years !== null],
+            ['w' =>  9, 'filled' => ! empty($this->employment_type)],
+            ['w' =>  5, 'filled' => $this->employed_years !== null],
+            ['w' =>  5, 'filled' => ! empty($this->education_level)],
             ['w' => 10, 'filled' => $this->monthly_income_usd !== null && $this->monthly_income_usd > 0],
             ['w' => 10, 'filled' => ! empty($this->marital_status)],
-            ['w' =>  9, 'filled' => $this->visas_obtained_count !== null],
+            ['w' =>  8, 'filled' => $this->visas_obtained_count !== null],
         ];
 
         return collect($weights)->sum(fn ($f) => $f['filled'] ? $f['w'] : 0);

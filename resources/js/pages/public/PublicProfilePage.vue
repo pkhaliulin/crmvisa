@@ -242,6 +242,19 @@
                     </select>
                     <p class="text-[11px] text-gray-400 mt-1">{{ $t('profile.incomeHint') }}</p>
                 </div>
+                <div class="sm:col-span-2">
+                    <label class="block text-xs font-medium text-gray-600 mb-1">
+                        {{ $t('profile.educationLevel') }}
+                        <span class="text-gray-400 font-normal">({{ $t('profile.educationBoost') }})</span>
+                    </label>
+                    <select v-model="form.education_level"
+                        class="w-full border rounded-xl px-3 py-2.5 text-sm outline-none transition-colors"
+                        :class="form.education_level ? 'border-[#1BA97F]' : 'border-gray-200 focus:border-[#1BA97F]'">
+                        <option value="">{{ $t('common.notSpecified') }}</option>
+                        <option v-for="el in educationLevels" :key="el.code" :value="el.code">{{ refLabel(el) }}</option>
+                    </select>
+                    <p class="text-[11px] text-gray-400 mt-1">{{ $t('profile.educationHint') }}</p>
+                </div>
                 <!-- Чат-пузырь: оценка занятости -->
                 <div v-if="employmentBubble" class="sm:col-span-2 relative mt-1">
                     <div class="absolute -top-1.5 left-4 w-3 h-3 rotate-45 border-l border-t"
@@ -586,8 +599,9 @@ const router     = useRouter();
 const publicAuth = usePublicAuthStore();
 const { activeItems: refItems } = usePublicReferences();
 
-const employmentTypes = computed(() => refItems('employment_type'));
-const maritalStatuses = computed(() => refItems('marital_status'));
+const employmentTypes  = computed(() => refItems('employment_type'));
+const maritalStatuses  = computed(() => refItems('marital_status'));
+const educationLevels  = computed(() => refItems('education_level'));
 
 function refLabel(item) {
     if (locale.value === 'uz' && item.label_uz) return item.label_uz;
@@ -632,6 +646,7 @@ const form = reactive({
     passport_expires_at:  publicAuth.user?.passport_expires_at?.slice(0, 10) ?? '',
     employment_type:      publicAuth.user?.employment_type ?? '',
     employed_years:       publicAuth.user?.employed_years ?? '',
+    education_level:      publicAuth.user?.education_level ?? '',
     monthly_income_usd:   publicAuth.user?.monthly_income_usd ?? '',
     marital_status:       publicAuth.user?.marital_status ?? '',
     has_children:         !!publicAuth.user?.has_children,

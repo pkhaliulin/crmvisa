@@ -65,9 +65,11 @@
           <h3 class="font-bold text-[#0A1F44] text-lg">
             {{ editingSetting ? $t('countryDetail.editVisaSetting') : $t('countryDetail.addVisaSetting') }}
           </h3>
-          <button v-if="editingSetting" @click="deleteTarget = editingSetting; showModal = false"
-            class="text-xs px-3 py-1.5 border border-red-200 rounded-lg hover:bg-red-50 text-red-600">
-            {{ $t('countryDetail.delete') }}
+          <button type="button" @click="showModal = false; editingSetting = null"
+            class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
           </button>
         </div>
         <form @submit.prevent="saveForm" class="space-y-6">
@@ -124,6 +126,7 @@
                 <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.processingMin') }}</label>
                 <input v-model.number="formData.processing_days_min" type="number" min="0" max="365"
                   class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]" />
+                <p class="text-[10px] text-gray-400 mt-0.5">{{ $t('countryDetail.processingMinHint') }}</p>
               </div>
               <div>
                 <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.processingAvg') }}</label>
@@ -135,6 +138,7 @@
                 <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.processingMax') }}</label>
                 <input v-model.number="formData.processing_days_max" type="number" min="0" max="365"
                   class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]" />
+                <p class="text-[10px] text-gray-400 mt-0.5">{{ $t('countryDetail.processingMaxHint') }}</p>
               </div>
             </div>
             <div class="mt-3 p-3 bg-blue-50 rounded-lg text-xs text-blue-600">
@@ -238,6 +242,12 @@
             <button type="button" @click="showModal = false; editingSetting = null"
               class="px-5 py-2.5 border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50">
               {{ $t('common.cancel') }}
+            </button>
+          </div>
+          <div v-if="editingSetting" class="pt-3 border-t border-gray-100 mt-3">
+            <button type="button" @click="deleteTarget = editingSetting; showModal = false"
+              class="w-full py-2.5 text-sm font-medium text-red-600 border border-red-200 rounded-xl hover:bg-red-50 transition-colors">
+              {{ $t('countryDetail.deleteVisaType') }}
             </button>
           </div>
         </form>
