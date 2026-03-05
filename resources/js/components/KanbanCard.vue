@@ -52,12 +52,12 @@
       </span>
     </div>
 
-    <!-- Appointment date (дата приема) -->
+    <!-- Appointment date (дата приема) — только для этапов подачи -->
     <div v-if="item.appointment_date" class="flex items-center gap-1 mt-2 text-xs font-medium text-green-600">
       <span>📅</span>
       <span>{{ item.appointment_date }}{{ item.appointment_time ? ' ' + item.appointment_time : '' }}</span>
     </div>
-    <div v-else class="flex items-center gap-1 mt-2 text-xs font-medium text-red-500">
+    <div v-else-if="['ready','review'].includes(item.stage)" class="flex items-center gap-1 mt-2 text-xs font-medium text-red-500">
       <span>🔴</span>
       <span>Дата приема не назначена</span>
     </div>
@@ -82,7 +82,7 @@ defineEmits(['click', 'move']);
 const COUNTRY_FLAGS = {
   DE: '🇩🇪', FR: '🇫🇷', IT: '🇮🇹', ES: '🇪🇸', CZ: '🇨🇿', PL: '🇵🇱',
   US: '🇺🇸', GB: '🇬🇧', AE: '🇦🇪', TR: '🇹🇷', KR: '🇰🇷', CN: '🇨🇳',
-  UZ: '🇺🇿', KZ: '🇰🇿', RU: '🇷🇺',
+  UZ: '🇺🇿', KZ: '🇰🇿', RU: '🇷🇺', IN: '🇮🇳', JP: '🇯🇵',
 };
 
 const flagEmoji     = computed(() => COUNTRY_FLAGS[props.item.country_code] ?? '🌍');

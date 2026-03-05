@@ -50,6 +50,48 @@
       </div>
     </div>
 
+    <!-- Action panels based on stage -->
+
+    <!-- Submit to Embassy panel (stage = ready) -->
+    <div v-if="caseData.stage === 'ready'" class="bg-blue-50 rounded-xl border border-blue-200 p-6">
+      <h3 class="font-semibold text-blue-800 mb-3">Подача в посольство</h3>
+      <p class="text-sm text-blue-700 mb-4">Все документы готовы. Укажите дату подачи и ожидаемую дату результата.</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+        <AppInput v-model="embassyForm.submitted_at" type="date" label="Дата подачи" />
+        <AppInput v-model="embassyForm.expected_result_date" type="date" label="Ожидаемая дата результата" />
+      </div>
+      <AppButton :loading="embassyForm.loading" @click="doSubmitToEmbassy">Отметить подачу</AppButton>
+    </div>
+
+    <!-- Awaiting result panel (stage = review) -->
+    <div v-if="caseData.stage === 'review'" class="bg-yellow-50 rounded-xl border border-yellow-200 p-6">
+      <h3 class="font-semibold text-yellow-800 mb-3">Ожидание результата</h3>
+      <div class="flex items-center gap-4 text-sm text-yellow-700 mb-4">
+        <span v-if="caseData.submitted_at">Подано: {{ formatDateShort(caseData.submitted_at) }}</span>
+        <span v-if="caseData.expected_result_date">Ожидаемый результат: {{ formatDateShort(caseData.expected_result_date) }}</span>
+      </div>
+      <div class="flex gap-2">
+        <AppButton @click="showResultModal = true">Записать результат</AppButton>
+        <AppButton variant="outline" @click="showExpectedDateModal = true">Изменить дату</AppButton>
+      </div>
+    </div>
+
+    <!-- Result panel (stage = result) -->
+    <div v-if="caseData.stage === 'result'" class="rounded-xl border p-6" :class="caseData.result_type === 'approved' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'">
+      <h3 class="font-semibold mb-2" :class="caseData.result_type === 'approved' ? 'text-green-800' : 'text-red-800'">
+        {{ caseData.result_type === 'approved' ? 'Виза одобрена' : 'Виза отклонена' }}
+      </h3>
+      <div class="text-sm space-y-1" :class="caseData.result_type === 'approved' ? 'text-green-700' : 'text-red-700'">
+        <p v-if="caseData.result_notes">{{ caseData.result_notes }}</p>
+        <p v-if="caseData.visa_issued_at">Выдана: {{ formatDateShort(caseData.visa_issued_at) }}</p>
+        <p v-if="caseData.visa_received_at">Получена: {{ formatDateShort(caseData.visa_received_at) }}</p>
+        <p v-if="caseData.visa_validity">Срок действия: {{ caseData.visa_validity }}</p>
+        <p v-if="caseData.rejection_reason">Причина отказа: {{ caseData.rejection_reason }}</p>
+        <p v-if="caseData.can_reapply !== null">Повторная подача: {{ caseData.can_reapply ? 'Возможна' : 'Нет' }}</p>
+        <p v-if="caseData.reapply_recommendation">Рекомендация: {{ caseData.reapply_recommendation }}</p>
+      </div>
+    </div>
+
     <!-- Documents checklist -->
     <div class="bg-white rounded-xl border border-gray-200 p-6">
       <!-- Panel header -->
@@ -92,12 +134,12 @@
             <!-- Status icon -->
             <div class="shrink-0 mt-0.5 text-lg select-none">
               <span v-if="item.type === 'checkbox'">{{ item.is_checked ? '✅' : '⬜' }}</span>
-              <span v-else>{{ item.status === 'approved' ? '✅' : item.status === 'rejected' ? '❌' : item.document ? '📎' : '📋' }}</span>
+              <span v-else>{{ statusIcon(item) }}</span>
             </div>
 
             <!-- Main content -->
             <div class="flex-1 min-w-0">
-              <!-- Document name — крупно, первым -->
+              <!-- Document name -->
               <div class="flex items-center gap-2 flex-wrap">
                 <p class="text-sm font-semibold text-gray-900">{{ item.name }}</p>
                 <span v-if="!item.is_required" class="text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-md">опционально</span>
@@ -129,6 +171,36 @@
               <p v-if="item.notes && item.status === 'rejected'" class="mt-2 text-xs text-red-600 bg-red-50 rounded-lg px-3 py-1.5">
                 {{ item.notes }}
               </p>
+
+              <!-- Review notes -->
+              <p v-if="item.review_notes && item.status !== 'rejected'" class="mt-2 text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-1.5">
+                {{ item.review_notes }}
+              </p>
+
+              <!-- Translation info -->
+              <div v-if="item.review_status === 'needs_translation'" class="mt-2 p-3 bg-purple-50 rounded-lg border border-purple-100">
+                <div class="flex items-center gap-2 text-xs text-purple-700 mb-1">
+                  <span>Перевод: {{ item.translation_pages ?? '?' }} стр.</span>
+                  <span v-if="item.translation_price"> · {{ item.translation_price.toLocaleString() }} сум</span>
+                  <AppBadge :color="translationStatusColor(item)" class="ml-1">{{ translationStatusLabel(item) }}</AppBadge>
+                </div>
+
+                <!-- Upload translation -->
+                <div v-if="item.status === 'needs_translation'" class="mt-2">
+                  <label class="cursor-pointer text-xs px-3 py-1.5 rounded-lg border border-purple-200 text-purple-700 bg-purple-100 hover:bg-purple-200 font-medium inline-block">
+                    Загрузить перевод
+                    <input type="file" class="hidden" @change="doUploadTranslation(item, $event)" />
+                  </label>
+                </div>
+
+                <!-- Approve translation -->
+                <div v-if="item.status === 'translated'" class="mt-2 flex items-center gap-2">
+                  <span class="text-xs text-purple-600">Перевод загружен</span>
+                  <button @click="doApproveTranslation(item)" class="text-xs px-3 py-1.5 rounded-lg bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 font-medium">Одобрить перевод</button>
+                </div>
+
+                <div v-if="item.status === 'translation_approved'" class="mt-1 text-xs text-green-600 font-medium">Перевод одобрен</div>
+              </div>
             </div>
 
             <!-- Right-side actions -->
@@ -143,8 +215,8 @@
                 >{{ item.is_checked ? 'Готово' : 'Отметить' }}</button>
               </template>
 
-              <!-- Upload button (пустой слот) -->
-              <template v-else-if="!item.document">
+              <!-- Upload button (empty slot) -->
+              <template v-else-if="!item.document && !['approved','needs_translation','translated','translation_approved'].includes(item.status)">
                 <label class="cursor-pointer text-xs px-3 py-1.5 rounded-lg border border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100 font-medium">
                   Загрузить
                   <input type="file" class="hidden" @change="uploadToSlot(item, $event)" />
@@ -154,10 +226,11 @@
               <!-- Manager review buttons -->
               <template v-if="item.document && item.status === 'uploaded'">
                 <button @click="reviewSlot(item, 'approved')" class="text-xs px-2.5 py-1.5 rounded-lg bg-green-50 text-green-700 border border-green-200 hover:bg-green-100">Принять</button>
-                <button @click="openReject(item)"             class="text-xs px-2.5 py-1.5 rounded-lg bg-red-50 text-red-700 border border-red-200 hover:bg-red-100">Отклонить</button>
+                <button @click="openTranslation(item)" class="text-xs px-2.5 py-1.5 rounded-lg bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100">На перевод</button>
+                <button @click="openReject(item)" class="text-xs px-2.5 py-1.5 rounded-lg bg-red-50 text-red-700 border border-red-200 hover:bg-red-100">Отклонить</button>
               </template>
 
-              <!-- +1 для повторяемых (метрики детей) -->
+              <!-- +1 for repeatable -->
               <button
                 v-if="item.is_repeatable"
                 @click="repeatSlot(item)"
@@ -165,9 +238,9 @@
                 title="Добавить ещё одного ребёнка"
               >+1</button>
 
-              <!-- Удалить кастомный слот -->
+              <!-- Delete custom slot -->
               <button
-                v-if="!item.requirement_id"
+                v-if="!item.requirement_id && !item.country_requirement_id"
                 @click="deleteSlot(item)"
                 class="text-gray-300 hover:text-red-400 text-sm px-1 transition-colors"
               >✕</button>
@@ -186,7 +259,7 @@
           <div class="w-2 h-2 rounded-full bg-blue-400 mt-1.5 shrink-0"></div>
           <div>
             <p class="text-sm font-medium">{{ STAGE_LABELS[h.stage] ?? h.stage }}</p>
-            <p class="text-xs text-gray-400">{{ formatDate(h.entered_at) }} · {{ h.user?.name ?? '—' }}</p>
+            <p class="text-xs text-gray-400">{{ formatDate(h.entered_at) }} · {{ h.user?.name ?? 'Система' }}</p>
             <p v-if="h.notes" class="text-xs text-gray-600 mt-0.5">{{ h.notes }}</p>
           </div>
         </div>
@@ -229,6 +302,73 @@
       <div class="flex gap-2 justify-end">
         <AppButton variant="outline" @click="showRejectModal = false">Отмена</AppButton>
         <AppButton variant="danger" @click="submitReject">Отклонить</AppButton>
+      </div>
+    </div>
+  </AppModal>
+
+  <!-- Translation modal -->
+  <AppModal v-model="showTranslationModal" title="Отправить на перевод">
+    <div class="space-y-4">
+      <p class="text-sm text-gray-600">Документ: <strong>{{ translationItem?.name }}</strong></p>
+      <AppInput v-model="translationForm.pages" type="number" label="Кол-во страниц" placeholder="1" />
+      <AppInput v-model="translationForm.notes" label="Комментарий" placeholder="Что перевести, особые требования..." />
+      <div class="flex gap-2 justify-end">
+        <AppButton variant="outline" @click="showTranslationModal = false">Отмена</AppButton>
+        <AppButton @click="submitTranslation">Отправить на перевод</AppButton>
+      </div>
+    </div>
+  </AppModal>
+
+  <!-- Result modal -->
+  <AppModal v-model="showResultModal" title="Записать результат">
+    <div class="space-y-4">
+      <div class="flex gap-3">
+        <button
+          @click="resultForm.result_type = 'approved'"
+          class="flex-1 py-3 rounded-xl border-2 text-center font-medium text-sm transition-colors"
+          :class="resultForm.result_type === 'approved' ? 'border-green-500 bg-green-50 text-green-700' : 'border-gray-200 text-gray-500 hover:border-gray-300'"
+        >Виза одобрена</button>
+        <button
+          @click="resultForm.result_type = 'rejected'"
+          class="flex-1 py-3 rounded-xl border-2 text-center font-medium text-sm transition-colors"
+          :class="resultForm.result_type === 'rejected' ? 'border-red-500 bg-red-50 text-red-700' : 'border-gray-200 text-gray-500 hover:border-gray-300'"
+        >Отказ</button>
+      </div>
+
+      <!-- Approved fields -->
+      <template v-if="resultForm.result_type === 'approved'">
+        <AppInput v-model="resultForm.visa_issued_at" type="date" label="Дата выдачи визы" />
+        <AppInput v-model="resultForm.visa_received_at" type="date" label="Дата получения" />
+        <AppInput v-model="resultForm.visa_validity" label="Срок действия" placeholder="90 дней / 1 год..." />
+      </template>
+
+      <!-- Rejected fields -->
+      <template v-if="resultForm.result_type === 'rejected'">
+        <AppInput v-model="resultForm.rejection_reason" label="Причина отказа" placeholder="Причина..." />
+        <div class="flex items-center gap-2">
+          <input type="checkbox" v-model="resultForm.can_reapply" id="canReapply" class="rounded" />
+          <label for="canReapply" class="text-sm text-gray-700">Повторная подача возможна</label>
+        </div>
+        <AppInput v-if="resultForm.can_reapply" v-model="resultForm.reapply_recommendation" label="Рекомендация" placeholder="Что исправить..." />
+      </template>
+
+      <AppInput v-model="resultForm.result_notes" label="Примечание" placeholder="Доп. информация..." />
+
+      <div class="flex gap-2 justify-end">
+        <AppButton variant="outline" @click="showResultModal = false">Отмена</AppButton>
+        <AppButton :loading="resultForm.loading" @click="doComplete" :disabled="!resultForm.result_type">Сохранить</AppButton>
+      </div>
+    </div>
+  </AppModal>
+
+  <!-- Expected date modal -->
+  <AppModal v-model="showExpectedDateModal" title="Изменить ожидаемую дату">
+    <div class="space-y-4">
+      <AppInput v-model="expectedDateForm.expected_result_date" type="date" label="Ожидаемая дата результата" />
+      <AppInput v-model="expectedDateForm.notes" label="Примечание" placeholder="Причина изменения..." />
+      <div class="flex gap-2 justify-end">
+        <AppButton variant="outline" @click="showExpectedDateModal = false">Отмена</AppButton>
+        <AppButton :loading="expectedDateForm.loading" @click="doUpdateExpectedDate">Сохранить</AppButton>
       </div>
     </div>
   </AppModal>
@@ -293,20 +433,35 @@ const loading         = ref(true);
 const showMoveModal   = ref(false);
 const showAddSlot     = ref(false);
 const showRejectModal = ref(false);
+const showTranslationModal = ref(false);
+const showResultModal      = ref(false);
+const showExpectedDateModal = ref(false);
 const rejectNote      = ref('');
 const rejectItem      = ref(null);
+const translationItem = ref(null);
 const preview         = ref(null);
 const zipLoading      = ref(false);
 const moveForm        = reactive({ stage: '', notes: '', loading: false });
 const newSlot         = reactive({ name: '', description: '', is_required: false, loading: false });
+const translationForm = reactive({ pages: 1, notes: '' });
+const embassyForm     = reactive({ submitted_at: '', expected_result_date: '', loading: false });
+const resultForm      = reactive({
+  result_type: '', result_notes: '',
+  visa_issued_at: '', visa_received_at: '', visa_validity: '',
+  rejection_reason: '', can_reapply: false, reapply_recommendation: '',
+  loading: false,
+});
+const expectedDateForm = reactive({ expected_result_date: '', notes: '', loading: false });
 
 const STAGE_LABELS = {
   lead: 'Лид', qualification: 'Квалификация', documents: 'Документы',
-  translation: 'Перевод', appointment: 'Запись', review: 'Рассмотрение', result: 'Результат',
+  doc_review: 'Проверка док.', translation: 'Перевод', ready: 'Готов к подаче',
+  review: 'Рассмотрение', result: 'Результат',
 };
 const STAGE_COLORS = {
   lead: 'gray', qualification: 'blue', documents: 'purple',
-  translation: 'yellow', appointment: 'orange', review: 'blue', result: 'green',
+  doc_review: 'orange', translation: 'yellow', ready: 'blue',
+  review: 'blue', result: 'green',
 };
 const stageOptions  = Object.entries(STAGE_LABELS).map(([value, label]) => ({ value, label }));
 const flagEmoji     = computed(() => countryFlag(caseData.value?.country_code ?? ''));
@@ -330,24 +485,51 @@ const uploadedCount = computed(() =>
   (checklist.value.items ?? []).filter(i => i.document || i.is_checked).length
 );
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// --- Helpers ---
 function itemBorderClass(item) {
-  if (item.status === 'approved')                       return 'border-green-200 bg-green-50/40';
+  if (item.status === 'approved' || item.status === 'translation_approved') return 'border-green-200 bg-green-50/40';
   if (item.status === 'rejected')                       return 'border-red-200 bg-red-50/30';
-  if (item.document || item.is_checked)                 return 'border-blue-200';
+  if (item.status === 'needs_translation')               return 'border-purple-200 bg-purple-50/30';
+  if (item.status === 'translated')                      return 'border-purple-200 bg-purple-50/20';
+  if (item.document || item.is_checked)                  return 'border-blue-200';
   return 'border-gray-200';
 }
 function slotStatusColor(item) {
-  if (item.status === 'approved')                       return 'green';
-  if (item.status === 'rejected')                       return 'red';
-  if (item.status === 'uploaded' || item.is_checked)    return 'blue';
+  const s = item.status;
+  if (s === 'approved' || s === 'translation_approved')  return 'green';
+  if (s === 'rejected')                                  return 'red';
+  if (s === 'needs_translation')                         return 'purple';
+  if (s === 'translated')                                return 'purple';
+  if (s === 'uploaded' || item.is_checked)               return 'blue';
   return 'gray';
 }
 function slotStatusLabel(item) {
-  if (item.status === 'approved')                       return 'Принято';
-  if (item.status === 'rejected')                       return 'Отклонено';
-  if (item.status === 'uploaded' || item.is_checked)    return 'На проверке';
+  const s = item.status;
+  if (s === 'approved')                                  return 'Принято';
+  if (s === 'rejected')                                  return 'Отклонено';
+  if (s === 'needs_translation')                         return 'На перевод';
+  if (s === 'translated')                                return 'Переведено';
+  if (s === 'translation_approved')                      return 'Перевод одобрен';
+  if (s === 'uploaded' || item.is_checked)               return 'На проверке';
   return item.is_required ? 'Ожидает' : 'Не загружен';
+}
+function statusIcon(item) {
+  const s = item.status;
+  if (s === 'approved' || s === 'translation_approved')  return '✅';
+  if (s === 'rejected')                                  return '❌';
+  if (s === 'needs_translation' || s === 'translated')   return '📝';
+  if (item.document)                                     return '📎';
+  return '📋';
+}
+function translationStatusColor(item) {
+  if (item.status === 'translation_approved') return 'green';
+  if (item.status === 'translated')           return 'blue';
+  return 'yellow';
+}
+function translationStatusLabel(item) {
+  if (item.status === 'translation_approved') return 'Одобрен';
+  if (item.status === 'translated')           return 'Загружен';
+  return 'Ожидает';
 }
 function fileIcon(mime) {
   if (!mime)                                            return '📄';
@@ -364,8 +546,11 @@ function formatDate(d) {
     day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
   });
 }
+function formatDateShort(d) {
+  return new Date(d).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
 
-// ─── Data ─────────────────────────────────────────────────────────────────────
+// --- Data ---
 async function load() {
   loading.value = true;
   try {
@@ -383,15 +568,23 @@ async function reloadChecklist() {
   const { data } = await casesApi.getChecklist(id);
   checklist.value = data.data;
 }
+async function reloadAll() {
+  const [cRes, clRes] = await Promise.all([
+    casesApi.get(id),
+    casesApi.getChecklist(id),
+  ]);
+  caseData.value  = cRes.data.data;
+  checklist.value = clRes.data.data;
+}
 
-// ─── Actions ──────────────────────────────────────────────────────────────────
+// --- Actions ---
 async function uploadToSlot(item, event) {
   const file = event.target.files?.[0];
   if (!file) return;
   const form = new FormData();
   form.append('file', file);
   await casesApi.uploadToSlot(id, item.id, form);
-  await reloadChecklist();
+  await reloadAll();
 }
 
 async function toggleCheck(item) {
@@ -407,11 +600,91 @@ function openReject(item) {
 async function submitReject() {
   await casesApi.reviewSlot(id, rejectItem.value.id, { status: 'rejected', notes: rejectNote.value });
   showRejectModal.value = false;
-  await reloadChecklist();
+  await reloadAll();
 }
 async function reviewSlot(item, status) {
   await casesApi.reviewSlot(id, item.id, { status });
-  await reloadChecklist();
+  await reloadAll();
+}
+
+function openTranslation(item) {
+  translationItem.value = item;
+  translationForm.pages = 1;
+  translationForm.notes = '';
+  showTranslationModal.value = true;
+}
+async function submitTranslation() {
+  await casesApi.reviewSlot(id, translationItem.value.id, {
+    status: 'needs_translation',
+    notes: translationForm.notes || null,
+    translation_pages: parseInt(translationForm.pages) || 1,
+  });
+  showTranslationModal.value = false;
+  await reloadAll();
+}
+
+async function doUploadTranslation(item, event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  const form = new FormData();
+  form.append('file', file);
+  await casesApi.uploadTranslation(id, item.id, form);
+  await reloadAll();
+}
+
+async function doApproveTranslation(item) {
+  await casesApi.approveTranslation(id, item.id);
+  await reloadAll();
+}
+
+async function doSubmitToEmbassy() {
+  if (!embassyForm.submitted_at || !embassyForm.expected_result_date) return;
+  embassyForm.loading = true;
+  try {
+    await casesApi.submitToEmbassy(id, {
+      submitted_at: embassyForm.submitted_at,
+      expected_result_date: embassyForm.expected_result_date,
+    });
+    await reloadAll();
+  } finally {
+    embassyForm.loading = false;
+  }
+}
+
+async function doComplete() {
+  if (!resultForm.result_type) return;
+  resultForm.loading = true;
+  try {
+    await casesApi.complete(id, {
+      result_type: resultForm.result_type,
+      result_notes: resultForm.result_notes || null,
+      visa_issued_at: resultForm.visa_issued_at || null,
+      visa_received_at: resultForm.visa_received_at || null,
+      visa_validity: resultForm.visa_validity || null,
+      rejection_reason: resultForm.rejection_reason || null,
+      can_reapply: resultForm.can_reapply,
+      reapply_recommendation: resultForm.reapply_recommendation || null,
+    });
+    showResultModal.value = false;
+    await reloadAll();
+  } finally {
+    resultForm.loading = false;
+  }
+}
+
+async function doUpdateExpectedDate() {
+  if (!expectedDateForm.expected_result_date) return;
+  expectedDateForm.loading = true;
+  try {
+    await casesApi.updateExpectedDate(id, {
+      expected_result_date: expectedDateForm.expected_result_date,
+      notes: expectedDateForm.notes || null,
+    });
+    showExpectedDateModal.value = false;
+    await reloadAll();
+  } finally {
+    expectedDateForm.loading = false;
+  }
 }
 
 async function repeatSlot(item) {

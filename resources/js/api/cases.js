@@ -25,4 +25,13 @@ export const casesApi = {
     reviewSlot:         (caseId, itemId, data)    => api.patch(`/cases/${caseId}/checklist/${itemId}/review`, data),
     deleteChecklistItem:(caseId, itemId)    => api.delete(`/cases/${caseId}/checklist/${itemId}`),
     downloadAllZip:     (caseId)            => api.get(`/cases/${caseId}/documents/zip`, { responseType: 'blob' }),
+
+    // Workflow
+    complete:           (id, data) => api.post(`/cases/${id}/complete`, data),
+    submitToEmbassy:    (id, data) => api.post(`/cases/${id}/submit-to-embassy`, data),
+    updateExpectedDate: (id, data) => api.patch(`/cases/${id}/expected-date`, data),
+
+    // Translation
+    uploadTranslation:  (caseId, itemId, form) => api.post(`/cases/${caseId}/checklist/${itemId}/upload-translation`, form, { headers: { 'Content-Type': 'multipart/form-data' } }),
+    approveTranslation: (caseId, itemId)       => api.patch(`/cases/${caseId}/checklist/${itemId}/approve-translation`),
 };
