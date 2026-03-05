@@ -194,6 +194,26 @@
                         </div>
                     </div>
 
+                    <!-- Таймер аннулирования -->
+                    <div v-if="p.status === 'pending' && p.expires_at"
+                        class="flex items-center gap-3 p-3 rounded-xl"
+                        :class="hoursLeft(p.expires_at) <= 24 ? 'bg-red-50 border border-red-200' : 'bg-gray-50 border border-gray-200'">
+                        <svg class="w-4 h-4 shrink-0" :class="hoursLeft(p.expires_at) <= 24 ? 'text-red-400 animate-pulse' : 'text-gray-400'"
+                            fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <div class="flex-1 min-w-0">
+                            <div class="text-xs font-semibold"
+                                :class="hoursLeft(p.expires_at) <= 24 ? 'text-red-700' : 'text-gray-700'">
+                                {{ $t('billing.invoiceExpires', { time: expiresIn(p.expires_at) }) }}
+                            </div>
+                            <div class="text-[10px]"
+                                :class="hoursLeft(p.expires_at) <= 24 ? 'text-red-500' : 'text-gray-400'">
+                                {{ $t('billing.invoiceExpiresHint') }}
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Оплата: pending -->
                     <template v-if="p.status === 'pending'">
                         <!-- Способы оплаты -->
@@ -254,6 +274,24 @@
                         </div>
                     </div>
 
+                    <!-- Аннулирован -->
+                    <div v-else-if="p.status === 'expired'" class="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                        <div class="w-10 h-10 bg-gray-300 rounded-xl flex items-center justify-center shrink-0">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="text-sm font-semibold text-gray-500">{{ $t('billing.statusExpired') }}</div>
+                            <div class="text-xs text-gray-400">{{ $t('billing.expiredHint') }}</div>
+                        </div>
+                        <router-link v-if="p.case_id"
+                            :to="{ name: 'me.cases.show', params: { id: p.case_id } }"
+                            class="ml-auto shrink-0 px-4 py-2 rounded-xl text-xs font-bold bg-[#1BA97F] hover:bg-[#158a68] text-white transition-colors">
+                            {{ $t('billing.payAgain') }}
+                        </router-link>
+                    </div>
+
                     <!-- Группа -->
                     <router-link v-if="p.group_id"
                         :to="{ name: 'me.groups.show', params: { id: p.group_id } }"
@@ -299,6 +337,7 @@ const PAYMENT_PROVIDERS = [
 
 const paidCount = computed(() => payments.value.filter(p => p.status === 'succeeded').length);
 const unpaidCount = computed(() => payments.value.filter(p => p.status === 'pending').length);
+const expiredCount = computed(() => payments.value.filter(p => p.status === 'expired').length);
 
 const VISA_TYPE_LABELS = computed(() => ({
     tourist: t('portal.touristVisa'), business: t('portal.businessVisa'),
@@ -327,6 +366,7 @@ function paymentStatusBadge(status) {
         processing:'bg-blue-100 text-blue-700',
         succeeded: 'bg-green-100 text-green-700',
         failed:    'bg-red-100 text-red-700',
+        expired:   'bg-gray-200 text-gray-500',
         refunded:  'bg-gray-100 text-gray-500',
     }[status] || 'bg-gray-100 text-gray-500';
 }
@@ -336,6 +376,7 @@ function paymentStatusLabel(status) {
         pending: t('billing.statusPending'),
         succeeded: t('billing.statusPaid'),
         failed: t('billing.statusFailed'),
+        expired: t('billing.statusExpired'),
         refunded: t('billing.statusRefunded'),
     }[status] || status;
 }
@@ -344,6 +385,23 @@ function formatDateTime(dateStr) {
     if (!dateStr) return '';
     const locale = i18n.global.locale.value === 'uz' ? 'uz-UZ' : 'ru-RU';
     return new Date(dateStr).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+function hoursLeft(dateStr) {
+    if (!dateStr) return 999;
+    const now = new Date();
+    const target = new Date(dateStr);
+    return Math.max(0, (target - now) / (1000 * 60 * 60));
+}
+
+function expiresIn(dateStr) {
+    const h = hoursLeft(dateStr);
+    if (h <= 0) return t('billing.expired');
+    const days = Math.floor(h / 24);
+    const hours = Math.floor(h % 24);
+    if (days > 0) return t('billing.daysAndHours', { days, hours });
+    if (hours > 0) return t('billing.hoursLeft', { hours });
+    return t('billing.lessThanHour');
 }
 
 function daysLeft(dateStr) {

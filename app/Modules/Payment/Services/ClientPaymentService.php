@@ -43,6 +43,7 @@ class ClientPaymentService
                 'currency'       => $currency,
                 'provider'       => $provider,
                 'status'         => 'pending',
+                'expires_at'     => now()->addDays(5),
             ]);
 
             $case->update(['payment_status' => 'pending']);

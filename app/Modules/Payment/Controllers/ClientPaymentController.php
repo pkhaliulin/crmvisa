@@ -220,6 +220,7 @@ class ClientPaymentController extends Controller
                 'group_members'   => $groupMembers,
                 'total_persons'   => $totalPersons,
                 'critical_date'   => $p->case?->critical_date?->toDateString(),
+                'expires_at'      => $p->expires_at?->toDateTimeString(),
             ];
         });
 

@@ -3,42 +3,56 @@
 namespace App\Console\Commands;
 
 use App\Modules\Case\Models\VisaCase;
+use App\Modules\Payment\Models\ClientPayment;
 use Illuminate\Console\Command;
-use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class PaymentTimeoutCommand extends Command
 {
     protected $signature = 'visabor:payment-timeout';
 
-    protected $description = 'Вернуть просроченные неоплаченные заявки из awaiting_payment в draft';
+    protected $description = 'Аннулировать просроченные счета (expires_at) и вернуть заявки в awaiting_payment';
 
     public function handle(): int
     {
-        $cases = VisaCase::where('public_status', 'awaiting_payment')
-            ->where(function ($q) {
-                $q->whereNull('payment_status')
-                  ->orWhereIn('payment_status', ['unpaid', 'pending']);
-            })
-            ->where('created_at', '<', Carbon::now()->subHours(24))
+        // Аннулировать платежи с истекшим сроком
+        $expired = ClientPayment::where('status', 'pending')
+            ->whereNotNull('expires_at')
+            ->where('expires_at', '<', now())
             ->get();
 
         $count = 0;
 
-        foreach ($cases as $case) {
-            $case->update([
-                'public_status'  => 'draft',
-                'agency_id'      => null,
-                'payment_status' => 'unpaid',
-            ]);
+        foreach ($expired as $payment) {
+            DB::transaction(function () use ($payment) {
+                if ($payment->agency_id) {
+                    DB::statement("SET LOCAL app.current_tenant_id = '{$payment->agency_id}'");
+                }
+                DB::statement("SET LOCAL app.is_superadmin = 'true'");
 
-            activity()
-                ->performedOn($case)
-                ->log('Автовозврат в черновик: оплата не получена за 24 часа');
+                $payment->update([
+                    'status'   => 'expired',
+                    'metadata' => array_merge($payment->metadata ?? [], [
+                        'expired_reason' => 'timeout',
+                        'expired_at'     => now()->toDateTimeString(),
+                    ]),
+                ]);
+
+                // Вернуть заявку в состояние awaiting_payment (можно повторно оплатить)
+                if ($payment->case_id) {
+                    $case = VisaCase::find($payment->case_id);
+                    if ($case && $case->payment_status !== 'paid') {
+                        $case->update(['payment_status' => 'unpaid']);
+                    }
+                }
+            });
 
             $count++;
         }
 
-        $this->info("Возвращено в черновик: {$count}");
+        if ($count > 0) {
+            $this->info("Аннулировано счетов: {$count}");
+        }
 
         return self::SUCCESS;
     }

@@ -27,12 +27,14 @@ class ClientPayment extends BaseModel
         'status',
         'paid_at',
         'metadata',
+        'expires_at',
     ];
 
     protected $casts = [
-        'amount'   => 'integer',
-        'paid_at'  => 'datetime',
-        'metadata' => 'array',
+        'amount'     => 'integer',
+        'paid_at'    => 'datetime',
+        'expires_at' => 'datetime',
+        'metadata'   => 'array',
     ];
 
     public function case(): BelongsTo
