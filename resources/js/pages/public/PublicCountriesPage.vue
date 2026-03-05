@@ -18,9 +18,9 @@
             </button>
         </div>
 
-        <!-- Search + regime filter -->
-        <div class="flex gap-2">
-            <div class="relative flex-1 min-w-0">
+        <!-- Search + regime + sort -->
+        <div class="flex gap-2 flex-wrap">
+            <div class="relative flex-1 min-w-[160px]">
                 <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
                 </svg>
@@ -34,6 +34,14 @@
                 <option value="evisa">{{ t('visaRegime.evisa') }}</option>
                 <option value="visa_on_arrival">{{ t('visaRegime.visa_on_arrival') }}</option>
                 <option value="visa_free">{{ t('visaRegime.visa_free') }}</option>
+            </select>
+            <select v-model="sortBy"
+                class="rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-[#1BA97F] transition-colors bg-white">
+                <option value="name">{{ t('countriesList.sortName') }}</option>
+                <option value="fee_asc">{{ t('countriesList.sortFeeAsc') }}</option>
+                <option value="fee_desc">{{ t('countriesList.sortFeeDesc') }}</option>
+                <option value="flight_asc">{{ t('countriesList.sortFlightAsc') }}</option>
+                <option value="processing">{{ t('countriesList.sortProcessing') }}</option>
             </select>
         </div>
 
@@ -99,21 +107,26 @@
 
                 <!-- Metrics row: visa_required or evisa -->
                 <div v-if="c.visa_regime === 'visa_required' || c.visa_regime === 'evisa'"
-                    class="flex items-center gap-x-4 gap-y-1 mt-3 text-xs text-gray-500 flex-wrap">
+                    class="flex items-center gap-x-4 gap-y-1.5 mt-3 text-xs text-gray-500 flex-wrap">
                     <div v-if="c.processing_days_standard" class="flex items-center gap-1">
                         <svg class="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-                        <span>{{ c.processing_days_standard }} {{ t('countryData.days') }} {{ t('countriesList.processing') }}</span>
+                        <span>{{ c.processing_days_standard }} {{ t('countriesList.daysProcessing') }}</span>
                     </div>
                     <div v-if="c.visa_fee_usd" class="flex items-center gap-1">
                         <svg class="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
-                        <span>${{ c.visa_fee_usd }} {{ t('countriesList.visaFee') }}</span>
+                        <span>${{ c.visa_fee_usd }} {{ t('countriesList.consulFee') }}</span>
                     </div>
                     <div v-if="c.appointment_wait_days" class="flex items-center gap-1">
                         <svg class="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-                        <span>{{ c.appointment_wait_days }} {{ t('countryData.days') }} {{ t('countriesList.waitDays') }}</span>
+                        <span>{{ c.appointment_wait_days }} {{ t('countriesList.daysWait') }}</span>
+                    </div>
+                    <div v-if="c.avg_flight_cost_usd" class="flex items-center gap-1">
+                        <svg class="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5 5 3 2 1-3.4 3.4L4.2 13l-1 .5 2 2 2 2 .5-1-1.7-2.8L10 10.3l1 2 3 5 .5-.3c.4-.2.6-.6.5-1.1z"/></svg>
+                        <span>~${{ c.avg_flight_cost_usd }} {{ t('countriesList.flight') }}</span>
                     </div>
                 </div>
 
@@ -127,6 +140,13 @@
                 <div v-else-if="c.visa_regime === 'visa_on_arrival' && c.visa_on_arrival_days"
                     class="mt-2.5 text-xs text-blue-600 font-medium">
                     {{ t('countriesList.voaPeriod', { days: c.visa_on_arrival_days }) }}
+                </div>
+
+                <!-- Financial hint (compact) -->
+                <div v-if="showFinanceHint(c)" class="mt-2 text-[11px] text-gray-400 flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M2 17l10 5 10-5M2 12l10 5 10-5M12 2L2 7l10 5 10-5-10-5z"/></svg>
+                    <span>{{ t('countriesList.financeHint', { income: c.min_monthly_income_usd, balance: c.min_balance_usd || '—' }) }}</span>
                 </div>
 
                 <!-- Requirements tags -->
@@ -174,8 +194,9 @@ const { t } = useI18n();
 const loading = ref(true);
 const countries = ref([]);
 const search = ref('');
-const filterRegime = ref('');
+const filterRegime = ref('visa_required');
 const filterContinent = ref('Europe');
+const sortBy = ref('name');
 const showAll = ref(false);
 
 const continentOptions = computed(() => [
@@ -217,12 +238,16 @@ function riskBadge(level) {
 function regimeLabel(c) {
     const label = t(`visaRegime.${c.visa_regime}`);
     if (c.visa_regime === 'visa_free' && c.visa_free_days) {
-        return `${label} · ${c.visa_free_days} ${t('countryData.days')}`;
+        return `${label} · ${c.visa_free_days} ${t('common.days')}`;
     }
     if (c.visa_regime === 'visa_on_arrival' && c.visa_on_arrival_days) {
-        return `${label} · ${c.visa_on_arrival_days} ${t('countryData.days')}`;
+        return `${label} · ${c.visa_on_arrival_days} ${t('common.days')}`;
     }
     return label;
+}
+
+function showFinanceHint(c) {
+    return c.visa_regime === 'visa_required' && c.min_monthly_income_usd && c.min_monthly_income_usd > 0;
 }
 
 function requirementTags(c) {
@@ -251,6 +276,21 @@ function applyLocation(c) {
     return '';
 }
 
+function sortFn(a, b) {
+    switch (sortBy.value) {
+        case 'fee_asc':
+            return (a.visa_fee_usd || 999) - (b.visa_fee_usd || 999);
+        case 'fee_desc':
+            return (b.visa_fee_usd || 0) - (a.visa_fee_usd || 0);
+        case 'flight_asc':
+            return (a.avg_flight_cost_usd || 9999) - (b.avg_flight_cost_usd || 9999);
+        case 'processing':
+            return (a.processing_days_standard || 999) - (b.processing_days_standard || 999);
+        default:
+            return localName(a).localeCompare(localName(b));
+    }
+}
+
 const filtered = computed(() => {
     let list = countries.value.filter(c => c.is_active);
 
@@ -272,7 +312,7 @@ const filtered = computed(() => {
         );
     }
 
-    return list;
+    return [...list].sort(sortFn);
 });
 
 const displayList = computed(() => showAll.value ? filtered.value : filtered.value.slice(0, 30));
