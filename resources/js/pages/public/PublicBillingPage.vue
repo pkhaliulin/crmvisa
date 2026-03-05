@@ -58,7 +58,17 @@
                             {{ $t('billing.invoiceNum', { num: invoiceNum(p) }) }}
                         </span>
                     </div>
-                    <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-2">
+                        <!-- Таймер аннулирования в шапке -->
+                        <div v-if="p.status === 'pending' && p.expires_at"
+                            class="flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-full"
+                            :class="hoursLeft(p.expires_at) <= 24 ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-500'">
+                            <svg class="w-3 h-3" :class="hoursLeft(p.expires_at) <= 24 ? 'animate-pulse' : ''"
+                                fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            {{ expiresIn(p.expires_at) }}
+                        </div>
                         <router-link v-if="p.case_id"
                             :to="{ name: 'me.cases.show', params: { id: p.case_id } }"
                             class="text-[10px] font-medium underline underline-offset-2 text-gray-400 hover:text-[#0A1F44] transition-colors">
@@ -190,26 +200,6 @@
                                     :class="daysLeft(p.critical_date) <= 7 ? 'bg-red-500' : daysLeft(p.critical_date) <= 21 ? 'bg-amber-500' : 'bg-orange-400'"
                                     :style="{ width: Math.max(5, 100 - (daysLeft(p.critical_date) / 90 * 100)) + '%' }">
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Таймер аннулирования -->
-                    <div v-if="p.status === 'pending' && p.expires_at"
-                        class="flex items-center gap-3 p-3 rounded-xl"
-                        :class="hoursLeft(p.expires_at) <= 24 ? 'bg-red-50 border border-red-200' : 'bg-gray-50 border border-gray-200'">
-                        <svg class="w-4 h-4 shrink-0" :class="hoursLeft(p.expires_at) <= 24 ? 'text-red-400 animate-pulse' : 'text-gray-400'"
-                            fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                        <div class="flex-1 min-w-0">
-                            <div class="text-xs font-semibold"
-                                :class="hoursLeft(p.expires_at) <= 24 ? 'text-red-700' : 'text-gray-700'">
-                                {{ $t('billing.invoiceExpires', { time: expiresIn(p.expires_at) }) }}
-                            </div>
-                            <div class="text-[10px]"
-                                :class="hoursLeft(p.expires_at) <= 24 ? 'text-red-500' : 'text-gray-400'">
-                                {{ $t('billing.invoiceExpiresHint') }}
                             </div>
                         </div>
                     </div>
