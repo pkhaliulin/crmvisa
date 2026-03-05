@@ -9,9 +9,9 @@
       <table class="w-full text-sm" v-if="users.length">
         <thead class="bg-gray-50 border-b text-gray-500 text-xs uppercase tracking-wide">
           <tr>
-            <th class="text-left px-4 py-3">Имя</th>
+            <th class="text-left px-4 py-3">Сотрудник</th>
             <th class="text-left px-4 py-3">Email</th>
-            <th class="text-left px-4 py-3">Телефон</th>
+            <th class="text-left px-4 py-3">Контакт</th>
             <th class="text-left px-4 py-3">Роль</th>
             <th class="text-left px-4 py-3">Статус</th>
             <th class="px-4 py-3"></th>
@@ -19,9 +19,23 @@
         </thead>
         <tbody class="divide-y divide-gray-100">
           <tr v-for="u in users" :key="u.id" class="hover:bg-gray-50 transition-colors">
-            <td class="px-4 py-3 font-medium text-gray-900">{{ u.name }}</td>
+            <td class="px-4 py-3">
+              <div class="flex items-center gap-2.5">
+                <img v-if="u.avatar_url" :src="u.avatar_url" class="w-8 h-8 rounded-lg object-cover shrink-0"/>
+                <div v-else class="w-8 h-8 rounded-lg bg-gradient-to-br from-[#0A1F44] to-[#1a3a6e] flex items-center justify-center text-white font-bold text-xs shrink-0">
+                  {{ u.name?.[0]?.toUpperCase() ?? '?' }}
+                </div>
+                <span class="font-medium text-gray-900">{{ u.name }}</span>
+              </div>
+            </td>
             <td class="px-4 py-3 text-gray-500">{{ u.email }}</td>
-            <td class="px-4 py-3 text-gray-500 font-mono text-xs">{{ u.phone || '—' }}</td>
+            <td class="px-4 py-3">
+              <a v-if="u.telegram_username" :href="`https://t.me/${u.telegram_username}`" target="_blank"
+                class="text-[#229ED9] hover:underline text-xs">@{{ u.telegram_username }}</a>
+              <a v-else-if="u.phone" :href="`https://t.me/${u.phone}`" target="_blank"
+                class="text-[#229ED9] hover:underline text-xs font-mono">{{ u.phone }}</a>
+              <span v-else class="text-gray-300 text-xs">—</span>
+            </td>
             <td class="px-4 py-3">
               <AppBadge :color="roleColor(u.role)">{{ roleLabel(u.role) }}</AppBadge>
             </td>
@@ -31,7 +45,7 @@
               </AppBadge>
             </td>
             <td class="px-4 py-3 text-right">
-              <button @click="deleteUser(u)" class="text-red-500 hover:text-red-700 text-xs font-medium transition-colors">
+              <button @click="confirmDelete(u)" class="text-red-500 hover:text-red-700 text-xs font-medium transition-colors">
                 Удалить
               </button>
             </td>
@@ -40,7 +54,9 @@
       </table>
 
       <div v-else class="py-16 text-center text-gray-400">
-        <div class="text-4xl mb-3">👥</div>
+        <svg class="w-12 h-12 mx-auto text-gray-200 mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"/>
+        </svg>
         <p class="text-sm">Сотрудников нет</p>
         <p class="text-xs mt-1 text-gray-300">Добавьте первого менеджера</p>
       </div>
@@ -50,43 +66,142 @@
   <!-- Модал создания -->
   <AppModal v-model="showCreate" title="Добавить сотрудника">
     <form @submit.prevent="createUser" class="space-y-4">
-      <AppInput
-        v-model="form.name"
-        label="Имя"
-        placeholder="Анвар Исмоилов"
-        required
-        :error="errors.name"
-        :maxlength="80"
-      />
-      <AppInput
-        v-model="form.email"
-        label="Email"
-        type="email"
-        placeholder="manager@agency.com"
-        required
-        :error="errors.email"
-        @blur="validateEmail"
-      />
-      <AppPhoneInput
-        v-model="form.phone"
-        label="Телефон"
-        :error="errors.phone"
-      />
+      <!-- Фото -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1.5">Фото сотрудника <span class="text-red-500">*</span></label>
+        <div class="flex items-start gap-3">
+          <label class="cursor-pointer shrink-0">
+            <input type="file" accept="image/*" class="hidden" @change="onAvatarSelect"/>
+            <div v-if="avatarPreview" class="relative w-20 h-20 rounded-xl overflow-hidden border-2 border-[#1BA97F] group">
+              <img :src="avatarPreview" class="w-full h-full object-cover"/>
+              <div class="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                </svg>
+              </div>
+            </div>
+            <div v-else class="w-20 h-20 rounded-xl border-2 border-dashed border-gray-300 hover:border-[#1BA97F] flex flex-col items-center justify-center text-gray-400 hover:text-[#1BA97F] transition-colors">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z"/>
+              </svg>
+              <span class="text-[10px] mt-0.5">Загрузить</span>
+            </div>
+          </label>
+          <!-- Чат-бабл от VisaBor -->
+          <div class="relative flex-1">
+            <div class="absolute -left-[6px] top-4 w-3 h-3 rotate-45 border-l border-b bg-blue-50 border-blue-200 z-10"></div>
+            <div class="absolute left-[-1px] top-[17px] h-[10px] w-[2px] bg-blue-50 z-10"></div>
+            <div class="relative rounded-2xl p-3 shadow-sm border bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
+              <div class="flex items-center gap-1.5 mb-1">
+                <div class="w-4 h-4 rounded-full bg-gradient-to-br from-[#1BA97F] to-[#0d7a5c] flex items-center justify-center shrink-0">
+                  <span class="text-[6px] font-bold text-white">VB</span>
+                </div>
+                <span class="text-[9px] font-semibold text-blue-500">VisaBor</span>
+              </div>
+              <p class="text-[11px] text-[#0A1F44] leading-relaxed">Фото повышает доверие клиентов на 40%. Рекомендуем деловое фото в белой рубашке — так команда выглядит профессионально и единообразно.</p>
+            </div>
+          </div>
+        </div>
+        <p v-if="errors.avatar" class="text-xs text-red-500 mt-1">{{ errors.avatar }}</p>
+      </div>
+
+      <!-- Имя и Фамилия -->
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Имя (латиница) <span class="text-red-500">*</span></label>
+          <input v-model="form.first_name" type="text" placeholder="Anvar"
+            class="w-full border rounded-xl px-3 py-2.5 text-sm outline-none transition-colors"
+            :class="errors.first_name ? 'border-red-300' : 'border-gray-200 focus:border-[#1BA97F]'"
+            @input="validateLatin('first_name')"/>
+          <p v-if="errors.first_name" class="text-xs text-red-500 mt-1">{{ errors.first_name }}</p>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Фамилия (латиница) <span class="text-red-500">*</span></label>
+          <input v-model="form.last_name" type="text" placeholder="Ismoilov"
+            class="w-full border rounded-xl px-3 py-2.5 text-sm outline-none transition-colors"
+            :class="errors.last_name ? 'border-red-300' : 'border-gray-200 focus:border-[#1BA97F]'"
+            @input="validateLatin('last_name')"/>
+          <p v-if="errors.last_name" class="text-xs text-red-500 mt-1">{{ errors.last_name }}</p>
+        </div>
+      </div>
+
+      <!-- Email -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Email <span class="text-red-500">*</span></label>
+        <input v-model="form.email" type="email" placeholder="manager@agency.com"
+          class="w-full border rounded-xl px-3 py-2.5 text-sm outline-none transition-colors"
+          :class="errors.email ? 'border-red-300' : emailValid === true ? 'border-[#1BA97F]' : 'border-gray-200 focus:border-[#1BA97F]'"
+          @blur="validateEmail" @input="onEmailInput"/>
+        <div class="flex items-center gap-1 mt-1">
+          <svg v-if="emailValid === true" class="w-3.5 h-3.5 text-[#1BA97F]" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+          </svg>
+          <p v-if="errors.email" class="text-xs text-red-500">{{ errors.email }}</p>
+          <p v-else-if="emailValid === true" class="text-xs text-[#1BA97F]">Email корректный</p>
+          <p v-else class="text-xs text-gray-400">Пароль будет отправлен на эту почту</p>
+        </div>
+      </div>
+
+      <!-- Телефон -->
+      <AppPhoneInput v-model="form.phone" label="Телефон" :error="errors.phone"/>
+
+      <!-- Telegram -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Telegram</label>
+        <div class="flex items-center gap-2">
+          <span class="text-sm text-gray-400">@</span>
+          <input v-model="form.telegram_username" type="text" placeholder="username"
+            class="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] transition-colors"
+            :class="errors.telegram_username ? 'border-red-300' : ''"/>
+        </div>
+        <p v-if="errors.telegram_username" class="text-xs text-red-500 mt-1">{{ errors.telegram_username }}</p>
+        <p v-else class="text-xs text-gray-400 mt-1">Если не указан, клиенты смогут написать по номеру телефона</p>
+      </div>
+
+      <!-- Роль -->
       <AppSelect v-model="form.role" label="Роль" :options="roleOptions" />
-      <AppInput
-        v-model="form.password"
-        label="Пароль"
-        type="password"
-        placeholder="Минимум 8 символов"
-        required
-        :error="errors.password"
-      />
+
+      <!-- Пароль -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Пароль <span class="text-red-500">*</span></label>
+        <div class="relative">
+          <input v-model="form.password" :type="showPassword ? 'text' : 'password'" placeholder="Минимум 8 символов"
+            class="w-full border rounded-xl px-3 py-2.5 text-sm outline-none transition-colors pr-10"
+            :class="errors.password ? 'border-red-300' : 'border-gray-200 focus:border-[#1BA97F]'"/>
+          <button type="button" @click="showPassword = !showPassword"
+            class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+            <svg v-if="!showPassword" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+            <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88"/>
+            </svg>
+          </button>
+        </div>
+        <p v-if="errors.password" class="text-xs text-red-500 mt-1">{{ errors.password }}</p>
+        <p v-else class="text-xs text-gray-400 mt-1">Будет отправлен на email вместе со ссылкой для входа</p>
+      </div>
+
       <p v-if="errorMsg" class="text-sm text-red-600 bg-red-50 p-2 rounded-lg">{{ errorMsg }}</p>
+
       <div class="flex gap-2 justify-end">
         <AppButton variant="outline" type="button" @click="showCreate = false">Отмена</AppButton>
         <AppButton type="submit" :loading="createLoading">Создать</AppButton>
       </div>
     </form>
+  </AppModal>
+
+  <!-- Модал подтверждения удаления -->
+  <AppModal v-model="showDeleteModal" title="Удалить сотрудника?">
+    <p class="text-sm text-gray-600 mb-4">
+      Вы уверены, что хотите удалить сотрудника <strong>{{ deleteTarget?.name }}</strong>? Это действие нельзя отменить.
+    </p>
+    <div class="flex gap-2 justify-end">
+      <AppButton variant="outline" @click="showDeleteModal = false">Отмена</AppButton>
+      <AppButton color="red" @click="deleteUser" :loading="deleting">Да, удалить</AppButton>
+    </div>
   </AppModal>
 </template>
 
@@ -96,7 +211,6 @@ import { usersApi } from '@/api/users';
 import AppButton from '@/components/AppButton.vue';
 import AppBadge from '@/components/AppBadge.vue';
 import AppModal from '@/components/AppModal.vue';
-import AppInput from '@/components/AppInput.vue';
 import AppPhoneInput from '@/components/AppPhoneInput.vue';
 import AppSelect from '@/components/AppSelect.vue';
 
@@ -105,7 +219,20 @@ const showCreate    = ref(false);
 const createLoading = ref(false);
 const errorMsg      = ref('');
 const errors        = ref({});
-const form = reactive({ name: '', email: '', phone: '', role: 'manager', password: '' });
+const showPassword  = ref(false);
+const emailValid    = ref(null);
+const avatarFile    = ref(null);
+const avatarPreview = ref(null);
+
+const form = reactive({
+  first_name: '', last_name: '', email: '', phone: '',
+  telegram_username: '', role: 'manager', password: '',
+});
+
+// Delete confirmation
+const showDeleteModal = ref(false);
+const deleteTarget    = ref(null);
+const deleting        = ref(false);
 
 const roleOptions = [
   { value: 'manager', label: 'Менеджер' },
@@ -117,6 +244,19 @@ const roleColors = { owner: 'purple', manager: 'blue', partner: 'gray', superadm
 const roleLabel  = (r) => roleLabels[r] ?? r;
 const roleColor  = (r) => roleColors[r] ?? 'gray';
 
+const latinRegex = /^[A-Za-z\s\-']*$/;
+
+function validateLatin(field) {
+  const val = form[field];
+  if (val && !latinRegex.test(val)) {
+    errors.value[field] = 'Только латинские буквы';
+    // Убрать нелатинские символы
+    form[field] = val.replace(/[^A-Za-z\s\-']/g, '');
+  } else {
+    delete errors.value[field];
+  }
+}
+
 function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
 }
@@ -124,15 +264,45 @@ function isValidEmail(email) {
 function validateEmail() {
   if (form.email && !isValidEmail(form.email)) {
     errors.value.email = 'Введите корректный email (например: name@domain.com)';
+    emailValid.value = false;
+  } else if (form.email) {
+    delete errors.value.email;
+    emailValid.value = true;
   } else {
+    emailValid.value = null;
+  }
+}
+
+function onEmailInput() {
+  if (emailValid.value !== null) {
+    emailValid.value = null;
     delete errors.value.email;
   }
 }
 
+function onAvatarSelect(e) {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  if (file.size > 2 * 1024 * 1024) {
+    errors.value.avatar = 'Максимум 2 МБ';
+    return;
+  }
+  delete errors.value.avatar;
+  avatarFile.value = file;
+  avatarPreview.value = URL.createObjectURL(file);
+}
+
 function openCreate() {
-  Object.assign(form, { name: '', email: '', phone: '', role: 'manager', password: '' });
-  errors.value   = {};
+  Object.assign(form, {
+    first_name: '', last_name: '', email: '', phone: '',
+    telegram_username: '', role: 'manager', password: '',
+  });
+  errors.value = {};
   errorMsg.value = '';
+  emailValid.value = null;
+  showPassword.value = false;
+  avatarFile.value = null;
+  avatarPreview.value = null;
   showCreate.value = true;
 }
 
@@ -142,17 +312,33 @@ async function fetchUsers() {
 }
 
 async function createUser() {
-  errors.value   = {};
+  errors.value = {};
   errorMsg.value = '';
 
-  if (!isValidEmail(form.email)) {
-    errors.value.email = 'Введите корректный email';
-    return;
-  }
+  // Валидация
+  if (!form.first_name.trim()) errors.value.first_name = 'Обязательное поле';
+  if (!form.last_name.trim()) errors.value.last_name = 'Обязательное поле';
+  if (!latinRegex.test(form.first_name)) errors.value.first_name = 'Только латинские буквы';
+  if (!latinRegex.test(form.last_name)) errors.value.last_name = 'Только латинские буквы';
+  if (!isValidEmail(form.email)) errors.value.email = 'Введите корректный email';
+  if (form.password.length < 8) errors.value.password = 'Минимум 8 символов';
+  if (!avatarFile.value) errors.value.avatar = 'Загрузите фото сотрудника';
+
+  if (Object.keys(errors.value).length) return;
+
+  const fd = new FormData();
+  fd.append('first_name', form.first_name.trim());
+  fd.append('last_name', form.last_name.trim());
+  fd.append('email', form.email.trim());
+  if (form.phone) fd.append('phone', form.phone);
+  if (form.telegram_username) fd.append('telegram_username', form.telegram_username.replace(/^@/, ''));
+  fd.append('role', form.role);
+  fd.append('password', form.password);
+  if (avatarFile.value) fd.append('avatar', avatarFile.value);
 
   createLoading.value = true;
   try {
-    await usersApi.create(form);
+    await usersApi.create(fd);
     showCreate.value = false;
     await fetchUsers();
   } catch (err) {
@@ -169,10 +355,23 @@ async function createUser() {
   }
 }
 
-async function deleteUser(u) {
-  if (!confirm(`Удалить сотрудника "${u.name}"? Это действие нельзя отменить.`)) return;
-  await usersApi.remove(u.id);
-  await fetchUsers();
+function confirmDelete(u) {
+  deleteTarget.value = u;
+  showDeleteModal.value = true;
+}
+
+async function deleteUser() {
+  deleting.value = true;
+  try {
+    await usersApi.remove(deleteTarget.value.id);
+    showDeleteModal.value = false;
+    deleteTarget.value = null;
+    await fetchUsers();
+  } catch (err) {
+    errorMsg.value = err.response?.data?.message || 'Ошибка удаления';
+  } finally {
+    deleting.value = false;
+  }
 }
 
 onMounted(fetchUsers);
