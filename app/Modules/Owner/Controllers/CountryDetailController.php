@@ -57,10 +57,17 @@ class CountryDetailController extends Controller
             'embassy_email'        => 'sometimes|nullable|email|max:255',
             'embassy_website'      => 'sometimes|nullable|url|max:500',
             'embassy_description'  => 'sometimes|nullable|string|max:5000',
-            'embassy_rules'        => 'sometimes|nullable|string|max:5000',
-            'appointment_url'      => 'sometimes|nullable|url|max:500',
-            'latitude'             => 'sometimes|nullable|numeric|between:-90,90',
-            'longitude'            => 'sometimes|nullable|numeric|between:-180,180',
+            'embassy_rules'              => 'sometimes|nullable|string|max:5000',
+            'appointment_url'            => 'sometimes|nullable|url|max:500',
+            'latitude'                   => 'sometimes|nullable|numeric|between:-90,90',
+            'longitude'                  => 'sometimes|nullable|numeric|between:-180,180',
+            'referral_embassy_country'   => 'sometimes|nullable|string|max:100',
+            'referral_embassy_city'      => 'sometimes|nullable|string|max:100',
+            'referral_embassy_name'      => 'sometimes|nullable|string|max:255',
+            'referral_embassy_address'   => 'sometimes|nullable|string|max:500',
+            'referral_embassy_website'   => 'sometimes|nullable|url|max:500',
+            'submission_procedure'       => 'sometimes|nullable|string|max:50',
+            'no_embassy_notes'           => 'sometimes|nullable|string|max:5000',
         ]);
 
         $country->update($data);
