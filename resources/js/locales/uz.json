@@ -1007,7 +1007,14 @@
     "statusPending": "To'lov kutilmoqda",
     "statusPaid": "To'langan",
     "statusFailed": "Xatolik",
-    "statusRefunded": "Qaytarilgan"
+    "statusRefunded": "Qaytarilgan",
+    "participants": "Ishtirokchilar",
+    "persons": "kishi",
+    "applicant": "Ariza beruvchi",
+    "familyMember": "Oila a'zosi",
+    "group": "Guruh",
+    "openCase": "Arizani ochish",
+    "openGroup": "Guruhni ochish"
   },
   "agencySelection": {
     "title": "Agentlikni tanlang",

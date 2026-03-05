@@ -1007,7 +1007,14 @@
     "statusPending": "Ожидает оплаты",
     "statusPaid": "Оплачено",
     "statusFailed": "Ошибка",
-    "statusRefunded": "Возврат"
+    "statusRefunded": "Возврат",
+    "participants": "Участники",
+    "persons": "чел.",
+    "applicant": "Заявитель",
+    "familyMember": "Член семьи",
+    "group": "Группа",
+    "openCase": "Открыть заявку",
+    "openGroup": "Открыть группу"
   },
   "agencySelection": {
     "title": "Выберите агентство",

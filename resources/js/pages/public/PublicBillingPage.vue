@@ -113,6 +113,49 @@
                         </div>
                     </div>
 
+                    <!-- Участники -->
+                    <div v-if="p.applicant_name || p.family_members?.length || p.group_members?.length"
+                        class="border border-gray-100 rounded-xl overflow-hidden">
+                        <div class="bg-gray-50 px-4 py-2 flex items-center justify-between">
+                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{{ $t('billing.participants') }}</span>
+                            <span class="text-[10px] font-bold text-[#0A1F44] bg-[#0A1F44]/5 px-2 py-0.5 rounded-full">
+                                {{ p.total_persons }} {{ $t('billing.persons', p.total_persons) }}
+                            </span>
+                        </div>
+                        <div class="px-4 py-3 space-y-2">
+                            <!-- Заявитель -->
+                            <div v-if="p.applicant_name" class="flex items-center gap-2">
+                                <div class="w-6 h-6 rounded-full bg-[#0A1F44] flex items-center justify-center text-white text-[10px] font-bold shrink-0">
+                                    {{ p.applicant_name[0]?.toUpperCase() }}
+                                </div>
+                                <div class="min-w-0">
+                                    <div class="text-xs font-semibold text-[#0A1F44] truncate">{{ p.applicant_name }}</div>
+                                    <div class="text-[10px] text-gray-400">{{ $t('billing.applicant') }}</div>
+                                </div>
+                            </div>
+                            <!-- Члены семьи -->
+                            <div v-for="(fm, fi) in p.family_members" :key="'fm'+fi" class="flex items-center gap-2">
+                                <div class="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-[10px] font-bold shrink-0">
+                                    {{ fm.name?.[0]?.toUpperCase() ?? '?' }}
+                                </div>
+                                <div class="min-w-0">
+                                    <div class="text-xs font-semibold text-[#0A1F44] truncate">{{ fm.name }}</div>
+                                    <div class="text-[10px] text-gray-400">{{ fm.relationship || $t('billing.familyMember') }}</div>
+                                </div>
+                            </div>
+                            <!-- Участники группы -->
+                            <div v-if="p.group_name" class="pt-1 border-t border-gray-100">
+                                <div class="text-[10px] text-gray-400 font-medium mb-1">{{ $t('billing.group') }}: {{ p.group_name }}</div>
+                            </div>
+                            <div v-for="(gm, gi) in p.group_members" :key="'gm'+gi" class="flex items-center gap-2">
+                                <div class="w-6 h-6 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 text-[10px] font-bold shrink-0">
+                                    {{ gm.name?.[0]?.toUpperCase() ?? '?' }}
+                                </div>
+                                <div class="text-xs font-semibold text-[#0A1F44] truncate">{{ gm.name }}</div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Мета: дата, провайдер -->
                     <div class="flex items-center justify-between pt-3 border-t border-gray-100 text-xs text-gray-400">
                         <div class="flex items-center gap-3">
@@ -127,12 +170,22 @@
                         </div>
                     </div>
 
-                    <!-- Кнопка оплатить (для неоплаченных) -->
-                    <router-link v-if="p.status === 'pending' && p.case_id"
-                        :to="{ name: 'me.cases.show', params: { id: p.case_id } }"
-                        class="block w-full text-center py-2.5 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white transition-colors">
-                        {{ $t('billing.goToPay') }}
-                    </router-link>
+                    <!-- Кнопки -->
+                    <div class="flex gap-2">
+                        <router-link v-if="p.case_id"
+                            :to="{ name: 'me.cases.show', params: { id: p.case_id } }"
+                            class="flex-1 text-center py-2.5 rounded-xl text-xs font-bold transition-colors"
+                            :class="p.status === 'pending'
+                                ? 'bg-amber-500 hover:bg-amber-600 text-white'
+                                : 'bg-gray-100 hover:bg-gray-200 text-[#0A1F44]'">
+                            {{ p.status === 'pending' ? $t('billing.goToPay') : $t('billing.openCase') }}
+                        </router-link>
+                        <router-link v-if="p.group_id"
+                            :to="{ name: 'me.groups.show', params: { id: p.group_id } }"
+                            class="flex-1 text-center py-2.5 rounded-xl text-xs font-bold bg-gray-100 hover:bg-gray-200 text-[#0A1F44] transition-colors">
+                            {{ $t('billing.openGroup') }}
+                        </router-link>
+                    </div>
                 </div>
             </div>
         </template>

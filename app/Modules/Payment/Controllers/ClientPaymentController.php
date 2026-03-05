@@ -146,38 +146,72 @@ class ClientPaymentController extends Controller
 
         $payments = ClientPayment::where('public_user_id', $publicUser->id)
             ->with([
-                'case:id,case_number,country_code,visa_type,public_status',
+                'case:id,case_number,country_code,visa_type,public_status,client_id,group_id',
+                'case.client:id,name',
                 'agency:id,name,city,logo_url',
                 'package:id,name,description,processing_days',
                 'package.items.service:id,name,category',
+                'group:id,name',
+                'group.members:id,group_id,name',
             ])
             ->orderByDesc('created_at')
             ->paginate(20);
 
-        $items = $payments->getCollection()->map(fn ($p) => [
-            'id'            => $p->id,
-            'amount'        => $p->amount,
-            'currency'      => $p->currency,
-            'provider'      => $p->provider,
-            'status'        => $p->status,
-            'paid_at'       => $p->paid_at?->toDateTimeString(),
-            'created_at'    => $p->created_at->toDateTimeString(),
-            'country_code'  => $p->case?->country_code,
-            'visa_type'     => $p->case?->visa_type,
-            'case_number'   => $p->case?->case_number,
-            'case_id'       => $p->case_id,
-            'case_status'   => $p->case?->public_status,
-            'agency_name'   => $p->agency?->name,
-            'agency_city'   => $p->agency?->city,
-            'agency_logo'   => $p->agency?->logo_url,
-            'package_name'  => $p->package?->name,
-            'package_desc'  => $p->package?->description,
-            'package_days'  => $p->package?->processing_days,
-            'services'      => $p->package?->items?->map(fn ($item) => [
-                'name'     => $item->service?->name ?? '',
-                'category' => $item->service?->category ?? '',
-            ])->filter(fn ($s) => $s['name'])->values() ?? [],
-        ]);
+        $items = $payments->getCollection()->map(function ($p) {
+            // Заявитель
+            $applicantName = $p->case?->client?->name;
+
+            // Члены семьи из case
+            $familyMembers = [];
+            if ($p->case_id) {
+                $familyMembers = \DB::table('case_family_members')
+                    ->join('family_members', 'case_family_members.family_member_id', '=', 'family_members.id')
+                    ->where('case_family_members.case_id', $p->case_id)
+                    ->select('family_members.name', 'family_members.relationship')
+                    ->get()
+                    ->map(fn ($fm) => ['name' => $fm->name, 'relationship' => $fm->relationship])
+                    ->toArray();
+            }
+
+            // Группа
+            $groupMembers = [];
+            if ($p->group_id && $p->group) {
+                $groupMembers = $p->group->members->map(fn ($m) => ['name' => $m->name])->toArray();
+            }
+
+            $totalPersons = 1 + count($familyMembers) + count($groupMembers);
+
+            return [
+                'id'              => $p->id,
+                'amount'          => $p->amount,
+                'currency'        => $p->currency,
+                'provider'        => $p->provider,
+                'status'          => $p->status,
+                'paid_at'         => $p->paid_at?->toDateTimeString(),
+                'created_at'      => $p->created_at->toDateTimeString(),
+                'country_code'    => $p->case?->country_code,
+                'visa_type'       => $p->case?->visa_type,
+                'case_number'     => $p->case?->case_number,
+                'case_id'         => $p->case_id,
+                'case_status'     => $p->case?->public_status,
+                'agency_name'     => $p->agency?->name,
+                'agency_city'     => $p->agency?->city,
+                'agency_logo'     => $p->agency?->logo_url,
+                'package_name'    => $p->package?->name,
+                'package_desc'    => $p->package?->description,
+                'package_days'    => $p->package?->processing_days,
+                'services'        => $p->package?->items?->map(fn ($item) => [
+                    'name'     => $item->service?->name ?? '',
+                    'category' => $item->service?->category ?? '',
+                ])->filter(fn ($s) => $s['name'])->values() ?? [],
+                'applicant_name'  => $applicantName,
+                'family_members'  => $familyMembers,
+                'group_id'        => $p->group_id,
+                'group_name'      => $p->group?->name,
+                'group_members'   => $groupMembers,
+                'total_persons'   => $totalPersons,
+            ];
+        });
 
         return ApiResponse::success([
             'payments' => $items,
