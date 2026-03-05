@@ -991,10 +991,23 @@
   },
   "billing": {
     "title": "Счета и оплаты",
-    "empty": "У вас пока нет оплат",
+    "subtitle": "Все ваши счета и история платежей",
+    "empty": "У вас пока нет счетов",
     "service": "Услуга",
     "provider": "Способ оплаты",
-    "status": "Статус"
+    "status": "Статус",
+    "totalInvoices": "Всего счетов",
+    "paidCount": "Оплачено",
+    "unpaidCount": "Не оплачено",
+    "invoiceNum": "Счет {num}",
+    "caseNum": "Заявка",
+    "serviceDetails": "Детали услуги",
+    "paidOn": "Оплачено",
+    "goToPay": "Перейти к оплате",
+    "statusPending": "Ожидает оплаты",
+    "statusPaid": "Оплачено",
+    "statusFailed": "Ошибка",
+    "statusRefunded": "Возврат"
   },
   "agencySelection": {
     "title": "Выберите агентство",

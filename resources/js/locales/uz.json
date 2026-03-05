@@ -991,10 +991,23 @@
   },
   "billing": {
     "title": "Hisob-kitoblar",
-    "empty": "Hali to'lovlar yo'q",
+    "subtitle": "Barcha hisoblar va to'lovlar tarixi",
+    "empty": "Hali hisoblar yo'q",
     "service": "Xizmat",
     "provider": "To'lov usuli",
-    "status": "Holat"
+    "status": "Holat",
+    "totalInvoices": "Jami hisoblar",
+    "paidCount": "To'langan",
+    "unpaidCount": "To'lanmagan",
+    "invoiceNum": "Hisob {num}",
+    "caseNum": "Ariza",
+    "serviceDetails": "Xizmat tafsilotlari",
+    "paidOn": "To'langan",
+    "goToPay": "To'lovga o'tish",
+    "statusPending": "To'lov kutilmoqda",
+    "statusPaid": "To'langan",
+    "statusFailed": "Xatolik",
+    "statusRefunded": "Qaytarilgan"
   },
   "agencySelection": {
     "title": "Agentlikni tanlang",

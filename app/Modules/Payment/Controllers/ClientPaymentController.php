@@ -145,21 +145,38 @@ class ClientPaymentController extends Controller
         $publicUser = $request->get('_public_user');
 
         $payments = ClientPayment::where('public_user_id', $publicUser->id)
-            ->with(['case:id,country_code,visa_type', 'agency:id,name'])
+            ->with([
+                'case:id,case_number,country_code,visa_type,public_status',
+                'agency:id,name,city,logo_url',
+                'package:id,name,description,processing_days',
+                'package.items.service:id,name,category',
+            ])
             ->orderByDesc('created_at')
             ->paginate(20);
 
         $items = $payments->getCollection()->map(fn ($p) => [
-            'id'           => $p->id,
-            'amount'       => $p->amount,
-            'currency'     => $p->currency,
-            'provider'     => $p->provider,
-            'status'       => $p->status,
-            'paid_at'      => $p->paid_at?->toDateTimeString(),
-            'created_at'   => $p->created_at->toDateTimeString(),
-            'country_code' => $p->case?->country_code,
-            'visa_type'    => $p->case?->visa_type,
-            'agency_name'  => $p->agency?->name,
+            'id'            => $p->id,
+            'amount'        => $p->amount,
+            'currency'      => $p->currency,
+            'provider'      => $p->provider,
+            'status'        => $p->status,
+            'paid_at'       => $p->paid_at?->toDateTimeString(),
+            'created_at'    => $p->created_at->toDateTimeString(),
+            'country_code'  => $p->case?->country_code,
+            'visa_type'     => $p->case?->visa_type,
+            'case_number'   => $p->case?->case_number,
+            'case_id'       => $p->case_id,
+            'case_status'   => $p->case?->public_status,
+            'agency_name'   => $p->agency?->name,
+            'agency_city'   => $p->agency?->city,
+            'agency_logo'   => $p->agency?->logo_url,
+            'package_name'  => $p->package?->name,
+            'package_desc'  => $p->package?->description,
+            'package_days'  => $p->package?->processing_days,
+            'services'      => $p->package?->items?->map(fn ($item) => [
+                'name'     => $item->service?->name ?? '',
+                'category' => $item->service?->category ?? '',
+            ])->filter(fn ($s) => $s['name'])->values() ?? [],
         ]);
 
         return ApiResponse::success([
