@@ -31,8 +31,37 @@ class ClientPaymentService
                     ->first()
                 : null;
 
-            $amount   = (int) ($package->price ?? 0);
-            $currency = $package->currency ?? 'USD';
+            $basePrice = (int) ($package->price ?? 0);
+            $currency  = $package->currency ?? 'USD';
+
+            // Разбивка: заявитель (100%) + семья (дети -50%, остальные -25%)
+            $breakdown = [];
+            $breakdown[] = [
+                'name'         => $publicUser->name ?? 'Заявитель',
+                'role'         => 'applicant',
+                'discount'     => 0,
+                'price'        => $basePrice,
+            ];
+
+            $familyMembers = DB::table('case_family_members')
+                ->join('public_user_family_members', 'case_family_members.family_member_id', '=', 'public_user_family_members.id')
+                ->where('case_family_members.case_id', $case->id)
+                ->select('public_user_family_members.name', 'public_user_family_members.relationship')
+                ->get();
+
+            foreach ($familyMembers as $fm) {
+                $isChild  = $fm->relationship === 'child';
+                $discount = $isChild ? 50 : 25;
+                $price    = (int) round($basePrice * (100 - $discount) / 100);
+                $breakdown[] = [
+                    'name'         => $fm->name,
+                    'role'         => $fm->relationship,
+                    'discount'     => $discount,
+                    'price'        => $price,
+                ];
+            }
+
+            $amount = array_sum(array_column($breakdown, 'price'));
 
             $payment = ClientPayment::create([
                 'case_id'        => $case->id,
@@ -44,6 +73,7 @@ class ClientPaymentService
                 'provider'       => $provider,
                 'status'         => 'pending',
                 'expires_at'     => now()->addDays(5),
+                'metadata'       => ['price_breakdown' => $breakdown, 'base_price' => $basePrice],
             ]);
 
             $case->update(['payment_status' => 'pending']);

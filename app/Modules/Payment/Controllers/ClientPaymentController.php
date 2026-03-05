@@ -221,6 +221,8 @@ class ClientPaymentController extends Controller
                 'total_persons'   => $totalPersons,
                 'critical_date'   => $p->case?->critical_date?->toDateString(),
                 'expires_at'      => $p->expires_at?->toDateTimeString(),
+                'price_breakdown' => $p->metadata['price_breakdown'] ?? null,
+                'base_price'      => $p->metadata['base_price'] ?? null,
             ];
         });
 

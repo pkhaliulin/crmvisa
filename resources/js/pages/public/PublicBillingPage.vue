@@ -124,75 +124,93 @@
                         </div>
                     </div>
 
-                    <!-- Участники -->
-                    <div v-if="p.applicant_name" class="bg-gray-50 rounded-xl p-3 space-y-2">
-                        <div class="flex items-center justify-between">
-                            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{{ $t('billing.participants') }}</div>
-                            <div v-if="p.total_persons > 1" class="text-[10px] font-bold text-[#0A1F44] bg-white px-2 py-0.5 rounded-full">
-                                {{ p.total_persons }} {{ $t('billing.persons') }}
+                    <!-- Услуга -->
+                    <div class="flex items-center gap-2 pb-2 border-b border-gray-100">
+                        <span class="text-lg">{{ codeToFlag(p.country_code) }}</span>
+                        <div>
+                            <div class="text-sm font-semibold text-[#0A1F44]">
+                                {{ p.package_name || (visaTypeLabel(p.visa_type) + ' — ' + (p.country_code || '')) }}
                             </div>
-                        </div>
-                        <!-- Заявитель -->
-                        <div class="flex items-center gap-2.5">
-                            <div class="w-8 h-8 bg-[#0A1F44] rounded-lg flex items-center justify-center shrink-0">
-                                <span class="text-white text-xs font-bold">{{ p.applicant_name.charAt(0) }}</span>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <div class="text-sm font-semibold text-[#0A1F44] truncate">{{ p.applicant_name }}</div>
-                                <div class="text-[10px] text-gray-400">{{ $t('billing.applicant') }}</div>
-                            </div>
-                        </div>
-                        <!-- Члены семьи -->
-                        <div v-for="(fm, fi) in (p.family_members || [])" :key="'fm'+fi" class="flex items-center gap-2.5">
-                            <div class="w-8 h-8 bg-[#1BA97F]/20 rounded-lg flex items-center justify-center shrink-0">
-                                <span class="text-[#1BA97F] text-xs font-bold">{{ fm.name?.charAt(0) || '?' }}</span>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <div class="text-sm font-semibold text-[#0A1F44] truncate">{{ fm.name }}</div>
-                                <div class="text-[10px] text-gray-400">{{ $t('billing.familyMember') }}</div>
-                            </div>
-                        </div>
-                        <!-- Члены группы -->
-                        <div v-for="(gm, gi) in (p.group_members || [])" :key="'gm'+gi" class="flex items-center gap-2.5">
-                            <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center shrink-0">
-                                <span class="text-blue-600 text-xs font-bold">{{ gm.name?.charAt(0) || '?' }}</span>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <div class="text-sm font-semibold text-[#0A1F44] truncate">{{ gm.name }}</div>
-                                <div class="text-[10px] text-gray-400">{{ $t('billing.group') }}</div>
+                            <div v-if="p.package_desc" class="text-[11px] text-gray-400 leading-tight">{{ p.package_desc }}</div>
+                            <div v-if="p.package_days" class="text-[10px] text-gray-400">
+                                {{ $t('payment.processingDays', { days: p.package_days }) }}
                             </div>
                         </div>
                     </div>
 
-                    <!-- Таблица услуг -->
+                    <!-- Таблица участников с ценами -->
                     <div class="border border-gray-100 rounded-xl overflow-hidden">
-                        <!-- Заголовок таблицы -->
                         <div class="grid grid-cols-12 gap-2 px-4 py-2 bg-gray-50 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                            <div class="col-span-7">{{ $t('billing.service') }}</div>
-                            <div class="col-span-2 text-center">{{ $t('billing.qty') }}</div>
+                            <div class="col-span-6">{{ $t('billing.participants') }}</div>
+                            <div class="col-span-3 text-center">{{ $t('billing.discount') }}</div>
                             <div class="col-span-3 text-right">{{ $t('billing.sum') }}</div>
                         </div>
-                        <!-- Строка услуги -->
-                        <div class="grid grid-cols-12 gap-2 px-4 py-3 items-start">
-                            <div class="col-span-7">
-                                <div class="flex items-center gap-2">
-                                    <span class="text-lg">{{ codeToFlag(p.country_code) }}</span>
-                                    <div>
-                                        <div class="text-sm font-semibold text-[#0A1F44]">
-                                            {{ p.package_name || (visaTypeLabel(p.visa_type) + ' — ' + (p.country_code || '')) }}
-                                        </div>
-                                        <div v-if="p.package_desc" class="text-[11px] text-gray-400 mt-0.5 leading-tight">{{ p.package_desc }}</div>
-                                        <div v-if="p.package_days" class="text-[10px] text-gray-400 mt-0.5">
-                                            {{ $t('payment.processingDays', { days: p.package_days }) }}
-                                        </div>
+                        <!-- Если есть breakdown из metadata -->
+                        <template v-if="p.price_breakdown?.length">
+                            <div v-for="(row, ri) in p.price_breakdown" :key="'br'+ri"
+                                class="grid grid-cols-12 gap-2 px-4 py-2.5 items-center border-t border-gray-50">
+                                <div class="col-span-6 flex items-center gap-2 min-w-0">
+                                    <div class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                                        :class="row.role === 'applicant' ? 'bg-[#0A1F44]' : row.role === 'child' ? 'bg-amber-100' : 'bg-[#1BA97F]/20'">
+                                        <span class="text-xs font-bold"
+                                            :class="row.role === 'applicant' ? 'text-white' : row.role === 'child' ? 'text-amber-600' : 'text-[#1BA97F]'">
+                                            {{ row.name?.charAt(0) || '?' }}
+                                        </span>
+                                    </div>
+                                    <div class="min-w-0">
+                                        <div class="text-xs font-semibold text-[#0A1F44] truncate">{{ row.name }}</div>
+                                        <div class="text-[10px] text-gray-400">{{ roleLabel(row.role) }}</div>
                                     </div>
                                 </div>
+                                <div class="col-span-3 text-center">
+                                    <span v-if="row.discount > 0" class="text-xs font-bold text-[#1BA97F]">-{{ row.discount }}%</span>
+                                    <span v-else class="text-xs text-gray-300">—</span>
+                                </div>
+                                <div class="col-span-3 text-right text-xs font-bold text-[#0A1F44]">
+                                    {{ formatPrice(row.price, p.currency) }}
+                                </div>
                             </div>
-                            <div class="col-span-2 text-center text-sm text-gray-600 self-center">{{ p.total_persons || 1 }}</div>
-                            <div class="col-span-3 text-right text-sm font-bold text-[#0A1F44] self-center">
-                                {{ formatPrice(p.amount, p.currency) }}
+                        </template>
+                        <!-- Фолбэк если нет breakdown -->
+                        <template v-else>
+                            <div class="grid grid-cols-12 gap-2 px-4 py-2.5 items-center">
+                                <div class="col-span-6 flex items-center gap-2 min-w-0">
+                                    <div class="w-7 h-7 bg-[#0A1F44] rounded-lg flex items-center justify-center shrink-0">
+                                        <span class="text-white text-xs font-bold">{{ (p.applicant_name || '?').charAt(0) }}</span>
+                                    </div>
+                                    <div class="min-w-0">
+                                        <div class="text-xs font-semibold text-[#0A1F44] truncate">{{ p.applicant_name || $t('billing.applicant') }}</div>
+                                        <div class="text-[10px] text-gray-400">{{ $t('billing.applicant') }}</div>
+                                    </div>
+                                </div>
+                                <div class="col-span-3 text-center text-xs text-gray-300">—</div>
+                                <div class="col-span-3 text-right text-xs font-bold text-[#0A1F44]">
+                                    {{ formatPrice(p.base_price || p.amount, p.currency) }}
+                                </div>
                             </div>
-                        </div>
+                            <div v-for="(fm, fi) in (p.family_members || [])" :key="'fmf'+fi"
+                                class="grid grid-cols-12 gap-2 px-4 py-2.5 items-center border-t border-gray-50">
+                                <div class="col-span-6 flex items-center gap-2 min-w-0">
+                                    <div class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                                        :class="fm.relationship === 'child' ? 'bg-amber-100' : 'bg-[#1BA97F]/20'">
+                                        <span class="text-xs font-bold"
+                                            :class="fm.relationship === 'child' ? 'text-amber-600' : 'text-[#1BA97F]'">
+                                            {{ fm.name?.charAt(0) || '?' }}
+                                        </span>
+                                    </div>
+                                    <div class="min-w-0">
+                                        <div class="text-xs font-semibold text-[#0A1F44] truncate">{{ fm.name }}</div>
+                                        <div class="text-[10px] text-gray-400">{{ roleLabel(fm.relationship) }}</div>
+                                    </div>
+                                </div>
+                                <div class="col-span-3 text-center">
+                                    <span class="text-xs font-bold text-[#1BA97F]">-{{ fm.relationship === 'child' ? 50 : 25 }}%</span>
+                                </div>
+                                <div class="col-span-3 text-right text-xs font-bold text-[#0A1F44]">
+                                    {{ formatPrice(Math.round((p.base_price || p.amount) * (fm.relationship === 'child' ? 0.5 : 0.75)), p.currency) }}
+                                </div>
+                            </div>
+                        </template>
                     </div>
 
                     <!-- Что включено -->
@@ -481,6 +499,18 @@ function toggleExpand(id) {
     const s = new Set(expandedIds.value);
     if (s.has(id)) s.delete(id); else s.add(id);
     expandedIds.value = s;
+}
+
+function roleLabel(role) {
+    const map = {
+        applicant: t('billing.applicant'),
+        child: t('billing.roleChild'),
+        spouse: t('billing.roleSpouse'),
+        parent: t('billing.roleParent'),
+        sibling: t('billing.roleSibling'),
+        other: t('billing.familyMember'),
+    };
+    return map[role] || t('billing.familyMember');
 }
 
 function providerLabel(provider) {
