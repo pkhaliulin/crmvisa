@@ -15,23 +15,16 @@
 
         <!-- Hero -->
         <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-4">
-            <!-- Gradient header -->
-            <div class="h-24 sm:h-32 bg-gradient-to-r from-[#0A1F44] via-[#1a3a6e] to-[#0A1F44] relative">
-                <div class="absolute inset-0 opacity-10"
-                    style="background-image: url('data:image/svg+xml,%3Csvg width=60 height=60 viewBox=%270 0 60 60%27 xmlns=%27http://www.w3.org/2000/svg%27%3E%3Cg fill=%27none%27 fill-rule=%27evenodd%27%3E%3Cg fill=%27%23ffffff%27 fill-opacity=%271%27%3E%3Cpath d=%27M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z%27/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')"></div>
-            </div>
-
-            <div class="px-5 sm:px-6 pb-5 sm:pb-6 -mt-10 sm:-mt-12 relative">
-                <div class="flex items-end gap-4">
+            <div class="p-5 sm:p-6">
+                <div class="flex items-start gap-4">
                     <!-- Логотип -->
-                    <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-white border-4 border-white shadow-lg flex items-center justify-center shrink-0 overflow-hidden">
+                    <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-[#0A1F44] to-[#1a3a6e] flex items-center justify-center shrink-0 overflow-hidden shadow-md">
                         <img v-if="agency.logo_url" :src="agency.logo_url" :alt="agency.name"
                             class="w-full h-full object-cover" />
-                        <div v-else class="w-full h-full bg-gradient-to-br from-[#0A1F44] to-[#1a3a6e] flex items-center justify-center">
-                            <span class="text-white text-3xl font-bold">{{ agency.name?.charAt(0) }}</span>
-                        </div>
+                        <span v-else class="text-white text-2xl sm:text-3xl font-bold">{{ agency.name?.charAt(0) }}</span>
                     </div>
-                    <div class="pb-1">
+
+                    <div class="flex-1 min-w-0">
                         <div class="flex items-center gap-2 flex-wrap">
                             <h1 class="text-xl sm:text-2xl font-bold text-[#0A1F44]">{{ agency.name }}</h1>
                             <span v-if="agency.is_verified"
@@ -42,7 +35,7 @@
                                 {{ t('agencyDetail.verified') }}
                             </span>
                         </div>
-                        <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-sm text-gray-500">
+                        <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-sm text-gray-500">
                             <span v-if="agency.city" class="flex items-center gap-1">
                                 <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
@@ -52,33 +45,30 @@
                             <span v-if="agency.experience_years">{{ t('agencies.experience', { years: agency.experience_years }) }}</span>
                             <span v-if="agency.member_since" class="text-gray-400">{{ t('agencyDetail.memberSince', { date: agency.member_since }) }}</span>
                         </div>
-                    </div>
-                </div>
 
-                <!-- Рейтинг -->
-                <div class="mt-4 flex items-center gap-3">
-                    <div v-if="agency.rating" class="flex items-center gap-2">
-                        <span class="text-3xl font-bold text-[#0A1F44]">{{ Number(agency.rating).toFixed(1) }}</span>
-                        <div>
-                            <div class="flex gap-0.5">
-                                <svg v-for="n in 5" :key="n" class="w-5 h-5"
-                                    :class="n <= Math.round(agency.rating) ? 'text-amber-400' : 'text-gray-200'"
-                                    fill="currentColor" viewBox="0 0 20 20">
+                        <!-- Рейтинг -->
+                        <div class="mt-3 flex items-center gap-3 flex-wrap">
+                            <div v-if="agency.rating" class="flex items-center gap-2">
+                                <span class="text-2xl font-bold text-[#0A1F44]">{{ Number(agency.rating).toFixed(1) }}</span>
+                                <div class="flex gap-0.5">
+                                    <svg v-for="n in 5" :key="n" class="w-4 h-4"
+                                        :class="n <= Math.round(agency.rating) ? 'text-amber-400' : 'text-gray-200'"
+                                        fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                    </svg>
+                                </div>
+                                <span class="text-xs text-gray-400">({{ agency.reviews_count }} {{ t('agencyDetail.reviewsCount') }})</span>
+                            </div>
+                            <div v-else class="text-sm text-gray-400 italic">{{ t('agencies.noReviews') }}</div>
+
+                            <div v-if="agency.top_criterion && agency.reviews_count >= 1"
+                                class="flex items-center gap-1.5 text-xs text-[#1BA97F] font-medium bg-green-50 px-2.5 py-1 rounded-full">
+                                <svg class="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
                                     <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
                                 </svg>
+                                {{ topCriterionMessage(agency.top_criterion) }}
                             </div>
-                            <span class="text-xs text-gray-400">{{ agency.reviews_count }} {{ t('agencyDetail.reviewsCount') }}</span>
                         </div>
-                    </div>
-                    <div v-else class="text-sm text-gray-400 italic">{{ t('agencies.noReviews') }}</div>
-
-                    <!-- Лучший критерий -->
-                    <div v-if="agency.top_criterion && agency.reviews_count >= 1"
-                        class="ml-auto flex items-center gap-1.5 text-sm text-[#1BA97F] font-medium bg-green-50 px-3 py-1.5 rounded-full">
-                        <svg class="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
-                        </svg>
-                        {{ topCriterionMessage(agency.top_criterion) }}
                     </div>
                 </div>
 
