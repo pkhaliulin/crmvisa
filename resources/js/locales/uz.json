@@ -1030,6 +1030,27 @@
     "tipHighApproval": "Bu davlat O'zbekiston fuqarolariga viza berish foizi yuqori. Hujjatlarni to'g'ri rasmiylashtirsangiz, viza olish imkoniyati juda yaxshi.",
     "tipHighRefusal": "Bu davlat rad etish foizi yuqori. Moliyaviy hujjatlarni puxta tayyorlash va vatanga bog'liqlikni isbotlash juda muhim. Tajribali agentlikka murojaat qilishni tavsiya etamiz."
   },
+  "countriesList": {
+    "title": "Sayohat uchun davlatlar",
+    "subtitle": "O'zbekiston fuqarolari uchun viza talablari — muddatlar, narxlar, hujjatlar",
+    "all": "Hammasi",
+    "popular": "Mashhur",
+    "processing": "ko'rib chiqish",
+    "visaFee": "viza",
+    "waitDays": "navbat kutish",
+    "visaFreePeriod": "Vizasiz {days} kungacha bo'lish mumkin",
+    "voaPeriod": "Kelganda viza {days} kungacha",
+    "insurance": "Sug'urta",
+    "hotelBooking": "Mehmonxona band",
+    "invitation": "Taklif xati",
+    "bankStatement": "Bank ko'chirmasi",
+    "biometrics": "Biometriya",
+    "returnTicket": "Qaytish bileti",
+    "referralAbroad": "Chet eldagi elchixona orqali",
+    "noResults": "Davlatlar topilmadi. Filtrlarni o'zgartirib ko'ring",
+    "showingCount": "Jami {total} dan {count} ta ko'rsatilmoqda",
+    "showMore": "Yana {count} ta ko'rsatish"
+  },
   "countriesPage": {
     "title": "Davlatlar",
     "subtitle": "Davlatlar, skoring og'irliklari va viza ma'lumotlarini boshqarish",
