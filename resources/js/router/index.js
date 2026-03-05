@@ -241,6 +241,12 @@ const routes = [
                 meta: { roles: ['owner', 'superadmin'] },
             },
             {
+                path: 'users/:id',
+                name: 'users.show',
+                component: () => import('@/pages/UserDetailPage.vue'),
+                meta: { roles: ['owner', 'superadmin'] },
+            },
+            {
                 path: 'reports',
                 name: 'reports',
                 component: () => import('@/pages/ReportsPage.vue'),

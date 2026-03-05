@@ -13,12 +13,13 @@
             <th class="text-left px-4 py-3">Email</th>
             <th class="text-left px-4 py-3">Контакт</th>
             <th class="text-left px-4 py-3">Роль</th>
-            <th class="text-left px-4 py-3">Статус</th>
-            <th class="px-4 py-3"></th>
+            <th class="text-center px-4 py-3">Статус</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100">
-          <tr v-for="u in users" :key="u.id" class="hover:bg-gray-50 transition-colors">
+          <tr v-for="u in users" :key="u.id"
+            class="hover:bg-gray-50 transition-colors cursor-pointer"
+            @click="router.push({ name: 'users.show', params: { id: u.id } })">
             <td class="px-4 py-3">
               <div class="flex items-center gap-2.5">
                 <img v-if="u.avatar_url" :src="u.avatar_url" class="w-8 h-8 rounded-lg object-cover shrink-0"/>
@@ -31,23 +32,26 @@
             <td class="px-4 py-3 text-gray-500">{{ u.email }}</td>
             <td class="px-4 py-3">
               <a v-if="u.telegram_username" :href="`https://t.me/${u.telegram_username}`" target="_blank"
+                @click.stop
                 class="text-[#229ED9] hover:underline text-xs">@{{ u.telegram_username }}</a>
               <a v-else-if="u.phone" :href="`https://t.me/${u.phone}`" target="_blank"
+                @click.stop
                 class="text-[#229ED9] hover:underline text-xs font-mono">{{ u.phone }}</a>
-              <span v-else class="text-gray-300 text-xs">—</span>
+              <span v-else class="text-gray-300 text-xs">--</span>
             </td>
             <td class="px-4 py-3">
               <AppBadge :color="roleColor(u.role)">{{ roleLabel(u.role) }}</AppBadge>
             </td>
-            <td class="px-4 py-3">
-              <AppBadge :color="u.is_active ? 'green' : 'gray'">
-                {{ u.is_active ? 'Активен' : 'Деактивирован' }}
-              </AppBadge>
-            </td>
-            <td class="px-4 py-3 text-right">
-              <button @click="confirmDelete(u)" class="text-red-500 hover:text-red-700 text-xs font-medium transition-colors">
-                Удалить
+            <td class="px-4 py-3 text-center" @click.stop>
+              <button v-if="u.role !== 'owner'"
+                @click="toggleActive(u)"
+                :disabled="toggling === u.id"
+                class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 focus:outline-none"
+                :class="u.is_active ? 'bg-[#1BA97F]' : 'bg-gray-300'">
+                <span class="inline-block h-3.5 w-3.5 rounded-full bg-white shadow-sm transition-transform duration-200"
+                  :class="u.is_active ? 'translate-x-[18px]' : 'translate-x-[3px]'"></span>
               </button>
+              <span v-else class="text-xs text-gray-400">--</span>
             </td>
           </tr>
         </tbody>
@@ -71,7 +75,7 @@
         <label class="block text-sm font-medium text-gray-700 mb-1.5">Фото сотрудника <span class="text-red-500">*</span></label>
         <div class="flex items-start gap-3">
           <label class="cursor-pointer shrink-0">
-            <input type="file" accept="image/*" class="hidden" @change="onAvatarSelect"/>
+            <input type="file" accept=".jpg,.jpeg,.png,.webp" class="hidden" @change="onAvatarSelect"/>
             <div v-if="avatarPreview" class="relative w-20 h-20 rounded-xl overflow-hidden border-2 border-[#1BA97F] group">
               <img :src="avatarPreview" class="w-full h-full object-cover"/>
               <div class="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
@@ -88,7 +92,6 @@
               <span class="text-[10px] mt-0.5">Загрузить</span>
             </div>
           </label>
-          <!-- Чат-бабл от VisaBor -->
           <div class="relative flex-1">
             <div class="absolute -left-[6px] top-4 w-3 h-3 rotate-45 border-l border-b bg-blue-50 border-blue-200 z-10"></div>
             <div class="absolute left-[-1px] top-[17px] h-[10px] w-[2px] bg-blue-50 z-10"></div>
@@ -99,14 +102,14 @@
                 </div>
                 <span class="text-[9px] font-semibold text-blue-500">VisaBor</span>
               </div>
-              <p class="text-[11px] text-[#0A1F44] leading-relaxed">Фото повышает доверие клиентов на 40%. Рекомендуем деловое фото в белой рубашке — так команда выглядит профессионально и единообразно.</p>
+              <p class="text-[11px] text-[#0A1F44] leading-relaxed">Фото повышает доверие клиентов на 40%. Рекомендуем деловое фото в белой рубашке — так команда выглядит профессионально.</p>
             </div>
           </div>
         </div>
+        <p class="text-[10px] text-gray-400 mt-1">JPG, PNG или WebP. Макс. 2 МБ. Рекомендуемый размер: 400x400 px.</p>
         <p v-if="errors.avatar" class="text-xs text-red-500 mt-1">{{ errors.avatar }}</p>
       </div>
 
-      <!-- Имя и Фамилия -->
       <div class="grid grid-cols-2 gap-3">
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Имя (латиница) <span class="text-red-500">*</span></label>
@@ -126,7 +129,6 @@
         </div>
       </div>
 
-      <!-- Email -->
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Email <span class="text-red-500">*</span></label>
         <input v-model="form.email" type="email" placeholder="manager@agency.com"
@@ -143,26 +145,21 @@
         </div>
       </div>
 
-      <!-- Телефон -->
       <AppPhoneInput v-model="form.phone" label="Телефон" :error="errors.phone"/>
 
-      <!-- Telegram -->
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Telegram</label>
         <div class="flex items-center gap-2">
           <span class="text-sm text-gray-400">@</span>
           <input v-model="form.telegram_username" type="text" placeholder="username"
-            class="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] transition-colors"
-            :class="errors.telegram_username ? 'border-red-300' : ''"/>
+            class="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] transition-colors"/>
         </div>
         <p v-if="errors.telegram_username" class="text-xs text-red-500 mt-1">{{ errors.telegram_username }}</p>
         <p v-else class="text-xs text-gray-400 mt-1">Если не указан, клиенты смогут написать по номеру телефона</p>
       </div>
 
-      <!-- Роль -->
       <AppSelect v-model="form.role" label="Роль" :options="roleOptions" />
 
-      <!-- Пароль -->
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Пароль <span class="text-red-500">*</span></label>
         <div class="relative">
@@ -192,21 +189,11 @@
       </div>
     </form>
   </AppModal>
-
-  <!-- Модал подтверждения удаления -->
-  <AppModal v-model="showDeleteModal" title="Удалить сотрудника?">
-    <p class="text-sm text-gray-600 mb-4">
-      Вы уверены, что хотите удалить сотрудника <strong>{{ deleteTarget?.name }}</strong>? Это действие нельзя отменить.
-    </p>
-    <div class="flex gap-2 justify-end">
-      <AppButton variant="outline" @click="showDeleteModal = false">Отмена</AppButton>
-      <AppButton color="red" @click="deleteUser" :loading="deleting">Да, удалить</AppButton>
-    </div>
-  </AppModal>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { usersApi } from '@/api/users';
 import AppButton from '@/components/AppButton.vue';
 import AppBadge from '@/components/AppBadge.vue';
@@ -214,6 +201,7 @@ import AppModal from '@/components/AppModal.vue';
 import AppPhoneInput from '@/components/AppPhoneInput.vue';
 import AppSelect from '@/components/AppSelect.vue';
 
+const router = useRouter();
 const users         = ref([]);
 const showCreate    = ref(false);
 const createLoading = ref(false);
@@ -223,16 +211,12 @@ const showPassword  = ref(false);
 const emailValid    = ref(null);
 const avatarFile    = ref(null);
 const avatarPreview = ref(null);
+const toggling      = ref(null);
 
 const form = reactive({
   first_name: '', last_name: '', email: '', phone: '',
   telegram_username: '', role: 'manager', password: '',
 });
-
-// Delete confirmation
-const showDeleteModal = ref(false);
-const deleteTarget    = ref(null);
-const deleting        = ref(false);
 
 const roleOptions = [
   { value: 'manager', label: 'Менеджер' },
@@ -250,7 +234,6 @@ function validateLatin(field) {
   const val = form[field];
   if (val && !latinRegex.test(val)) {
     errors.value[field] = 'Только латинские буквы';
-    // Убрать нелатинские символы
     form[field] = val.replace(/[^A-Za-z\s\-']/g, '');
   } else {
     delete errors.value[field];
@@ -287,6 +270,10 @@ function onAvatarSelect(e) {
     errors.value.avatar = 'Максимум 2 МБ';
     return;
   }
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+    errors.value.avatar = 'Только JPG, PNG или WebP';
+    return;
+  }
   delete errors.value.avatar;
   avatarFile.value = file;
   avatarPreview.value = URL.createObjectURL(file);
@@ -311,11 +298,22 @@ async function fetchUsers() {
   users.value = data.data;
 }
 
+async function toggleActive(u) {
+  toggling.value = u.id;
+  try {
+    await usersApi.update(u.id, { is_active: !u.is_active });
+    u.is_active = !u.is_active;
+  } catch (e) {
+    // ignore
+  } finally {
+    toggling.value = null;
+  }
+}
+
 async function createUser() {
   errors.value = {};
   errorMsg.value = '';
 
-  // Валидация
   if (!form.first_name.trim()) errors.value.first_name = 'Обязательное поле';
   if (!form.last_name.trim()) errors.value.last_name = 'Обязательное поле';
   if (!latinRegex.test(form.first_name)) errors.value.first_name = 'Только латинские буквы';
@@ -352,25 +350,6 @@ async function createUser() {
     }
   } finally {
     createLoading.value = false;
-  }
-}
-
-function confirmDelete(u) {
-  deleteTarget.value = u;
-  showDeleteModal.value = true;
-}
-
-async function deleteUser() {
-  deleting.value = true;
-  try {
-    await usersApi.remove(deleteTarget.value.id);
-    showDeleteModal.value = false;
-    deleteTarget.value = null;
-    await fetchUsers();
-  } catch (err) {
-    errorMsg.value = err.response?.data?.message || 'Ошибка удаления';
-  } finally {
-    deleting.value = false;
   }
 }
 

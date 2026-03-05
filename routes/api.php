@@ -105,10 +105,12 @@ Route::prefix('v1')->group(function () {
 
     // Управление пользователями агентства (только owner)
     Route::middleware(['auth:api', 'role:owner,superadmin', 'plan.active'])->group(function () {
-        Route::get('users',          [UserController::class, 'index']);
-        Route::post('users',         [UserController::class, 'store'])->middleware('plan.limit:max_managers');
-        Route::patch('users/{id}',   [UserController::class, 'update']);
-        Route::delete('users/{id}',  [UserController::class, 'destroy']);
+        Route::get('users',                  [UserController::class, 'index']);
+        Route::post('users',                 [UserController::class, 'store'])->middleware('plan.limit:max_managers');
+        Route::get('users/{id}',             [UserController::class, 'show']);
+        Route::patch('users/{id}',           [UserController::class, 'update']);
+        Route::post('users/{id}/password',   [UserController::class, 'resetPassword']);
+        Route::delete('users/{id}',          [UserController::class, 'destroy']);
 
         // Настройки агентства
         Route::get('agency/settings',                      [AgencySettingsController::class, 'show']);
