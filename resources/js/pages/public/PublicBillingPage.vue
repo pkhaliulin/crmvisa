@@ -132,7 +132,7 @@
                     </div>
 
                     <!-- ИТОГО к оплате -->
-                    <div class="flex items-center justify-between p-4 rounded-xl bg-[#0A1F44] text-white">
+                    <div class="flex items-center justify-between p-4 rounded-xl bg-[#1BA97F] text-white">
                         <span class="text-sm font-semibold">{{ $t('payment.total') }}</span>
                         <span class="text-xl font-bold">{{ formatPrice(p.amount, p.currency) }}</span>
                     </div>
