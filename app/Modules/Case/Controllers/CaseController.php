@@ -18,6 +18,14 @@ class CaseController extends Controller
         $user     = $request->user();
         $agencyId = $user->agency_id;
 
+        $filters = $request->validate([
+            'stage'        => ['nullable', 'string', 'in:' . implode(',', array_keys(config('stages')))],
+            'assigned_to'  => ['nullable', 'string', 'max:50'],
+            'priority'     => ['nullable', 'string', 'in:low,normal,high,urgent'],
+            'country_code' => ['nullable', 'string', 'size:2', 'regex:/^[A-Za-z]{2}$/'],
+            'q'            => ['nullable', 'string', 'max:100'],
+        ]);
+
         $query = VisaCase::where('cases.agency_id', $agencyId)
             ->with(['client:id,name,phone', 'assignee:id,name'])
             ->selectRaw("
@@ -35,33 +43,33 @@ class CaseController extends Controller
         }
 
         // Фильтр по этапу
-        if ($request->filled('stage')) {
-            $query->where('stage', $request->stage);
+        if (!empty($filters['stage'])) {
+            $query->where('stage', $filters['stage']);
         }
 
         // Фильтр по менеджеру
-        if ($request->filled('assigned_to')) {
-            if ($request->assigned_to === 'unassigned') {
+        if (!empty($filters['assigned_to'])) {
+            if ($filters['assigned_to'] === 'unassigned') {
                 $query->whereNull('cases.assigned_to');
             } else {
-                $query->where('cases.assigned_to', $request->assigned_to);
+                $query->where('cases.assigned_to', $filters['assigned_to']);
             }
         }
 
         // Фильтр по приоритету
-        if ($request->filled('priority')) {
-            $query->where('priority', $request->priority);
+        if (!empty($filters['priority'])) {
+            $query->where('priority', $filters['priority']);
         }
 
         // Фильтр по стране
-        if ($request->filled('country_code')) {
-            $query->where('country_code', strtoupper($request->country_code));
+        if (!empty($filters['country_code'])) {
+            $query->where('country_code', strtoupper($filters['country_code']));
         }
 
-        // Поиск по имени клиента
-        if ($request->filled('q')) {
+        // Поиск по имени клиента (параметризованный запрос)
+        if (!empty($filters['q'])) {
             $query->join('clients', 'clients.id', '=', 'cases.client_id')
-                  ->where('clients.name', 'ilike', '%' . $request->q . '%');
+                  ->where('clients.name', 'ilike', '%' . str_replace(['%', '_'], ['\\%', '\\_'], $filters['q']) . '%');
         }
 
         // Сортировка: сначала просроченные, потом горящие, остальные по дате
@@ -150,9 +158,9 @@ class CaseController extends Controller
         return ApiResponse::success($case);
     }
 
-    public function critical(): JsonResponse
+    public function critical(Request $request): JsonResponse
     {
-        return ApiResponse::success($this->service->critical());
+        return ApiResponse::success($this->service->critical($request->user()->agency_id));
     }
 
     /**

@@ -24,7 +24,7 @@
             class="text-xs text-blue-600 hover:text-blue-800 font-medium truncate max-w-[200px]">
             {{ item.document.original_name }}
           </button>
-          <a :href="item.document.url" download class="text-[10px] text-gray-400 hover:text-gray-600">Скачать</a>
+          <a v-if="isSafeUrl(item.document.url)" :href="item.document.url" download class="text-[10px] text-gray-400 hover:text-gray-600">Скачать</a>
           <label class="text-[10px] text-gray-400 hover:text-gray-600 cursor-pointer">
             Заменить
             <input type="file" class="hidden" @change="$emit('upload', item, $event)" />
@@ -128,41 +128,30 @@ import AppBadge from './AppBadge.vue';
 const props = defineProps({ item: Object });
 defineEmits(['upload', 'toggle', 'review', 'reject', 'translation', 'upload-translation', 'approve-translation', 'preview', 'delete', 'repeat']);
 
-const statusColor = computed(() => {
+const STATUS_MAP = {
+  approved:             { color: 'green',  label: 'Принято',     border: 'border-green-100 bg-green-50/30',   bar: 'bg-green-400' },
+  translation_approved: { color: 'green',  label: 'Перевод OK',  border: 'border-green-100 bg-green-50/30',   bar: 'bg-green-400' },
+  rejected:             { color: 'red',    label: 'Отклонено',   border: 'border-red-100 bg-red-50/20',       bar: 'bg-red-400' },
+  needs_translation:    { color: 'purple', label: 'На перевод',  border: 'border-purple-100 bg-purple-50/20', bar: 'bg-purple-400' },
+  translated:           { color: 'purple', label: 'Переведено',  border: 'border-purple-100 bg-purple-50/20', bar: 'bg-purple-400' },
+  uploaded:             { color: 'blue',   label: 'На проверке', border: 'border-blue-100 bg-blue-50/20',     bar: 'bg-blue-400' },
+};
+
+const statusEntry = computed(() => {
   const s = props.item.status;
-  if (s === 'approved' || s === 'translation_approved') return 'green';
-  if (s === 'rejected') return 'red';
-  if (s === 'needs_translation' || s === 'translated') return 'purple';
-  if (s === 'uploaded' || props.item.is_checked) return 'blue';
-  return 'gray';
+  if (STATUS_MAP[s]) return STATUS_MAP[s];
+  if (props.item.is_checked) return { color: 'blue', label: 'На проверке', border: 'border-gray-100', bar: 'bg-blue-400' };
+  return { color: 'gray', label: props.item.is_required ? 'Ожидает' : 'Не загружен', border: 'border-gray-100', bar: 'bg-gray-200' };
 });
 
-const statusLabel = computed(() => {
-  const s = props.item.status;
-  if (s === 'approved') return 'Принято';
-  if (s === 'rejected') return 'Отклонено';
-  if (s === 'needs_translation') return 'На перевод';
-  if (s === 'translated') return 'Переведено';
-  if (s === 'translation_approved') return 'Перевод OK';
-  if (s === 'uploaded' || props.item.is_checked) return 'На проверке';
-  return props.item.is_required ? 'Ожидает' : 'Не загружен';
-});
+const statusColor = computed(() => statusEntry.value.color);
+const statusLabel = computed(() => statusEntry.value.label);
+const borderClass = computed(() => statusEntry.value.border);
+const barClass    = computed(() => statusEntry.value.bar);
 
-const borderClass = computed(() => {
-  const s = props.item.status;
-  if (s === 'approved' || s === 'translation_approved') return 'border-green-100 bg-green-50/30';
-  if (s === 'rejected') return 'border-red-100 bg-red-50/20';
-  if (s === 'needs_translation' || s === 'translated') return 'border-purple-100 bg-purple-50/20';
-  if (s === 'uploaded') return 'border-blue-100 bg-blue-50/20';
-  return 'border-gray-100';
-});
-
-const barClass = computed(() => {
-  const s = props.item.status;
-  if (s === 'approved' || s === 'translation_approved') return 'bg-green-400';
-  if (s === 'rejected') return 'bg-red-400';
-  if (s === 'needs_translation' || s === 'translated') return 'bg-purple-400';
-  if (s === 'uploaded') return 'bg-blue-400';
-  return 'bg-gray-200';
-});
+function isSafeUrl(url) {
+  if (!url) return false;
+  try { const u = new URL(url, window.location.origin); return ['http:', 'https:'].includes(u.protocol); }
+  catch { return false; }
+}
 </script>

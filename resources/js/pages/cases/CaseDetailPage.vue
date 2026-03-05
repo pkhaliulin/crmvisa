@@ -4,6 +4,11 @@
     <div class="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full"></div>
   </div>
 
+  <div v-else-if="loadError" class="flex flex-col items-center justify-center py-32 text-gray-500">
+    <p class="text-sm mb-3">{{ loadError }}</p>
+    <button @click="load" class="text-sm text-blue-600 hover:underline">Повторить</button>
+  </div>
+
   <div v-else-if="caseData">
 
     <!-- ===== TOP BAR ===== -->
@@ -525,7 +530,7 @@
       </div>
       <div class="flex gap-2 justify-end">
         <AppButton variant="outline" @click="showAssignModal = false">Отмена</AppButton>
-        <AppButton :loading="assignForm.loading" :disabled="!assignForm.manager_id" @click="doAssignFromModal">Назначить</AppButton>
+        <AppButton :loading="assignForm.loading" :disabled="!assignForm.manager_id" @click="doAssign">Назначить</AppButton>
       </div>
     </div>
   </AppModal>
@@ -725,18 +730,22 @@ function stepClass(idx) {
 
 // Helpers
 function cleanPhone(p) { return (p ?? '').replace(/[^0-9]/g, ''); }
-function fmtFull(d) { return new Date(d).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }); }
-function fmtShort(d) { return new Date(d).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' }); }
+function fmtFull(d) { if (!d) return '---'; return new Date(d).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }); }
+function fmtShort(d) { if (!d) return '---'; return new Date(d).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' }); }
 function isImage(m) { return m?.startsWith('image/'); }
 function isPdf(m) { return m === 'application/pdf'; }
 
 // Data
+const loadError = ref(null);
 async function load() {
   loading.value = true;
+  loadError.value = null;
   try {
     const [c, cl] = await Promise.all([casesApi.get(id), casesApi.getChecklist(id)]);
     caseData.value = c.data.data;
     checklist.value = cl.data.data;
+  } catch (e) {
+    loadError.value = e.response?.data?.message || 'Ошибка загрузки';
   } finally { loading.value = false; }
 }
 async function reloadChecklist() { checklist.value = (await casesApi.getChecklist(id)).data.data; }
@@ -761,7 +770,7 @@ async function uploadToSlot(item, event) {
 async function toggleCheck(item) { await casesApi.checkSlot(id, item.id, !item.is_checked); await reloadChecklist(); }
 
 function openReject(item) { rejectItem.value = item; rejectNote.value = ''; showRejectModal.value = true; }
-async function submitReject() { await casesApi.reviewSlot(id, rejectItem.value.id, { status: 'rejected', notes: rejectNote.value }); showRejectModal.value = false; await reloadAll(); }
+async function submitReject() { await casesApi.reviewSlot(id, rejectItem.value.id, { status: 'rejected', notes: rejectNote.value }); showRejectModal.value = false; rejectItem.value = null; rejectNote.value = ''; await reloadAll(); }
 async function reviewSlot(item, status) { await casesApi.reviewSlot(id, item.id, { status }); await reloadAll(); }
 
 function openTranslation(item) { translationItem.value = item; translationForm.pages = 1; translationForm.notes = ''; showTranslationModal.value = true; }
@@ -847,15 +856,6 @@ async function loadManagers() {
 }
 
 async function doAssign() {
-  if (!assignForm.manager_id) return;
-  assignForm.loading = true;
-  try {
-    await casesApi.update(id, { assigned_to: assignForm.manager_id });
-    await reloadAll();
-  } finally { assignForm.loading = false; }
-}
-
-async function doAssignFromModal() {
   if (!assignForm.manager_id) return;
   assignForm.loading = true;
   try {

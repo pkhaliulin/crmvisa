@@ -193,9 +193,9 @@ class CaseService extends BaseService
         return $this->caseRepository()->byStage($stage);
     }
 
-    public function critical(): Collection
+    public function critical(string $agencyId): Collection
     {
-        return $this->caseRepository()->critical();
+        return $this->caseRepository()->critical($agencyId);
     }
 
     /**

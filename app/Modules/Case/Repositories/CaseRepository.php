@@ -18,9 +18,10 @@ class CaseRepository extends BaseRepository
         return VisaCase::where('stage', $stage)->with(['client', 'assignee'])->get();
     }
 
-    public function critical(): Collection
+    public function critical(string $agencyId): Collection
     {
-        return VisaCase::whereNotNull('critical_date')
+        return VisaCase::where('agency_id', $agencyId)
+            ->whereNotNull('critical_date')
             ->whereDate('critical_date', '<=', now()->addDays(5))
             ->with(['client', 'assignee'])
             ->orderBy('critical_date')
