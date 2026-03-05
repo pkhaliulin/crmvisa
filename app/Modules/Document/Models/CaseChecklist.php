@@ -31,13 +31,26 @@ class CaseChecklist extends BaseModel
         'status',
         'notes',
         'sort_order',
+        'review_status',
+        'review_notes',
+        'reviewed_by',
+        'reviewed_at',
+        'translation_pages',
+        'translation_price',
+        'translation_document_id',
+        'translated_by',
+        'translated_at',
     ];
 
     protected $casts = [
-        'is_required' => 'boolean',
-        'is_checked'  => 'boolean',
-        'sort_order'  => 'integer',
-        'metadata'    => 'array',
+        'is_required'        => 'boolean',
+        'is_checked'         => 'boolean',
+        'sort_order'         => 'integer',
+        'metadata'           => 'array',
+        'reviewed_at'        => 'datetime',
+        'translated_at'      => 'datetime',
+        'translation_pages'  => 'integer',
+        'translation_price'  => 'integer',
     ];
 
     // -------------------------------------------------------------------------

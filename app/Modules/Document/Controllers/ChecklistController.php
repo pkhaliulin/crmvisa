@@ -4,6 +4,7 @@ namespace App\Modules\Document\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Case\Models\VisaCase;
+use App\Modules\Case\Services\CaseService;
 use App\Modules\Document\Models\CaseChecklist;
 use App\Modules\Document\Services\ChecklistService;
 use App\Support\Helpers\ApiResponse;
@@ -12,7 +13,10 @@ use Illuminate\Http\Request;
 
 class ChecklistController extends Controller
 {
-    public function __construct(private readonly ChecklistService $service) {}
+    public function __construct(
+        private readonly ChecklistService $service,
+        private readonly CaseService $caseService,
+    ) {}
 
     /**
      * GET /api/v1/cases/{caseId}/checklist
@@ -42,6 +46,9 @@ class ChecklistController extends Controller
 
         $result = $this->service->uploadToSlot($item, $request->file('file'), $case);
 
+        // Авто-переход: все обязательные документы загружены → doc_review
+        $this->caseService->checkAutoTransitionAfterUpload($case->fresh());
+
         return ApiResponse::success($result, 'Document uploaded');
     }
 
@@ -51,17 +58,69 @@ class ChecklistController extends Controller
      */
     public function review(Request $request, string $caseId, string $itemId): JsonResponse
     {
-        $this->authorizeCase($request, $caseId);
+        $case = $this->authorizeCase($request, $caseId);
         $item = $this->authorizeItem($request, $caseId, $itemId);
 
         $validated = $request->validate([
-            'status' => ['required', 'in:approved,rejected,pending'],
-            'notes'  => ['nullable', 'string', 'max:500'],
+            'status'            => ['required', 'in:approved,rejected,needs_translation'],
+            'notes'             => ['nullable', 'string', 'max:500'],
+            'translation_pages' => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);
 
-        $result = $this->service->reviewSlot($item, $validated['status'], $validated['notes'] ?? null);
+        $result = $this->service->reviewSlot(
+            $item,
+            $validated['status'],
+            $validated['notes'] ?? null,
+            $validated['translation_pages'] ?? null
+        );
+
+        // Проверить автопереход
+        $this->caseService->checkAutoTransitionAfterReview($case->fresh());
 
         return ApiResponse::success($result, 'Status updated');
+    }
+
+    /**
+     * POST /api/v1/cases/{caseId}/checklist/{itemId}/upload-translation
+     * Загрузить перевод документа (переводчик/менеджер).
+     */
+    public function uploadTranslation(Request $request, string $caseId, string $itemId): JsonResponse
+    {
+        $case = $this->authorizeCase($request, $caseId);
+        $item = $this->authorizeItem($request, $caseId, $itemId);
+
+        if ($item->review_status !== 'needs_translation') {
+            return ApiResponse::error('Документ не отмечен как требующий перевод', null, 422);
+        }
+
+        $request->validate([
+            'file' => ['required', 'file', 'max:20480'],
+        ]);
+
+        $result = $this->service->uploadTranslation($item, $request->file('file'), $case);
+
+        return ApiResponse::success($result, 'Translation uploaded');
+    }
+
+    /**
+     * PATCH /api/v1/cases/{caseId}/checklist/{itemId}/approve-translation
+     * Менеджер одобряет перевод.
+     */
+    public function approveTranslation(Request $request, string $caseId, string $itemId): JsonResponse
+    {
+        $case = $this->authorizeCase($request, $caseId);
+        $item = $this->authorizeItem($request, $caseId, $itemId);
+
+        if ($item->status !== 'translated') {
+            return ApiResponse::error('Перевод ещё не загружен', null, 422);
+        }
+
+        $result = $this->service->approveTranslation($item);
+
+        // Проверить автопереход
+        $this->caseService->checkAutoTransitionAfterTranslation($case->fresh());
+
+        return ApiResponse::success($result, 'Translation approved');
     }
 
     /**

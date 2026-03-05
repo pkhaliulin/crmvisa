@@ -2,6 +2,8 @@
 
 namespace App\Modules\Payment\Services;
 
+use App\Modules\Agency\Models\Agency;
+use App\Modules\Agency\Services\AgencyService;
 use App\Modules\Case\Models\VisaCase;
 use App\Modules\Case\Services\CaseService;
 use App\Modules\Group\Services\GroupService;
@@ -126,19 +128,20 @@ class ClientPaymentService
                 $case = VisaCase::find($payment->case_id);
                 if (! $case) return;
 
-                // Обновить payment_status и public_status
+                // Обновить payment_status
                 $case->update([
                     'payment_status' => 'paid',
                     'public_status'  => 'submitted',
+                    'stage'          => 'lead',
                 ]);
 
-                // Создать PublicLead — лид передаётся агентству только после оплаты
+                // Создать PublicLead
                 $score = (int) DB::table('public_score_cache')
                     ->where('public_user_id', $case->client?->public_user_id)
                     ->where('country_code', $case->country_code)
                     ->value('score');
 
-                PublicLead::create([
+                $lead = PublicLead::create([
                     'public_user_id'     => $case->client?->public_user_id,
                     'country_code'       => $case->country_code,
                     'visa_type'          => $case->visa_type,
@@ -148,6 +151,22 @@ class ClientPaymentService
                     'case_id'            => $case->id,
                     'client_id'          => $case->client_id,
                 ]);
+
+                // Авто-назначение менеджера по стратегии агентства
+                if ($case->agency_id) {
+                    $agency = Agency::find($case->agency_id);
+                    if ($agency && $agency->lead_assignment_mode !== 'manual') {
+                        $manager = app(AgencyService::class)->assignLead($lead, $agency);
+                        if ($manager) {
+                            $case->update([
+                                'assigned_to'   => $manager->id,
+                                'public_status'  => 'manager_assigned',
+                                'stage'          => 'qualification',
+                            ]);
+                            $lead->update(['status' => 'assigned']);
+                        }
+                    }
+                }
             }
         });
     }

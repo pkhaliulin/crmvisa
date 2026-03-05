@@ -120,6 +120,8 @@ class CaseController extends Controller
             'appointment_date'     => ['sometimes', 'nullable', 'date'],
             'appointment_time'     => ['sometimes', 'nullable', 'string', 'max:10'],
             'appointment_location' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'expected_result_date' => ['sometimes', 'nullable', 'date'],
+            'return_date'          => ['sometimes', 'nullable', 'date'],
         ]);
 
         $case = $this->service->updateCase($id, $data);
@@ -151,5 +153,68 @@ class CaseController extends Controller
     public function critical(): JsonResponse
     {
         return ApiResponse::success($this->service->critical());
+    }
+
+    /**
+     * POST /cases/{id}/complete — Завершить заявку (одобрено/отказ).
+     */
+    public function complete(Request $request, string $id): JsonResponse
+    {
+        $data = $request->validate([
+            'result_type'            => ['required', 'in:approved,rejected'],
+            'result_notes'           => ['nullable', 'string'],
+            'visa_issued_at'         => ['nullable', 'date'],
+            'visa_received_at'       => ['nullable', 'date'],
+            'visa_validity'          => ['nullable', 'string', 'max:100'],
+            'rejection_reason'       => ['nullable', 'string'],
+            'can_reapply'            => ['nullable', 'boolean'],
+            'reapply_recommendation' => ['nullable', 'string'],
+        ]);
+
+        $case = $this->service->findOrFail($id);
+        $case = $this->service->completeCase($case, $data['result_type'], $data);
+
+        return ApiResponse::success($case);
+    }
+
+    /**
+     * POST /cases/{id}/submit-to-embassy — Отметить подачу в посольство.
+     */
+    public function submitToEmbassy(Request $request, string $id): JsonResponse
+    {
+        $data = $request->validate([
+            'submitted_at'         => ['required', 'date'],
+            'expected_result_date' => ['required', 'date'],
+        ]);
+
+        $case = $this->service->findOrFail($id);
+        $case->update([
+            'submitted_at'         => $data['submitted_at'],
+            'expected_result_date' => $data['expected_result_date'],
+            'last_manager_update_at' => now(),
+        ]);
+
+        $this->service->moveToStage($case->fresh(), 'review', 'Документы поданы в посольство');
+
+        return ApiResponse::success($case->fresh(['client', 'assignee', 'stageHistory']));
+    }
+
+    /**
+     * PATCH /cases/{id}/expected-date — Обновить ожидаемую дату результата.
+     */
+    public function updateExpectedDate(Request $request, string $id): JsonResponse
+    {
+        $data = $request->validate([
+            'expected_result_date' => ['required', 'date'],
+            'notes'                => ['nullable', 'string'],
+        ]);
+
+        $case = $this->service->findOrFail($id);
+        $case->update([
+            'expected_result_date'   => $data['expected_result_date'],
+            'last_manager_update_at' => now(),
+        ]);
+
+        return ApiResponse::success($case->fresh());
     }
 }

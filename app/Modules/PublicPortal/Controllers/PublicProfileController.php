@@ -7,6 +7,7 @@ use App\Modules\Agency\Models\Agency;
 use App\Modules\Case\Models\VisaCase;
 use App\Modules\Client\Models\Client;
 use App\Modules\Document\Models\CaseChecklist;
+use App\Modules\Case\Services\CaseService;
 use App\Modules\Document\Services\ChecklistService;
 use App\Modules\PublicPortal\Models\PublicLead;
 use App\Modules\Case\Models\CaseFamilyMember;
@@ -440,6 +441,9 @@ class PublicProfileController extends Controller
             'document_id' => $doc->id,
             'status'      => 'uploaded',
         ]);
+
+        // Авто-переход: все обязательные документы загружены → doc_review
+        app(CaseService::class)->checkAutoTransitionAfterUpload($case->fresh());
 
         return ApiResponse::success(['status' => 'uploaded'], 'Документ загружен и отправлен на проверку');
     }

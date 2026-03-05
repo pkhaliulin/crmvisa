@@ -68,7 +68,10 @@ Route::prefix('v1')->group(function () {
 
         // Заявки
         Route::get('cases/critical',          [CaseController::class, 'critical']);
-        Route::post('cases/{id}/move-stage',  [CaseController::class, 'moveStage']);
+        Route::post('cases/{id}/move-stage',        [CaseController::class, 'moveStage']);
+        Route::post('cases/{id}/complete',          [CaseController::class, 'complete']);
+        Route::post('cases/{id}/submit-to-embassy', [CaseController::class, 'submitToEmbassy']);
+        Route::patch('cases/{id}/expected-date',    [CaseController::class, 'updateExpectedDate']);
         Route::apiResource('cases', CaseController::class)->middleware([
             'plan.limit:max_cases',
         ]);
@@ -89,6 +92,8 @@ Route::prefix('v1')->group(function () {
             Route::post('/{itemId}/upload',        [ChecklistController::class, 'upload']);
             Route::patch('/{itemId}/check',        [ChecklistController::class, 'check']);
             Route::patch('/{itemId}/review',       [ChecklistController::class, 'review']);
+            Route::post('/{itemId}/upload-translation',   [ChecklistController::class, 'uploadTranslation']);
+            Route::patch('/{itemId}/approve-translation',  [ChecklistController::class, 'approveTranslation']);
             Route::delete('/{itemId}',             [ChecklistController::class, 'destroy']);
         });
 

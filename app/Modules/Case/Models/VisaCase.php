@@ -102,13 +102,31 @@ class VisaCase extends BaseModel
         'appointment_time',
         'appointment_location',
         'notes',
+        'submitted_at',
+        'expected_result_date',
+        'result_type',
+        'result_notes',
+        'visa_issued_at',
+        'visa_received_at',
+        'visa_validity',
+        'rejection_reason',
+        'can_reapply',
+        'reapply_recommendation',
+        'previous_case_id',
+        'last_manager_update_at',
     ];
 
     protected $casts = [
-        'critical_date'    => 'date',
-        'travel_date'      => 'date',
-        'return_date'      => 'date',
-        'appointment_date' => 'date',
+        'critical_date'        => 'date',
+        'travel_date'          => 'date',
+        'return_date'          => 'date',
+        'appointment_date'     => 'date',
+        'submitted_at'         => 'datetime',
+        'expected_result_date' => 'date',
+        'visa_issued_at'       => 'date',
+        'visa_received_at'     => 'date',
+        'can_reapply'          => 'boolean',
+        'last_manager_update_at' => 'datetime',
     ];
 
     public function agency(): BelongsTo

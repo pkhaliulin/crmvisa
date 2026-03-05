@@ -169,22 +169,107 @@ class ChecklistService
     }
 
     /**
-     * Менеджер: одобрить / отклонить документ в слоте.
+     * Менеджер: проверить документ — одобрить / отклонить / на перевод.
+     * review_status: approved | rejected | needs_translation
      */
-    public function reviewSlot(CaseChecklist $item, string $status, ?string $notes = null): CaseChecklist
+    public function reviewSlot(CaseChecklist $item, string $reviewStatus, ?string $notes = null, ?int $translationPages = null): CaseChecklist
     {
-        $item->update(['status' => $status, 'notes' => $notes]);
+        $updateData = [
+            'review_status' => $reviewStatus,
+            'review_notes'  => $notes,
+            'reviewed_by'   => Auth::id(),
+            'reviewed_at'   => now(),
+        ];
 
-        // Синхронизируем статус самого документа
+        // Маппинг review_status → status
+        $statusMap = [
+            'approved'          => 'approved',
+            'rejected'          => 'rejected',
+            'needs_translation' => 'needs_translation',
+        ];
+        $updateData['status'] = $statusMap[$reviewStatus] ?? $item->status;
+        $updateData['notes']  = $notes;
+
+        if ($reviewStatus === 'needs_translation' && $translationPages) {
+            $updateData['translation_pages'] = $translationPages;
+            // Расчёт стоимости перевода из настроек агентства
+            $case = \App\Modules\Case\Models\VisaCase::find($item->case_id);
+            if ($case?->agency_id) {
+                $pricePerPage = DB::table('agencies')
+                    ->where('id', $case->agency_id)
+                    ->value('translation_price_per_page');
+                if ($pricePerPage) {
+                    $updateData['translation_price'] = $pricePerPage * $translationPages;
+                }
+            }
+        }
+
+        if ($reviewStatus === 'rejected') {
+            // Сброс загруженного файла — клиент должен перезагрузить
+            $updateData['document_id'] = null;
+        }
+
+        $item->update($updateData);
+
+        // Синхронизируем статус документа
         if ($item->document_id) {
-            $docStatus = match ($status) {
-                'approved' => 'approved',
+            $docStatus = match ($reviewStatus) {
+                'approved', 'needs_translation' => 'approved',
                 'rejected' => 'rejected',
                 default    => 'pending',
             };
             Document::where('id', $item->document_id)->update(['status' => $docStatus]);
         }
 
+        return $item->fresh(['document']);
+    }
+
+    /**
+     * Переводчик/менеджер: загрузить перевод документа.
+     */
+    public function uploadTranslation(CaseChecklist $item, \Illuminate\Http\UploadedFile $file, \App\Modules\Case\Models\VisaCase $case): CaseChecklist
+    {
+        return DB::transaction(function () use ($item, $file, $case) {
+            // Удалить старый перевод если был
+            if ($item->translation_document_id) {
+                $old = Document::find($item->translation_document_id);
+                if ($old) {
+                    Storage::disk('public')->delete($old->file_path);
+                    $old->forceDelete();
+                }
+            }
+
+            $path = $file->store("agencies/{$case->agency_id}/cases/{$case->id}/translations", 'public');
+
+            $document = Document::create([
+                'agency_id'     => $case->agency_id,
+                'case_id'       => $case->id,
+                'client_id'     => $case->client_id,
+                'uploaded_by'   => Auth::id(),
+                'type'          => 'translation_' . $item->name,
+                'original_name' => $file->getClientOriginalName(),
+                'file_path'     => $path,
+                'mime_type'     => $file->getMimeType(),
+                'size'          => $file->getSize(),
+            ]);
+
+            $item->update([
+                'translation_document_id' => $document->id,
+                'translated_by'           => Auth::id(),
+                'translated_at'           => now(),
+                'status'                  => 'translated',
+            ]);
+
+            return $item->fresh(['document']);
+        });
+    }
+
+    /**
+     * Менеджер: одобрить перевод.
+     */
+    public function approveTranslation(CaseChecklist $item): CaseChecklist
+    {
+        $item->update(['status' => 'translation_approved']);
         return $item->fresh(['document']);
     }
 

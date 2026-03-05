@@ -243,7 +243,7 @@ class CaseService extends BaseService
     {
         $map = [
             'lead'          => 'submitted',
-            'qualification' => 'submitted',
+            'qualification' => 'manager_assigned',
             'documents'     => 'document_collection',
             'doc_review'    => 'document_collection',
             'translation'   => 'translation',
@@ -253,5 +253,135 @@ class CaseService extends BaseService
         ];
 
         return $map[$stage] ?? null;
+    }
+
+    /**
+     * Проверить автопереход после загрузки документа.
+     * Все обязательные документы загружены → documents → doc_review.
+     */
+    public function checkAutoTransitionAfterUpload(VisaCase $case): bool
+    {
+        if ($case->stage !== 'documents') {
+            return false;
+        }
+
+        $checklist = DB::table('case_checklist')
+            ->where('case_id', $case->id)
+            ->whereNull('deleted_at')
+            ->get(['is_required', 'status']);
+
+        $allRequiredUploaded = $checklist
+            ->where('is_required', true)
+            ->every(fn ($item) => in_array($item->status, ['uploaded', 'approved', 'needs_translation']));
+
+        if ($allRequiredUploaded && $checklist->where('is_required', true)->count() > 0) {
+            $this->moveToStageSystem($case, 'doc_review', 'Все обязательные документы загружены');
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Проверить автопереход после проверки документа менеджером.
+     * Все документы проверены → doc_review → translation (если нужен) или ready.
+     */
+    public function checkAutoTransitionAfterReview(VisaCase $case): bool
+    {
+        if ($case->stage !== 'doc_review') {
+            return false;
+        }
+
+        $checklist = DB::table('case_checklist')
+            ->where('case_id', $case->id)
+            ->whereNull('deleted_at')
+            ->where('is_required', true)
+            ->get(['status', 'review_status']);
+
+        // Есть отклонённые → возвращаем в documents
+        if ($checklist->contains('review_status', 'rejected')) {
+            $this->moveToStageSystem($case, 'documents', 'Есть отклонённые документы — требуется перезагрузка');
+            return true;
+        }
+
+        // Все проверены (approved или needs_translation)?
+        $allReviewed = $checklist->every(fn ($item) =>
+            in_array($item->review_status, ['approved', 'needs_translation'])
+        );
+
+        if (! $allReviewed) {
+            return false;
+        }
+
+        // Есть документы на перевод?
+        $needsTranslation = $checklist->contains('review_status', 'needs_translation');
+
+        if ($needsTranslation) {
+            $this->moveToStageSystem($case, 'translation', 'Документы проверены, требуется перевод');
+        } else {
+            $this->moveToStageSystem($case, 'ready', 'Все документы одобрены, перевод не требуется');
+        }
+
+        return true;
+    }
+
+    /**
+     * Проверить автопереход после завершения перевода.
+     * Все переводы готовы и проверены → translation → ready.
+     */
+    public function checkAutoTransitionAfterTranslation(VisaCase $case): bool
+    {
+        if ($case->stage !== 'translation') {
+            return false;
+        }
+
+        $needTranslation = DB::table('case_checklist')
+            ->where('case_id', $case->id)
+            ->whereNull('deleted_at')
+            ->where('review_status', 'needs_translation')
+            ->get(['status']);
+
+        $allTranslated = $needTranslation->every(fn ($item) =>
+            $item->status === 'translation_approved'
+        );
+
+        if ($allTranslated && $needTranslation->count() > 0) {
+            $this->moveToStageSystem($case, 'ready', 'Все переводы проверены и одобрены');
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Завершить заявку с результатом.
+     */
+    public function completeCase(VisaCase $case, string $resultType, array $data): VisaCase
+    {
+        return DB::transaction(function () use ($case, $resultType, $data) {
+            $updateData = [
+                'result_type'  => $resultType,
+                'result_notes' => $data['result_notes'] ?? null,
+            ];
+
+            if ($resultType === 'approved') {
+                $updateData['public_status']      = 'completed';
+                $updateData['visa_issued_at']      = $data['visa_issued_at'] ?? null;
+                $updateData['visa_received_at']    = $data['visa_received_at'] ?? null;
+                $updateData['visa_validity']        = $data['visa_validity'] ?? null;
+            } else {
+                $updateData['public_status']            = 'rejected';
+                $updateData['rejection_reason']          = $data['rejection_reason'] ?? null;
+                $updateData['can_reapply']               = $data['can_reapply'] ?? null;
+                $updateData['reapply_recommendation']    = $data['reapply_recommendation'] ?? null;
+            }
+
+            $case->update($updateData);
+
+            // Переход на этап result
+            $this->moveToStage($case->fresh(), 'result', "Результат: {$resultType}");
+
+            return $case->fresh(['client', 'assignee', 'stageHistory']);
+        });
     }
 }
