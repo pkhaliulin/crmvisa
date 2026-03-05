@@ -314,24 +314,28 @@ const TOP_COUNTRIES = [
 const statusSummary = ref({ activeCases: 0, docsNeeded: 0, awaitingResult: 0, unpaidCases: 0, unpaidCaseId: null });
 
 async function loadStatusSummary() {
+    // Загружаем заявки и биллинг отдельно, чтобы ошибка одного не ломала другой
+    let cases = [];
+    let unpaidCount = 0;
+
     try {
-        const [casesRes, billingRes] = await Promise.all([
-            publicPortalApi.cases(),
-            publicPortalApi.billingHistory(),
-        ]);
-        const cases = casesRes?.data?.data ?? [];
+        const casesRes = await publicPortalApi.cases();
+        cases = casesRes?.data?.data ?? [];
+    } catch { /* ignore */ }
+
+    try {
+        const billingRes = await publicPortalApi.billingHistory();
         const payments = billingRes?.data?.data?.payments ?? [];
-        const unpaidPayments = payments.filter(p => p.status === 'pending');
-        statusSummary.value = {
-            activeCases: cases.filter(c => c.stage !== 'result').length,
-            docsNeeded: cases.filter(c => c.stage === 'documents').length,
-            awaitingResult: cases.filter(c => c.stage === 'review').length,
-            unpaidCases: unpaidPayments.length,
-            unpaidCaseId: null,
-        };
-    } catch {
-        // ignore
-    }
+        unpaidCount = payments.filter(p => p.status === 'pending').length;
+    } catch { /* ignore */ }
+
+    statusSummary.value = {
+        activeCases: cases.filter(c => c.stage !== 'result').length,
+        docsNeeded: cases.filter(c => c.stage === 'documents').length,
+        awaitingResult: cases.filter(c => c.stage === 'review').length,
+        unpaidCases: unpaidCount,
+        unpaidCaseId: null,
+    };
 }
 
 function closeNewCase() {

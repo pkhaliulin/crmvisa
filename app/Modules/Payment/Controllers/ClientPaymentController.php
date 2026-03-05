@@ -164,13 +164,17 @@ class ClientPaymentController extends Controller
             // Члены семьи из case
             $familyMembers = [];
             if ($p->case_id) {
-                $familyMembers = \DB::table('case_family_members')
-                    ->join('family_members', 'case_family_members.family_member_id', '=', 'family_members.id')
-                    ->where('case_family_members.case_id', $p->case_id)
-                    ->select('family_members.name', 'family_members.relationship')
-                    ->get()
-                    ->map(fn ($fm) => ['name' => $fm->name, 'relationship' => $fm->relationship])
-                    ->toArray();
+                try {
+                    $familyMembers = \DB::table('case_family_members')
+                        ->join('public_user_family_members', 'case_family_members.family_member_id', '=', 'public_user_family_members.id')
+                        ->where('case_family_members.case_id', $p->case_id)
+                        ->select('public_user_family_members.name', 'public_user_family_members.relationship')
+                        ->get()
+                        ->map(fn ($fm) => ['name' => $fm->name, 'relationship' => $fm->relationship])
+                        ->toArray();
+                } catch (\Throwable) {
+                    $familyMembers = [];
+                }
             }
 
             // Группа
