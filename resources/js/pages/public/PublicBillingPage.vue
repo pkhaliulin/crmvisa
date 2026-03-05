@@ -138,16 +138,18 @@
                     </div>
 
                     <!-- Обратный отсчёт: крайний срок -->
-                    <div v-if="p.status === 'pending' && p.critical_date && daysLeft(p.critical_date) >= 0"
+                    <div v-if="p.status === 'pending' && p.critical_date"
                         class="rounded-xl overflow-hidden"
-                        :class="daysLeft(p.critical_date) <= 7
-                            ? 'bg-red-50 border border-red-200'
-                            : daysLeft(p.critical_date) <= 21
-                                ? 'bg-amber-50 border border-amber-200'
-                                : 'bg-orange-50 border border-orange-200'">
+                        :class="daysLeft(p.critical_date) <= 0
+                            ? 'bg-red-50 border-2 border-red-300'
+                            : daysLeft(p.critical_date) <= 7
+                                ? 'bg-red-50 border border-red-200'
+                                : daysLeft(p.critical_date) <= 21
+                                    ? 'bg-amber-50 border border-amber-200'
+                                    : 'bg-orange-50 border border-orange-200'">
                         <div class="px-4 py-3 flex items-start gap-3">
                             <div class="shrink-0 mt-0.5">
-                                <svg class="w-5 h-5 animate-pulse" :class="daysLeft(p.critical_date) <= 7 ? 'text-red-500' : 'text-amber-500'"
+                                <svg class="w-5 h-5 animate-pulse" :class="daysLeft(p.critical_date) <= 7 ? 'text-red-500' : daysLeft(p.critical_date) <= 21 ? 'text-amber-500' : 'text-orange-500'"
                                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round"
                                         d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
@@ -155,25 +157,28 @@
                             </div>
                             <div class="flex-1 min-w-0">
                                 <div class="text-xs font-bold uppercase tracking-wider"
-                                    :class="daysLeft(p.critical_date) <= 7 ? 'text-red-600' : 'text-amber-600'">
-                                    {{ $t('billing.urgentTitle') }}
+                                    :class="daysLeft(p.critical_date) <= 7 ? 'text-red-600' : daysLeft(p.critical_date) <= 21 ? 'text-amber-600' : 'text-orange-600'">
+                                    {{ daysLeft(p.critical_date) <= 0 ? $t('billing.overdue') : $t('billing.urgentTitle') }}
                                 </div>
                                 <div class="text-sm font-semibold mt-1"
-                                    :class="daysLeft(p.critical_date) <= 7 ? 'text-red-800' : 'text-amber-800'">
-                                    {{ $t('billing.deadlineWarning', { days: daysLeft(p.critical_date), date: formatDeadline(p.critical_date) }) }}
+                                    :class="daysLeft(p.critical_date) <= 7 ? 'text-red-800' : daysLeft(p.critical_date) <= 21 ? 'text-amber-800' : 'text-orange-800'">
+                                    {{ daysLeft(p.critical_date) <= 0
+                                        ? $t('billing.overdueWarning', { date: formatDeadline(p.critical_date) })
+                                        : $t('billing.deadlineWarning', { days: daysLeft(p.critical_date), date: formatDeadline(p.critical_date) })
+                                    }}
                                 </div>
                                 <div class="text-xs mt-1"
-                                    :class="daysLeft(p.critical_date) <= 7 ? 'text-red-600' : 'text-amber-600'">
+                                    :class="daysLeft(p.critical_date) <= 7 ? 'text-red-600' : daysLeft(p.critical_date) <= 21 ? 'text-amber-600' : 'text-orange-600'">
                                     {{ $t('billing.payToStart') }}
                                 </div>
                             </div>
                             <div class="text-right shrink-0">
                                 <div class="text-2xl font-black"
-                                    :class="daysLeft(p.critical_date) <= 7 ? 'text-red-600' : 'text-amber-600'">
-                                    {{ daysLeft(p.critical_date) }}
+                                    :class="daysLeft(p.critical_date) <= 7 ? 'text-red-600' : daysLeft(p.critical_date) <= 21 ? 'text-amber-600' : 'text-orange-600'">
+                                    {{ Math.max(0, daysLeft(p.critical_date)) }}
                                 </div>
                                 <div class="text-[10px] font-bold uppercase"
-                                    :class="daysLeft(p.critical_date) <= 7 ? 'text-red-400' : 'text-amber-400'">
+                                    :class="daysLeft(p.critical_date) <= 7 ? 'text-red-400' : daysLeft(p.critical_date) <= 21 ? 'text-amber-400' : 'text-orange-400'">
                                     {{ $t('billing.daysShort') }}
                                 </div>
                             </div>

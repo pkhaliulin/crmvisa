@@ -1020,6 +1020,8 @@
     "deadlineWarning": "Hujjatlarni topshirish muddati: {date} ({days} kun qoldi). Vaqt kamaymoqda!",
     "payToStart": "Menejer faqat to'lovdan keyin ishni boshlaydi. Kechiktirmang — har bir kun muhim!",
     "daysShort": "kun",
+    "overdue": "Muddat o'tdi!",
+    "overdueWarning": "Hujjatlarni topshirish muddati ({date}) allaqachon o'tdi! Menejer ishni boshlashi uchun darhol to'lang.",
     "executor": "Ijrochi",
     "invoiceDate": "Chiqarilgan sana",
     "qty": "Soni",

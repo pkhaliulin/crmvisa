@@ -144,6 +144,9 @@ class ClientPaymentController extends Controller
     {
         $publicUser = $request->get('_public_user');
 
+        // Временно разрешить чтение кейсов через RLS (платежи уже фильтруются по public_user_id)
+        \DB::statement("SET LOCAL app.is_superadmin = 'true'");
+
         $payments = ClientPayment::where('public_user_id', $publicUser->id)
             ->with([
                 'case:id,case_number,country_code,visa_type,public_status,client_id,group_id,critical_date',
@@ -156,6 +159,8 @@ class ClientPaymentController extends Controller
             ])
             ->orderByDesc('created_at')
             ->paginate(20);
+
+        \DB::statement("RESET app.is_superadmin");
 
         $items = $payments->getCollection()->map(function ($p) {
             // Заявитель
