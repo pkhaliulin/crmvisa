@@ -34,7 +34,7 @@
                             {{ $t('common.profilePercent', { percent: publicAuth.profilePercent }) }}
                         </div>
                     </div>
-                    <router-link to="/me/profile"
+                    <router-link to="/me/cases"
                         class="px-4 py-2 bg-[#1BA97F] text-white text-sm font-semibold rounded-lg hover:bg-[#169B72] transition-colors">
                         {{ $t('common.myAccount') }}
                     </router-link>
@@ -104,7 +104,7 @@
                 </div>
                 <div class="pt-2 flex flex-col gap-2">
                     <template v-if="publicAuth.isLoggedIn">
-                        <router-link to="/me/profile" @click="mobileOpen=false"
+                        <router-link to="/me/cases" @click="mobileOpen=false"
                             class="block py-3 px-4 bg-[#1BA97F] text-white text-sm font-semibold
                                    rounded-xl text-center">
                             {{ $t('common.myAccount') }}

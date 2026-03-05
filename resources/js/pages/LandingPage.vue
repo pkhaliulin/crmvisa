@@ -473,7 +473,7 @@ function onAuthSuccess() {
     } else if (selectedCountry.value?.code) {
         router.push({ name: 'me.scoring', query: { country: selectedCountry.value.code } });
     } else {
-        router.push({ name: 'me.profile' });
+        router.push({ name: 'me.cases' });
     }
 }
 </script>
