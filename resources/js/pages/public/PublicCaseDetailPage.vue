@@ -160,73 +160,51 @@
 
                 <!-- Даты -->
                 <div class="grid grid-cols-2 gap-3 mt-4">
-                    <!-- Дата поездки (туда) -->
+                    <!-- Дата вылета (туда) -->
                     <div class="p-3 rounded-xl bg-gray-50">
-                        <div class="text-xs text-gray-400 mb-0.5">{{ $t('cases.departureDateLabel') }}</div>
-                        <div v-if="!editingTravelDate && caseData.travel_date" class="flex items-center gap-2">
-                            <span class="text-sm font-semibold text-[#0A1F44]">{{ formatDate(caseData.travel_date) }}</span>
-                            <button @click="startEditTravelDate" class="text-gray-400 hover:text-[#1BA97F] transition-colors">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
-                                </svg>
-                            </button>
+                        <div class="flex items-center gap-1.5 text-xs text-gray-400 mb-1">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M5 17h14M3.5 13.5L12 5l8.5 8.5"/>
+                            </svg>
+                            {{ $t('cases.departureDateLabel') }}
                         </div>
-                        <div v-else-if="editingTravelDate" class="flex items-center gap-2">
-                            <input type="date" v-model="travelDateInput"
-                                class="text-sm border border-gray-200 rounded-lg px-2 py-1 w-full outline-none focus:border-[#1BA97F]"/>
-                            <button @click="saveTravelDates" :disabled="savingTravelDate"
-                                class="text-[#1BA97F] hover:text-[#0d7a5c] transition-colors shrink-0">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-                                </svg>
-                            </button>
-                            <button @click="editingTravelDate = false" class="text-gray-400 hover:text-red-500 transition-colors shrink-0">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
-                                </svg>
-                            </button>
-                        </div>
-                        <div v-else>
-                            <button @click="startEditTravelDate" class="text-sm text-[#1BA97F] hover:text-[#0d7a5c] font-medium transition-colors">
-                                + {{ $t('cases.setTravelDate') }}
-                            </button>
-                        </div>
+                        <input type="date" :value="caseData.travel_date || ''" @change="onTravelDateChange($event)"
+                            :min="todayStr"
+                            :disabled="savingTravelDate"
+                            class="text-sm border rounded-lg px-2 py-1.5 w-full outline-none transition-colors cursor-pointer"
+                            :class="savingTravelDate ? 'border-gray-100 bg-gray-100 text-gray-400' : 'border-gray-200 focus:border-[#1BA97F] hover:border-[#1BA97F]'"/>
+                        <div v-if="savingTravelDate" class="text-[10px] text-[#1BA97F] mt-1">{{ $t('common.saving') }}...</div>
                     </div>
-                    <!-- Дата возвращения (обратно) -->
+                    <!-- Дата возврата (обратно) -->
                     <div class="p-3 rounded-xl bg-gray-50">
-                        <div class="text-xs text-gray-400 mb-0.5">{{ $t('cases.returnDateLabel') }}</div>
-                        <div v-if="!editingReturnDate && caseData.return_date" class="flex items-center gap-2">
-                            <span class="text-sm font-semibold text-[#0A1F44]">{{ formatDate(caseData.return_date) }}</span>
-                            <button @click="startEditReturnDate" class="text-gray-400 hover:text-[#1BA97F] transition-colors">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
-                                </svg>
-                            </button>
+                        <div class="flex items-center gap-1.5 text-xs text-gray-400 mb-1">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M5 7h14M3.5 10.5L12 19l8.5-8.5"/>
+                            </svg>
+                            {{ $t('cases.returnDateLabel') }}
                         </div>
-                        <div v-else-if="editingReturnDate" class="flex items-center gap-2">
-                            <input type="date" v-model="returnDateInput"
-                                class="text-sm border border-gray-200 rounded-lg px-2 py-1 w-full outline-none focus:border-[#1BA97F]"/>
-                            <button @click="saveReturnDate" :disabled="savingReturnDate"
-                                class="text-[#1BA97F] hover:text-[#0d7a5c] transition-colors shrink-0">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-                                </svg>
-                            </button>
-                            <button @click="editingReturnDate = false" class="text-gray-400 hover:text-red-500 transition-colors shrink-0">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
-                                </svg>
-                            </button>
-                        </div>
-                        <div v-else>
-                            <button @click="startEditReturnDate" class="text-sm text-[#1BA97F] hover:text-[#0d7a5c] font-medium transition-colors">
-                                + {{ $t('cases.setReturnDate') }}
-                            </button>
-                        </div>
+                        <input type="date" :value="caseData.return_date || ''" @change="onReturnDateChange($event)"
+                            :min="returnDateMin"
+                            :disabled="savingReturnDate || !caseData.travel_date"
+                            class="text-sm border rounded-lg px-2 py-1.5 w-full outline-none transition-colors cursor-pointer"
+                            :class="savingReturnDate ? 'border-gray-100 bg-gray-100 text-gray-400' : !caseData.travel_date ? 'border-gray-100 bg-gray-100 text-gray-300' : 'border-gray-200 focus:border-[#1BA97F] hover:border-[#1BA97F]'"/>
+                        <div v-if="savingReturnDate" class="text-[10px] text-[#1BA97F] mt-1">{{ $t('common.saving') }}...</div>
+                        <div v-else-if="!caseData.travel_date" class="text-[10px] text-gray-300 mt-1">{{ $t('cases.setDepartureFirst') }}</div>
+                        <div v-else-if="tripDaysWarning" class="text-[10px] text-amber-600 mt-1">{{ tripDaysWarning }}</div>
                     </div>
                     <div class="p-3 rounded-xl bg-gray-50">
                         <div class="text-xs text-gray-400 mb-0.5">{{ $t('cases.created') }}</div>
                         <div class="text-sm font-semibold text-[#0A1F44]">{{ formatDate(caseData.created_at) }}</div>
+                    </div>
+                    <!-- Срок пребывания -->
+                    <div v-if="caseData.travel_date && caseData.return_date" class="p-3 rounded-xl bg-gray-50">
+                        <div class="text-xs text-gray-400 mb-0.5">{{ $t('cases.tripDuration') }}</div>
+                        <div class="text-sm font-semibold" :class="tripDaysOverLimit ? 'text-red-600' : 'text-[#0A1F44]'">
+                            {{ tripDays }} {{ $t('common.days') }}
+                            <span v-if="caseData.max_stay_days" class="text-xs font-normal text-gray-400">
+                                / {{ $t('cases.maxStayDays', { days: caseData.max_stay_days }) }}
+                            </span>
+                        </div>
                     </div>
                 </div>
 
@@ -984,25 +962,48 @@ const PAYMENT_PROVIDERS = [
 const showChangeAgencyModal = ref(false);
 const changingAgency = ref(false);
 
-// --- Travel date edit ---
-const editingTravelDate = ref(false);
-const travelDateInput = ref('');
+// --- Travel date ---
 const savingTravelDate = ref(false);
+const savingReturnDate = ref(false);
+const todayStr = new Date().toISOString().slice(0, 10);
 
-function startEditTravelDate() {
-    travelDateInput.value = caseData.value?.travel_date ?? '';
-    editingTravelDate.value = true;
-}
+const returnDateMin = computed(() => {
+    return caseData.value?.travel_date || todayStr;
+});
 
-async function saveTravelDates() {
+const tripDays = computed(() => {
+    const d = caseData.value;
+    if (!d?.travel_date || !d?.return_date) return 0;
+    const ms = new Date(d.return_date) - new Date(d.travel_date);
+    return Math.max(0, Math.round(ms / 86400000));
+});
+
+const tripDaysOverLimit = computed(() => {
+    const max = caseData.value?.max_stay_days;
+    return max && tripDays.value > max;
+});
+
+const tripDaysWarning = computed(() => {
+    if (tripDaysOverLimit.value) {
+        return t('cases.tripExceedsMax', { days: caseData.value.max_stay_days });
+    }
+    return '';
+});
+
+async function onTravelDateChange(e) {
+    const val = e.target.value || null;
     savingTravelDate.value = true;
     try {
-        const res = await publicPortalApi.updateCase(route.params.id, { travel_date: travelDateInput.value || null });
+        const res = await publicPortalApi.updateCase(route.params.id, { travel_date: val });
         const d = res.data?.data ?? {};
-        caseData.value.travel_date = d.travel_date ?? travelDateInput.value ?? null;
+        caseData.value.travel_date = d.travel_date ?? val;
         caseData.value.critical_date = d.critical_date ?? caseData.value.critical_date;
         if (d.deadline_info) caseData.value.deadline_info = d.deadline_info;
-        editingTravelDate.value = false;
+        // Если дата возврата раньше новой даты вылета — сбросить
+        if (caseData.value.return_date && val && caseData.value.return_date < val) {
+            await publicPortalApi.updateCase(route.params.id, { return_date: null });
+            caseData.value.return_date = null;
+        }
     } catch (e) {
         alert(e?.response?.data?.message ?? t('common.error'));
     } finally {
@@ -1010,22 +1011,12 @@ async function saveTravelDates() {
     }
 }
 
-// --- Return date edit ---
-const editingReturnDate = ref(false);
-const returnDateInput = ref('');
-const savingReturnDate = ref(false);
-
-function startEditReturnDate() {
-    returnDateInput.value = caseData.value?.return_date ?? '';
-    editingReturnDate.value = true;
-}
-
-async function saveReturnDate() {
+async function onReturnDateChange(e) {
+    const val = e.target.value || null;
     savingReturnDate.value = true;
     try {
-        await publicPortalApi.updateCase(route.params.id, { return_date: returnDateInput.value || null });
-        caseData.value.return_date = returnDateInput.value || null;
-        editingReturnDate.value = false;
+        await publicPortalApi.updateCase(route.params.id, { return_date: val });
+        caseData.value.return_date = val;
     } catch (e) {
         alert(e?.response?.data?.message ?? t('common.error'));
     } finally {

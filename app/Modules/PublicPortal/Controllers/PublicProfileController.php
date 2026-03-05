@@ -280,6 +280,10 @@ class PublicProfileController extends Controller
             'appointment_location' => $case->appointment_location,
             'group_id'             => $case->group_id,
             'notes'                => $case->notes,
+            'max_stay_days'        => \DB::table('country_visa_type_settings')
+                ->where('country_code', $case->country_code)
+                ->where('visa_type', $case->visa_type)
+                ->value('max_stay_days'),
             'deadline_info'        => VisaCase::deadlineExplanation($case->country_code, $case->visa_type),
             'created_at'           => $case->created_at->toDateString(),
             'agency'               => $case->agency ? [
