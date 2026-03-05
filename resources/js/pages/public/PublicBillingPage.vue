@@ -42,158 +42,182 @@
             </div>
 
             <!-- Карточки счетов -->
-            <div v-for="p in payments" :key="p.id"
+            <div v-for="(p, idx) in payments" :key="p.id"
                 class="bg-white rounded-2xl border shadow-sm overflow-hidden"
                 :class="p.status === 'pending' ? 'border-amber-200' : 'border-gray-100'">
 
                 <!-- Шапка счета -->
                 <div class="px-5 py-3 flex items-center justify-between"
-                    :class="p.status === 'succeeded' ? 'bg-[#1BA97F]/5' : p.status === 'pending' ? 'bg-amber-50' : 'bg-gray-50'">
+                    :class="p.status === 'succeeded' ? 'bg-[#1BA97F]/5' : p.status === 'pending' ? 'bg-[#0A1F44]' : 'bg-gray-50'">
                     <div class="flex items-center gap-2">
-                        <svg class="w-4 h-4 shrink-0" :class="p.status === 'succeeded' ? 'text-[#1BA97F]' : p.status === 'pending' ? 'text-amber-500' : 'text-gray-400'"
+                        <svg class="w-4 h-4 shrink-0" :class="p.status === 'succeeded' ? 'text-[#1BA97F]' : p.status === 'pending' ? 'text-white/60' : 'text-gray-400'"
                             fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                         </svg>
-                        <span class="text-xs font-semibold text-[#0A1F44]">
+                        <span class="text-xs font-semibold" :class="p.status === 'pending' ? 'text-white' : 'text-[#0A1F44]'">
                             {{ $t('billing.invoiceNum', { num: invoiceNum(p) }) }}
                         </span>
                     </div>
-                    <span class="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full"
-                        :class="paymentStatusBadge(p.status)">
-                        {{ paymentStatusLabel(p.status) }}
-                    </span>
+                    <div class="flex items-center gap-3">
+                        <router-link v-if="p.case_id"
+                            :to="{ name: 'me.cases.show', params: { id: p.case_id } }"
+                            class="text-[10px] font-medium underline underline-offset-2 transition-colors"
+                            :class="p.status === 'pending' ? 'text-white/70 hover:text-white' : 'text-gray-400 hover:text-[#0A1F44]'">
+                            {{ $t('billing.viewCase') }}
+                        </router-link>
+                        <span class="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full"
+                            :class="paymentStatusBadge(p.status)">
+                            {{ paymentStatusLabel(p.status) }}
+                        </span>
+                    </div>
                 </div>
 
                 <div class="p-5 space-y-4">
-                    <!-- Страна + виза + агентство -->
-                    <div class="flex items-start gap-3">
-                        <span class="text-2xl shrink-0">{{ codeToFlag(p.country_code) }}</span>
-                        <div class="flex-1 min-w-0">
-                            <div class="text-sm font-bold text-[#0A1F44]">
-                                {{ countryName(p.country_code) }} — {{ visaTypeLabel(p.visa_type) }}
-                            </div>
-                            <div class="text-xs text-gray-400 mt-0.5">
-                                {{ p.agency_name }}<span v-if="p.agency_city">, {{ p.agency_city }}</span>
-                            </div>
-                            <div v-if="p.case_number" class="text-[10px] font-mono text-gray-400 mt-0.5">
-                                {{ $t('billing.caseNum') }} {{ p.case_number }}
-                            </div>
+                    <!-- Исполнитель + дата -->
+                    <div class="flex items-start justify-between text-xs text-gray-400">
+                        <div>
+                            <div class="text-[10px] font-bold uppercase tracking-wider mb-0.5">{{ $t('billing.executor') }}</div>
+                            <div class="text-sm font-semibold text-[#0A1F44]">{{ p.agency_name }}</div>
+                            <div v-if="p.agency_city">{{ p.agency_city }}</div>
                         </div>
-                        <div class="text-right shrink-0">
-                            <div class="text-lg font-bold" :class="p.status === 'succeeded' ? 'text-[#1BA97F]' : 'text-[#0A1F44]'">
+                        <div class="text-right">
+                            <div class="text-[10px] font-bold uppercase tracking-wider mb-0.5">{{ $t('billing.invoiceDate') }}</div>
+                            <div class="text-sm font-semibold text-[#0A1F44]">{{ formatDateTime(p.created_at) }}</div>
+                            <div v-if="p.case_number" class="font-mono mt-0.5">{{ $t('billing.caseNum') }} {{ p.case_number }}</div>
+                        </div>
+                    </div>
+
+                    <!-- Таблица услуг -->
+                    <div class="border border-gray-100 rounded-xl overflow-hidden">
+                        <!-- Заголовок таблицы -->
+                        <div class="grid grid-cols-12 gap-2 px-4 py-2 bg-gray-50 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                            <div class="col-span-7">{{ $t('billing.service') }}</div>
+                            <div class="col-span-2 text-center">{{ $t('billing.qty') }}</div>
+                            <div class="col-span-3 text-right">{{ $t('billing.sum') }}</div>
+                        </div>
+                        <!-- Строка услуги -->
+                        <div class="grid grid-cols-12 gap-2 px-4 py-3 items-start">
+                            <div class="col-span-7">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-lg">{{ codeToFlag(p.country_code) }}</span>
+                                    <div>
+                                        <div class="text-sm font-semibold text-[#0A1F44]">
+                                            {{ p.package_name || (visaTypeLabel(p.visa_type) + ' — ' + (p.country_code || '')) }}
+                                        </div>
+                                        <div v-if="p.package_desc" class="text-[11px] text-gray-400 mt-0.5 leading-tight">{{ p.package_desc }}</div>
+                                        <div v-if="p.package_days" class="text-[10px] text-gray-400 mt-0.5">
+                                            {{ $t('payment.processingDays', { days: p.package_days }) }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-span-2 text-center text-sm text-gray-600 self-center">{{ p.total_persons || 1 }}</div>
+                            <div class="col-span-3 text-right text-sm font-bold text-[#0A1F44] self-center">
                                 {{ formatPrice(p.amount, p.currency) }}
                             </div>
                         </div>
                     </div>
 
-                    <!-- Детали пакета -->
-                    <div v-if="p.package_name" class="border border-gray-100 rounded-xl overflow-hidden">
-                        <div class="bg-gray-50 px-4 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                            {{ $t('billing.serviceDetails') }}
-                        </div>
-                        <div class="px-4 py-3">
-                            <div class="text-sm font-semibold text-[#0A1F44]">{{ p.package_name }}</div>
-                            <div v-if="p.package_desc" class="text-xs text-gray-400 mt-0.5">{{ p.package_desc }}</div>
-                            <div v-if="p.package_days" class="text-[10px] text-gray-400 mt-1">
-                                {{ $t('payment.processingDays', { days: p.package_days }) }}
-                            </div>
-                        </div>
-                        <!-- Услуги -->
-                        <div v-if="p.services?.length" class="px-4 pb-3">
-                            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">{{ $t('payment.includedServices') }}</div>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-1">
-                                <div v-for="(s, si) in p.services" :key="si"
-                                    class="flex items-center gap-1.5 text-xs text-[#0A1F44]">
-                                    <svg class="w-3 h-3 text-[#1BA97F] shrink-0" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-                                    </svg>
-                                    {{ s.name }}
-                                </div>
+                    <!-- Что включено -->
+                    <div v-if="p.services?.length" class="space-y-1.5">
+                        <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{{ $t('payment.includedServices') }}</div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-1">
+                            <div v-for="(s, si) in p.services" :key="si"
+                                class="flex items-center gap-1.5 text-xs text-[#0A1F44]">
+                                <svg class="w-3 h-3 text-[#1BA97F] shrink-0" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                {{ s.name }}
                             </div>
                         </div>
                     </div>
 
-                    <!-- Участники -->
-                    <div v-if="p.applicant_name || p.family_members?.length || p.group_members?.length"
-                        class="border border-gray-100 rounded-xl overflow-hidden">
-                        <div class="bg-gray-50 px-4 py-2 flex items-center justify-between">
-                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{{ $t('billing.participants') }}</span>
-                            <span class="text-[10px] font-bold text-[#0A1F44] bg-[#0A1F44]/5 px-2 py-0.5 rounded-full">
-                                {{ p.total_persons }} {{ $t('billing.persons', p.total_persons) }}
-                            </span>
-                        </div>
-                        <div class="px-4 py-3 space-y-2">
-                            <!-- Заявитель -->
-                            <div v-if="p.applicant_name" class="flex items-center gap-2">
-                                <div class="w-6 h-6 rounded-full bg-[#0A1F44] flex items-center justify-center text-white text-[10px] font-bold shrink-0">
-                                    {{ p.applicant_name[0]?.toUpperCase() }}
-                                </div>
-                                <div class="min-w-0">
-                                    <div class="text-xs font-semibold text-[#0A1F44] truncate">{{ p.applicant_name }}</div>
-                                    <div class="text-[10px] text-gray-400">{{ $t('billing.applicant') }}</div>
-                                </div>
-                            </div>
-                            <!-- Члены семьи -->
-                            <div v-for="(fm, fi) in p.family_members" :key="'fm'+fi" class="flex items-center gap-2">
-                                <div class="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-[10px] font-bold shrink-0">
-                                    {{ fm.name?.[0]?.toUpperCase() ?? '?' }}
-                                </div>
-                                <div class="min-w-0">
-                                    <div class="text-xs font-semibold text-[#0A1F44] truncate">{{ fm.name }}</div>
-                                    <div class="text-[10px] text-gray-400">{{ fm.relationship || $t('billing.familyMember') }}</div>
-                                </div>
-                            </div>
-                            <!-- Участники группы -->
-                            <div v-if="p.group_name" class="pt-1 border-t border-gray-100">
-                                <div class="text-[10px] text-gray-400 font-medium mb-1">{{ $t('billing.group') }}: {{ p.group_name }}</div>
-                            </div>
-                            <div v-for="(gm, gi) in p.group_members" :key="'gm'+gi" class="flex items-center gap-2">
-                                <div class="w-6 h-6 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 text-[10px] font-bold shrink-0">
-                                    {{ gm.name?.[0]?.toUpperCase() ?? '?' }}
-                                </div>
-                                <div class="text-xs font-semibold text-[#0A1F44] truncate">{{ gm.name }}</div>
-                            </div>
-                        </div>
+                    <!-- ИТОГО к оплате -->
+                    <div class="flex items-center justify-between p-4 rounded-xl bg-[#0A1F44] text-white">
+                        <span class="text-sm font-semibold">{{ $t('payment.total') }}</span>
+                        <span class="text-xl font-bold">{{ formatPrice(p.amount, p.currency) }}</span>
                     </div>
 
-                    <!-- Мета: дата, провайдер -->
-                    <div class="flex items-center justify-between pt-3 border-t border-gray-100 text-xs text-gray-400">
-                        <div class="flex items-center gap-3">
-                            <span>{{ formatDateTime(p.created_at) }}</span>
-                            <span v-if="p.provider && p.provider !== 'pending'" class="font-medium uppercase px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">{{ p.provider }}</span>
+                    <!-- Оплата: pending -->
+                    <template v-if="p.status === 'pending'">
+                        <!-- Способы оплаты -->
+                        <div>
+                            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">{{ $t('payment.chooseMethod') }}</div>
+                            <div class="grid grid-cols-3 gap-3">
+                                <button v-for="prov in PAYMENT_PROVIDERS" :key="prov.id"
+                                    @click="initiatePayment(p, prov.id)"
+                                    :disabled="payingId === p.id"
+                                    class="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-gray-100 hover:border-[#1BA97F] hover:shadow-md transition-all disabled:opacity-50">
+                                    <div class="w-12 h-12 rounded-lg flex items-center justify-center text-2xl font-bold"
+                                        :class="prov.bgClass">
+                                        {{ prov.icon }}
+                                    </div>
+                                    <span class="text-xs font-semibold text-[#0A1F44]">{{ prov.label }}</span>
+                                </button>
+                            </div>
                         </div>
-                        <div v-if="p.paid_at" class="flex items-center gap-1 text-[#1BA97F]">
-                            <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+
+                        <!-- Тестовая оплата -->
+                        <div class="pt-3 border-t border-dashed border-gray-200">
+                            <button @click="testMarkAsPaid(p)"
+                                :disabled="markingPaidId === p.id"
+                                class="w-full py-2.5 px-4 rounded-xl text-xs font-semibold transition-colors
+                                    bg-gray-100 text-gray-600 hover:bg-[#1BA97F]/10 hover:text-[#1BA97F]
+                                    disabled:opacity-50 flex items-center justify-center gap-2">
+                                <svg v-if="markingPaidId === p.id" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                                </svg>
+                                <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                {{ $t('payment.markAsPaid') }}
+                            </button>
+                            <p class="text-[10px] text-gray-400 text-center mt-1">{{ $t('payment.markAsPaidHint') }}</p>
+                        </div>
+
+                        <!-- Безопасность -->
+                        <div class="flex items-center gap-2 pt-2 border-t border-gray-100">
+                            <svg class="w-4 h-4 text-gray-300 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                            </svg>
+                            <span class="text-[10px] text-gray-400">{{ $t('payment.securePayment') }}</span>
+                        </div>
+                    </template>
+
+                    <!-- Оплачено -->
+                    <div v-else-if="p.status === 'succeeded'" class="flex items-center gap-3 p-4 bg-[#1BA97F]/5 rounded-xl">
+                        <div class="w-10 h-10 bg-[#1BA97F] rounded-xl flex items-center justify-center shrink-0">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
                             </svg>
-                            {{ $t('billing.paidOn') }} {{ formatDateTime(p.paid_at) }}
+                        </div>
+                        <div>
+                            <div class="text-sm font-semibold text-[#1BA97F]">{{ $t('billing.statusPaid') }}</div>
+                            <div v-if="p.paid_at" class="text-xs text-gray-400">{{ formatDateTime(p.paid_at) }}</div>
                         </div>
                     </div>
 
-                    <!-- Кнопки -->
-                    <div class="flex gap-2">
-                        <router-link v-if="p.case_id && p.status === 'pending'"
-                            :to="{ name: 'me.cases.show', params: { id: p.case_id } }"
-                            class="flex-1 text-center py-2.5 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white transition-colors">
-                            {{ $t('billing.goToPay') }}
-                        </router-link>
-                        <router-link v-if="p.case_id"
-                            :to="{ name: 'me.cases.show', params: { id: p.case_id } }"
-                            class="flex-1 text-center py-2.5 rounded-xl text-xs font-bold transition-colors"
-                            :class="p.status === 'pending'
-                                ? 'bg-[#0A1F44] hover:bg-[#0d2a5e] text-white'
-                                : 'bg-gray-100 hover:bg-gray-200 text-[#0A1F44]'">
-                            {{ $t('billing.checkCase') }}
-                        </router-link>
-                        <router-link v-if="p.group_id"
-                            :to="{ name: 'me.groups.show', params: { id: p.group_id } }"
-                            class="flex-1 text-center py-2.5 rounded-xl text-xs font-bold bg-gray-100 hover:bg-gray-200 text-[#0A1F44] transition-colors">
-                            {{ $t('billing.openGroup') }}
-                        </router-link>
-                    </div>
+                    <!-- Группа -->
+                    <router-link v-if="p.group_id"
+                        :to="{ name: 'me.groups.show', params: { id: p.group_id } }"
+                        class="block text-center py-2.5 rounded-xl text-xs font-bold bg-gray-100 hover:bg-gray-200 text-[#0A1F44] transition-colors">
+                        {{ $t('billing.openGroup') }}
+                    </router-link>
                 </div>
             </div>
         </template>
+
+        <!-- Toast -->
+        <Teleport to="body">
+            <Transition enter-active-class="transition duration-300 ease-out" enter-from-class="opacity-0 translate-y-2" enter-to-class="opacity-100 translate-y-0"
+                leave-active-class="transition duration-200 ease-in" leave-from-class="opacity-100 translate-y-0" leave-to-class="opacity-0 translate-y-2">
+                <div v-if="toast"
+                    class="fixed top-5 right-5 z-50 bg-[#1BA97F] text-white text-sm px-5 py-3 rounded-xl shadow-lg max-w-xs font-medium">
+                    {{ toast }}
+                </div>
+            </Transition>
+        </Teleport>
     </div>
 </template>
 
@@ -207,6 +231,15 @@ import i18n from '@/i18n';
 const { t } = useI18n();
 const loading  = ref(true);
 const payments = ref([]);
+const payingId = ref(null);
+const markingPaidId = ref(null);
+const toast = ref('');
+
+const PAYMENT_PROVIDERS = [
+    { id: 'click', label: 'Click', icon: 'C', bgClass: 'bg-blue-100 text-blue-600' },
+    { id: 'payme', label: 'Payme', icon: 'P', bgClass: 'bg-cyan-100 text-cyan-600' },
+    { id: 'uzum',  label: 'Uzum',  icon: 'U', bgClass: 'bg-purple-100 text-purple-600' },
+];
 
 const paidCount = computed(() => payments.value.filter(p => p.status === 'succeeded').length);
 const unpaidCount = computed(() => payments.value.filter(p => p.status === 'pending').length);
@@ -255,6 +288,44 @@ function formatDateTime(dateStr) {
     if (!dateStr) return '';
     const locale = i18n.global.locale.value === 'uz' ? 'uz-UZ' : 'ru-RU';
     return new Date(dateStr).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+function showToast(msg) {
+    toast.value = msg;
+    setTimeout(() => { toast.value = ''; }, 3000);
+}
+
+async function initiatePayment(p, provider) {
+    payingId.value = p.id;
+    try {
+        const res = await publicPortalApi.initiatePayment({
+            case_id: p.case_id,
+            provider,
+        });
+        const url = res.data.data?.payment_url;
+        if (url && url !== '#') {
+            window.open(url, '_blank');
+        }
+        p.status = 'pending';
+    } catch (e) {
+        alert(e?.response?.data?.message ?? t('common.error'));
+    } finally {
+        payingId.value = null;
+    }
+}
+
+async function testMarkAsPaid(p) {
+    markingPaidId.value = p.id;
+    try {
+        await publicPortalApi.markAsPaid({ case_id: p.case_id });
+        p.status = 'succeeded';
+        p.paid_at = new Date().toISOString();
+        showToast(t('payment.markedAsPaid'));
+    } catch (e) {
+        alert(e?.response?.data?.message ?? t('common.error'));
+    } finally {
+        markingPaidId.value = null;
+    }
 }
 
 onMounted(async () => {

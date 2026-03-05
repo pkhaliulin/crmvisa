@@ -1015,6 +1015,11 @@
     "group": "Guruh",
     "openCase": "Arizani ochish",
     "checkCase": "Arizani tekshirish",
+    "viewCase": "Arizaga o'tish",
+    "executor": "Ijrochi",
+    "invoiceDate": "Chiqarilgan sana",
+    "qty": "Soni",
+    "sum": "Summa",
     "openGroup": "Guruhni ochish"
   },
   "agencySelection": {

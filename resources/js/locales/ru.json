@@ -1015,6 +1015,11 @@
     "group": "Группа",
     "openCase": "Открыть заявку",
     "checkCase": "Проверить заявку",
+    "viewCase": "Перейти к заявке",
+    "executor": "Исполнитель",
+    "invoiceDate": "Дата выставления",
+    "qty": "Кол-во",
+    "sum": "Сумма",
     "openGroup": "Открыть группу"
   },
   "agencySelection": {
