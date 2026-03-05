@@ -124,19 +124,42 @@
                         </div>
                     </div>
 
-                    <!-- ФИО заявителя и участники -->
-                    <div v-if="p.applicant_name" class="bg-gray-50 rounded-xl p-3 space-y-1.5">
-                        <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{{ $t('billing.applicant') }}</div>
-                        <div class="flex items-center gap-2">
-                            <div class="w-7 h-7 bg-[#0A1F44] rounded-lg flex items-center justify-center shrink-0">
+                    <!-- Участники -->
+                    <div v-if="p.applicant_name" class="bg-gray-50 rounded-xl p-3 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{{ $t('billing.participants') }}</div>
+                            <div v-if="p.total_persons > 1" class="text-[10px] font-bold text-[#0A1F44] bg-white px-2 py-0.5 rounded-full">
+                                {{ p.total_persons }} {{ $t('billing.persons') }}
+                            </div>
+                        </div>
+                        <!-- Заявитель -->
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-8 h-8 bg-[#0A1F44] rounded-lg flex items-center justify-center shrink-0">
                                 <span class="text-white text-xs font-bold">{{ p.applicant_name.charAt(0) }}</span>
                             </div>
-                            <div>
-                                <div class="text-sm font-semibold text-[#0A1F44]">{{ p.applicant_name }}</div>
-                                <div v-if="p.total_persons > 1" class="text-[11px] text-gray-400">
-                                    {{ p.total_persons }} {{ $t('billing.persons') }}
-                                    <template v-if="p.family_members?.length"> — {{ p.family_members.map(f => f.name).slice(0, 2).join(', ') }}<template v-if="p.family_members.length > 2">, {{ $t('billing.andMore', { count: p.family_members.length - 2 }) }}</template></template>
-                                </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="text-sm font-semibold text-[#0A1F44] truncate">{{ p.applicant_name }}</div>
+                                <div class="text-[10px] text-gray-400">{{ $t('billing.applicant') }}</div>
+                            </div>
+                        </div>
+                        <!-- Члены семьи -->
+                        <div v-for="(fm, fi) in (p.family_members || [])" :key="'fm'+fi" class="flex items-center gap-2.5">
+                            <div class="w-8 h-8 bg-[#1BA97F]/20 rounded-lg flex items-center justify-center shrink-0">
+                                <span class="text-[#1BA97F] text-xs font-bold">{{ fm.name?.charAt(0) || '?' }}</span>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="text-sm font-semibold text-[#0A1F44] truncate">{{ fm.name }}</div>
+                                <div class="text-[10px] text-gray-400">{{ $t('billing.familyMember') }}</div>
+                            </div>
+                        </div>
+                        <!-- Члены группы -->
+                        <div v-for="(gm, gi) in (p.group_members || [])" :key="'gm'+gi" class="flex items-center gap-2.5">
+                            <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center shrink-0">
+                                <span class="text-blue-600 text-xs font-bold">{{ gm.name?.charAt(0) || '?' }}</span>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="text-sm font-semibold text-[#0A1F44] truncate">{{ gm.name }}</div>
+                                <div class="text-[10px] text-gray-400">{{ $t('billing.group') }}</div>
                             </div>
                         </div>
                     </div>
