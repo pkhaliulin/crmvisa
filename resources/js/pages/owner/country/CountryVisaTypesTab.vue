@@ -44,9 +44,10 @@
             </td>
             <td class="px-5 py-3 text-center" @click.stop>
               <button @click="toggleActive(s)"
-                class="text-xs px-2.5 py-1 rounded-full font-medium transition-colors"
-                :class="s.is_active ? 'bg-green-50 text-green-700 hover:bg-green-100' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'">
-                {{ s.is_active ? $t('countryDetail.active') : $t('countryDetail.inactive') }}
+                class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none"
+                :class="s.is_active ? 'bg-[#1BA97F]' : 'bg-gray-300'">
+                <span class="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform duration-200"
+                  :class="s.is_active ? 'translate-x-6' : 'translate-x-1'"></span>
               </button>
             </td>
           </tr>
