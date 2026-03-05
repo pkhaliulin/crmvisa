@@ -11,6 +11,7 @@ use App\Modules\PublicPortal\Models\PublicLead;
 use App\Support\Helpers\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class PublicAgencyController extends Controller
@@ -75,6 +76,135 @@ class PublicAgencyController extends Controller
             ->values();
 
         return ApiResponse::success(['agencies' => $agencies]);
+    }
+
+    /**
+     * GET /public/agencies/{id}
+     */
+    public function show(Request $request, string $id): JsonResponse
+    {
+        $locale = $this->detectLocale($request);
+
+        $agency = Agency::where('is_active', true)
+            ->whereNull('blocked_at')
+            ->findOrFail($id);
+
+        // Пакеты услуг
+        $packages = $agency->packages()
+            ->where('is_active', true)
+            ->with(['items.service:id,name,category'])
+            ->get()
+            ->map(fn ($pkg) => [
+                'id'              => $pkg->id,
+                'name'            => $this->localized($pkg, 'name', $locale),
+                'country_code'    => $pkg->country_code,
+                'visa_type'       => $pkg->visa_type,
+                'description'     => $this->localized($pkg, 'description', $locale),
+                'price'           => $pkg->price,
+                'currency'        => $pkg->currency ?? 'USD',
+                'processing_days' => $pkg->processing_days,
+                'services'        => $pkg->items->map(fn ($item) => [
+                    'name'     => $item->service?->name ?? '',
+                    'category' => $item->service?->category ?? '',
+                ])->filter(fn ($s) => $s['name'])->values(),
+            ]);
+
+        // Статистика (SET LOCAL для обхода RLS)
+        $stats = DB::transaction(function () use ($id) {
+            DB::statement("SET LOCAL app.current_tenant_id = '{$id}'");
+
+            // Команда
+            $team = DB::table('users')
+                ->where('agency_id', $id)
+                ->where('is_active', true)
+                ->whereNull('deleted_at')
+                ->select(['name', 'avatar_url', 'role'])
+                ->orderByRaw("CASE WHEN role = 'owner' THEN 0 ELSE 1 END")
+                ->orderBy('name')
+                ->get()
+                ->map(fn ($u) => [
+                    'name'       => $u->name,
+                    'avatar_url' => $u->avatar_url,
+                    'role'       => $u->role,
+                ]);
+
+            // Количество заявок
+            $totalCases = DB::table('cases')
+                ->where('agency_id', $id)
+                ->whereNull('deleted_at')
+                ->count();
+
+            $completedCases = DB::table('cases')
+                ->where('agency_id', $id)
+                ->whereNull('deleted_at')
+                ->whereIn('public_status', ['completed', 'rejected'])
+                ->count();
+
+            $approvedCases = DB::table('cases')
+                ->where('agency_id', $id)
+                ->whereNull('deleted_at')
+                ->where('public_status', 'completed')
+                ->count();
+
+            // Уникальные клиенты
+            $clientsCount = DB::table('cases')
+                ->where('agency_id', $id)
+                ->whereNull('deleted_at')
+                ->distinct('client_id')
+                ->count('client_id');
+
+            // Страны работы
+            $countries = DB::table('agency_work_countries')
+                ->where('agency_id', $id)
+                ->where('is_active', true)
+                ->pluck('country_code')
+                ->toArray();
+
+            // Типы виз (из пакетов)
+            $visaTypes = DB::table('agency_service_packages')
+                ->where('agency_id', $id)
+                ->where('is_active', true)
+                ->whereNotNull('visa_type')
+                ->distinct()
+                ->pluck('visa_type')
+                ->toArray();
+
+            return compact('team', 'totalCases', 'completedCases', 'approvedCases', 'clientsCount', 'countries', 'visaTypes');
+        });
+
+        $successRate = $stats['completedCases'] > 0
+            ? round(($stats['approvedCases'] / $stats['completedCases']) * 100)
+            : null;
+
+        return ApiResponse::success([
+            'id'                => $agency->id,
+            'name'              => $agency->name,
+            'city'              => $agency->city,
+            'address'           => $agency->address,
+            'latitude'          => $agency->latitude,
+            'longitude'         => $agency->longitude,
+            'rating'            => $agency->rating,
+            'reviews_count'     => $agency->reviews_count,
+            'top_criterion'     => $agency->top_criterion,
+            'description'       => $this->localized($agency, 'description', $locale),
+            'experience_years'  => $agency->experience_years,
+            'website_url'       => $agency->website_url,
+            'logo_url'          => $agency->logo_url,
+            'is_verified'       => $agency->is_verified,
+            'phone'             => $agency->phone,
+            'email'             => $agency->email,
+            'member_since'      => $agency->created_at?->toDateString(),
+            'packages'          => $packages,
+            'team'              => $stats['team'],
+            'team_count'        => $stats['team']->count(),
+            'total_cases'       => $stats['totalCases'],
+            'completed_cases'   => $stats['completedCases'],
+            'approved_cases'    => $stats['approvedCases'],
+            'success_rate'      => $successRate,
+            'clients_count'     => $stats['clientsCount'],
+            'countries'         => $stats['countries'],
+            'visa_types'        => $stats['visaTypes'],
+        ]);
     }
 
     private function detectLocale(Request $request): string

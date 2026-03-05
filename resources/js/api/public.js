@@ -63,6 +63,7 @@ export const publicPortalApi = {
 
     // Agencies & Leads
     agencies:       (params) => publicApi.get('/agencies', { params }),
+    agencyDetail:   (id)     => publicApi.get(`/agencies/${id}`),
     submitLead:     (data)   => publicApi.post('/leads', data),
     caseAgencies:   (caseId) => publicApi.get(`/me/cases/${caseId}/agencies`),
     changeAgency:   (caseId) => publicApi.post(`/me/cases/${caseId}/change-agency`),

@@ -297,6 +297,17 @@
                             <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
                         </svg>
                     </button>
+                    <!-- Подробнее об агентстве -->
+                    <router-link :to="{ name: 'me.agencies.show', params: { id: agency.id } }"
+                        class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all bg-white text-[#1BA97F] border-[#1BA97F]/30 hover:bg-[#1BA97F]/5 hover:border-[#1BA97F]">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                        </svg>
+                        {{ agencyProfileLabel }}
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                        </svg>
+                    </router-link>
                     <!-- Отправить заявку -->
                     <button @click="openConfirm(agency, null)"
                         class="ml-auto flex items-center gap-1.5 px-4 py-1.5 bg-[#1BA97F] hover:bg-[#17956f] text-white text-xs font-semibold rounded-full transition-colors">
@@ -684,6 +695,7 @@ const prevLabel = computed(() => t('agencies.previous'));
 const nextLabel = computed(() => t('agencies.next'));
 const byRequestLabel = computed(() => t('common.byRequest').toLowerCase());
 const mapTitle = computed(() => t('landing.agenciesMapTitle'));
+const agencyProfileLabel = computed(() => t('agencies.agencyProfile'));
 const packagesPlurals = computed(() => [
     t('agencies.packageOne'),
     t('agencies.packageFew'),

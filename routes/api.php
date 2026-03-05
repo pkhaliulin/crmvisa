@@ -363,6 +363,7 @@ Route::prefix('v1')->group(function () {
         Route::delete('me/cases/{id}/family/{fid}', [PublicFamilyController::class, 'detachFromCase']);
 
         Route::get('agencies',              [PublicAgencyController::class, 'index']);
+        Route::get('agencies/{id}',         [PublicAgencyController::class, 'show']);
         Route::post('leads',                [PublicAgencyController::class, 'submitLead']);
         Route::get('agencies/{id}/reviews', [PublicReviewController::class, 'index']);
         Route::post('agencies/{id}/reviews',[PublicReviewController::class, 'store']);
