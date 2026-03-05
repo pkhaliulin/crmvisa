@@ -146,6 +146,13 @@ class PublicAgencyController extends Controller
                 ->where('public_status', 'completed')
                 ->count();
 
+            // Активные заявки (сейчас в работе — не draft, не awaiting_payment, не completed, не rejected)
+            $activeCases = DB::table('cases')
+                ->where('agency_id', $id)
+                ->whereNull('deleted_at')
+                ->whereNotIn('public_status', ['draft', 'awaiting_payment', 'completed', 'rejected'])
+                ->count();
+
             // Уникальные клиенты
             $clientsCount = DB::table('cases')
                 ->where('agency_id', $id)
@@ -169,7 +176,7 @@ class PublicAgencyController extends Controller
                 ->pluck('visa_type')
                 ->toArray();
 
-            return compact('team', 'totalCases', 'completedCases', 'approvedCases', 'clientsCount', 'countries', 'visaTypes');
+            return compact('team', 'totalCases', 'completedCases', 'approvedCases', 'activeCases', 'clientsCount', 'countries', 'visaTypes');
         });
 
         $successRate = $stats['completedCases'] > 0
@@ -201,6 +208,7 @@ class PublicAgencyController extends Controller
             'completed_cases'   => $stats['completedCases'],
             'approved_cases'    => $stats['approvedCases'],
             'success_rate'      => $successRate,
+            'active_cases'      => $stats['activeCases'],
             'clients_count'     => $stats['clientsCount'],
             'countries'         => $stats['countries'],
             'visa_types'        => $stats['visaTypes'],

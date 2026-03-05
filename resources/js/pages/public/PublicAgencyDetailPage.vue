@@ -90,24 +90,62 @@
         </div>
 
         <!-- Статистика в цифрах -->
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 text-center">
-                <div class="text-2xl font-bold text-[#0A1F44]">{{ agency.total_cases || 0 }}</div>
-                <div class="text-xs text-gray-400 mt-1">{{ t('agencyDetail.totalCases') }}</div>
-            </div>
-            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 text-center">
-                <div class="text-2xl font-bold" :class="agency.success_rate >= 80 ? 'text-[#1BA97F]' : agency.success_rate >= 50 ? 'text-amber-500' : 'text-[#0A1F44]'">
-                    {{ agency.success_rate != null ? agency.success_rate + '%' : '--' }}
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-4">
+            <div class="grid grid-cols-3 sm:grid-cols-5 divide-x divide-gray-100">
+                <!-- Всего обработано -->
+                <div class="p-4 text-center">
+                    <div class="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center mx-auto mb-2">
+                        <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                    </div>
+                    <div class="text-2xl font-bold text-[#0A1F44]">{{ agency.total_cases || 0 }}</div>
+                    <div class="text-xs text-gray-400 mt-0.5">{{ t('agencyDetail.totalCases') }}</div>
                 </div>
-                <div class="text-xs text-gray-400 mt-1">{{ t('agencyDetail.successRate') }}</div>
-            </div>
-            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 text-center">
-                <div class="text-2xl font-bold text-[#0A1F44]">{{ agency.team_count || 0 }}</div>
-                <div class="text-xs text-gray-400 mt-1">{{ t('agencyDetail.teamCount') }}</div>
-            </div>
-            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 text-center">
-                <div class="text-2xl font-bold text-[#0A1F44]">{{ agency.clients_count || 0 }}</div>
-                <div class="text-xs text-gray-400 mt-1">{{ t('agencyDetail.clientsCount') }}</div>
+                <!-- Сейчас в работе -->
+                <div class="p-4 text-center">
+                    <div class="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center mx-auto mb-2">
+                        <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <div class="text-2xl font-bold text-amber-500">{{ agency.active_cases || 0 }}</div>
+                    <div class="text-xs text-gray-400 mt-0.5">{{ t('agencyDetail.activeCases') }}</div>
+                </div>
+                <!-- Успешность -->
+                <div class="p-4 text-center">
+                    <div class="w-9 h-9 rounded-xl flex items-center justify-center mx-auto mb-2"
+                        :class="agency.success_rate >= 80 ? 'bg-green-50' : agency.success_rate >= 50 ? 'bg-amber-50' : 'bg-gray-50'">
+                        <svg class="w-5 h-5" :class="agency.success_rate >= 80 ? 'text-[#1BA97F]' : agency.success_rate >= 50 ? 'text-amber-500' : 'text-gray-400'"
+                            fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <div class="text-2xl font-bold" :class="agency.success_rate >= 80 ? 'text-[#1BA97F]' : agency.success_rate >= 50 ? 'text-amber-500' : 'text-gray-400'">
+                        {{ agency.success_rate != null ? agency.success_rate + '%' : t('agencyDetail.noData') }}
+                    </div>
+                    <div class="text-xs text-gray-400 mt-0.5">{{ t('agencyDetail.successRate') }}</div>
+                </div>
+                <!-- Сотрудников -->
+                <div class="p-4 text-center">
+                    <div class="w-9 h-9 rounded-xl bg-purple-50 flex items-center justify-center mx-auto mb-2">
+                        <svg class="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                    </div>
+                    <div class="text-2xl font-bold text-[#0A1F44]">{{ agency.team_count || 0 }}</div>
+                    <div class="text-xs text-gray-400 mt-0.5">{{ t('agencyDetail.teamCount') }}</div>
+                </div>
+                <!-- Клиентов -->
+                <div class="p-4 text-center">
+                    <div class="w-9 h-9 rounded-xl bg-green-50 flex items-center justify-center mx-auto mb-2">
+                        <svg class="w-5 h-5 text-[#1BA97F]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                        </svg>
+                    </div>
+                    <div class="text-2xl font-bold text-[#0A1F44]">{{ agency.clients_count || 0 }}</div>
+                    <div class="text-xs text-gray-400 mt-0.5">{{ t('agencyDetail.clientsCount') }}</div>
+                </div>
             </div>
         </div>
 
