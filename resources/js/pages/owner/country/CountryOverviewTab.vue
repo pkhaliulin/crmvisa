@@ -3,7 +3,10 @@
     <!-- Основная информация + редактирование -->
     <div class="bg-white rounded-xl border border-gray-100 p-5">
       <div class="flex items-center justify-between mb-4">
-        <h4 class="text-sm font-semibold text-gray-500">{{ $t('countryDetail.generalInfo') }}</h4>
+        <div>
+          <h4 class="text-sm font-semibold text-gray-500">{{ $t('countryDetail.generalInfo') }}</h4>
+          <p class="text-xs text-gray-400 mt-0.5">{{ $t('countryDetail.generalInfoHint') }}</p>
+        </div>
         <button v-if="!editing" @click="startEdit" class="text-xs px-3 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-600">
           {{ $t('countryDetail.edit') }}
         </button>
@@ -49,6 +52,7 @@
           <div>
             <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.nameUz') }}</label>
             <input v-model="form.name_uz" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]" />
+            <p class="text-[10px] text-gray-400 mt-0.5">{{ $t('countryDetail.nameUzHint') }}</p>
           </div>
           <div>
             <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.flagEmoji') }}</label>
@@ -56,7 +60,7 @@
           </div>
         </div>
 
-        <!-- Ряд 2: Конт, Статус, Риск -->
+        <!-- Ряд 2 -->
         <div class="grid grid-cols-4 gap-4">
           <div>
             <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.continent') }}</label>
@@ -72,62 +76,82 @@
               <option value="medium">{{ $t('countryDetail.riskMedium') }}</option>
               <option value="high">{{ $t('countryDetail.riskHigh') }}</option>
             </select>
+            <p class="text-[10px] text-gray-400 mt-0.5">{{ $t('countryDetail.riskLevelHint') }}</p>
           </div>
           <div>
             <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.sortOrder') }}</label>
             <input v-model.number="form.sort_order" type="number" min="0"
               class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]" />
+            <p class="text-[10px] text-gray-400 mt-0.5">{{ $t('countryDetail.sortOrderHint') }}</p>
           </div>
           <div>
             <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.commission') }} (%)</label>
             <input v-model.number="form.commission_rate" type="number" min="0" max="100" step="0.01"
               class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]" />
+            <p class="text-[10px] text-gray-400 mt-0.5">{{ $t('countryDetail.commissionHint') }}</p>
           </div>
         </div>
 
-        <!-- Чекбоксы -->
-        <div class="flex flex-wrap gap-4">
-          <label class="flex items-center gap-2 text-sm">
-            <input type="checkbox" v-model="form.is_active" class="rounded" />
-            {{ $t('countryDetail.active') }}
+        <!-- Чекбоксы с подсказками -->
+        <div class="grid grid-cols-2 gap-3">
+          <label class="flex items-start gap-2 text-sm p-3 bg-gray-50 rounded-lg">
+            <input type="checkbox" v-model="form.is_active" class="rounded mt-0.5" />
+            <div>
+              <span>{{ $t('countryDetail.active') }}</span>
+              <p class="text-[10px] text-gray-400">{{ $t('countryDetail.activeHint') }}</p>
+            </div>
           </label>
-          <label class="flex items-center gap-2 text-sm">
-            <input type="checkbox" v-model="form.is_popular" class="rounded" />
-            {{ $t('countryDetail.popular') }}
+          <label class="flex items-start gap-2 text-sm p-3 bg-gray-50 rounded-lg">
+            <input type="checkbox" v-model="form.is_popular" class="rounded mt-0.5" />
+            <div>
+              <span>{{ $t('countryDetail.popular') }}</span>
+              <p class="text-[10px] text-gray-400">{{ $t('countryDetail.popularHint') }}</p>
+            </div>
           </label>
-          <label class="flex items-center gap-2 text-sm">
-            <input type="checkbox" v-model="form.is_high_approval" class="rounded" />
-            {{ $t('countryDetail.highApproval') }}
+          <label class="flex items-start gap-2 text-sm p-3 bg-gray-50 rounded-lg">
+            <input type="checkbox" v-model="form.is_high_approval" class="rounded mt-0.5" />
+            <div>
+              <span>{{ $t('countryDetail.highApproval') }}</span>
+              <p class="text-[10px] text-gray-400">{{ $t('countryDetail.highApprovalHint') }}</p>
+            </div>
           </label>
-          <label class="flex items-center gap-2 text-sm">
-            <input type="checkbox" v-model="form.is_high_refusal" class="rounded" />
-            {{ $t('countryDetail.highRefusal') }}
+          <label class="flex items-start gap-2 text-sm p-3 bg-gray-50 rounded-lg">
+            <input type="checkbox" v-model="form.is_high_refusal" class="rounded mt-0.5" />
+            <div>
+              <span>{{ $t('countryDetail.highRefusal') }}</span>
+              <p class="text-[10px] text-gray-400">{{ $t('countryDetail.highRefusalHint') }}</p>
+            </div>
           </label>
         </div>
 
-        <!-- Сроки обработки -->
+        <!-- Общие сроки обработки -->
         <fieldset class="border border-gray-200 rounded-xl p-4">
           <legend class="text-xs font-semibold text-gray-500 uppercase px-2">{{ $t('countryDetail.generalTimeline') }}</legend>
-          <div class="grid grid-cols-4 gap-3 mt-2">
+          <p class="text-[11px] text-gray-400 mb-3">{{ $t('countryDetail.generalTimelineHint') }}</p>
+          <div class="grid grid-cols-4 gap-3">
             <div>
               <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.standardDays') }}</label>
               <input v-model.number="form.processing_days_standard" type="number" min="0"
                 class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]" />
+              <p class="text-[10px] text-gray-400 mt-0.5">{{ $t('countryDetail.standardDaysHint') }}</p>
             </div>
             <div>
               <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.expeditedDays') }}</label>
               <input v-model.number="form.processing_days_expedited" type="number" min="0"
                 class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]" />
+              <p class="text-[10px] text-gray-400 mt-0.5">{{ $t('countryDetail.expeditedDaysHint') }}</p>
             </div>
             <div>
               <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.appointmentWait') }}</label>
               <input v-model.number="form.appointment_wait_days" type="number" min="0"
                 class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]" />
+              <p class="text-[10px] text-gray-400 mt-0.5">{{ $t('countryDetail.appointmentWaitOverviewHint') }}</p>
             </div>
             <div>
               <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.bufferDays') }}</label>
               <input v-model.number="form.buffer_days_recommended" type="number" min="0"
                 class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]" />
+              <p class="text-[10px] text-gray-400 mt-0.5">{{ $t('countryDetail.bufferOverviewHint') }}</p>
             </div>
           </div>
         </fieldset>
@@ -135,7 +159,8 @@
         <!-- Стоимость -->
         <fieldset class="border border-gray-200 rounded-xl p-4">
           <legend class="text-xs font-semibold text-gray-500 uppercase px-2">{{ $t('countryDetail.costsTitle') }}</legend>
-          <div class="grid grid-cols-4 gap-3 mt-2">
+          <p class="text-[11px] text-gray-400 mb-3">{{ $t('countryDetail.costsTitleHint') }}</p>
+          <div class="grid grid-cols-4 gap-3">
             <div>
               <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.visaFee') }} ($)</label>
               <input v-model.number="form.visa_fee_usd" type="number" min="0" step="0.01"
@@ -150,6 +175,7 @@
               <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.avgFlight') }} ($)</label>
               <input v-model.number="form.avg_flight_cost_usd" type="number" min="0"
                 class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]" />
+              <p class="text-[10px] text-gray-400 mt-0.5">{{ $t('countryDetail.avgFlightHint') }}</p>
             </div>
             <div>
               <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.avgHotel') }} ($/{{ $t('countryDetail.perNight') }})</label>
@@ -163,7 +189,8 @@
         <div>
           <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.notes') }}</label>
           <textarea v-model="form.notes" rows="3"
-            class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F] resize-none"></textarea>
+            class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F] resize-none"
+            :placeholder="$t('countryDetail.notesPlaceholder')"></textarea>
         </div>
 
         <div class="flex gap-3 pt-2">
@@ -205,7 +232,6 @@
         </div>
       </div>
 
-      <!-- Требования -->
       <div v-if="hasRequirements" class="mt-4 flex flex-wrap gap-2">
         <span v-if="country.invitation_required" class="text-xs px-2.5 py-1 rounded-full bg-red-50 text-red-700">{{ $t('countryDetail.invitationRequired') }}</span>
         <span v-if="country.hotel_booking_required" class="text-xs px-2.5 py-1 rounded-full bg-orange-50 text-orange-700">{{ $t('countryDetail.hotelRequired') }}</span>
@@ -217,7 +243,8 @@
 
     <!-- Сроки обработки (только отображение) -->
     <div v-if="country.processing_days_standard || country.processing_days_expedited" class="bg-white rounded-xl border border-gray-100 p-5">
-      <h4 class="text-sm font-semibold text-gray-500 mb-4">{{ $t('countryDetail.generalTimeline') }}</h4>
+      <h4 class="text-sm font-semibold text-gray-500 mb-1">{{ $t('countryDetail.generalTimeline') }}</h4>
+      <p class="text-xs text-gray-400 mb-4">{{ $t('countryDetail.generalTimelineViewHint') }}</p>
       <div class="grid grid-cols-4 gap-4 text-center">
         <div class="p-3 bg-blue-50 rounded-lg">
           <div class="text-xl font-bold text-blue-700">{{ country.processing_days_standard ?? '---' }}</div>
@@ -407,7 +434,6 @@ async function saveOverview() {
   }
 }
 
-// Inline sub-component
 const InfoItem = {
   props: ['label', 'value', 'mono'],
   template: `

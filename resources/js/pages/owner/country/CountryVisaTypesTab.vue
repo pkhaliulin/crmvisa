@@ -1,7 +1,10 @@
 <template>
   <div class="space-y-4">
     <div class="flex items-center justify-between">
-      <p class="text-sm text-gray-500">{{ $t('countryDetail.visaTypesDesc') }}</p>
+      <div>
+        <p class="text-sm text-gray-500">{{ $t('countryDetail.visaTypesDesc') }}</p>
+        <p class="text-xs text-gray-400 mt-1">{{ $t('countryDetail.visaTypesHint') }}</p>
+      </div>
       <button @click="openAdd"
         class="px-4 py-2 bg-[#0A1F44] text-white text-sm font-semibold rounded-xl hover:bg-[#0d2a5e]">
         + {{ $t('countryDetail.addVisaType') }}
@@ -16,22 +19,17 @@
         <thead class="bg-gray-50 text-gray-500">
           <tr>
             <th class="text-left px-5 py-3 font-medium">{{ $t('countryDetail.name') }}</th>
-            <th class="text-left px-5 py-3 font-medium">{{ $t('countryDetail.status') }}</th>
             <th class="text-left px-5 py-3 font-medium">{{ $t('countryDetail.processingTime') }}</th>
             <th class="text-left px-5 py-3 font-medium">{{ $t('countryDetail.minDaysBefore') }}</th>
             <th class="text-left px-5 py-3 font-medium">{{ $t('countryDetail.fees') }}</th>
-            <th class="px-5 py-3 font-medium w-24"></th>
+            <th class="px-5 py-3 font-medium text-center">{{ $t('countryDetail.status') }}</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100">
-          <tr v-for="s in settings" :key="s.id" class="hover:bg-gray-50">
+          <tr v-for="s in settings" :key="s.id"
+            @click="startEdit(s)"
+            class="hover:bg-blue-50/50 transition-colors cursor-pointer">
             <td class="px-5 py-3 font-medium text-gray-800">{{ s.visa_type }}</td>
-            <td class="px-5 py-3">
-              <span class="text-xs px-2 py-0.5 rounded-full"
-                :class="s.is_active ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-400'">
-                {{ s.is_active ? $t('countryDetail.active') : $t('countryDetail.inactive') }}
-              </span>
-            </td>
             <td class="px-5 py-3 text-gray-600">
               <span v-if="s.processing_days_avg">{{ s.processing_days_avg }} {{ $t('countryDetail.days') }}</span>
               <span v-else class="text-gray-300">---</span>
@@ -44,15 +42,12 @@
               <span v-if="s.consular_fee_usd">${{ s.consular_fee_usd }}</span>
               <span v-else class="text-gray-300">---</span>
             </td>
-            <td class="px-5 py-3">
-              <div class="flex gap-2 justify-end">
-                <button @click="startEdit(s)" class="text-xs px-2.5 py-1 border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-600">
-                  {{ $t('countryDetail.edit') }}
-                </button>
-                <button @click="deleteTarget = s" class="text-xs px-2.5 py-1 border border-red-200 rounded-lg hover:bg-red-50 text-red-600">
-                  {{ $t('countryDetail.delete') }}
-                </button>
-              </div>
+            <td class="px-5 py-3 text-center" @click.stop>
+              <button @click="toggleActive(s)"
+                class="text-xs px-2.5 py-1 rounded-full font-medium transition-colors"
+                :class="s.is_active ? 'bg-green-50 text-green-700 hover:bg-green-100' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'">
+                {{ s.is_active ? $t('countryDetail.active') : $t('countryDetail.inactive') }}
+              </button>
             </td>
           </tr>
         </tbody>
@@ -66,9 +61,15 @@
     <!-- Modal: Add / Edit (full form) -->
     <div v-if="showModal" class="fixed inset-0 z-50 bg-black/40 flex items-start justify-center p-4 overflow-y-auto">
       <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl p-6 my-8">
-        <h3 class="font-bold text-[#0A1F44] text-lg mb-4">
-          {{ editingSetting ? $t('countryDetail.editVisaSetting') : $t('countryDetail.addVisaSetting') }}
-        </h3>
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-bold text-[#0A1F44] text-lg">
+            {{ editingSetting ? $t('countryDetail.editVisaSetting') : $t('countryDetail.addVisaSetting') }}
+          </h3>
+          <button v-if="editingSetting" @click="deleteTarget = editingSetting; showModal = false"
+            class="text-xs px-3 py-1.5 border border-red-200 rounded-lg hover:bg-red-50 text-red-600">
+            {{ $t('countryDetail.delete') }}
+          </button>
+        </div>
         <form @submit.prevent="saveForm" class="space-y-6">
 
           <!-- Тип визы + статус -->
@@ -99,21 +100,25 @@
           <!-- Сроки обработки -->
           <fieldset class="border border-gray-200 rounded-xl p-4">
             <legend class="text-xs font-semibold text-gray-500 uppercase px-2">{{ $t('countryDetail.processingTimeline') }}</legend>
-            <div class="grid grid-cols-3 gap-3 mt-2">
+            <p class="text-[11px] text-gray-400 mb-3">{{ $t('countryDetail.processingTimelineHint') }}</p>
+            <div class="grid grid-cols-3 gap-3">
               <div>
                 <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.preparationDays') }}</label>
                 <input v-model.number="formData.preparation_days" type="number" min="0" max="365"
                   class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]" />
+                <p class="text-[10px] text-gray-400 mt-0.5">{{ $t('countryDetail.preparationDaysHint') }}</p>
               </div>
               <div>
                 <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.appointmentWaitDays') }}</label>
                 <input v-model.number="formData.appointment_wait_days" type="number" min="0" max="365"
                   class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]" />
+                <p class="text-[10px] text-gray-400 mt-0.5">{{ $t('countryDetail.appointmentWaitHint') }}</p>
               </div>
               <div>
                 <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.bufferDays') }}</label>
                 <input v-model.number="formData.buffer_days" type="number" min="0" max="365"
                   class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]" />
+                <p class="text-[10px] text-gray-400 mt-0.5">{{ $t('countryDetail.bufferDaysHint') }}</p>
               </div>
               <div>
                 <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.processingMin') }}</label>
@@ -124,6 +129,7 @@
                 <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.processingAvg') }}</label>
                 <input v-model.number="formData.processing_days_avg" type="number" min="0" max="365"
                   class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]" />
+                <p class="text-[10px] text-gray-400 mt-0.5">{{ $t('countryDetail.processingAvgHint') }}</p>
               </div>
               <div>
                 <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.processingMax') }}</label>
@@ -134,13 +140,15 @@
             <div class="mt-3 p-3 bg-blue-50 rounded-lg text-xs text-blue-600">
               {{ $t('countryDetail.autoCalcNote') }}
               <span v-if="calcMinDays" class="font-semibold">{{ calcMinDays }} {{ $t('countryDetail.days') }}</span>
+              <p class="text-[10px] text-blue-500 mt-1">{{ $t('countryDetail.autoCalcExplain') }}</p>
             </div>
           </fieldset>
 
           <!-- Требования к подаче -->
           <fieldset class="border border-gray-200 rounded-xl p-4">
             <legend class="text-xs font-semibold text-gray-500 uppercase px-2">{{ $t('countryDetail.submissionReqs') }}</legend>
-            <div class="grid grid-cols-2 gap-3 mt-2">
+            <p class="text-[11px] text-gray-400 mb-3">{{ $t('countryDetail.submissionReqsHint') }}</p>
+            <div class="grid grid-cols-2 gap-3">
               <label class="flex items-center gap-2 text-sm">
                 <input type="checkbox" v-model="formData.biometrics_required" class="rounded" />
                 {{ $t('countryDetail.biometricsRequired') }}
@@ -169,33 +177,39 @@
                   <option value="daily_slots">{{ $t('countryDetail.patternDaily') }}</option>
                   <option value="no_appointment">{{ $t('countryDetail.patternNoAppt') }}</option>
                 </select>
+                <p class="text-[10px] text-gray-400 mt-0.5">{{ $t('countryDetail.appointmentPatternHint') }}</p>
               </div>
               <div>
                 <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.avgRefusalRate') }} (%)</label>
                 <input v-model.number="formData.avg_refusal_rate" type="number" min="0" max="100" step="0.1"
                   class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]" />
+                <p class="text-[10px] text-gray-400 mt-0.5">{{ $t('countryDetail.avgRefusalRateHint') }}</p>
               </div>
             </div>
             <div class="mt-3">
               <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.appointmentNotes') }}</label>
               <textarea v-model="formData.appointment_notes" rows="2"
-                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F] resize-none"></textarea>
+                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F] resize-none"
+                :placeholder="$t('countryDetail.appointmentNotesPlaceholder')"></textarea>
             </div>
           </fieldset>
 
           <!-- Стоимость -->
           <fieldset class="border border-gray-200 rounded-xl p-4">
             <legend class="text-xs font-semibold text-gray-500 uppercase px-2">{{ $t('countryDetail.feesTitle') }}</legend>
-            <div class="grid grid-cols-2 gap-3 mt-2">
+            <p class="text-[11px] text-gray-400 mb-3">{{ $t('countryDetail.feesTitleHint') }}</p>
+            <div class="grid grid-cols-2 gap-3">
               <div>
                 <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.consularFee') }} ($)</label>
                 <input v-model.number="formData.consular_fee_usd" type="number" min="0" step="0.01"
                   class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]" />
+                <p class="text-[10px] text-gray-400 mt-0.5">{{ $t('countryDetail.consularFeeHint') }}</p>
               </div>
               <div>
                 <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.serviceFee') }} ($)</label>
                 <input v-model.number="formData.service_fee_usd" type="number" min="0" step="0.01"
                   class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]" />
+                <p class="text-[10px] text-gray-400 mt-0.5">{{ $t('countryDetail.serviceFeeHint') }}</p>
               </div>
             </div>
           </fieldset>
@@ -205,12 +219,14 @@
             <div>
               <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.description') }}</label>
               <textarea v-model="formData.description" rows="2"
-                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F] resize-none"></textarea>
+                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F] resize-none"
+                :placeholder="$t('countryDetail.visaTypeDescPlaceholder')"></textarea>
             </div>
             <div>
               <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.notes') }}</label>
               <textarea v-model="formData.notes" rows="2"
-                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F] resize-none"></textarea>
+                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F] resize-none"
+                :placeholder="$t('countryDetail.notesPlaceholder')"></textarea>
             </div>
           </div>
 
@@ -321,6 +337,13 @@ function startEdit(s) {
     avg_refusal_rate: s.avg_refusal_rate ?? null,
   });
   showModal.value = true;
+}
+
+async function toggleActive(s) {
+  try {
+    await ownerCountriesApi.visaSettingUpdate(props.countryCode, s.id, { is_active: !s.is_active });
+    s.is_active = !s.is_active;
+  } catch { /* ignore */ }
 }
 
 async function loadSettings() {
