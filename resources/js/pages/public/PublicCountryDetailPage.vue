@@ -327,8 +327,8 @@ const ChatBubble = (props, { slots }) => {
         blue:   { bg: 'bg-gradient-to-br from-blue-50 to-indigo-50', border: 'border-blue-200', label: 'text-blue-500' },
     };
     const cl = colors[props.color] || colors.green;
-    return h('div', { class: 'relative' }, [
-        h('div', { class: `absolute -top-1.5 left-4 w-3 h-3 rotate-45 border-l border-t ${cl.bg} ${cl.border}` }),
+    return h('div', { class: 'relative mt-2' }, [
+        h('div', { class: `absolute -top-[7px] left-5 w-3.5 h-3.5 rotate-45 border-l border-t ${cl.bg} ${cl.border} z-10` }),
         h('div', { class: `relative rounded-2xl p-3.5 shadow-sm border ${cl.bg} ${cl.border}` }, [
             h('div', { class: 'flex items-center gap-1.5 mb-1.5' }, [
                 h('div', { class: 'w-5 h-5 rounded-full bg-gradient-to-br from-[#1BA97F] to-[#0d7a5c] flex items-center justify-center shrink-0' }, [
