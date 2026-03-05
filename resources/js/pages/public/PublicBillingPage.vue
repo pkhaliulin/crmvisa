@@ -47,8 +47,9 @@
                 :class="p.status === 'pending' ? 'border-amber-200' : 'border-gray-100'">
 
                 <!-- Шапка счета -->
-                <div class="px-5 py-3 flex items-center justify-between"
-                    :class="p.status === 'succeeded' ? 'bg-[#1BA97F]/5' : p.status === 'pending' ? 'bg-amber-50' : 'bg-gray-50'">
+                <div class="px-5 py-3 flex items-center justify-between cursor-pointer"
+                    :class="p.status === 'succeeded' ? 'bg-[#1BA97F]/5' : p.status === 'pending' ? 'bg-amber-50' : 'bg-gray-50'"
+                    @click="p.status !== 'pending' && toggleExpand(p.id)">
                     <div class="flex items-center gap-2">
                         <svg class="w-4 h-4 shrink-0" :class="p.status === 'succeeded' ? 'text-[#1BA97F]' : p.status === 'pending' ? 'text-amber-500' : 'text-gray-400'"
                             fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -56,6 +57,10 @@
                         </svg>
                         <span class="text-xs font-semibold text-[#0A1F44]">
                             {{ $t('billing.invoiceNum', { num: invoiceNum(p) }) }}
+                        </span>
+                        <!-- Сумма в шапке для свёрнутых -->
+                        <span v-if="p.status !== 'pending'" class="text-xs font-bold text-[#0A1F44] ml-1">
+                            {{ formatPrice(p.amount, p.currency) }}
                         </span>
                     </div>
                     <div class="flex items-center gap-2">
@@ -69,20 +74,43 @@
                             </svg>
                             {{ expiresIn(p.expires_at) }}
                         </div>
+                        <!-- Дата оплаты для succeeded -->
+                        <span v-if="p.status === 'succeeded' && p.paid_at" class="text-[10px] text-gray-400">
+                            {{ formatDateTime(p.paid_at) }}
+                        </span>
                         <router-link v-if="p.case_id"
                             :to="{ name: 'me.cases.show', params: { id: p.case_id } }"
-                            class="text-[10px] font-medium underline underline-offset-2 text-gray-400 hover:text-[#0A1F44] transition-colors">
+                            class="text-[10px] font-medium underline underline-offset-2 text-gray-400 hover:text-[#0A1F44] transition-colors"
+                            @click.stop>
                             {{ $t('billing.viewCase') }}
                         </router-link>
                         <span class="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full"
                             :class="paymentStatusBadge(p.status)">
                             {{ paymentStatusLabel(p.status) }}
                         </span>
+                        <!-- Стрелка раскрытия для не-pending -->
+                        <svg v-if="p.status !== 'pending'"
+                            class="w-4 h-4 text-gray-400 transition-transform duration-200"
+                            :class="expandedIds.has(p.id) ? 'rotate-180' : ''"
+                            fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                        </svg>
                     </div>
                 </div>
 
-                <div class="p-5 space-y-4">
-                    <!-- Исполнитель + дата -->
+                <!-- Для expired — компактная строка с кнопкой -->
+                <div v-if="p.status === 'expired' && !expandedIds.has(p.id)" class="px-5 py-3 flex items-center justify-between border-t border-gray-100">
+                    <div class="text-xs text-gray-400">{{ $t('billing.expiredHint') }}</div>
+                    <router-link v-if="p.case_id"
+                        :to="{ name: 'me.cases.show', params: { id: p.case_id } }"
+                        class="shrink-0 px-4 py-1.5 rounded-lg text-xs font-bold bg-[#1BA97F] hover:bg-[#158a68] text-white transition-colors">
+                        {{ $t('billing.payAgain') }}
+                    </router-link>
+                </div>
+
+                <!-- Контент: всегда видим для pending, раскрываемый для остальных -->
+                <div v-if="p.status === 'pending' || expandedIds.has(p.id)" class="p-5 space-y-4">
+                    <!-- Заявитель + Исполнитель + дата -->
                     <div class="flex items-start justify-between text-xs text-gray-400">
                         <div>
                             <div class="text-[10px] font-bold uppercase tracking-wider mb-0.5">{{ $t('billing.executor') }}</div>
@@ -93,6 +121,23 @@
                             <div class="text-[10px] font-bold uppercase tracking-wider mb-0.5">{{ $t('billing.invoiceDate') }}</div>
                             <div class="text-sm font-semibold text-[#0A1F44]">{{ formatDateTime(p.created_at) }}</div>
                             <div v-if="p.case_number" class="font-mono mt-0.5">{{ $t('billing.caseNum') }} {{ p.case_number }}</div>
+                        </div>
+                    </div>
+
+                    <!-- ФИО заявителя и участники -->
+                    <div v-if="p.applicant_name" class="bg-gray-50 rounded-xl p-3 space-y-1.5">
+                        <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{{ $t('billing.applicant') }}</div>
+                        <div class="flex items-center gap-2">
+                            <div class="w-7 h-7 bg-[#0A1F44] rounded-lg flex items-center justify-center shrink-0">
+                                <span class="text-white text-xs font-bold">{{ p.applicant_name.charAt(0) }}</span>
+                            </div>
+                            <div>
+                                <div class="text-sm font-semibold text-[#0A1F44]">{{ p.applicant_name }}</div>
+                                <div v-if="p.total_persons > 1" class="text-[11px] text-gray-400">
+                                    {{ p.total_persons }} {{ $t('billing.persons') }}
+                                    <template v-if="p.family_members?.length"> — {{ p.family_members.map(f => f.name).slice(0, 2).join(', ') }}<template v-if="p.family_members.length > 2">, {{ $t('billing.andMore', { count: p.family_members.length - 2 }) }}</template></template>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -141,8 +186,8 @@
                         </div>
                     </div>
 
-                    <!-- ИТОГО к оплате -->
-                    <div class="flex items-center justify-between p-4 rounded-xl bg-[#1BA97F] text-white">
+                    <!-- ИТОГО к оплате — только для pending -->
+                    <div v-if="p.status === 'pending'" class="flex items-center justify-between p-4 rounded-xl bg-[#1BA97F] text-white">
                         <span class="text-sm font-semibold">{{ $t('payment.total') }}</span>
                         <span class="text-xl font-bold">{{ formatPrice(p.amount, p.currency) }}</span>
                     </div>
@@ -251,33 +296,32 @@
                         </div>
                     </template>
 
-                    <!-- Оплачено -->
-                    <div v-else-if="p.status === 'succeeded'" class="flex items-center gap-3 p-4 bg-[#1BA97F]/5 rounded-xl">
-                        <div class="w-10 h-10 bg-[#1BA97F] rounded-xl flex items-center justify-center shrink-0">
-                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-                            </svg>
-                        </div>
-                        <div>
+                    <!-- Детали оплаченного счёта (в раскрытом виде) -->
+                    <div v-if="p.status === 'succeeded'" class="flex items-center gap-3 p-3 bg-[#1BA97F]/5 rounded-xl">
+                        <svg class="w-5 h-5 text-[#1BA97F] shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        <div class="flex-1">
                             <div class="text-sm font-semibold text-[#1BA97F]">{{ $t('billing.statusPaid') }}</div>
-                            <div v-if="p.paid_at" class="text-xs text-gray-400">{{ formatDateTime(p.paid_at) }}</div>
+                            <div class="text-xs text-gray-400">
+                                {{ formatDateTime(p.paid_at) }}
+                                <span v-if="p.provider"> — {{ $t('billing.paidVia') }} {{ providerLabel(p.provider) }}</span>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Аннулирован -->
-                    <div v-else-if="p.status === 'expired'" class="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-200">
-                        <div class="w-10 h-10 bg-gray-300 rounded-xl flex items-center justify-center shrink-0">
-                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
-                            </svg>
-                        </div>
-                        <div>
+                    <!-- Детали аннулированного счёта (в раскрытом виде) -->
+                    <div v-if="p.status === 'expired'" class="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-200">
+                        <svg class="w-5 h-5 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                        <div class="flex-1">
                             <div class="text-sm font-semibold text-gray-500">{{ $t('billing.statusExpired') }}</div>
                             <div class="text-xs text-gray-400">{{ $t('billing.expiredHint') }}</div>
                         </div>
                         <router-link v-if="p.case_id"
                             :to="{ name: 'me.cases.show', params: { id: p.case_id } }"
-                            class="ml-auto shrink-0 px-4 py-2 rounded-xl text-xs font-bold bg-[#1BA97F] hover:bg-[#158a68] text-white transition-colors">
+                            class="shrink-0 px-4 py-1.5 rounded-lg text-xs font-bold bg-[#1BA97F] hover:bg-[#158a68] text-white transition-colors">
                             {{ $t('billing.payAgain') }}
                         </router-link>
                     </div>
@@ -318,6 +362,7 @@ const payments = ref([]);
 const payingId = ref(null);
 const markingPaidId = ref(null);
 const toast = ref('');
+const expandedIds = ref(new Set());
 
 const PAYMENT_PROVIDERS = [
     { id: 'click', label: 'Click', icon: 'C', bgClass: 'bg-blue-100 text-blue-600' },
@@ -407,6 +452,17 @@ function formatDeadline(dateStr) {
     if (!dateStr) return '';
     const locale = i18n.global.locale.value === 'uz' ? 'uz-UZ' : 'ru-RU';
     return new Date(dateStr).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+function toggleExpand(id) {
+    const s = new Set(expandedIds.value);
+    if (s.has(id)) s.delete(id); else s.add(id);
+    expandedIds.value = s;
+}
+
+function providerLabel(provider) {
+    const map = { click: 'Click', payme: 'Payme', uzum: 'Uzum' };
+    return map[provider] || provider || '—';
 }
 
 function showToast(msg) {

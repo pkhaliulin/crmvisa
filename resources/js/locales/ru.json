@@ -1038,7 +1038,12 @@
     "invoiceDate": "Дата выставления",
     "qty": "Кол-во",
     "sum": "Сумма",
-    "openGroup": "Открыть группу"
+    "openGroup": "Открыть группу",
+    "showDetails": "Показать детали",
+    "hideDetails": "Скрыть детали",
+    "paidVia": "Оплачено через",
+    "andMore": "и ещё {count}",
+    "persons": "чел."
   },
   "agencySelection": {
     "title": "Выберите агентство",

@@ -1038,7 +1038,12 @@
     "invoiceDate": "Chiqarilgan sana",
     "qty": "Soni",
     "sum": "Summa",
-    "openGroup": "Guruhni ochish"
+    "openGroup": "Guruhni ochish",
+    "showDetails": "Tafsilotlarni ko'rsatish",
+    "hideDetails": "Tafsilotlarni yashirish",
+    "paidVia": "Orqali to'langan",
+    "andMore": "va yana {count}",
+    "persons": "kishi"
   },
   "agencySelection": {
     "title": "Agentlikni tanlang",
