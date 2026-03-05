@@ -25,7 +25,7 @@ class PublicAuthController extends Controller
         $sent = $this->auth->sendOtp($request->phone);
 
         if (! $sent) {
-            return ApiResponse::error('Не удалось отправить SMS. Попробуйте ещё раз.', 503);
+            return ApiResponse::error('Не удалось отправить SMS. Попробуйте ещё раз.', null, 503);
         }
 
         return ApiResponse::success(null, 'SMS с кодом подтверждения отправлен');
@@ -49,7 +49,7 @@ class PublicAuthController extends Controller
                 $request->code
             );
         } catch (\InvalidArgumentException $e) {
-            return ApiResponse::error($e->getMessage(), 422);
+            return ApiResponse::error($e->getMessage(), null, 422);
         }
 
         return ApiResponse::success([
@@ -93,7 +93,7 @@ class PublicAuthController extends Controller
                 $request->pin
             );
         } catch (\InvalidArgumentException $e) {
-            return ApiResponse::error($e->getMessage(), 422);
+            return ApiResponse::error($e->getMessage(), null, 422);
         }
 
         return ApiResponse::success([

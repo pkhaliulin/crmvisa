@@ -129,7 +129,8 @@
         <div class="space-y-3">
           <div>
             <label class="text-xs text-gray-500 mb-1 block">Имя *</label>
-            <input v-model="createForm.name" maxlength="80" placeholder="Анвар Исмоилов"
+            <input v-model="createForm.name" maxlength="80" placeholder="Anvar Ismoilov"
+              @blur="createForm.name = titleCase(createForm.name)"
               class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]" />
             <p v-if="createErrors.name" class="text-xs text-red-600 mt-1">{{ createErrors.name }}</p>
           </div>
@@ -218,6 +219,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue';
 import api from '@/api/index';
+import { titleCase } from '@/utils/format';
 
 const users      = ref([]);
 const loading    = ref(true);

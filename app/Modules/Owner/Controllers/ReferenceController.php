@@ -78,7 +78,7 @@ class ReferenceController extends Controller
             ->exists();
 
         if ($exists) {
-            return ApiResponse::error("Код '{$data['code']}' уже существует в справочнике '$category'.", 422);
+            return ApiResponse::error("Код '{$data['code']}' уже существует в справочнике '$category'.", null, 422);
         }
 
         $id = Str::uuid()->toString();

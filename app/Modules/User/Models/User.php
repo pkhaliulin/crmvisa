@@ -5,6 +5,7 @@ namespace App\Modules\User\Models;
 use App\Modules\Agency\Models\Agency;
 use App\Modules\Case\Models\VisaCase;
 use App\Support\Traits\HasUuid;
+use App\Support\Traits\NormalizesName;
 use App\Support\Traits\NormalizesPhone;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -17,7 +18,7 @@ use Spatie\Activitylog\Traits\LogsActivity;
 
 class User extends Authenticatable implements JWTSubject
 {
-    use HasUuid, SoftDeletes, Notifiable, NormalizesPhone, LogsActivity;
+    use HasUuid, SoftDeletes, Notifiable, NormalizesPhone, NormalizesName, LogsActivity;
 
     protected $keyType = 'string';
     public $incrementing = false;

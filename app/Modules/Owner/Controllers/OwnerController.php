@@ -454,6 +454,7 @@ class OwnerController extends Controller
         if ($usageCount > 0) {
             return ApiResponse::error(
                 "Тип визы используется в $usageCount настройках стран. Сначала удалите их.",
+                null,
                 422
             );
         }

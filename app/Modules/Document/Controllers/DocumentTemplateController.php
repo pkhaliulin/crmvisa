@@ -87,7 +87,7 @@ class DocumentTemplateController extends Controller
         $template = DocumentTemplate::findOrFail($id);
 
         if ($template->countryRequirements()->exists()) {
-            return ApiResponse::error('Нельзя удалить: шаблон привязан к требованиям стран. Сначала удалите привязки.', 422);
+            return ApiResponse::error('Нельзя удалить: шаблон привязан к требованиям стран. Сначала удалите привязки.', null, 422);
         }
 
         $template->delete();

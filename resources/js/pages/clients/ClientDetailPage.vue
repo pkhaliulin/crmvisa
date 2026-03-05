@@ -18,7 +18,7 @@
         <div class="flex-1 min-w-0">
           <h2 class="text-xl font-bold text-gray-900 truncate">{{ client.name }}</h2>
           <p class="text-sm text-gray-500">
-            {{ client.phone }}<span v-if="client.email"> · {{ client.email }}</span>
+            {{ formatPhone(client.phone) }}<span v-if="client.email"> · {{ client.email }}</span>
           </p>
         </div>
         <RouterLink :to="{ name: 'clients.create', query: { edit: client.id } }">
@@ -143,6 +143,7 @@ import { useCountries } from '@/composables/useCountries';
 import { useReferences } from '@/composables/useReferences';
 import AppBadge from '@/components/AppBadge.vue';
 import AppButton from '@/components/AppButton.vue';
+import { formatPhone } from '@/utils/format';
 
 const { countryName, countryFlag, visaTypeName } = useCountries();
 const { label: refLabel } = useReferences();

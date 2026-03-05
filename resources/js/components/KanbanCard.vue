@@ -28,7 +28,7 @@
         {{ item.client?.name ?? '—' }}
       </p>
     </div>
-    <p class="text-xs text-gray-400">{{ item.client?.phone }}</p>
+    <p class="text-xs text-gray-400">{{ formatPhone(item.client?.phone) }}</p>
 
     <!-- SLA Stage timer -->
     <div v-if="item.stage_sla_hours_left !== null && item.stage_sla_hours_left !== undefined"
@@ -75,6 +75,7 @@
 <script setup>
 import { computed } from 'vue';
 import AppBadge from './AppBadge.vue';
+import { formatPhone } from '@/utils/format';
 
 const props = defineProps({ item: Object });
 defineEmits(['click', 'move']);

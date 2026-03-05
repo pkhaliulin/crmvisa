@@ -17,11 +17,12 @@
 
         <AppInput
           v-model="form.name"
-          label="ФИО"
-          placeholder="Ислом Каримов"
+          label="ФИО (латиницей, как в паспорте)"
+          placeholder="Islom Karimov"
           required
           :error="errors.name"
           :maxlength="120"
+          @blur="form.name = titleCase(form.name)"
         />
 
         <!-- Phone — required, telegram hint -->
@@ -85,6 +86,7 @@
             label="Номер паспорта"
             placeholder="AA1234567"
             :maxlength="20"
+            @blur="form.passport_number = (form.passport_number || '').toUpperCase()"
           />
           <AppInput
             v-model="form.passport_expires_at"
@@ -128,6 +130,7 @@ import AppPhoneInput from '@/components/AppPhoneInput.vue';
 import AppTextarea from '@/components/AppTextarea.vue';
 import AppSelect from '@/components/AppSelect.vue';
 import AppButton from '@/components/AppButton.vue';
+import { titleCase } from '@/utils/format';
 
 const router = useRouter();
 const route  = useRoute();

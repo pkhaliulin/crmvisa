@@ -14,10 +14,11 @@
       <AppInput
         v-model="form.name"
         label="Ваше имя (руководитель)"
-        placeholder="Ислом Каримов"
+        placeholder="Islom Karimov"
         required
         :error="errors.name"
         :maxlength="80"
+        @blur="form.name = titleCase(form.name)"
       />
       <AppInput
         v-model="form.email"
@@ -69,6 +70,7 @@ import AuthLayout from '@/layouts/AuthLayout.vue';
 import AppInput from '@/components/AppInput.vue';
 import AppPhoneInput from '@/components/AppPhoneInput.vue';
 import AppButton from '@/components/AppButton.vue';
+import { titleCase } from '@/utils/format';
 
 const auth   = useAuthStore();
 const router = useRouter();

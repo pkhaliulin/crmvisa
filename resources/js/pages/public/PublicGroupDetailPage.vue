@@ -191,6 +191,7 @@
                         <div>
                             <label class="block text-xs font-medium text-gray-500 mb-1">{{ $t('group.memberName') }}</label>
                             <input v-model="memberForm.name" type="text" :placeholder="$t('group.memberNamePlaceholder')"
+                                @blur="memberForm.name = titleCase(memberForm.name)"
                                 class="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-[#0A1F44] focus:outline-none focus:border-[#1BA97F] transition-colors">
                         </div>
                         <div v-if="addMemberError" class="text-xs text-red-500">{{ addMemberError }}</div>
@@ -341,6 +342,7 @@ import { useI18n } from 'vue-i18n';
 import { usePublicAuthStore } from '@/stores/publicAuth';
 import { publicPortalApi } from '@/api/public';
 import { codeToFlag } from '@/utils/countries';
+import { titleCase } from '@/utils/format';
 
 const { t } = useI18n();
 const router = useRouter();

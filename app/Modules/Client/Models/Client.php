@@ -4,6 +4,7 @@ namespace App\Modules\Client\Models;
 
 use App\Support\Abstracts\BaseModel;
 use App\Support\Traits\HasTenant;
+use App\Support\Traits\NormalizesName;
 use App\Support\Traits\NormalizesPhone;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Notifications\Notifiable;
@@ -11,7 +12,7 @@ use Spatie\Activitylog\LogOptions;
 
 class Client extends BaseModel
 {
-    use HasTenant, Notifiable, NormalizesPhone;
+    use HasTenant, Notifiable, NormalizesPhone, NormalizesName;
 
     protected $fillable = [
         'agency_id',
@@ -56,6 +57,7 @@ class Client extends BaseModel
     {
         $this->attributes['email'] = $value !== null ? strtolower(trim($value)) : null;
     }
+
 
     public function isPassportExpiringSoon(int $days = 90): bool
     {

@@ -33,7 +33,7 @@
                 <p class="font-semibold text-blue-700 group-hover:underline">{{ c.name }}</p>
                 <p class="text-xs text-gray-400">{{ c.email ?? '' }}</p>
               </td>
-              <td class="px-4 py-3 text-gray-500">{{ c.phone ?? '—' }}</td>
+              <td class="px-4 py-3 text-gray-500 font-mono text-xs">{{ formatPhone(c.phone) }}</td>
               <td class="px-4 py-3">
                 <span v-if="c.nationality" class="flex items-center gap-1.5">
                   <span>{{ codeToFlag(c.nationality?.slice(0,2) ?? '') }}</span>
@@ -65,6 +65,7 @@ import { ref, onMounted, computed } from 'vue';
 import { RouterLink, useRouter } from 'vue-router';
 import { clientsApi } from '@/api/clients';
 import { codeToFlag } from '@/utils/countries';
+import { formatPhone } from '@/utils/format';
 import { useReferences } from '@/composables/useReferences';
 import AppInput from '@/components/AppInput.vue';
 import AppButton from '@/components/AppButton.vue';

@@ -5,6 +5,7 @@ namespace App\Modules\PublicPortal\Models;
 use App\Modules\Group\Models\CaseGroup;
 use App\Modules\Group\Models\CaseGroupMember;
 use App\Support\Traits\HasUuid;
+use App\Support\Traits\NormalizesName;
 use App\Support\Traits\NormalizesPhone;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -12,7 +13,7 @@ use Illuminate\Support\Facades\Hash;
 
 class PublicUser extends Model
 {
-    use HasUuid, NormalizesPhone;
+    use HasUuid, NormalizesPhone, NormalizesName;
 
     protected $table = 'public_users';
 

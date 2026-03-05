@@ -78,7 +78,7 @@ class CountryRequirementController extends Controller
             ->exists();
 
         if ($exists) {
-            return ApiResponse::error('Такая привязка уже существует', 422);
+            return ApiResponse::error('Такая привязка уже существует', null, 422);
         }
 
         $req = CountryVisaRequirement::create($data);
