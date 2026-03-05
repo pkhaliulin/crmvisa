@@ -48,21 +48,20 @@
 
                 <!-- Шапка счета -->
                 <div class="px-5 py-3 flex items-center justify-between"
-                    :class="p.status === 'succeeded' ? 'bg-[#1BA97F]/5' : p.status === 'pending' ? 'bg-[#0A1F44]' : 'bg-gray-50'">
+                    :class="p.status === 'succeeded' ? 'bg-[#1BA97F]/5' : p.status === 'pending' ? 'bg-amber-50' : 'bg-gray-50'">
                     <div class="flex items-center gap-2">
-                        <svg class="w-4 h-4 shrink-0" :class="p.status === 'succeeded' ? 'text-[#1BA97F]' : p.status === 'pending' ? 'text-white/60' : 'text-gray-400'"
+                        <svg class="w-4 h-4 shrink-0" :class="p.status === 'succeeded' ? 'text-[#1BA97F]' : p.status === 'pending' ? 'text-amber-500' : 'text-gray-400'"
                             fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                         </svg>
-                        <span class="text-xs font-semibold" :class="p.status === 'pending' ? 'text-white' : 'text-[#0A1F44]'">
+                        <span class="text-xs font-semibold text-[#0A1F44]">
                             {{ $t('billing.invoiceNum', { num: invoiceNum(p) }) }}
                         </span>
                     </div>
                     <div class="flex items-center gap-3">
                         <router-link v-if="p.case_id"
                             :to="{ name: 'me.cases.show', params: { id: p.case_id } }"
-                            class="text-[10px] font-medium underline underline-offset-2 transition-colors"
-                            :class="p.status === 'pending' ? 'text-white/70 hover:text-white' : 'text-gray-400 hover:text-[#0A1F44]'">
+                            class="text-[10px] font-medium underline underline-offset-2 text-gray-400 hover:text-[#0A1F44] transition-colors">
                             {{ $t('billing.viewCase') }}
                         </router-link>
                         <span class="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full"
