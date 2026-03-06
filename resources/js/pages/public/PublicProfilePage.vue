@@ -982,7 +982,15 @@ async function save() {
         // Собираем name из firstName + lastName
         form.name = [firstName.value, lastName.value].filter(Boolean).join(' ').trim();
         const payload = { ...form };
-        if (!payload.monthly_income_usd) delete payload.monthly_income_usd;
+        // Удаляем пустые строки для integer-полей (бэкенд требует integer, '' не пройдёт)
+        const intFields = ['monthly_income_usd', 'employed_years', 'children_count', 'visas_obtained_count', 'refusals_count', 'last_refusal_year'];
+        for (const f of intFields) {
+            if (payload[f] === '' || payload[f] === null || payload[f] === undefined) delete payload[f];
+        }
+        // Удаляем пустые строки для остальных полей (не отправлять пустышки)
+        for (const [k, v] of Object.entries(payload)) {
+            if (v === '') delete payload[k];
+        }
         const { data } = await publicPortalApi.updateProfile(payload);
         publicAuth.user = data.data.user;
         localStorage.setItem('public_user', JSON.stringify(data.data.user));
