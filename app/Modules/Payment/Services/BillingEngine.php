@@ -418,7 +418,7 @@ class BillingEngine
 
         // Лиды за текущий месяц
         $leadsThisMonth = DB::table('public_leads')
-            ->where('agency_id', $agency->id)
+            ->where('assigned_agency_id', $agency->id)
             ->where('created_at', '>=', now()->startOfMonth())
             ->count();
 
