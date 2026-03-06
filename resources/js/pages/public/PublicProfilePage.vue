@@ -244,7 +244,7 @@
                             autocomplete="off"
                             spellcheck="false"
                             class="w-14 py-2.5 text-center text-sm font-mono uppercase outline-none
-                                   bg-gray-50 border-r border-gray-200 tracking-[0.3em] text-[#0A1F44] font-bold"
+                                   bg-gray-50 border-r border-gray-200 tracking-[0.15em] text-[#0A1F44] font-bold"
                         />
                         <!-- Разделитель -->
                         <div class="flex items-center px-2.5 text-gray-300 text-sm select-none font-light">—</div>
