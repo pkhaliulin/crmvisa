@@ -36,6 +36,8 @@ export const publicPortalApi = {
     // Profile
     me:             ()       => publicApi.get('/me'),
     updateProfile:  (data)   => publicApi.patch('/me', data),
+    changePhoneSendOtp: (phone) => publicApi.post('/me/change-phone/send-otp', { phone }),
+    changePhoneVerify:  (phone, code) => publicApi.post('/me/change-phone/verify', { phone, code }),
     uploadPassport: (file)   => {
         const fd = new FormData();
         fd.append('passport', file);

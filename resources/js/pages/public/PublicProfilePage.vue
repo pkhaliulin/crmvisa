@@ -30,6 +30,20 @@
                     </svg>
                     <p class="text-xs text-blue-700">{{ $t('profile.latinWarning') }}</p>
                 </div>
+                <!-- Телефон -->
+                <div class="mb-4">
+                    <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.phone') }}</label>
+                    <div class="flex items-center gap-2">
+                        <div class="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 text-[#0A1F44] font-medium">
+                            {{ formatPhone(publicAuth.user?.phone) }}
+                        </div>
+                        <button @click="showPhoneModal = true" type="button"
+                            class="shrink-0 text-xs text-[#1BA97F] hover:text-[#169B72] font-medium px-3 py-2.5 border border-[#1BA97F]/30 rounded-xl hover:bg-[#1BA97F]/5 transition-colors">
+                            {{ $t('profile.changePhone') }}
+                        </button>
+                    </div>
+                </div>
+
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.firstName') }} <span class="text-red-500">*</span></label>
@@ -525,6 +539,199 @@
                 {{ saving ? $t('profile.savingProfile') : $t('profile.saveProfile') }}
             </button>
         </div>
+
+        <!-- Члены семьи -->
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div class="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
+                <div>
+                    <h3 class="font-bold text-[#0A1F44] text-sm">{{ $t('profile.familyMembersTitle') }}</h3>
+                    <p class="text-xs text-gray-400 mt-0.5">{{ $t('profile.familyMembersHint') }}</p>
+                </div>
+                <button @click="openFamilyForm()" type="button"
+                    class="shrink-0 flex items-center gap-1.5 text-xs font-semibold text-[#1BA97F] hover:text-[#169B72] px-3 py-2 border border-[#1BA97F]/30 rounded-xl hover:bg-[#1BA97F]/5 transition-colors">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+                    {{ $t('profile.addFamilyMember') }}
+                </button>
+            </div>
+
+            <div class="p-5">
+                <!-- Пусто -->
+                <div v-if="!familyMembers.length && !familyLoading" class="text-center py-6">
+                    <svg class="w-10 h-10 text-gray-200 mx-auto mb-2" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"/></svg>
+                    <p class="text-xs text-gray-400">{{ $t('profile.noFamilyMembers') }}</p>
+                </div>
+
+                <!-- Список членов семьи -->
+                <div v-else class="space-y-3">
+                    <div v-for="member in familyMembers" :key="member.id"
+                        class="border border-gray-100 rounded-xl p-4 hover:border-gray-200 transition-colors">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="font-semibold text-sm text-[#0A1F44]">{{ member.name }}</span>
+                                    <span class="text-[10px] font-medium px-2 py-0.5 rounded-full"
+                                        :class="relationshipColor(member.relationship)">
+                                        {{ $t('profile.rel' + capitalize(member.relationship)) }}
+                                    </span>
+                                    <span v-if="member.is_minor" class="text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-50 text-amber-600">
+                                        {{ $t('profile.minor') }}
+                                    </span>
+                                </div>
+                                <div class="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-gray-400">
+                                    <span v-if="member.dob">{{ member.dob }}</span>
+                                    <span v-if="member.gender">{{ member.gender === 'M' ? $t('profile.male') : $t('profile.female') }}</span>
+                                    <span v-if="member.passport_number">{{ member.passport_number }}</span>
+                                    <span v-if="member.passport_expires_at">{{ $t('profile.memberPassportExpiry') }}: {{ member.passport_expires_at }}</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-1 shrink-0">
+                                <button @click="openFamilyForm(member)" type="button"
+                                    class="p-1.5 text-gray-400 hover:text-[#1BA97F] rounded-lg hover:bg-gray-50 transition-colors">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"/></svg>
+                                </button>
+                                <button @click="deleteFamilyMember(member)" type="button"
+                                    class="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модалка смены телефона -->
+    <div v-if="showPhoneModal"
+        class="fixed inset-0 bg-[#0A1F44]/40 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        @click.self="showPhoneModal = false">
+        <div class="bg-white w-full max-w-sm rounded-2xl shadow-xl p-6">
+            <h3 class="text-base font-bold text-[#0A1F44] mb-4">{{ $t('profile.changePhone') }}</h3>
+
+            <div v-if="!phoneOtpSent">
+                <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.newPhone') }}</label>
+                <div class="flex gap-2">
+                    <span class="flex items-center px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-500 font-medium">+998</span>
+                    <input v-model="newPhoneDigits" type="tel" maxlength="9" inputmode="numeric" placeholder="90 123 45 67"
+                        class="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] transition-colors"
+                        @input="newPhoneDigits = newPhoneDigits.replace(/\D/g, '')"/>
+                </div>
+                <p v-if="phoneError" class="text-xs text-red-500 mt-2">{{ phoneError }}</p>
+                <button @click="sendPhoneOtp" :disabled="newPhoneDigits.length < 9 || phoneSending"
+                    class="w-full mt-4 bg-[#1BA97F] hover:bg-[#169B72] disabled:opacity-50 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors">
+                    {{ phoneSending ? '...' : $t('profile.sendCode') }}
+                </button>
+            </div>
+
+            <div v-else>
+                <p class="text-sm text-gray-500 mb-3">{{ $t('profile.codeSent') }}: <span class="font-medium text-[#0A1F44]">+998 {{ newPhoneDigits }}</span></p>
+                <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.enterCode') }}</label>
+                <div class="flex gap-2 justify-center mb-3">
+                    <input v-for="i in 4" :key="i" :ref="el => { if (el) otpInputs[i-1] = el }"
+                        type="text" maxlength="1" inputmode="numeric"
+                        class="w-12 h-12 text-center text-lg font-bold border-2 rounded-xl outline-none transition-colors"
+                        :class="otpCode[i-1] ? 'border-[#1BA97F] bg-[#1BA97F]/5' : 'border-gray-200 focus:border-[#1BA97F]'"
+                        :value="otpCode[i-1] || ''"
+                        @input="handleOtpInput(i-1, $event)"
+                        @keydown.backspace="handleOtpBackspace(i-1, $event)"/>
+                </div>
+                <p v-if="phoneError" class="text-xs text-red-500 mb-3 text-center">{{ phoneError }}</p>
+                <button @click="verifyPhoneOtp" :disabled="otpCode.join('').length < 4 || phoneSending"
+                    class="w-full bg-[#1BA97F] hover:bg-[#169B72] disabled:opacity-50 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors">
+                    {{ phoneSending ? '...' : $t('profile.confirmChange') }}
+                </button>
+            </div>
+
+            <button @click="showPhoneModal = false; phoneOtpSent = false; phoneError = ''"
+                class="w-full mt-2 text-sm text-gray-400 hover:text-gray-600 py-2 transition-colors">
+                {{ $t('common.cancel') }}
+            </button>
+        </div>
+    </div>
+
+    <!-- Модалка добавления/редактирования члена семьи -->
+    <div v-if="showFamilyForm"
+        class="fixed inset-0 bg-[#0A1F44]/40 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center sm:p-4"
+        @click.self="showFamilyForm = false">
+        <div class="bg-white w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl shadow-xl p-6 max-h-[90vh] overflow-y-auto">
+            <h3 class="text-base font-bold text-[#0A1F44] mb-4">
+                {{ editingMember ? $t('common.edit') : $t('profile.addFamilyMember') }}
+            </h3>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.memberName') }} <span class="text-red-500">*</span></label>
+                    <input v-model="familyForm.name" @input="familyForm.name = familyForm.name.replace(/[^A-Za-z\s\-']/g, '').toUpperCase()"
+                        :placeholder="$t('profile.firstNamePlaceholder') + ' ' + $t('profile.lastNamePlaceholder')"
+                        class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] transition-colors"/>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.relationship') }} <span class="text-red-500">*</span></label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button v-for="rel in relationships" :key="rel.value" type="button"
+                            @click="familyForm.relationship = rel.value"
+                            :class="familyForm.relationship === rel.value ? 'border-[#1BA97F] bg-[#1BA97F]/10 text-[#0A1F44] font-semibold' : 'border-gray-100 bg-gray-50 text-gray-600 hover:border-gray-200'"
+                            class="px-2 py-2 rounded-xl text-xs border transition-colors text-center">
+                            {{ rel.label }}
+                        </button>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.memberDob') }}</label>
+                        <input v-model="familyForm.dob" type="date" class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] transition-colors"/>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.memberGender') }}</label>
+                        <div class="flex gap-2">
+                            <button type="button" @click="familyForm.gender = 'M'"
+                                :class="familyForm.gender === 'M' ? 'bg-[#1BA97F] text-white border-[#1BA97F]' : 'bg-white text-gray-600 border-gray-200'"
+                                class="flex-1 px-2 py-2.5 rounded-xl text-xs border transition-colors font-medium">{{ $t('profile.male') }}</button>
+                            <button type="button" @click="familyForm.gender = 'F'"
+                                :class="familyForm.gender === 'F' ? 'bg-[#1BA97F] text-white border-[#1BA97F]' : 'bg-white text-gray-600 border-gray-200'"
+                                class="flex-1 px-2 py-2.5 rounded-xl text-xs border transition-colors font-medium">{{ $t('profile.female') }}</button>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.memberCitizenship') }}</label>
+                    <select v-model="familyForm.citizenship"
+                        class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] transition-colors">
+                        <option value="">{{ $t('profile.selectCountry') }}</option>
+                        <option value="UZ">{{ $t('countries.UZ') }}</option>
+                        <option value="KZ">{{ $t('countries.KZ') }}</option>
+                        <option value="KG">{{ $t('countries.KG') }}</option>
+                        <option value="TJ">{{ $t('countries.TJ') }}</option>
+                        <option value="TM">{{ $t('countries.TM') }}</option>
+                        <option value="RU">{{ $t('countries.RU') }}</option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.memberPassport') }}</label>
+                        <input v-model="familyForm.passport_number" maxlength="20" placeholder="AA1234567"
+                            @input="familyForm.passport_number = familyForm.passport_number.toUpperCase()"
+                            class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] transition-colors font-mono"/>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.memberPassportExpiry') }}</label>
+                        <input v-model="familyForm.passport_expires_at" type="date"
+                            class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] transition-colors"/>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex gap-3 mt-6">
+                <button @click="showFamilyForm = false" type="button"
+                    class="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50 transition-colors">
+                    {{ $t('common.cancel') }}
+                </button>
+                <button @click="saveFamilyMember" :disabled="!familyForm.name || !familyForm.relationship || familySaving" type="button"
+                    class="flex-1 bg-[#1BA97F] hover:bg-[#169B72] disabled:opacity-50 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors">
+                    {{ familySaving ? '...' : $t('profile.saveMember') }}
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- Quick Wizard Modal -->
@@ -601,6 +808,7 @@ import { publicPortalApi } from '@/api/public';
 import { usePublicAuthStore } from '@/stores/publicAuth';
 import { usePublicReferences } from '@/composables/usePublicReferences';
 import { ageMessages } from '@/data/ageMessages';
+import { formatPhone } from '@/utils/format';
 
 const { t, locale } = useI18n();
 const router     = useRouter();
@@ -1004,6 +1212,124 @@ async function save() {
     }
 }
 
+// --- Смена телефона ---
+const showPhoneModal = ref(false);
+const newPhoneDigits = ref('');
+const phoneOtpSent   = ref(false);
+const phoneSending   = ref(false);
+const phoneError     = ref('');
+const otpCode        = ref(['', '', '', '']);
+const otpInputs      = ref([]);
+
+async function sendPhoneOtp() {
+    phoneError.value = '';
+    phoneSending.value = true;
+    try {
+        await publicPortalApi.changePhoneSendOtp('+998' + newPhoneDigits.value);
+        phoneOtpSent.value = true;
+    } catch (e) {
+        phoneError.value = e.response?.data?.message || t('profile.saveError');
+    } finally { phoneSending.value = false; }
+}
+
+function handleOtpInput(idx, e) {
+    const val = e.target.value.replace(/\D/g, '');
+    otpCode.value[idx] = val.slice(0, 1);
+    e.target.value = otpCode.value[idx];
+    if (val && idx < 3) nextTick(() => otpInputs.value[idx + 1]?.focus());
+}
+
+function handleOtpBackspace(idx, e) {
+    if (!otpCode.value[idx] && idx > 0) {
+        e.preventDefault();
+        otpCode.value[idx - 1] = '';
+        nextTick(() => otpInputs.value[idx - 1]?.focus());
+    }
+}
+
+async function verifyPhoneOtp() {
+    phoneError.value = '';
+    phoneSending.value = true;
+    try {
+        const { data } = await publicPortalApi.changePhoneVerify('+998' + newPhoneDigits.value, otpCode.value.join(''));
+        publicAuth.user = data.data.user;
+        localStorage.setItem('public_user', JSON.stringify(data.data.user));
+        showPhoneModal.value = false;
+        phoneOtpSent.value = false;
+        newPhoneDigits.value = '';
+        otpCode.value = ['', '', '', ''];
+    } catch (e) {
+        phoneError.value = e.response?.data?.message || t('profile.saveError');
+    } finally { phoneSending.value = false; }
+}
+
+// --- Члены семьи ---
+const familyMembers  = ref([]);
+const familyLoading  = ref(false);
+const showFamilyForm = ref(false);
+const familySaving   = ref(false);
+const editingMember  = ref(null);
+const familyForm     = reactive({ name: '', relationship: '', dob: '', gender: '', citizenship: '', passport_number: '', passport_expires_at: '' });
+
+const relationships = computed(() => [
+    { value: 'child',   label: t('profile.relChild') },
+    { value: 'spouse',  label: t('profile.relSpouse') },
+    { value: 'parent',  label: t('profile.relParent') },
+    { value: 'sibling', label: t('profile.relSibling') },
+    { value: 'other',   label: t('profile.relOther') },
+]);
+
+function capitalize(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : ''; }
+
+function relationshipColor(rel) {
+    const map = { child: 'bg-blue-50 text-blue-600', spouse: 'bg-pink-50 text-pink-600', parent: 'bg-purple-50 text-purple-600', sibling: 'bg-teal-50 text-teal-600' };
+    return map[rel] || 'bg-gray-50 text-gray-600';
+}
+
+function openFamilyForm(member = null) {
+    editingMember.value = member;
+    if (member) {
+        Object.assign(familyForm, { name: member.name, relationship: member.relationship, dob: member.dob || '', gender: member.gender || '', citizenship: member.citizenship || '', passport_number: member.passport_number || '', passport_expires_at: member.passport_expires_at || '' });
+    } else {
+        Object.assign(familyForm, { name: '', relationship: '', dob: '', gender: '', citizenship: '', passport_number: '', passport_expires_at: '' });
+    }
+    showFamilyForm.value = true;
+}
+
+async function loadFamilyMembers() {
+    familyLoading.value = true;
+    try {
+        const { data } = await publicPortalApi.familyMembers();
+        familyMembers.value = data.data;
+    } catch { /* ignore */ }
+    finally { familyLoading.value = false; }
+}
+
+async function saveFamilyMember() {
+    familySaving.value = true;
+    try {
+        const payload = { ...familyForm };
+        for (const [k, v] of Object.entries(payload)) { if (v === '') delete payload[k]; }
+        if (editingMember.value) {
+            await publicPortalApi.updateFamilyMember(editingMember.value.id, payload);
+        } else {
+            await publicPortalApi.addFamilyMember(payload);
+        }
+        showFamilyForm.value = false;
+        await loadFamilyMembers();
+    } catch (e) {
+        console.error('Family save error:', e.response?.data || e);
+    } finally { familySaving.value = false; }
+}
+
+async function deleteFamilyMember(member) {
+    if (!confirm(t('profile.confirmDeleteMember'))) return;
+    try {
+        await publicPortalApi.deleteFamilyMember(member.id);
+        await loadFamilyMembers();
+    } catch { /* ignore */ }
+}
+
 // Инициализация серии/номера из формы при старте
 initPassportFields(form.passport_number);
 
@@ -1022,6 +1348,7 @@ onMounted(async () => {
         lastName.value = parts.last;
         initPassportFields(form.passport_number);
     } catch { /* ignore */ }
+    loadFamilyMembers();
 });
 </script>
 
