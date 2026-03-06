@@ -167,6 +167,19 @@ class PublicProfileController extends Controller
             'planned_return_date'  => ['nullable', 'date', 'after:today'],
         ]);
 
+        // Проверяем, есть ли хотя бы одно агентство, работающее с этой страной
+        $hasAgencies = \App\Modules\Agency\Models\AgencyWorkCountry::where('country_code', strtoupper($data['country_code']))
+            ->where('is_active', true)
+            ->whereHas('agency', fn ($q) => $q->where('is_active', true))
+            ->exists();
+
+        if (! $hasAgencies) {
+            return ApiResponse::error('К сожалению, пока ни одно агентство не работает с этой страной. Заявку создать невозможно.', [
+                'no_agencies' => true,
+                'country_code' => strtoupper($data['country_code']),
+            ], 422);
+        }
+
         $case = DB::transaction(function () use ($publicUser, $data) {
             $client = Client::withoutTenant()
                 ->where('public_user_id', $publicUser->id)

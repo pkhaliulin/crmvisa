@@ -336,6 +336,7 @@ Route::prefix('v1')->group(function () {
         // Список стран для лендинга
         Route::get('countries', [PublicScoringController::class, 'countries']);
         Route::get('countries/{code}', [PublicScoringController::class, 'countryView']);
+        Route::get('served-countries', [PublicScoringController::class, 'servedCountries']);
 
         // Phone auth
         Route::post('auth/send-otp',  [PublicAuthController::class, 'sendOtp'])->middleware('throttle:5,1');

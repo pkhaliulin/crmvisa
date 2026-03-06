@@ -93,6 +93,7 @@ export const publicPortalApi = {
     payForGroup:       (id, provider)  => publicApi.post(`/me/groups/${id}/pay`, { provider }),
 
     // Scoring
+    servedCountries: ()  => publicApi.get('/served-countries'),
     countries:    ()     => publicApi.get('/countries'),
     countryDetail:(code) => publicApi.get(`/countries/${code}`),
     scoreAll:     ()     => publicApi.get('/scoring'),

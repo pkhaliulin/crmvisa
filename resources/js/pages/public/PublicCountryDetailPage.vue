@@ -287,7 +287,11 @@
             </div>
 
             <!-- Подать заявку -->
-            <button @click="createDraftCase"
+            <div v-if="c.has_agencies === false" class="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-center">
+                <p class="text-sm font-semibold text-amber-700">{{ $t('portal.noAgenciesForCountry') }}</p>
+                <p class="text-xs text-amber-600 mt-1">{{ $t('portal.noAgenciesHint') }}</p>
+            </div>
+            <button v-else @click="createDraftCase"
                 :disabled="creatingCase"
                 class="w-full py-3.5 bg-[#0A1F44] hover:bg-[#0d2a5e] text-white text-sm font-semibold rounded-2xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
                 <svg v-if="creatingCase" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">

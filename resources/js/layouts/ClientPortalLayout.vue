@@ -122,7 +122,7 @@
 
                 <!-- New application CTA -->
                 <div class="p-3 border-b border-gray-50">
-                    <button @click="showNewCase = true"
+                    <button @click="showNewCase = true; loadServedCountries()"
                         class="w-full flex items-center justify-center gap-2 bg-[#0A1F44] hover:bg-[#0d2a5e] text-white rounded-xl px-4 py-3 text-sm font-semibold transition-colors">
                         <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
@@ -184,7 +184,7 @@
                 </router-link>
 
                 <!-- Central new case button -->
-                <button @click="showNewCase = true" class="flex-1 flex flex-col items-center justify-center gap-0.5">
+                <button @click="showNewCase = true; loadServedCountries()" class="flex-1 flex flex-col items-center justify-center gap-0.5">
                     <div class="w-11 h-11 bg-[#0A1F44] rounded-xl flex items-center justify-center -mt-2 shadow-lg">
                         <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
@@ -240,37 +240,44 @@
 
                     <!-- Форма создания заявки -->
                     <div v-else class="space-y-3">
-                        <div>
-                            <label class="block text-xs font-medium text-gray-500 mb-1">{{ $t('portal.destinationCountry') }}</label>
-                            <select v-model="newCaseForm.country_code"
-                                class="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-[#0A1F44] focus:outline-none focus:border-[#1BA97F] transition-colors bg-white">
-                                <option value="">{{ $t('profile.selectCountry') }}</option>
-                                <option v-for="c in TOP_COUNTRIES" :key="c" :value="c">{{ $t('countries.' + c) }}</option>
-                            </select>
+                        <div v-if="servedCountries.length === 0 && !loadingServed" class="rounded-xl border border-gray-200 bg-gray-50 p-4 text-center">
+                            <p class="text-sm text-gray-500">{{ $t('portal.noServedCountries') }}</p>
                         </div>
-                        <div>
-                            <label class="block text-xs font-medium text-gray-500 mb-1">{{ $t('portal.visaTypeLabel') }}</label>
-                            <select v-model="newCaseForm.visa_type"
-                                class="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-[#0A1F44] focus:outline-none focus:border-[#1BA97F] transition-colors bg-white">
-                                <option value="">{{ $t('portal.selectType') }}</option>
-                                <option value="tourist">{{ $t('portal.tourist') }}</option>
-                                <option value="business">{{ $t('portal.business') }}</option>
-                                <option value="student">{{ $t('portal.studentVisa') }}</option>
-                                <option value="work">{{ $t('portal.work') }}</option>
-                                <option value="transit">{{ $t('portal.transit') }}</option>
-                            </select>
-                        </div>
-                        <div v-if="newCaseError" class="text-xs text-red-500">{{ newCaseError }}</div>
-                        <button @click="createDraftCase"
-                            :disabled="newCaseSubmitting || !newCaseForm.country_code || !newCaseForm.visa_type"
-                            class="w-full py-3 bg-[#1BA97F] hover:bg-[#169B72] text-white text-sm font-semibold rounded-xl
-                                   transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
-                            <svg v-if="newCaseSubmitting" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                            </svg>
-                            {{ newCaseSubmitting ? $t('portal.creating') : $t('portal.createApplication') }}
-                        </button>
+                        <template v-else>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-500 mb-1">{{ $t('portal.destinationCountry') }}</label>
+                                <select v-model="newCaseForm.country_code"
+                                    class="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-[#0A1F44] focus:outline-none focus:border-[#1BA97F] transition-colors bg-white">
+                                    <option value="">{{ $t('profile.selectCountry') }}</option>
+                                    <option v-for="c in servedCountries" :key="c.country_code" :value="c.country_code">
+                                        {{ $t('countries.' + c.country_code) }} ({{ c.agencies_count }})
+                                    </option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-500 mb-1">{{ $t('portal.visaTypeLabel') }}</label>
+                                <select v-model="newCaseForm.visa_type"
+                                    class="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-[#0A1F44] focus:outline-none focus:border-[#1BA97F] transition-colors bg-white">
+                                    <option value="">{{ $t('portal.selectType') }}</option>
+                                    <option value="tourist">{{ $t('portal.tourist') }}</option>
+                                    <option value="business">{{ $t('portal.business') }}</option>
+                                    <option value="student">{{ $t('portal.studentVisa') }}</option>
+                                    <option value="work">{{ $t('portal.work') }}</option>
+                                    <option value="transit">{{ $t('portal.transit') }}</option>
+                                </select>
+                            </div>
+                            <div v-if="newCaseError" class="text-xs text-red-500">{{ newCaseError }}</div>
+                            <button @click="createDraftCase"
+                                :disabled="newCaseSubmitting || !newCaseForm.country_code || !newCaseForm.visa_type"
+                                class="w-full py-3 bg-[#1BA97F] hover:bg-[#169B72] text-white text-sm font-semibold rounded-xl
+                                       transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+                                <svg v-if="newCaseSubmitting" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                                </svg>
+                                {{ newCaseSubmitting ? $t('portal.creating') : $t('portal.createApplication') }}
+                            </button>
+                        </template>
                     </div>
                 </div>
             </div>
@@ -304,12 +311,21 @@ const newCaseForm = ref({ country_code: '', visa_type: '' });
 const newCaseSubmitting = ref(false);
 const newCaseError = ref('');
 
-// Топ-30 стран для граждан Узбекистана
-const TOP_COUNTRIES = [
-    'DE', 'FR', 'IT', 'ES', 'GB', 'US', 'CA', 'KR', 'AE', 'TR',
-    'PL', 'CZ', 'JP', 'CN', 'SA', 'RU', 'KZ', 'IN', 'TH', 'MY',
-    'AU', 'NL', 'AT', 'CH', 'SE', 'HU', 'GR', 'PT', 'BE', 'SG',
-];
+// Страны, по которым работает хотя бы одно агентство
+const servedCountries = ref([]);
+const loadingServed = ref(false);
+
+async function loadServedCountries() {
+    if (servedCountries.value.length > 0) return;
+    loadingServed.value = true;
+    try {
+        const res = await publicPortalApi.servedCountries();
+        servedCountries.value = (res.data?.data ?? []).sort((a, b) =>
+            (t('countries.' + a.country_code) || '').localeCompare(t('countries.' + b.country_code) || '')
+        );
+    } catch { /* ignore */ }
+    loadingServed.value = false;
+}
 
 // Status summary для верхнего бара
 const statusSummary = ref({ activeCases: 0, docsNeeded: 0, awaitingResult: 0, unpaidCases: 0, unpaidCaseId: null });

@@ -3,6 +3,7 @@
 namespace App\Modules\PublicPortal\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Agency\Models\AgencyWorkCountry;
 use App\Modules\Owner\Models\PortalCountry;
 use App\Modules\PublicPortal\Services\PublicScoringService;
 use App\Support\Helpers\ApiResponse;
@@ -25,7 +26,23 @@ class PublicScoringController extends Controller
             ->when($request->continent, fn ($q, $c) => $q->byContinent($c))
             ->orderBy('sort_order');
 
-        return ApiResponse::success($query->get());
+        $countries = $query->get();
+
+        // Подсчитываем количество активных агентств для каждой страны
+        $countryCodes = $countries->pluck('country_code')->toArray();
+        $agencyCounts = AgencyWorkCountry::where('is_active', true)
+            ->whereIn('country_code', $countryCodes)
+            ->whereHas('agency', fn ($q) => $q->where('is_active', true))
+            ->selectRaw('country_code, count(distinct agency_id) as cnt')
+            ->groupBy('country_code')
+            ->pluck('cnt', 'country_code');
+
+        $countries->each(function ($c) use ($agencyCounts) {
+            $c->agencies_count = $agencyCounts[$c->country_code] ?? 0;
+            $c->has_agencies = ($agencyCounts[$c->country_code] ?? 0) > 0;
+        });
+
+        return ApiResponse::success($countries);
     }
 
     /**
@@ -40,7 +57,34 @@ class PublicScoringController extends Controller
 
         $country->increment('view_count');
 
+        // Количество активных агентств для этой страны
+        $count = AgencyWorkCountry::where('country_code', strtoupper($code))
+            ->where('is_active', true)
+            ->whereHas('agency', fn ($q) => $q->where('is_active', true))
+            ->count();
+        $country->agencies_count = $count;
+        $country->has_agencies = $count > 0;
+
         return ApiResponse::success($country);
+    }
+
+    /**
+     * GET /public/served-countries
+     * Список стран+виз, по которым работает хотя бы одно агентство.
+     */
+    public function servedCountries(): JsonResponse
+    {
+        $served = AgencyWorkCountry::where('is_active', true)
+            ->whereHas('agency', fn ($q) => $q->where('is_active', true))
+            ->selectRaw('country_code, count(distinct agency_id) as agencies_count')
+            ->groupBy('country_code')
+            ->get()
+            ->keyBy('country_code');
+
+        return ApiResponse::success($served->map(fn ($row) => [
+            'country_code'   => $row->country_code,
+            'agencies_count' => (int) $row->agencies_count,
+        ])->values());
     }
 
     /**
