@@ -1224,7 +1224,7 @@ async function save() {
             return;
         }
         // Собираем name из firstName + lastName
-        form.name = [firstName.value, lastName.value].filter(Boolean).join(' ').trim();
+        form.name = [firstName.value, lastName.value].filter(Boolean).join(' ').trim().toUpperCase();
         const payload = { ...form };
         // Удаляем пустые строки для integer-полей (бэкенд требует integer, '' не пройдёт)
         const intFields = ['monthly_income_usd', 'employed_years', 'children_count', 'visas_obtained_count', 'refusals_count', 'last_refusal_year'];
@@ -1380,10 +1380,10 @@ onMounted(async () => {
                 form[key] = (key === 'passport_expires_at' || key === 'dob') ? val?.slice(0, 10) ?? '' : val;
             }
         });
-        // Разбить name на firstName/lastName
+        // Разбить name на firstName/lastName + UPPERCASE (как в загранпаспорте)
         const parts = splitName(form.name);
-        firstName.value = parts.first;
-        lastName.value = parts.last;
+        firstName.value = (parts.first || '').toUpperCase();
+        lastName.value = (parts.last || '').toUpperCase();
         initPassportFields(form.passport_number);
     } catch { /* ignore */ }
     loadFamilyMembers();
