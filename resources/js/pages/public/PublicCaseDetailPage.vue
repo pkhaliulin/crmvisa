@@ -745,7 +745,7 @@
                                         </select>
                                     </div>
                                     <div>
-                                        <label class="text-xs text-gray-500 mb-1 block">{{ $t('family.dob') }}</label>
+                                        <label class="text-xs text-gray-500 mb-1 block">{{ $t('family.dob') }} <span class="text-red-500">*</span></label>
                                         <input v-model="newFamilyForm.dob" type="date"
                                             class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] transition-colors"/>
                                     </div>
@@ -753,7 +753,7 @@
                                 <!-- Пол + Гражданство (searchable dropdown) -->
                                 <div class="grid grid-cols-2 gap-3">
                                     <div>
-                                        <label class="text-xs text-gray-500 mb-1 block">{{ $t('family.gender') }}</label>
+                                        <label class="text-xs text-gray-500 mb-1 block">{{ $t('family.gender') }} <span class="text-red-500">*</span></label>
                                         <select v-model="newFamilyForm.gender"
                                             class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] bg-white transition-colors">
                                             <option value="">--</option>
@@ -762,7 +762,7 @@
                                         </select>
                                     </div>
                                     <div class="relative">
-                                        <label class="text-xs text-gray-500 mb-1 block">{{ $t('family.citizenship') }}</label>
+                                        <label class="text-xs text-gray-500 mb-1 block">{{ $t('family.citizenship') }} <span class="text-red-500">*</span></label>
                                         <input
                                             v-model="citizenshipSearch"
                                             @focus="showCitizenshipDropdown = true"
@@ -787,7 +787,7 @@
                                 <!-- Паспорт (формат AA-1234567 как в профиле) -->
                                 <div class="grid grid-cols-2 gap-3">
                                     <div>
-                                        <label class="text-xs text-gray-500 mb-1 block">{{ $t('family.passportNumber') }}</label>
+                                        <label class="text-xs text-gray-500 mb-1 block">{{ $t('family.passportNumber') }} <span class="text-red-500">*</span></label>
                                         <div class="flex items-stretch rounded-xl border transition-colors overflow-hidden"
                                             :class="fmPassportValid ? 'border-[#1BA97F]' : 'border-gray-200 focus-within:border-[#1BA97F]'">
                                             <input
@@ -819,13 +819,13 @@
                                         <p class="text-[10px] text-gray-400 mt-0.5">{{ $t('family.passportFormat') }}</p>
                                     </div>
                                     <div>
-                                        <label class="text-xs text-gray-500 mb-1 block">{{ $t('family.passportExpires') }}</label>
+                                        <label class="text-xs text-gray-500 mb-1 block">{{ $t('family.passportExpires') }} <span class="text-red-500">*</span></label>
                                         <input v-model="newFamilyForm.passport_expires_at" type="date"
                                             class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] transition-colors"/>
                                     </div>
                                 </div>
                                 <button @click="createAndAttachFamily"
-                                    :disabled="!newFamilyForm.first_name || !newFamilyForm.last_name || !newFamilyForm.relationship || familySaving"
+                                    :disabled="!newFamilyForm.first_name || !newFamilyForm.last_name || !newFamilyForm.relationship || !newFamilyForm.dob || !newFamilyForm.gender || !newFamilyForm.citizenship || !fmPassportValid || !newFamilyForm.passport_expires_at || familySaving"
                                     class="w-full py-3 bg-[#1BA97F] hover:bg-[#0d7a5c] text-white text-sm font-semibold rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
                                     <svg v-if="familySaving" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
                                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
