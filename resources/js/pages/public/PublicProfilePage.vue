@@ -30,20 +30,6 @@
                     </svg>
                     <p class="text-xs text-blue-700">{{ $t('profile.latinWarning') }}</p>
                 </div>
-                <!-- Телефон -->
-                <div class="mb-4">
-                    <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.phone') }}</label>
-                    <div class="flex items-center gap-2">
-                        <div class="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 text-[#0A1F44] font-medium">
-                            {{ formatPhone(publicAuth.user?.phone) }}
-                        </div>
-                        <button @click="showPhoneModal = true" type="button"
-                            class="shrink-0 text-xs text-[#1BA97F] hover:text-[#169B72] font-medium px-3 py-2.5 border border-[#1BA97F]/30 rounded-xl hover:bg-[#1BA97F]/5 transition-colors">
-                            {{ $t('profile.changePhone') }}
-                        </button>
-                    </div>
-                </div>
-
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.firstName') }} <span class="text-red-500">*</span></label>
@@ -128,6 +114,42 @@
                             </button>
                         </div>
                     </div>
+                </div>
+
+                <!-- Предупреждение: телефон — главный ключ -->
+                <div class="flex items-start gap-2 p-3 rounded-xl bg-amber-50 border border-amber-200 mt-4">
+                    <svg class="w-4 h-4 text-amber-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
+                    </svg>
+                    <div>
+                        <p class="text-xs text-amber-800 font-medium">{{ $t('profile.phoneWarningTitle') }}</p>
+                        <p class="text-[11px] text-amber-700 mt-0.5 leading-relaxed">{{ $t('profile.phoneWarningDesc') }}</p>
+                    </div>
+                </div>
+
+                <!-- Телефон -->
+                <div class="mt-3">
+                    <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.phone') }}</label>
+                    <div class="flex items-center gap-2">
+                        <div class="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 text-[#0A1F44] font-medium">
+                            {{ formatPhone(publicAuth.user?.phone) }}
+                        </div>
+                        <button @click="showPhoneModal = true" type="button"
+                            class="shrink-0 text-xs text-[#1BA97F] hover:text-[#169B72] font-medium px-3 py-2.5 border border-[#1BA97F]/30 rounded-xl hover:bg-[#1BA97F]/5 transition-colors">
+                            {{ $t('profile.changePhone') }}
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Email для восстановления -->
+                <div class="mt-3">
+                    <label class="block text-xs font-medium text-gray-600 mb-1">
+                        {{ $t('profile.recoveryEmail') }}
+                        <span class="text-gray-400 font-normal">({{ $t('profile.recoveryEmailHint') }})</span>
+                    </label>
+                    <input v-model="form.recovery_email" type="email" placeholder="example@gmail.com"
+                        class="w-full border rounded-xl px-3 py-2.5 text-sm outline-none transition-colors"
+                        :class="form.recovery_email && isValidEmail(form.recovery_email) ? 'border-[#1BA97F]' : 'border-gray-200 focus:border-[#1BA97F]'"/>
                 </div>
             </div>
         </div>
@@ -845,6 +867,10 @@ function isLatinOnly(val) {
     return /^[A-Za-z\s\-']+$/.test(val || '');
 }
 
+function isValidEmail(val) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val || '');
+}
+
 function onLatinInput(field, e) {
     // Убираем кириллицу и спецсимволы, оставляем только латиницу, пробелы, дефис, апостроф
     // Автоматически переводим в UPPERCASE (как в загранпаспорте)
@@ -864,6 +890,7 @@ const form = reactive({
     employment_type:      publicAuth.user?.employment_type ?? '',
     employed_years:       publicAuth.user?.employed_years ?? '',
     education_level:      publicAuth.user?.education_level ?? '',
+    recovery_email:       publicAuth.user?.recovery_email ?? '',
     monthly_income_usd:   publicAuth.user?.monthly_income_usd ?? '',
     marital_status:       publicAuth.user?.marital_status ?? '',
     has_children:         !!publicAuth.user?.has_children,

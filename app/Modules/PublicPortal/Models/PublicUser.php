@@ -19,6 +19,7 @@ class PublicUser extends Model
 
     protected $fillable = [
         'phone',
+        'recovery_email',
         'pin_hash',
         'api_token',
         'name',

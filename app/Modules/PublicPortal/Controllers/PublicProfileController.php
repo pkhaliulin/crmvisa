@@ -71,6 +71,7 @@ class PublicProfileController extends Controller
             'last_refusal_year'     => 'sometimes|nullable|integer|min:2000|max:2099',
             'employed_years'        => 'sometimes|integer|min:0|max:50',
             'education_level'       => ['sometimes', 'nullable', new ReferenceExists('education_level')],
+            'recovery_email'        => 'sometimes|nullable|email|max:255',
         ]);
 
         $user->update($data);
