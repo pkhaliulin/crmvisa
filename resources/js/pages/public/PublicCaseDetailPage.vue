@@ -1133,10 +1133,12 @@ import { codeToFlag, ALL_COUNTRIES } from '@/utils/countries';
 import AgencyCard from '@/components/AgencyCard.vue';
 import i18n from '@/i18n';
 import { formatPhone } from '@/utils/format';
+import { usePublicAuthStore } from '@/stores/publicAuth';
 
 const { t } = useI18n();
 const route  = useRoute();
 const router = useRouter();
+const publicAuth = usePublicAuthStore();
 
 const loading     = ref(true);
 const caseData    = ref(null);
@@ -1303,27 +1305,45 @@ function handleFmDigitsInput(e) {
 }
 
 // --- Document tabs ---
-const activeDocTab = ref('main');
+const activeDocTab = ref('all');
+
+const applicantName = computed(() => publicAuth.user?.name || t('family.applicant'));
 
 const docTabs = computed(() => {
-    const tabs = [{
-        key: 'main',
-        label: t('family.applicant'),
-        items: checklist.value,
-        uploaded: checklist.value.filter(i => i.status === 'uploaded' || i.status === 'approved').length,
-        total: checklist.value.length,
-    }];
-    for (const fm of caseFamilyMembers.value) {
+    const mainItems = checklist.value;
+    const mainUploaded = mainItems.filter(i => i.status === 'uploaded' || i.status === 'approved').length;
+
+    const familyTabs = caseFamilyMembers.value.map(fm => {
         const items = fm.checklist ?? [];
-        tabs.push({
+        return {
             key: fm.id,
             label: fm.name,
             items,
             uploaded: items.filter(i => i.status === 'uploaded' || i.status === 'approved').length,
             total: items.length,
-        });
-    }
-    return tabs;
+        };
+    });
+
+    const allItems = [...mainItems, ...familyTabs.flatMap(t => t.items)];
+    const allUploaded = allItems.filter(i => i.status === 'uploaded' || i.status === 'approved').length;
+
+    return [
+        {
+            key: 'all',
+            label: t('common.all'),
+            items: allItems,
+            uploaded: allUploaded,
+            total: allItems.length,
+        },
+        {
+            key: 'main',
+            label: applicantName.value,
+            items: mainItems,
+            uploaded: mainUploaded,
+            total: mainItems.length,
+        },
+        ...familyTabs,
+    ];
 });
 
 const activeTabChecklist = computed(() => {
@@ -1335,8 +1355,8 @@ const activeTabUploaded = computed(() => {
     return activeTabChecklist.value.filter(i => i.status === 'uploaded' || i.status === 'approved').length;
 });
 
-const allDocsTotal = computed(() => docTabs.value.reduce((s, t) => s + t.total, 0));
-const allDocsUploaded = computed(() => docTabs.value.reduce((s, t) => s + t.uploaded, 0));
+const allDocsTotal = computed(() => docTabs.value.find(t => t.key === 'all')?.total ?? 0);
+const allDocsUploaded = computed(() => docTabs.value.find(t => t.key === 'all')?.uploaded ?? 0);
 
 function isFamilyAttached(fid) {
     return caseFamilyMembers.value.some(fm => fm.id === fid);
@@ -1416,7 +1436,7 @@ async function confirmDetachFamily() {
         caseData.value = data.data;
         caseFamilyMembers.value = data.data?.family_members ?? [];
         await loadFamilyData();
-        activeDocTab.value = 'main';
+        activeDocTab.value = 'all';
     } catch (e) {
         alert(e?.response?.data?.message ?? t('common.error'));
     } finally {
