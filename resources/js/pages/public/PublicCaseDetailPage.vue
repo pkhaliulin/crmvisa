@@ -1084,6 +1084,32 @@
             </div>
         </div>
 
+        <!-- Отмена заявки (только draft / awaiting_payment и не оплачено) -->
+        <div v-if="caseData && canCancel" class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+            <div v-if="!showCancelConfirm" class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500">{{ $t('cases.cancelHint') }}</p>
+                </div>
+                <button @click="showCancelConfirm = true"
+                    class="px-4 py-2 text-sm font-medium text-red-600 border border-red-200 rounded-xl hover:bg-red-50 transition-colors">
+                    {{ $t('cases.cancelCase') }}
+                </button>
+            </div>
+            <div v-else class="text-center space-y-3">
+                <p class="text-sm font-semibold text-red-600">{{ $t('cases.cancelConfirmText') }}</p>
+                <div class="flex gap-3 justify-center">
+                    <button @click="showCancelConfirm = false"
+                        class="px-4 py-2 text-sm font-medium text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
+                        {{ $t('common.back') }}
+                    </button>
+                    <button @click="doCancelCase" :disabled="cancelling"
+                        class="px-4 py-2 text-sm font-semibold text-white bg-red-500 hover:bg-red-600 rounded-xl transition-colors disabled:opacity-50">
+                        {{ cancelling ? '...' : $t('cases.cancelConfirmBtn') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- Ошибка / не найдено -->
         <div v-if="!loading && !caseData" class="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center">
             <div class="text-3xl mb-3">404</div>
@@ -1115,6 +1141,30 @@ const loading     = ref(true);
 const caseData    = ref(null);
 const uploading   = ref({});
 const uploadToast = ref('');
+
+// --- Отмена заявки ---
+const showCancelConfirm = ref(false);
+const cancelling = ref(false);
+const canCancel = computed(() => {
+    const c = caseData.value;
+    if (!c) return false;
+    // Разрешаем отмену только для draft и awaiting_payment, и только если не оплачено
+    if (!['draft', 'awaiting_payment'].includes(c.public_status)) return false;
+    if (c.payment_status === 'paid') return false;
+    return true;
+});
+
+async function doCancelCase() {
+    cancelling.value = true;
+    try {
+        await publicPortalApi.cancelCase(caseData.value.id);
+        router.push({ name: 'me.cases' });
+    } catch (e) {
+        alert(e?.response?.data?.message ?? t('cases.cancelError'));
+    } finally {
+        cancelling.value = false;
+    }
+}
 
 // --- Inline-агентства ---
 const inlineAgencies  = ref([]);
@@ -1623,7 +1673,7 @@ function getVisibleStatuses(c) {
 const currentStepIdx = computed(() => {
     if (!caseData.value) return 0;
     const s = caseData.value.public_status;
-    if (s === 'completed' || s === 'rejected') return 8;
+    if (s === 'completed' || s === 'rejected' || s === 'cancelled') return 8;
     return caseData.value.public_status_order ?? 0;
 });
 
@@ -1654,6 +1704,7 @@ function publicStatusBadge(status) {
         under_review:          'bg-purple-50 text-purple-700',
         completed:             'bg-green-50 text-green-700',
         rejected:              'bg-red-50 text-red-700',
+        cancelled:             'bg-gray-100 text-gray-500',
     };
     return map[status] || 'bg-gray-100 text-gray-600';
 }
@@ -1661,6 +1712,7 @@ function publicStatusBadge(status) {
 function statusTextColor(status) {
     if (status === 'completed') return 'text-[#1BA97F]';
     if (status === 'rejected')  return 'text-red-500';
+    if (status === 'cancelled') return 'text-gray-400';
     return 'text-gray-500';
 }
 
@@ -1668,6 +1720,7 @@ function getProgressColor(index, status, order) {
     if (status === 'rejected') {
         return index < order ? 'bg-red-300' : index === order ? 'bg-red-500' : 'bg-gray-100';
     }
+    if (status === 'cancelled') return 'bg-gray-200';
     if (status === 'completed') return 'bg-[#1BA97F]';
     return index < order ? 'bg-[#1BA97F]' : index === order ? 'bg-[#1BA97F]/50' : 'bg-gray-100';
 }

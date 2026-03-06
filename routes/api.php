@@ -357,6 +357,7 @@ Route::prefix('v1')->group(function () {
         Route::post('me/cases',                                   [PublicProfileController::class, 'createDraftCase']);
         Route::get('me/cases/{id}',                               [PublicProfileController::class, 'caseDetail']);
         Route::patch('me/cases/{id}',                             [PublicProfileController::class, 'updateCase']);
+        Route::post('me/cases/{id}/cancel',                      [PublicProfileController::class, 'cancelCase']);
         Route::post('me/cases/{caseId}/checklist/{itemId}/upload',[PublicProfileController::class, 'uploadChecklistItem']);
 
         // Семья — профиль

@@ -526,6 +526,38 @@ class PublicProfileController extends Controller
     }
 
     /**
+     * POST /public/me/cases/{id}/cancel
+     * Отмена заявки клиентом (только draft и awaiting_payment).
+     */
+    public function cancelCase(Request $request, string $id): JsonResponse
+    {
+        $publicUser = $request->get('_public_user');
+
+        $case = VisaCase::whereHas('client', fn ($q) => $q->where('public_user_id', $publicUser->id))
+            ->where('id', $id)
+            ->firstOrFail();
+
+        $cancellable = ['draft', 'awaiting_payment'];
+
+        if (! in_array($case->public_status, $cancellable)) {
+            return ApiResponse::error(
+                'Отменить можно только заявки в статусе «Черновик» или «Ожидание оплаты». Свяжитесь с агентством для отмены.',
+                ['public_status' => $case->public_status],
+                422
+            );
+        }
+
+        // Отменяем связанный pending-платёж если есть
+        \App\Modules\Payment\Models\ClientPayment::where('case_id', $case->id)
+            ->where('status', 'pending')
+            ->update(['status' => 'cancelled']);
+
+        $case->update(['public_status' => 'cancelled']);
+
+        return ApiResponse::success(['id' => $case->id, 'public_status' => 'cancelled'], 'Заявка отменена.');
+    }
+
+    /**
      * GET /public/me/cases/{id}/agencies
      * Агентства, работающие со страной кейса.
      */

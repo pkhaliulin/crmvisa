@@ -61,4 +61,10 @@ return [
         'tooltip' => 'В визе отказано',
         'color'   => 'red',
     ],
+    'cancelled' => [
+        'label'   => 'Отменена',
+        'order'   => 10,
+        'tooltip' => 'Заявка отменена клиентом',
+        'color'   => 'gray',
+    ],
 ];

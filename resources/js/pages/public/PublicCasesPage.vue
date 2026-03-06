@@ -379,12 +379,14 @@ function publicStatusBadge(status) {
         under_review:          'bg-purple-50 text-purple-700',
         completed:             'bg-green-50 text-green-700',
         rejected:              'bg-red-50 text-red-700',
+        cancelled:             'bg-gray-100 text-gray-500',
     };
     return map[status] || 'bg-gray-100 text-gray-600';
 }
 
 function progressColor(index, c) {
     const current = currentStepIndex(c);
+    if (c.public_status === 'cancelled') return 'bg-gray-200';
     if (c.public_status === 'completed') return 'bg-[#1BA97F]';
     if (c.public_status === 'rejected') {
         return index < current ? 'bg-red-300' : index === current ? 'bg-red-500' : 'bg-gray-100';
