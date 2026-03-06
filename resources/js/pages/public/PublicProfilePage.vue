@@ -147,8 +147,11 @@
                         <span class="text-amber-600 font-normal">({{ $t('profile.recoveryEmailHint') }})</span>
                     </label>
                     <input v-model="form.recovery_email" type="email" placeholder="example@gmail.com"
-                        class="w-full border border-amber-300 rounded-xl px-3 py-2.5 text-sm outline-none transition-colors bg-amber-50"
-                        :class="form.recovery_email && isValidEmail(form.recovery_email) ? 'border-[#1BA97F] bg-white' : ''"/>
+                        class="w-full border rounded-xl px-3 py-2.5 text-sm outline-none transition-colors"
+                        :class="form.recovery_email
+                            ? (isValidEmail(form.recovery_email) ? 'border-[#1BA97F] bg-white' : 'border-red-400 bg-red-50')
+                            : 'border-amber-300 bg-amber-50'"/>
+                    <p v-if="form.recovery_email && !isValidEmail(form.recovery_email)" class="text-[11px] text-red-500 mt-1">{{ $t('profile.invalidEmail') }}</p>
                 </div>
             </div>
         </div>
@@ -1213,6 +1216,13 @@ async function save() {
     saveMsg.value = '';
     saveError.value = false;
     try {
+        // Валидация email
+        if (form.recovery_email && !isValidEmail(form.recovery_email)) {
+            saveError.value = true;
+            saveMsg.value = t('profile.invalidEmail');
+            saving.value = false;
+            return;
+        }
         // Собираем name из firstName + lastName
         form.name = [firstName.value, lastName.value].filter(Boolean).join(' ').trim();
         const payload = { ...form };
@@ -1221,10 +1231,12 @@ async function save() {
         for (const f of intFields) {
             if (payload[f] === '' || payload[f] === null || payload[f] === undefined) delete payload[f];
         }
-        // Удаляем пустые строки для остальных полей (не отправлять пустышки)
+        // Удаляем пустые строки для остальных полей (кроме recovery_email — null = сброс)
         for (const [k, v] of Object.entries(payload)) {
-            if (v === '') delete payload[k];
+            if (v === '' && k !== 'recovery_email') delete payload[k];
         }
+        // Пустой email → null (сброс на сервере)
+        if (payload.recovery_email === '') payload.recovery_email = null;
         const { data } = await publicPortalApi.updateProfile(payload);
         publicAuth.user = data.data.user;
         localStorage.setItem('public_user', JSON.stringify(data.data.user));
