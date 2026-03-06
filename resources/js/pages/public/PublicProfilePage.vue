@@ -1238,8 +1238,13 @@ async function save() {
         // Пустой email → null (сброс на сервере)
         if (payload.recovery_email === '') payload.recovery_email = null;
         const { data } = await publicPortalApi.updateProfile(payload);
-        publicAuth.user = data.data.user;
-        localStorage.setItem('public_user', JSON.stringify(data.data.user));
+        const updatedUser = data?.data?.user;
+        if (updatedUser) {
+            publicAuth.user = updatedUser;
+            try { localStorage.setItem('public_user', JSON.stringify(updatedUser)); } catch {}
+            // Синхронизируем form с ответом сервера (null → '')
+            form.recovery_email = updatedUser.recovery_email ?? '';
+        }
         saveMsg.value = t('profile.profileSaved');
         setTimeout(() => { saveMsg.value = ''; }, 3000);
     } catch (e) {
