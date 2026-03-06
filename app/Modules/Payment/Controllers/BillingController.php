@@ -92,10 +92,24 @@ class BillingController extends Controller
             ];
         }
 
+        $planModel = $subscription->plan;
         return ApiResponse::success([
             'id'              => $subscription->id,
             'plan_slug'       => $subscription->plan_slug,
-            'plan'            => $subscription->plan,
+            'plan'            => $planModel ? [
+                'slug'            => $planModel->slug,
+                'name'            => $planModel->name,
+                'price_uzs'       => $planModel->price_uzs,
+                'price_monthly'   => $planModel->price_monthly,
+                'max_managers'    => $planModel->max_managers,
+                'max_cases'       => $planModel->max_cases,
+                'max_leads_per_month' => $planModel->max_leads_per_month,
+                'features'        => $planModel->features,
+                'has_marketplace' => $planModel->has_marketplace,
+                'has_analytics'   => $planModel->has_analytics,
+                'has_api_access'  => $planModel->has_api_access,
+                'has_white_label' => $planModel->has_white_label,
+            ] : null,
             'status'          => $subscription->status,
             'billing_period'  => $subscription->billing_period,
             'payment_method'  => $subscription->payment_method,

@@ -85,6 +85,77 @@ class ClientPaymentService
     }
 
     /**
+     * Пересчитать сумму pending-платежа с учётом членов семьи.
+     * Вызывается при attach/detach семьи и при загрузке биллинга (catch-up).
+     */
+    public static function recalculatePaymentAmount(ClientPayment $payment): void
+    {
+        if ($payment->status !== 'pending' || ! $payment->case_id) return;
+
+        // Базовая цена: из metadata или из пакета
+        $basePrice = $payment->metadata['base_price'] ?? null;
+
+        if ($basePrice === null) {
+            // Первый раз — берём цену пакета
+            if ($payment->package_id) {
+                $basePrice = (int) DB::table('agency_service_packages')
+                    ->where('id', $payment->package_id)
+                    ->value('price');
+            }
+            if (! $basePrice) {
+                $basePrice = $payment->amount;
+            }
+        }
+
+        $basePrice = (int) $basePrice;
+
+        // Имя заявителя
+        $applicantName = null;
+        if ($payment->public_user_id) {
+            $applicantName = DB::table('public_users')
+                ->where('id', $payment->public_user_id)
+                ->value('name');
+        }
+
+        $breakdown = [];
+        $breakdown[] = [
+            'name'     => $applicantName ?? 'Заявитель',
+            'role'     => 'applicant',
+            'discount' => 0,
+            'price'    => $basePrice,
+        ];
+
+        $familyMembers = DB::table('case_family_members')
+            ->join('public_user_family_members', 'case_family_members.family_member_id', '=', 'public_user_family_members.id')
+            ->where('case_family_members.case_id', $payment->case_id)
+            ->select('public_user_family_members.name', 'public_user_family_members.relationship')
+            ->get();
+
+        foreach ($familyMembers as $fm) {
+            $isChild  = $fm->relationship === 'child';
+            $discount = $isChild ? 50 : 25;
+            $price    = (int) round($basePrice * (100 - $discount) / 100);
+            $breakdown[] = [
+                'name'     => $fm->name,
+                'role'     => $fm->relationship,
+                'discount' => $discount,
+                'price'    => $price,
+            ];
+        }
+
+        $amount = array_sum(array_column($breakdown, 'price'));
+
+        $metadata = $payment->metadata ?? [];
+        $metadata['price_breakdown'] = $breakdown;
+        $metadata['base_price'] = $basePrice;
+
+        $payment->update([
+            'amount'   => $amount,
+            'metadata' => $metadata,
+        ]);
+    }
+
+    /**
      * Сгенерировать URL для оплаты (заглушка — реальная интеграция позже).
      */
     public function getPaymentUrl(ClientPayment $payment): string

@@ -49,8 +49,8 @@
                         <div class="text-xs text-amber-600 mt-0.5">
                             {{ $t('payment.invoiceBannerDesc', { agency: caseData.agency?.name }) }}
                         </div>
-                        <div v-if="caseData.package" class="text-sm font-bold text-amber-800 mt-1">
-                            {{ formatPrice(caseData.package.price, caseData.package.currency) }}
+                        <div class="text-sm font-bold text-amber-800 mt-1">
+                            {{ formatPrice(invoiceTotalAmount, invoiceCurrency) }}
                         </div>
                     </div>
                     <button @click="scrollToPayment"
@@ -359,27 +359,67 @@
                     <!-- Визовая услуга -->
                     <div class="border border-gray-100 rounded-xl overflow-hidden">
                         <div class="bg-gray-50 px-4 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider grid grid-cols-12 gap-2">
-                            <div class="col-span-7">{{ $t('payment.invoiceService') }}</div>
-                            <div class="col-span-2 text-center">{{ $t('payment.invoiceQty') }}</div>
-                            <div class="col-span-3 text-right">{{ $t('payment.invoiceAmount') }}</div>
+                            <div class="col-span-6">{{ $t('billing.participants') }}</div>
+                            <div class="col-span-3 text-center">{{ $t('billing.discount') }}</div>
+                            <div class="col-span-3 text-right">{{ $t('billing.sum') }}</div>
                         </div>
-                        <!-- Строка пакета -->
-                        <div v-if="caseData.package" class="px-4 py-3 grid grid-cols-12 gap-2 items-start">
-                            <div class="col-span-7">
-                                <div class="text-sm font-semibold text-[#0A1F44]">{{ caseData.package.name }}</div>
-                                <div v-if="caseData.package.description" class="text-[11px] text-gray-400 mt-0.5 leading-snug">{{ caseData.package.description }}</div>
-                                <div v-if="caseData.package.processing_days" class="text-[10px] text-gray-400 mt-1">
-                                    {{ $t('payment.processingDays', { days: caseData.package.processing_days }) }}
+                        <!-- Breakdown из сервера -->
+                        <template v-if="caseData.price_breakdown?.length">
+                            <div v-for="(row, ri) in caseData.price_breakdown" :key="'br'+ri"
+                                class="grid grid-cols-12 gap-2 px-4 py-2.5 items-center border-t border-gray-50">
+                                <div class="col-span-6 flex items-center gap-2 min-w-0">
+                                    <div class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                                        :class="row.role === 'applicant' ? 'bg-[#0A1F44]' : row.role === 'child' ? 'bg-amber-100' : 'bg-[#1BA97F]/20'">
+                                        <span class="text-xs font-bold"
+                                            :class="row.role === 'applicant' ? 'text-white' : row.role === 'child' ? 'text-amber-600' : 'text-[#1BA97F]'">
+                                            {{ row.name?.charAt(0) || '?' }}
+                                        </span>
+                                    </div>
+                                    <div class="min-w-0">
+                                        <div class="text-xs font-semibold text-[#0A1F44] truncate">{{ row.name }}</div>
+                                        <div class="text-[10px] text-gray-400">{{ invoiceRoleLabel(row.role) }}</div>
+                                    </div>
+                                </div>
+                                <div class="col-span-3 text-center">
+                                    <span v-if="row.discount > 0" class="text-xs font-bold text-[#1BA97F]">-{{ row.discount }}%</span>
+                                    <span v-else class="text-xs text-gray-300">—</span>
+                                </div>
+                                <div class="col-span-3 text-right text-xs font-bold text-[#0A1F44]">
+                                    {{ formatPrice(row.price, caseData.payment_currency || caseData.package?.currency) }}
                                 </div>
                             </div>
-                            <div class="col-span-2 text-center text-sm text-gray-600">1</div>
-                            <div class="col-span-3 text-right text-sm font-bold text-[#0A1F44]">{{ formatPrice(caseData.package.price, caseData.package.currency) }}</div>
+                        </template>
+                        <!-- Фолбэк: только пакет без breakdown -->
+                        <template v-else>
+                            <div v-if="caseData.package" class="px-4 py-3 grid grid-cols-12 gap-2 items-start">
+                                <div class="col-span-6">
+                                    <div class="text-sm font-semibold text-[#0A1F44]">{{ caseData.package.name }}</div>
+                                    <div v-if="caseData.package.description" class="text-[11px] text-gray-400 mt-0.5 leading-snug">{{ caseData.package.description }}</div>
+                                    <div v-if="caseData.package.processing_days" class="text-[10px] text-gray-400 mt-1">
+                                        {{ $t('payment.processingDays', { days: caseData.package.processing_days }) }}
+                                    </div>
+                                </div>
+                                <div class="col-span-3 text-center text-xs text-gray-300">—</div>
+                                <div class="col-span-3 text-right text-sm font-bold text-[#0A1F44]">{{ formatPrice(caseData.package.price, caseData.package.currency) }}</div>
+                            </div>
+                            <div v-else class="px-4 py-3 grid grid-cols-12 gap-2">
+                                <div class="col-span-6 text-sm text-[#0A1F44]">{{ $t('payment.visaService') }}</div>
+                                <div class="col-span-3 text-center text-sm text-gray-600">—</div>
+                                <div class="col-span-3 text-right text-sm text-gray-400">—</div>
+                            </div>
+                        </template>
+                        <!-- ИТОГО в таблице (если несколько участников) -->
+                        <div v-if="caseData.price_breakdown?.length > 1" class="grid grid-cols-12 gap-2 px-4 py-2.5 items-center border-t-2 border-gray-200 bg-gray-50">
+                            <div class="col-span-6 text-xs font-bold text-[#0A1F44] uppercase">{{ $t('payment.total') }}</div>
+                            <div class="col-span-3 text-center text-[10px] text-gray-400">{{ caseData.price_breakdown.length }} {{ $t('billing.persons') }}</div>
+                            <div class="col-span-3 text-right text-sm font-bold text-[#0A1F44]">{{ formatPrice(invoiceTotalAmount, invoiceCurrency) }}</div>
                         </div>
-                        <div v-else class="px-4 py-3 grid grid-cols-12 gap-2">
-                            <div class="col-span-7 text-sm text-[#0A1F44]">{{ $t('payment.visaService') }}</div>
-                            <div class="col-span-2 text-center text-sm text-gray-600">1</div>
-                            <div class="col-span-3 text-right text-sm text-gray-400">—</div>
-                        </div>
+                    </div>
+
+                    <!-- Пакет и срок -->
+                    <div v-if="caseData.package" class="text-xs text-gray-400">
+                        <span class="font-semibold text-[#0A1F44]">{{ caseData.package.name }}</span>
+                        <span v-if="caseData.package.processing_days"> — {{ $t('payment.processingDays', { days: caseData.package.processing_days }) }}</span>
                     </div>
 
                     <!-- Что включено -->
@@ -396,10 +436,10 @@
                         </div>
                     </div>
 
-                    <!-- ИТОГО -->
-                    <div v-if="caseData.package" class="flex items-center justify-between p-4 rounded-xl bg-[#0A1F44] text-white">
+                    <!-- ИТОГО к оплате -->
+                    <div class="flex items-center justify-between p-4 rounded-xl bg-[#0A1F44] text-white">
                         <span class="text-sm font-semibold">{{ $t('payment.total') }}</span>
-                        <span class="text-xl font-bold">{{ formatPrice(caseData.package.price, caseData.package.currency) }}</span>
+                        <span class="text-xl font-bold">{{ formatPrice(invoiceTotalAmount, invoiceCurrency) }}</span>
                     </div>
 
                     <!-- Статус pending -->
@@ -1623,6 +1663,25 @@ const invoiceExpiresFormatted = computed(() => {
     if (hours > 0) return t('billing.hoursLeft', { hours });
     return t('billing.lessThanHour');
 });
+
+const invoiceTotalAmount = computed(() => {
+    return caseData.value?.payment_amount ?? caseData.value?.package?.price ?? 0;
+});
+const invoiceCurrency = computed(() => {
+    return caseData.value?.payment_currency ?? caseData.value?.package?.currency ?? 'USD';
+});
+
+function invoiceRoleLabel(role) {
+    const map = {
+        applicant: t('billing.applicant'),
+        child: t('billing.roleChild'),
+        spouse: t('billing.roleSpouse'),
+        parent: t('billing.roleParent'),
+        sibling: t('billing.roleSibling'),
+        other: t('billing.familyMember'),
+    };
+    return map[role] || t('billing.familyMember');
+}
 
 function formatPrice(amount, currency) {
     if (!amount && amount !== 0) return '';

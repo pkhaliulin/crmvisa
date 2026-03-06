@@ -482,6 +482,16 @@ class PublicProfileController extends Controller
             }
         }
 
+        // Пересчёт pending-платежа (catch-up)
+        $pendingPayment = ClientPayment::where('case_id', $case->id)
+            ->where('status', 'pending')
+            ->first();
+
+        if ($pendingPayment && empty($pendingPayment->metadata['price_breakdown'])) {
+            \App\Modules\Payment\Services\ClientPaymentService::recalculatePaymentAmount($pendingPayment);
+            $pendingPayment->refresh();
+        }
+
         return ApiResponse::success([
             'id'                   => $case->id,
             'case_number'          => $case->case_number,
@@ -501,10 +511,10 @@ class PublicProfileController extends Controller
             'travel_date'          => $case->travel_date?->toDateString(),
             'return_date'          => $case->return_date?->toDateString(),
             'payment_status'       => $case->payment_status ?? 'unpaid',
-            'payment_expires_at'   => ClientPayment::where('case_id', $case->id)
-                ->where('status', 'pending')
-                ->whereNotNull('expires_at')
-                ->value('expires_at'),
+            'payment_expires_at'   => $pendingPayment?->expires_at,
+            'payment_amount'       => $pendingPayment?->amount,
+            'payment_currency'     => $pendingPayment?->currency,
+            'price_breakdown'      => $pendingPayment?->metadata['price_breakdown'] ?? null,
             'appointment_date'     => $case->appointment_date?->toDateString(),
             'appointment_time'     => $case->appointment_time,
             'appointment_location' => $case->appointment_location,

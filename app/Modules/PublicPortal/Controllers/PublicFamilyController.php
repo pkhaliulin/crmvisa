@@ -291,44 +291,7 @@ class PublicFamilyController extends Controller
 
         if (! $payment) return;
 
-        $basePrice = $payment->metadata['base_price'] ?? $payment->amount;
-
-        $breakdown = [];
-        $breakdown[] = [
-            'name'     => $publicUser->name ?? 'Заявитель',
-            'role'     => 'applicant',
-            'discount' => 0,
-            'price'    => (int) $basePrice,
-        ];
-
-        $familyMembers = DB::table('case_family_members')
-            ->join('public_user_family_members', 'case_family_members.family_member_id', '=', 'public_user_family_members.id')
-            ->where('case_family_members.case_id', $case->id)
-            ->select('public_user_family_members.name', 'public_user_family_members.relationship')
-            ->get();
-
-        foreach ($familyMembers as $fm) {
-            $isChild  = $fm->relationship === 'child';
-            $discount = $isChild ? 50 : 25;
-            $price    = (int) round($basePrice * (100 - $discount) / 100);
-            $breakdown[] = [
-                'name'     => $fm->name,
-                'role'     => $fm->relationship,
-                'discount' => $discount,
-                'price'    => $price,
-            ];
-        }
-
-        $amount = array_sum(array_column($breakdown, 'price'));
-
-        $metadata = $payment->metadata ?? [];
-        $metadata['price_breakdown'] = $breakdown;
-        $metadata['base_price'] = (int) $basePrice;
-
-        $payment->update([
-            'amount'   => $amount,
-            'metadata' => $metadata,
-        ]);
+        \App\Modules\Payment\Services\ClientPaymentService::recalculatePaymentAmount($payment);
     }
 
     private function formatMember(PublicUserFamilyMember $m): array

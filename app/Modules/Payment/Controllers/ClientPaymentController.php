@@ -87,15 +87,23 @@ class ClientPaymentController extends Controller
             ->orderByDesc('created_at')
             ->first();
 
+        // Пересчёт при просмотре (catch-up для платежей без breakdown)
+        if ($payment && $payment->status === 'pending' && empty($payment->metadata['price_breakdown'])) {
+            ClientPaymentService::recalculatePaymentAmount($payment);
+            $payment->refresh();
+        }
+
         return ApiResponse::success([
             'payment_status' => $case->payment_status ?? 'unpaid',
             'payment'        => $payment ? [
-                'id'       => $payment->id,
-                'amount'   => $payment->amount,
-                'currency' => $payment->currency,
-                'provider' => $payment->provider,
-                'status'   => $payment->status,
-                'paid_at'  => $payment->paid_at?->toDateTimeString(),
+                'id'              => $payment->id,
+                'amount'          => $payment->amount,
+                'currency'        => $payment->currency,
+                'provider'        => $payment->provider,
+                'status'          => $payment->status,
+                'paid_at'         => $payment->paid_at?->toDateTimeString(),
+                'price_breakdown' => $payment->metadata['price_breakdown'] ?? null,
+                'base_price'      => $payment->metadata['base_price'] ?? null,
             ] : null,
         ]);
     }
@@ -164,6 +172,17 @@ class ClientPaymentController extends Controller
             ->paginate(20);
 
         \DB::statement("RESET app.is_superadmin");
+
+        // Пересчёт pending-платежей с семьёй но без breakdown (catch-up)
+        foreach ($payments->getCollection() as $p) {
+            if ($p->status === 'pending' && $p->case_id && empty($p->metadata['price_breakdown'])) {
+                $hasFam = \DB::table('case_family_members')->where('case_id', $p->case_id)->exists();
+                if ($hasFam) {
+                    ClientPaymentService::recalculatePaymentAmount($p);
+                    $p->refresh();
+                }
+            }
+        }
 
         $items = $payments->getCollection()->map(function ($p) {
             // Заявитель

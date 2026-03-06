@@ -253,7 +253,22 @@ class OwnerBillingController extends Controller
             ->where('due_at', '<', now())
             ->count();
 
-        $recentEvents = BillingEvent::orderByDesc('created_at')->limit(20)->get();
+        $recentEvents = BillingEvent::orderByDesc('created_at')->limit(20)->get()
+            ->map(function ($ev) {
+                $agencyName = $ev->agency_id
+                    ? DB::table('agencies')->where('id', $ev->agency_id)->value('name')
+                    : null;
+                $amount = $ev->metadata['amount'] ?? null;
+                return [
+                    'id'           => $ev->id,
+                    'event'        => $ev->event,
+                    'agency_id'    => $ev->agency_id,
+                    'agency_name'  => $agencyName,
+                    'amount'       => $amount,
+                    'metadata'     => $ev->metadata,
+                    'created_at'   => $ev->created_at,
+                ];
+            });
 
         return ApiResponse::success([
             'revenue'            => $revenue,
