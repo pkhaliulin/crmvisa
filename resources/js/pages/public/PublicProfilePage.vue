@@ -146,7 +146,7 @@
                         {{ $t('profile.recoveryEmail') }}
                         <span class="text-amber-600 font-normal">({{ $t('profile.recoveryEmailHint') }})</span>
                     </label>
-                    <input v-model="form.recovery_email" type="email" placeholder="example@gmail.com"
+                    <input v-model="form.recovery_email" type="text" inputmode="email" autocomplete="email" placeholder="example@gmail.com"
                         class="w-full border rounded-xl px-3 py-2.5 text-sm outline-none transition-colors"
                         :class="form.recovery_email
                             ? (isValidEmail(form.recovery_email) ? 'border-[#1BA97F] bg-white' : 'border-red-400 bg-red-50')
