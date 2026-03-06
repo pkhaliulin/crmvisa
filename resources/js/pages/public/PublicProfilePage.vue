@@ -635,10 +635,10 @@
             <div v-if="!phoneOtpSent">
                 <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.newPhone') }}</label>
                 <div class="flex gap-2">
-                    <span class="flex items-center px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-500 font-medium">+998</span>
-                    <input v-model="newPhoneDigits" type="tel" maxlength="9" inputmode="numeric" placeholder="90 123 45 67"
-                        class="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] transition-colors"
-                        @input="newPhoneDigits = newPhoneDigits.replace(/\D/g, '')"/>
+                    <span class="flex items-center px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-500 font-medium font-mono">+998</span>
+                    <input :value="newPhoneDisplay" type="tel" maxlength="12" inputmode="numeric" placeholder="90 123 45 67"
+                        class="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] transition-colors font-mono tracking-wider"
+                        @input="onNewPhoneInput" @keydown="onNewPhoneKeydown"/>
                 </div>
                 <p v-if="phoneError" class="text-xs text-red-500 mt-2">{{ phoneError }}</p>
                 <button @click="sendPhoneOtp" :disabled="newPhoneDigits.length < 9 || phoneSending"
@@ -648,7 +648,7 @@
             </div>
 
             <div v-else>
-                <p class="text-sm text-gray-500 mb-3">{{ $t('profile.codeSent') }}: <span class="font-medium text-[#0A1F44]">+998 {{ newPhoneDigits }}</span></p>
+                <p class="text-sm text-gray-500 mb-3">{{ $t('profile.codeSent') }}: <span class="font-medium text-[#0A1F44] font-mono">+998 {{ newPhoneDisplay }}</span></p>
                 <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.enterCode') }}</label>
                 <div class="flex gap-2 justify-center mb-3">
                     <input v-for="i in 4" :key="i" :ref="el => { if (el) otpInputs[i-1] = el }"
@@ -1258,6 +1258,34 @@ const phoneSending   = ref(false);
 const phoneError     = ref('');
 const otpCode        = ref(['', '', '', '']);
 const otpInputs      = ref([]);
+
+// Форматирование: 9 цифр → XX XXX XX XX
+function formatPhoneDigits(d) {
+    let r = '';
+    if (d.length > 0) r += d.slice(0, 2);
+    if (d.length > 2) r += ' ' + d.slice(2, 5);
+    if (d.length > 5) r += ' ' + d.slice(5, 7);
+    if (d.length > 7) r += ' ' + d.slice(7, 9);
+    return r;
+}
+const newPhoneDisplay = computed(() => formatPhoneDigits(newPhoneDigits.value));
+
+function onNewPhoneInput(e) {
+    const raw = e.target.value.replace(/\D/g, '').slice(0, 9);
+    newPhoneDigits.value = raw;
+    const formatted = formatPhoneDigits(raw);
+    const pos = e.target.selectionStart;
+    e.target.value = formatted;
+    const newPos = Math.min(pos, formatted.length);
+    e.target.setSelectionRange(newPos, newPos);
+}
+
+function onNewPhoneKeydown(e) {
+    const allowed = ['Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight', 'Home', 'End'];
+    if (allowed.includes(e.key)) return;
+    if (e.key >= '0' && e.key <= '9') return;
+    e.preventDefault();
+}
 
 async function sendPhoneOtp() {
     phoneError.value = '';
