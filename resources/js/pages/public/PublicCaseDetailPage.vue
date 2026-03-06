@@ -788,7 +788,7 @@
                                 <div class="grid grid-cols-2 gap-3">
                                     <div>
                                         <label class="text-xs text-gray-500 mb-1 block">{{ $t('family.passportNumber') }} <span class="text-red-500">*</span></label>
-                                        <div class="flex items-stretch rounded-xl border transition-colors overflow-hidden"
+                                        <div class="flex items-stretch rounded-xl border transition-colors"
                                             :class="fmPassportValid ? 'border-[#1BA97F]' : 'border-gray-200 focus-within:border-[#1BA97F]'">
                                             <input
                                                 ref="fmPassportSeriesInput"
@@ -798,8 +798,8 @@
                                                 maxlength="2"
                                                 autocomplete="off"
                                                 spellcheck="false"
-                                                class="w-16 py-2.5 px-3 text-sm font-mono uppercase outline-none bg-gray-50 border-r border-gray-200 text-[#0A1F44] font-bold"/>
-                                            <div class="flex items-center px-2.5 text-gray-300 text-sm select-none font-light">—</div>
+                                                class="w-16 py-2.5 px-3 text-sm font-mono uppercase outline-none bg-gray-50 border-r border-gray-200 rounded-l-xl text-[#0A1F44] font-bold"/>
+                                            <div class="flex items-center px-2.5 text-gray-300 text-sm select-none font-light shrink-0">—</div>
                                             <input
                                                 ref="fmPassportNumberInput"
                                                 :value="fmPassportDigits"
@@ -808,7 +808,7 @@
                                                 maxlength="7"
                                                 inputmode="numeric"
                                                 autocomplete="off"
-                                                class="flex-1 px-1 py-2.5 text-sm font-mono outline-none tracking-[0.2em] text-[#0A1F44]"/>
+                                                class="flex-1 min-w-0 px-1 py-2.5 text-sm font-mono outline-none tracking-[0.2em] text-[#0A1F44]"/>
                                             <div v-if="fmPassportValid" class="flex items-center pr-2 shrink-0">
                                                 <div class="w-4 h-4 rounded-full bg-[#1BA97F] flex items-center justify-center">
                                                     <svg class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
@@ -1290,16 +1290,16 @@ const fmPassportValid = computed(() => /^[A-Z]{2}[0-9]{7}$/.test(newFamilyForm.v
 function handleFmSeriesInput(e) {
     const clean = e.target.value.replace(/[^a-zA-Z]/g, '').toUpperCase().slice(0, 2);
     fmPassportSeries.value = clean;
-    e.target.value = clean;
     newFamilyForm.value.passport_number = clean + fmPassportDigits.value;
+    nextTick(() => { e.target.value = clean; });
     if (clean.length === 2) nextTick(() => fmPassportNumberInput.value?.focus());
 }
 
 function handleFmDigitsInput(e) {
     const clean = e.target.value.replace(/[^0-9]/g, '').slice(0, 7);
     fmPassportDigits.value = clean;
-    e.target.value = clean;
     newFamilyForm.value.passport_number = fmPassportSeries.value + clean;
+    nextTick(() => { e.target.value = clean; });
 }
 
 // --- Document tabs ---
