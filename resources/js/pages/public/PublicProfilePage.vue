@@ -940,6 +940,7 @@ function selectWizardAnswer(value) {
 }
 
 async function finishWizard() {
+    // Копируем ответы визарда в form
     if (wizardAnswers.employment_type)   form.employment_type   = wizardAnswers.employment_type;
     if (wizardAnswers.employed_years !== undefined) form.employed_years = wizardAnswers.employed_years;
     if (wizardAnswers.monthly_income_usd) form.monthly_income_usd = wizardAnswers.monthly_income_usd;
@@ -948,7 +949,27 @@ async function finishWizard() {
     if (vh === 'schengen' || vh === 'both') form.has_schengen_visa = true;
     if (vh === 'us' || vh === 'both') form.has_us_visa = true;
 
-    await save();
+    // Сохраняем ТОЛЬКО поля визарда (не весь form — там могут быть невалидные пустые поля)
+    saving.value = true;
+    try {
+        const wizardPayload = {};
+        if (wizardAnswers.employment_type)   wizardPayload.employment_type   = wizardAnswers.employment_type;
+        if (wizardAnswers.employed_years !== undefined) wizardPayload.employed_years = Number(wizardAnswers.employed_years);
+        if (wizardAnswers.monthly_income_usd) wizardPayload.monthly_income_usd = Number(wizardAnswers.monthly_income_usd);
+        if (wizardAnswers.marital_status)    wizardPayload.marital_status    = wizardAnswers.marital_status;
+        if (vh === 'schengen' || vh === 'both') wizardPayload.has_schengen_visa = true;
+        if (vh === 'us' || vh === 'both') wizardPayload.has_us_visa = true;
+        if (vh === 'none') { wizardPayload.has_schengen_visa = false; wizardPayload.has_us_visa = false; }
+
+        const { data } = await publicPortalApi.updateProfile(wizardPayload);
+        publicAuth.user = data.data.user;
+        localStorage.setItem('public_user', JSON.stringify(data.data.user));
+    } catch (e) {
+        console.error('Wizard save error:', e.response?.data || e);
+    } finally {
+        saving.value = false;
+    }
+
     showWizard.value = false;
     router.push({ name: 'me.scoring' });
 }
