@@ -7,6 +7,7 @@ use App\Modules\Case\Models\CaseFamilyMember;
 use App\Modules\Case\Models\VisaCase;
 use App\Modules\Document\Models\CaseChecklist;
 use App\Modules\PublicPortal\Models\PublicUserFamilyMember;
+use App\Modules\Payment\Models\ClientPayment;
 use App\Support\Helpers\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -166,7 +167,7 @@ class PublicFamilyController extends Controller
             return ApiResponse::error('Этот член семьи уже добавлен в заявку.', null, 409);
         }
 
-        DB::transaction(function () use ($case, $member) {
+        DB::transaction(function () use ($case, $member, $publicUser) {
             CaseFamilyMember::create([
                 'case_id'          => $case->id,
                 'family_member_id' => $member->id,
@@ -174,6 +175,9 @@ class PublicFamilyController extends Controller
 
             // Создать базовый чеклист документов для члена семьи
             $this->createFamilyMemberChecklist($case, $member);
+
+            // Пересчитать платёж с учётом нового члена семьи
+            $this->recalculatePayment($case, $publicUser);
         });
 
         return ApiResponse::created(null, 'Член семьи добавлен в заявку');
@@ -194,13 +198,16 @@ class PublicFamilyController extends Controller
             ->where('family_member_id', $fid)
             ->firstOrFail();
 
-        DB::transaction(function () use ($case, $fid, $caseMember) {
+        DB::transaction(function () use ($case, $fid, $caseMember, $publicUser) {
             // Удалить чеклист этого члена семьи
             CaseChecklist::where('case_id', $case->id)
                 ->where('family_member_id', $fid)
                 ->delete();
 
             $caseMember->delete();
+
+            // Пересчитать платёж без этого члена семьи
+            $this->recalculatePayment($case, $publicUser);
         });
 
         return ApiResponse::success(null, 'Член семьи откреплён');
@@ -271,6 +278,57 @@ class PublicFamilyController extends Controller
         }
 
         DB::table('case_checklist')->insert($rows);
+    }
+
+    /**
+     * Пересчитать pending-платёж при изменении состава семьи.
+     */
+    private function recalculatePayment(VisaCase $case, $publicUser): void
+    {
+        $payment = ClientPayment::where('case_id', $case->id)
+            ->where('status', 'pending')
+            ->first();
+
+        if (! $payment) return;
+
+        $basePrice = $payment->metadata['base_price'] ?? $payment->amount;
+
+        $breakdown = [];
+        $breakdown[] = [
+            'name'     => $publicUser->name ?? 'Заявитель',
+            'role'     => 'applicant',
+            'discount' => 0,
+            'price'    => (int) $basePrice,
+        ];
+
+        $familyMembers = DB::table('case_family_members')
+            ->join('public_user_family_members', 'case_family_members.family_member_id', '=', 'public_user_family_members.id')
+            ->where('case_family_members.case_id', $case->id)
+            ->select('public_user_family_members.name', 'public_user_family_members.relationship')
+            ->get();
+
+        foreach ($familyMembers as $fm) {
+            $isChild  = $fm->relationship === 'child';
+            $discount = $isChild ? 50 : 25;
+            $price    = (int) round($basePrice * (100 - $discount) / 100);
+            $breakdown[] = [
+                'name'     => $fm->name,
+                'role'     => $fm->relationship,
+                'discount' => $discount,
+                'price'    => $price,
+            ];
+        }
+
+        $amount = array_sum(array_column($breakdown, 'price'));
+
+        $metadata = $payment->metadata ?? [];
+        $metadata['price_breakdown'] = $breakdown;
+        $metadata['base_price'] = (int) $basePrice;
+
+        $payment->update([
+            'amount'   => $amount,
+            'metadata' => $metadata,
+        ]);
     }
 
     private function formatMember(PublicUserFamilyMember $m): array
