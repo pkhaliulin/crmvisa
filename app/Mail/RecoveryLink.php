@@ -9,28 +9,29 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class WelcomeEmail extends Mailable
+class RecoveryLink extends Mailable
 {
     use Queueable, SerializesModels;
 
+    public string $recoveryUrl;
+
     public function __construct(
         public string $userName,
-        public string $userPhone,
-        public string $portalUrl = 'https://visabor.uz/me',
-    ) {}
+        public string $token,
+    ) {
+        $this->recoveryUrl = url("/recovery/verify?token={$token}");
+    }
 
     public function envelope(): Envelope
     {
         return new Envelope(
-            from: new Address('noreply@visabor.uz', 'VisaBor'),
-            subject: 'VisaBor — Добро пожаловать!',
+            from: new Address('security@visabor.uz', 'VisaBor Security'),
+            subject: 'VisaBor — Восстановление доступа',
         );
     }
 
     public function content(): Content
     {
-        return new Content(
-            view: 'emails.welcome',
-        );
+        return new Content(view: 'emails.recovery-link');
     }
 }

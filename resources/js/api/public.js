@@ -39,6 +39,7 @@ export const publicPortalApi = {
     changePhoneSendOtp: (phone) => publicApi.post('/me/change-phone/send-otp', { phone }),
     changePhoneVerify:  (phone, code) => publicApi.post('/me/change-phone/verify', { phone, code }),
     saveEmail:          (email) => publicApi.post('/me/email', { recovery_email: email }),
+    verifyEmail:        (code)  => publicApi.post('/me/email/verify', { code }),
     uploadPassport: (file)   => {
         const fd = new FormData();
         fd.append('passport', file);
@@ -100,6 +101,12 @@ export const publicPortalApi = {
     countryDetail:(code) => publicApi.get(`/countries/${code}`),
     scoreAll:     ()     => publicApi.get('/scoring'),
     scoreCountry: (code) => publicApi.get(`/scoring/${code}`),
+
+    // Recovery (no auth)
+    recoveryRequest:     (phone) => publicApi.post('/recovery/request', { phone }),
+    recoveryVerifyToken: (token) => publicApi.post('/recovery/verify-token', { token }),
+    recoverySendOtp:     (token, phone) => publicApi.post('/recovery/send-otp', { token, phone }),
+    recoveryConfirm:     (token, phone, code) => publicApi.post('/recovery/confirm', { token, phone, code }),
 
     // References (public, no auth)
     publicReferences: () => publicApi.get('/references'),

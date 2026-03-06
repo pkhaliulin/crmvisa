@@ -20,6 +20,7 @@ class PublicUser extends Model
     protected $fillable = [
         'phone',
         'recovery_email',
+        'email_verified_at',
         'pin_hash',
         'api_token',
         'name',
@@ -57,6 +58,7 @@ class PublicUser extends Model
         'dob'                 => 'date',
         'passport_expires_at' => 'date',
         'last_login_at'       => 'datetime',
+        'email_verified_at'   => 'datetime',
         'ocr_raw_data'        => 'array',
         'has_children'        => 'boolean',
         'has_property'        => 'boolean',

@@ -147,16 +147,49 @@
                         <span class="text-amber-600 font-normal">({{ $t('profile.recoveryEmailHint') }})</span>
                     </label>
 
-                    <!-- Режим просмотра: email сохранён -->
-                    <div v-if="savedEmail && !emailEditing" class="flex items-center gap-2">
-                        <div class="flex-1 border border-[#1BA97F] rounded-xl px-3 py-2.5 text-sm bg-[#1BA97F]/5 text-[#0A1F44] font-medium flex items-center gap-2">
-                            <svg class="w-4 h-4 text-[#1BA97F] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                    <!-- Режим просмотра: email сохранён и не в режиме редактирования -->
+                    <div v-if="savedEmail && !emailEditing && !emailVerifying" class="flex items-center gap-2">
+                        <div class="flex-1 rounded-xl px-3 py-2.5 text-sm font-medium flex items-center gap-2"
+                            :class="emailVerified
+                                ? 'border border-[#1BA97F] bg-[#1BA97F]/5 text-[#0A1F44]'
+                                : 'border border-amber-400 bg-amber-50 text-amber-900'">
+                            <svg class="w-4 h-4 shrink-0" :class="emailVerified ? 'text-[#1BA97F]' : 'text-amber-500'" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
                             {{ savedEmail }}
+                            <span v-if="emailVerified" class="ml-auto text-[10px] bg-[#1BA97F]/10 text-[#1BA97F] px-2 py-0.5 rounded-full font-semibold">{{ $t('profile.emailVerified') }}</span>
+                            <span v-else class="ml-auto text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-semibold cursor-pointer hover:bg-amber-200" @click="resendVerification">{{ $t('profile.emailUnverified') }}</span>
                         </div>
                         <button @click="startEmailEdit" type="button"
                             class="shrink-0 p-2.5 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors text-gray-500 hover:text-[#0A1F44]">
                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
                         </button>
+                    </div>
+
+                    <!-- Режим верификации: ввод 4-значного кода -->
+                    <div v-else-if="emailVerifying" class="space-y-3">
+                        <div class="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
+                            <p class="text-xs text-blue-800 font-medium mb-2">{{ $t('profile.verifyEmailHint', { email: savedEmail }) }}</p>
+                            <div class="flex items-center gap-2">
+                                <div class="flex gap-1.5">
+                                    <input v-for="i in 4" :key="i" :ref="el => { if (el) verifyInputs[i-1] = el }"
+                                        type="text" inputmode="numeric" maxlength="1"
+                                        class="w-10 h-10 text-center text-lg font-bold border-2 rounded-lg outline-none transition-colors"
+                                        :class="verifyCode[i-1] ? 'border-[#1BA97F] bg-white' : 'border-gray-300 bg-white'"
+                                        :value="verifyCode[i-1] || ''"
+                                        @input="onVerifyInput($event, i-1)"
+                                        @keydown.backspace="onVerifyBackspace($event, i-1)"
+                                        @paste="onVerifyPaste" />
+                                </div>
+                                <button @click="submitVerifyCode" :disabled="verifyCode.join('').length < 4 || emailSaving"
+                                    class="shrink-0 p-2.5 rounded-xl transition-colors"
+                                    :class="verifyCode.join('').length === 4
+                                        ? 'bg-[#1BA97F] text-white hover:bg-[#169B72]'
+                                        : 'bg-gray-100 text-gray-400 cursor-not-allowed'">
+                                    <svg v-if="!emailSaving" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                    <svg v-else class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                                </button>
+                            </div>
+                            <button @click="emailVerifying = false; verifyCode = ['','','',''];" class="text-[11px] text-blue-600 hover:text-blue-800 mt-2">{{ $t('common.cancel') }}</button>
+                        </div>
                     </div>
 
                     <!-- Режим ввода/редактирования -->
@@ -904,17 +937,22 @@ function isValidEmail(val) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val || '');
 }
 
-// --- Email: отдельная логика сохранения ---
-const savedEmail    = ref(publicAuth.user?.recovery_email ?? '');
-const emailDraft    = ref(savedEmail.value || '');
-const emailEditing  = ref(false);
-const emailSaving   = ref(false);
-const emailMsg      = ref('');
-const emailMsgError = ref(false);
+// --- Email: отдельная логика сохранения + верификация ---
+const savedEmail     = ref(publicAuth.user?.recovery_email ?? '');
+const emailVerified  = ref(!!publicAuth.user?.email_verified_at);
+const emailDraft     = ref(savedEmail.value || '');
+const emailEditing   = ref(false);
+const emailVerifying = ref(false);
+const emailSaving    = ref(false);
+const emailMsg       = ref('');
+const emailMsgError  = ref(false);
+const verifyCode     = ref(['', '', '', '']);
+const verifyInputs   = ref([]);
 
 function startEmailEdit() {
     emailDraft.value = savedEmail.value;
     emailEditing.value = true;
+    emailVerifying.value = false;
     emailMsg.value = '';
 }
 
@@ -936,14 +974,90 @@ async function saveEmailField() {
             publicAuth.user = updatedUser;
             try { localStorage.setItem('public_user', JSON.stringify(updatedUser)); } catch {}
             form.recovery_email = updatedUser.recovery_email ?? '';
+            emailVerified.value = !!updatedUser.email_verified_at;
         }
         savedEmail.value = emailDraft.value;
         emailEditing.value = false;
-        emailMsg.value = t('profile.emailSaved');
-        setTimeout(() => { emailMsg.value = ''; }, 4000);
+        // Переключаемся на ввод кода верификации
+        emailVerifying.value = true;
+        verifyCode.value = ['', '', '', ''];
+        emailMsg.value = t('profile.verificationSent');
+        setTimeout(() => { emailMsg.value = ''; }, 5000);
+        nextTick(() => { if (verifyInputs.value[0]) verifyInputs.value[0].focus(); });
     } catch (e) {
         emailMsgError.value = true;
         emailMsg.value = e.response?.data?.message ?? t('profile.saveError');
+    } finally {
+        emailSaving.value = false;
+    }
+}
+
+async function resendVerification() {
+    if (!savedEmail.value) return;
+    emailSaving.value = true;
+    try {
+        await publicPortalApi.saveEmail(savedEmail.value);
+        emailVerifying.value = true;
+        verifyCode.value = ['', '', '', ''];
+        emailMsg.value = t('profile.verificationSent');
+        emailMsgError.value = false;
+        setTimeout(() => { emailMsg.value = ''; }, 5000);
+        nextTick(() => { if (verifyInputs.value[0]) verifyInputs.value[0].focus(); });
+    } catch (e) {
+        emailMsgError.value = true;
+        emailMsg.value = e.response?.data?.message ?? t('profile.saveError');
+    } finally {
+        emailSaving.value = false;
+    }
+}
+
+function onVerifyInput(e, idx) {
+    const val = e.target.value.replace(/\D/g, '');
+    verifyCode.value[idx] = val.charAt(0) || '';
+    e.target.value = verifyCode.value[idx];
+    if (val && idx < 3 && verifyInputs.value[idx + 1]) {
+        verifyInputs.value[idx + 1].focus();
+    }
+    if (verifyCode.value.join('').length === 4) {
+        submitVerifyCode();
+    }
+}
+
+function onVerifyBackspace(e, idx) {
+    if (!verifyCode.value[idx] && idx > 0) {
+        verifyInputs.value[idx - 1].focus();
+    }
+}
+
+function onVerifyPaste(e) {
+    const text = (e.clipboardData?.getData('text') || '').replace(/\D/g, '').slice(0, 4);
+    for (let i = 0; i < 4; i++) verifyCode.value[i] = text[i] || '';
+    e.preventDefault();
+    if (text.length === 4) submitVerifyCode();
+}
+
+async function submitVerifyCode() {
+    const code = verifyCode.value.join('');
+    if (code.length < 4) return;
+    emailSaving.value = true;
+    emailMsg.value = '';
+    emailMsgError.value = false;
+    try {
+        const { data } = await publicPortalApi.verifyEmail(code);
+        const updatedUser = data?.data?.user;
+        if (updatedUser) {
+            publicAuth.user = updatedUser;
+            try { localStorage.setItem('public_user', JSON.stringify(updatedUser)); } catch {}
+            emailVerified.value = !!updatedUser.email_verified_at;
+        }
+        emailVerifying.value = false;
+        emailMsg.value = t('profile.emailVerifiedSuccess');
+        setTimeout(() => { emailMsg.value = ''; }, 4000);
+    } catch (e) {
+        emailMsgError.value = true;
+        emailMsg.value = e.response?.data?.message ?? t('profile.verifyError');
+        verifyCode.value = ['', '', '', ''];
+        nextTick(() => { if (verifyInputs.value[0]) verifyInputs.value[0].focus(); });
     } finally {
         emailSaving.value = false;
     }
@@ -1497,6 +1611,7 @@ onMounted(async () => {
         // Синхронизируем email-поле
         savedEmail.value = publicAuth.user?.recovery_email ?? '';
         emailDraft.value = savedEmail.value || '';
+        emailVerified.value = !!publicAuth.user?.email_verified_at;
     } catch { /* ignore */ }
     loadFamilyMembers();
 });

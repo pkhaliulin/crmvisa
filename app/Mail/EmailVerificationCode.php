@@ -9,28 +9,25 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class WelcomeEmail extends Mailable
+class EmailVerificationCode extends Mailable
 {
     use Queueable, SerializesModels;
 
     public function __construct(
+        public string $code,
         public string $userName,
-        public string $userPhone,
-        public string $portalUrl = 'https://visabor.uz/me',
     ) {}
 
     public function envelope(): Envelope
     {
         return new Envelope(
-            from: new Address('noreply@visabor.uz', 'VisaBor'),
-            subject: 'VisaBor — Добро пожаловать!',
+            from: new Address('security@visabor.uz', 'VisaBor Security'),
+            subject: "VisaBor — Код подтверждения: {$this->code}",
         );
     }
 
     public function content(): Content
     {
-        return new Content(
-            view: 'emails.welcome',
-        );
+        return new Content(view: 'emails.verify-email');
     }
 }

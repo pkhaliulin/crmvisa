@@ -16,6 +16,7 @@ use App\Modules\PublicPortal\Controllers\PublicFamilyController;
 use App\Modules\PublicPortal\Controllers\PublicProfileController;
 use App\Modules\PublicPortal\Controllers\PublicReviewController;
 use App\Modules\PublicPortal\Controllers\PublicScoringController;
+use App\Modules\PublicPortal\Controllers\RecoveryController;
 use App\Modules\Document\Controllers\ChecklistController;
 use App\Modules\Document\Controllers\CountryRequirementController;
 use App\Modules\Document\Controllers\DocumentController;
@@ -342,6 +343,12 @@ Route::prefix('v1')->group(function () {
         Route::post('auth/send-otp',  [PublicAuthController::class, 'sendOtp'])->middleware('throttle:5,1');
         Route::post('auth/verify-otp',[PublicAuthController::class, 'verifyOtp'])->middleware('throttle:10,1');
         Route::post('auth/login',     [PublicAuthController::class, 'loginWithPin'])->middleware('throttle:10,1');
+
+        // Recovery (без авторизации)
+        Route::post('recovery/request',      [RecoveryController::class, 'request'])->middleware('throttle:3,1');
+        Route::post('recovery/verify-token', [RecoveryController::class, 'verifyToken']);
+        Route::post('recovery/send-otp',     [RecoveryController::class, 'sendOtp'])->middleware('throttle:5,1');
+        Route::post('recovery/confirm',      [RecoveryController::class, 'confirm'])->middleware('throttle:5,1');
     });
 
     // С токеном публичного пользователя
@@ -351,7 +358,8 @@ Route::prefix('v1')->group(function () {
         Route::get('me',             [PublicProfileController::class, 'me']);
         Route::patch('me',           [PublicProfileController::class, 'update']);
         Route::post('me/passport',   [PublicProfileController::class, 'uploadPassport']);
-        Route::post('me/email',      [PublicProfileController::class, 'saveEmail']);
+        Route::post('me/email',        [PublicProfileController::class, 'saveEmail']);
+        Route::post('me/email/verify', [PublicProfileController::class, 'verifyEmail']);
         Route::post('me/change-phone/send-otp', [PublicProfileController::class, 'changePhoneSendOtp']);
         Route::post('me/change-phone/verify',   [PublicProfileController::class, 'changePhoneVerify']);
         Route::get('me/cases',                                    [PublicProfileController::class, 'cases']);

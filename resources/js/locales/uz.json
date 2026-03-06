@@ -106,6 +106,7 @@
     "sending": "Yuborilmoqda...",
     "getCode": "Kodni olish",
     "havePin": "PIN-ingiz bormi?",
+    "lostPhone": "Telefonga kirish imkoniyatini yo'qotdingizmi?",
     "smsSentConfirm": "Sizga tasdiqlash kodi bilan SMS yubordik.",
     "checking": "Tekshirilmoqda...",
     "confirm": "Tasdiqlash",
@@ -239,6 +240,12 @@
     "editEmail": "O'zgartirish",
     "saveEmail": "Saqlash",
     "clearEmail": "Emailni o'chirish",
+    "emailVerified": "Tasdiqlangan",
+    "emailUnverified": "Tasdiqlash",
+    "verificationSent": "Tasdiqlash kodi emailga yuborildi",
+    "verifyEmailHint": "Kod {email} ga yuborildi. 4 raqam kiriting:",
+    "emailVerifiedSuccess": "Email tasdiqlandi",
+    "verifyError": "Noto'g'ri yoki muddati o'tgan kod",
     "changePhone": "Raqamni o'zgartirish",
     "newPhone": "Yangi raqam",
     "sendCode": "Kod yuborish",
@@ -1491,5 +1498,25 @@
       "sibling": "Aka/Opa",
       "other": "Boshqa"
     }
+  },
+  "recovery": {
+    "title": "Kirishni tiklash",
+    "enterPhone": "Kirish imkoniyati yo'qolgan telefon raqamini kiriting. Bog'langan emailga havola yuboramiz.",
+    "phone": "Telefon raqami",
+    "sendLink": "Havola yuborish",
+    "linkSent": "Havola yuborildi",
+    "checkEmail": "Pochtangizni tekshiring. Agar akkauntga tasdiqlangan email bog'langan bo'lsa — tiklash havolasini olasiz.",
+    "backToHome": "Bosh sahifaga qaytish",
+    "linkExpired": "Havola yaroqsiz",
+    "linkExpiredHint": "Havola muddati tugagan yoki allaqachon ishlatilgan.",
+    "tryAgain": "Yangi havola so'rash",
+    "hi": "Salom, {name}!",
+    "enterNewPhone": "Akkauntga yangi telefon raqamini bog'lash uchun kiriting.",
+    "sendSms": "SMS-kod yuborish",
+    "enterOtp": "SMSdan 4 xonali kodni kiriting:",
+    "confirm": "Tasdiqlash",
+    "success": "Kirish tiklandi",
+    "successHint": "Telefon raqami muvaffaqiyatli o'zgartirildi. Akkauntga kirdingiz.",
+    "goToProfile": "Shaxsiy kabinetga o'tish"
   }
 }

@@ -86,6 +86,11 @@
                             {{ $t('common.login') }}
                         </button>
                     </p>
+                    <p class="mt-2 text-center">
+                        <router-link to="/recovery" class="text-xs text-gray-400 hover:text-[#1BA97F]" @click="$emit('close')">
+                            {{ $t('auth.lostPhone') }}
+                        </router-link>
+                    </p>
                 </template>
 
                 <!-- ШАГ 2: OTP (4 бокса) -->

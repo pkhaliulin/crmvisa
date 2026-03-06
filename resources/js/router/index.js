@@ -13,6 +13,20 @@ const routes = [
         meta: { public: true },
     },
 
+    // Восстановление доступа
+    {
+        path: '/recovery',
+        name: 'recovery',
+        component: () => import('@/pages/public/RecoveryPage.vue'),
+        meta: { public: true },
+    },
+    {
+        path: '/recovery/verify',
+        name: 'recovery.verify',
+        component: () => import('@/pages/public/RecoveryVerifyPage.vue'),
+        meta: { public: true },
+    },
+
     // Личный кабинет публичного пользователя
     {
         path: '/me',
