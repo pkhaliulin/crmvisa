@@ -79,13 +79,19 @@ class AgencySettingsController extends Controller
 
         $agencyId = $request->user()->agency_id;
 
-        $country = AgencyWorkCountry::updateOrCreate(
-            ['agency_id' => $agencyId, 'country_code' => strtoupper($data['country_code'])],
-            [
-                'visa_types' => $data['visa_types'] ?? [],
-                'is_active'  => true,
-            ]
-        );
+        try {
+            $country = AgencyWorkCountry::updateOrCreate(
+                ['agency_id' => $agencyId, 'country_code' => strtoupper($data['country_code'])],
+                [
+                    'visa_types' => $data['visa_types'] ?? [],
+                    'is_active'  => true,
+                ]
+            );
+        } catch (\Illuminate\Database\UniqueConstraintViolationException) {
+            $country = AgencyWorkCountry::where('agency_id', $agencyId)
+                ->where('country_code', strtoupper($data['country_code']))
+                ->first();
+        }
 
         return ApiResponse::created($country);
     }

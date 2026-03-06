@@ -108,8 +108,11 @@ class ClientPaymentController extends Controller
     {
         $publicUser = $request->get('_public_user');
 
+        // RLS superadmin для доступа к cases/clients (кроссирующие tenant)
+        \DB::statement("SET LOCAL app.is_superadmin = 'true'");
+
         $data = $request->validate([
-            'case_id' => ['required', 'uuid', 'exists:cases,id'],
+            'case_id' => ['required', 'uuid'],
         ]);
 
         $case = VisaCase::whereHas('client', fn ($q) => $q->where('public_user_id', $publicUser->id))

@@ -9,7 +9,12 @@
  */
 export function formatPhone(phone) {
     if (!phone) return '—';
-    const raw = String(phone).trim();
+    let raw = String(phone).trim();
+
+    // Защита: если пришла PHP serialize обёртка s:N:"value", извлекаем value
+    const serMatch = raw.match(/^s:\d+:"(.+)";?$/);
+    if (serMatch) raw = serMatch[1];
+
     const digits = raw.replace(/\D/g, '');
 
     if (!digits) return raw;

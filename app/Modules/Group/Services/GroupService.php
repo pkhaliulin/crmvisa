@@ -239,8 +239,8 @@ class GroupService
     public function setGroupAgency(CaseGroup $group, string $agencyId): void
     {
         DB::transaction(function () use ($group, $agencyId) {
-            // Устанавливаем tenant context для RLS (позволяет UPDATE agency_id из NULL в UUID)
-            DB::statement("SET LOCAL app.current_tenant_id = '{$agencyId}'");
+            // Superadmin для RLS: кейсы с agency_id=NULL недоступны через tenant_id
+            DB::statement("SET LOCAL app.is_superadmin = 'true'");
 
             $group->update([
                 'agency_id' => $agencyId,
