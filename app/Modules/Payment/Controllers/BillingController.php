@@ -194,6 +194,50 @@ class BillingController extends Controller
     }
 
     /**
+     * POST /api/v1/billing/change-plan
+     */
+    public function changePlan(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'plan_slug'      => 'required|string|exists:billing_plans,slug',
+            'billing_period' => 'required|in:monthly,yearly',
+        ]);
+
+        $agency = $request->user()->agency;
+        $newPlanSlug = $validated['plan_slug'];
+        $currentPlanSlug = $agency->plan instanceof \BackedEnum
+            ? $agency->plan->value
+            : (string) $agency->plan;
+
+        if ($newPlanSlug === $currentPlanSlug) {
+            return ApiResponse::error('Вы уже на этом тарифе', null, 422);
+        }
+
+        $newPlan = \App\Modules\Payment\Models\BillingPlan::findOrFail($newPlanSlug);
+        if (! $newPlan->is_active || ! $newPlan->is_public) {
+            return ApiResponse::error('Этот тариф недоступен', null, 422);
+        }
+
+        $subscription = $this->engine->subscribe(
+            $agency,
+            $newPlanSlug,
+            $validated['billing_period'],
+            'prepaid',
+            null,
+            $request->user()->id,
+        );
+
+        return ApiResponse::success([
+            'subscription_id' => $subscription->id,
+            'plan_slug'       => $subscription->plan_slug,
+            'plan_name'       => $newPlan->name,
+            'status'          => $subscription->status,
+            'expires_at'      => $subscription->expires_at,
+            'billing_period'  => $subscription->billing_period,
+        ], 'Тариф успешно изменён');
+    }
+
+    /**
      * POST /api/v1/admin/billing/activate
      */
     public function adminActivate(Request $request): JsonResponse

@@ -187,6 +187,7 @@ Route::prefix('v1')->group(function () {
         Route::get('billing/transactions',  [BillingController::class, 'transactions']);
         Route::get('billing/invoices',      [BillingController::class, 'invoices']);
         Route::post('billing/cancel',       [BillingController::class, 'cancel']);
+        Route::post('billing/change-plan',  [BillingController::class, 'changePlan']);
     });
 
     // Суперадмин: ручная активация плана + управление справочниками документов

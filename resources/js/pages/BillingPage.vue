@@ -1,5 +1,5 @@
 <template>
-  <div class="max-w-3xl mx-auto space-y-6">
+  <div class="max-w-4xl mx-auto space-y-6">
     <div>
       <h1 class="text-xl font-bold text-gray-900">Тариф и подписка</h1>
       <p class="text-sm text-gray-500 mt-1">Ваш текущий план, использование лимитов и история оплат</p>
@@ -15,7 +15,7 @@
         <Transition enter-active-class="transition duration-300 ease-out" enter-from-class="opacity-0 translate-y-2"
           leave-active-class="transition duration-200 ease-in" leave-to-class="opacity-0 translate-y-2">
           <div v-if="toast"
-            class="fixed top-5 right-5 z-50 bg-[#0A1F44] text-white text-sm px-4 py-3 rounded-xl shadow-lg max-w-xs">
+            :class="['fixed top-5 right-5 z-50 text-white text-sm px-4 py-3 rounded-xl shadow-lg max-w-xs', toastError ? 'bg-red-600' : 'bg-[#0A1F44]']">
             {{ toast }}
           </div>
         </Transition>
@@ -50,14 +50,12 @@
             </div>
             <div v-else class="mt-2 text-sm text-gray-400">Без ограничения по времени</div>
 
-            <!-- Модель оплаты -->
             <div v-if="sub.payment_model" class="mt-2 text-xs text-gray-400">
               <span v-if="sub.payment_model === 'earn_first'" class="text-green-600 font-medium">Оплата из дохода (earn-first)</span>
               <span v-else-if="sub.payment_model === 'prepaid'" class="text-blue-600 font-medium">Предоплата</span>
               <span v-else class="text-gray-600 font-medium">{{ sub.payment_model }}</span>
             </div>
 
-            <!-- Прогресс earn-first -->
             <div v-if="sub.earn_first_progress" class="mt-3 p-3 bg-green-50 rounded-lg">
               <div class="flex justify-between text-xs mb-1">
                 <span class="text-green-700 font-medium">Прогресс автосписания</span>
@@ -71,9 +69,8 @@
               </div>
             </div>
 
-            <!-- Grace period -->
             <div v-if="sub.is_in_grace_period" class="mt-2 px-3 py-2 bg-amber-50 rounded-lg border border-amber-200">
-              <div class="text-xs font-medium text-amber-700">Льготный период — оплатите подписку до {{ formatDate(sub.grace_ends_at) }}</div>
+              <div class="text-xs font-medium text-amber-700">Льготный период -- оплатите подписку до {{ formatDate(sub.grace_ends_at) }}</div>
             </div>
           </div>
 
@@ -137,29 +134,52 @@
 
       <!-- Тарифные планы -->
       <section class="bg-white rounded-xl border border-gray-200 p-6">
-        <h2 class="font-semibold text-gray-700 text-sm uppercase tracking-wide mb-1">Доступные тарифы</h2>
-        <p class="text-xs text-gray-400 mb-4">Для смены тарифа свяжитесь с поддержкой: info@visabor.uz</p>
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h2 class="font-semibold text-gray-700 text-sm uppercase tracking-wide">Тарифные планы</h2>
+            <p class="text-xs text-gray-400 mt-0.5">Выберите подходящий план для вашего агентства</p>
+          </div>
+          <div class="flex bg-gray-100 rounded-lg p-0.5">
+            <button @click="selectedPeriod = 'monthly'"
+              :class="['px-3 py-1.5 text-xs font-medium rounded-md transition-colors',
+                selectedPeriod === 'monthly' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700']">
+              Месяц
+            </button>
+            <button @click="selectedPeriod = 'yearly'"
+              :class="['px-3 py-1.5 text-xs font-medium rounded-md transition-colors',
+                selectedPeriod === 'yearly' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700']">
+              Год <span class="text-[#1BA97F] font-bold">-17%</span>
+            </button>
+          </div>
+        </div>
+
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div v-for="plan in availablePlans" :key="plan.slug"
             :class="[
               'relative flex flex-col rounded-xl border-2 p-4 transition-all',
               isCurrentPlan(plan.slug)
-                ? 'border-[#1BA97F] bg-[#1BA97F]/5'
-                : 'border-gray-200 bg-white hover:border-gray-300',
+                ? 'border-[#1BA97F] bg-[#1BA97F]/5 ring-1 ring-[#1BA97F]/20'
+                : plan.is_recommended
+                  ? 'border-blue-400 bg-blue-50/30 hover:border-blue-500'
+                  : 'border-gray-200 bg-white hover:border-gray-300',
             ]">
             <div v-if="isCurrentPlan(plan.slug)"
               class="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#1BA97F] text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider whitespace-nowrap">
-              Текущий
+              Текущий план
             </div>
-            <div v-if="plan.is_recommended && !isCurrentPlan(plan.slug)"
+            <div v-else-if="plan.is_recommended"
               class="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-500 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full whitespace-nowrap">
               Рекомендуемый
             </div>
+
             <p class="font-bold text-[#0A1F44] text-base">{{ plan.name }}</p>
             <p class="text-2xl font-extrabold mt-1" :class="isCurrentPlan(plan.slug) ? 'text-[#1BA97F]' : 'text-gray-800'">
-              {{ plan.price_uzs > 0 ? fmtMoney(plan.price_uzs) : 'Бесплатно' }}
+              {{ planPrice(plan) > 0 ? fmtMoney(planPrice(plan)) : 'Бесплатно' }}
             </p>
-            <p v-if="plan.price_uzs > 0" class="text-[11px] text-gray-400 -mt-0.5">/ месяц</p>
+            <p v-if="planPrice(plan) > 0" class="text-[11px] text-gray-400 -mt-0.5">
+              / {{ selectedPeriod === 'yearly' ? 'год' : 'месяц' }}
+            </p>
+
             <ul class="mt-3 space-y-1.5 flex-1">
               <li class="flex items-start gap-1.5 text-[11px] text-gray-600">
                 <span class="text-[#1BA97F] mt-0.5 shrink-0">+</span>
@@ -185,16 +205,23 @@
                 <span class="text-[#1BA97F] mt-0.5 shrink-0">+</span>
                 White-label
               </li>
+              <li v-if="plan.has_priority_support" class="flex items-start gap-1.5 text-[11px] text-gray-600">
+                <span class="text-[#1BA97F] mt-0.5 shrink-0">+</span>
+                Приоритетная поддержка
+              </li>
             </ul>
-            <button @click="selectPlan(plan)"
-              :disabled="isCurrentPlan(plan.slug)"
+
+            <button @click="openChangePlan(plan)"
+              :disabled="isCurrentPlan(plan.slug) || changingPlan"
               :class="[
                 'mt-4 w-full py-2 rounded-lg text-sm font-medium transition-colors',
                 isCurrentPlan(plan.slug)
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  : 'bg-[#0A1F44] text-white hover:bg-[#0d2a5e]',
+                  ? 'bg-[#1BA97F]/10 text-[#1BA97F] cursor-default'
+                  : isUpgrade(plan)
+                    ? 'bg-[#1BA97F] text-white hover:bg-[#158a68]'
+                    : 'bg-[#0A1F44] text-white hover:bg-[#0d2a5e]',
               ]">
-              {{ isCurrentPlan(plan.slug) ? 'Ваш план' : 'Выбрать' }}
+              {{ isCurrentPlan(plan.slug) ? 'Ваш план' : isUpgrade(plan) ? 'Перейти' : 'Выбрать' }}
             </button>
           </div>
         </div>
@@ -222,7 +249,7 @@
               class="border-t border-gray-100 hover:bg-gray-50 transition-colors">
               <td class="px-6 py-3 text-gray-700">{{ formatDate(tx.created_at || tx.paid_at) }}</td>
               <td class="px-6 py-3 font-medium text-gray-900">{{ txTypeLabel(tx.type || tx.plan) }}</td>
-              <td class="px-6 py-3 text-gray-700">{{ tx.amount ? fmtMoney(tx.amount) : '—' }}</td>
+              <td class="px-6 py-3 text-gray-700">{{ tx.amount ? fmtMoney(tx.amount) : '--' }}</td>
               <td class="px-6 py-3">
                 <span :class="['text-xs font-semibold px-2 py-0.5 rounded-full', txStatusClass(tx.status)]">
                   {{ txStatusLabel(tx.status) }}
@@ -232,6 +259,74 @@
           </tbody>
         </table>
       </section>
+
+      <!-- Модалка подтверждения смены тарифа -->
+      <Teleport to="body">
+        <Transition enter-active-class="transition duration-200 ease-out" enter-from-class="opacity-0"
+          leave-active-class="transition duration-150 ease-in" leave-to-class="opacity-0">
+          <div v-if="showConfirmModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" @click.self="showConfirmModal = false">
+            <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+              <h3 class="text-lg font-bold text-[#0A1F44]">Смена тарифного плана</h3>
+
+              <div class="mt-4 p-4 bg-gray-50 rounded-xl space-y-3">
+                <div class="flex justify-between text-sm">
+                  <span class="text-gray-500">Текущий план</span>
+                  <span class="font-medium text-gray-700">{{ currentPlanName }}</span>
+                </div>
+                <div class="flex items-center justify-center">
+                  <svg class="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+                  </svg>
+                </div>
+                <div class="flex justify-between text-sm">
+                  <span class="text-gray-500">Новый план</span>
+                  <span class="font-bold" :class="isUpgrade(selectedPlan) ? 'text-[#1BA97F]' : 'text-[#0A1F44]'">
+                    {{ selectedPlan?.name }}
+                  </span>
+                </div>
+                <div class="flex justify-between text-sm">
+                  <span class="text-gray-500">Стоимость</span>
+                  <span class="font-bold text-gray-900">
+                    {{ selectedPlan ? (planPrice(selectedPlan) > 0 ? fmtMoney(planPrice(selectedPlan)) : 'Бесплатно') : '' }}
+                    <span v-if="selectedPlan && planPrice(selectedPlan) > 0" class="text-gray-400 font-normal text-xs">
+                      / {{ selectedPeriod === 'yearly' ? 'год' : 'мес' }}
+                    </span>
+                  </span>
+                </div>
+                <div class="flex justify-between text-sm">
+                  <span class="text-gray-500">Период</span>
+                  <span class="font-medium text-gray-700">{{ selectedPeriod === 'yearly' ? 'Годовой' : 'Ежемесячный' }}</span>
+                </div>
+              </div>
+
+              <div v-if="isUpgrade(selectedPlan)" class="mt-3 p-3 bg-green-50 rounded-lg">
+                <p class="text-xs text-green-700">Повышение тарифа. Новые лимиты и возможности вступят в силу сразу после подтверждения.</p>
+              </div>
+              <div v-else class="mt-3 p-3 bg-amber-50 rounded-lg">
+                <p class="text-xs text-amber-700">Понижение тарифа. Новые лимиты вступят в силу сразу. Убедитесь, что текущее использование не превышает лимиты нового плана.</p>
+              </div>
+
+              <div class="mt-5 flex gap-3">
+                <button @click="showConfirmModal = false" :disabled="changingPlan"
+                  class="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                  Отмена
+                </button>
+                <button @click="confirmChangePlan" :disabled="changingPlan"
+                  :class="[
+                    'flex-1 px-4 py-2.5 rounded-lg text-sm font-medium text-white transition-colors flex items-center justify-center gap-2',
+                    isUpgrade(selectedPlan)
+                      ? 'bg-[#1BA97F] hover:bg-[#158a68]'
+                      : 'bg-[#0A1F44] hover:bg-[#0d2a5e]',
+                    changingPlan ? 'opacity-70 cursor-wait' : '',
+                  ]">
+                  <div v-if="changingPlan" class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  {{ changingPlan ? 'Применяем...' : 'Подтвердить' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </Transition>
+      </Teleport>
     </template>
   </div>
 </template>
@@ -242,6 +337,7 @@ import api from '@/api/index';
 
 const loading = ref(true);
 const toast = ref('');
+const toastError = ref(false);
 
 const sub = ref({
   plan_slug: 'trial',
@@ -258,6 +354,10 @@ const sub = ref({
 const limits = ref(null);
 const transactions = ref([]);
 const availablePlans = ref([]);
+const selectedPeriod = ref('monthly');
+const showConfirmModal = ref(false);
+const selectedPlan = ref(null);
+const changingPlan = ref(false);
 
 const currentPlanName = computed(() => {
   if (sub.value.plan?.name) return sub.value.plan.name;
@@ -272,8 +372,20 @@ const currentPlanPrice = computed(() => {
   return 'Бесплатно';
 });
 
+function planPrice(plan) {
+  if (!plan) return 0;
+  return selectedPeriod.value === 'yearly' ? (plan.price_yearly || 0) : (plan.price_uzs || 0);
+}
+
 function isCurrentPlan(slug) {
   return sub.value.plan_slug === slug;
+}
+
+function isUpgrade(plan) {
+  if (!plan) return false;
+  const currentPlan = availablePlans.value.find(p => p.slug === sub.value.plan_slug);
+  if (!currentPlan) return true;
+  return (plan.price_uzs || 0) > (currentPlan.price_uzs || 0);
 }
 
 function statusLabel(s) {
@@ -296,12 +408,12 @@ function txTypeLabel(type) {
     commission: 'Комиссия', earn_first: 'Автосписание',
     payout: 'Выплата', refund: 'Возврат',
   };
-  return map[type] || type || '—';
+  return map[type] || type || '--';
 }
 
 function txStatusLabel(s) {
   const map = { succeeded: 'Оплачено', completed: 'Оплачено', pending: 'Ожидает', failed: 'Ошибка', refunded: 'Возврат' };
-  return map[s] || s || '—';
+  return map[s] || s || '--';
 }
 
 function txStatusClass(s) {
@@ -317,7 +429,7 @@ function fmtMoney(val) {
 }
 
 function formatDate(dateStr) {
-  if (!dateStr) return '—';
+  if (!dateStr) return '--';
   try {
     return new Date(dateStr).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
   } catch { return dateStr; }
@@ -338,14 +450,51 @@ const leadsPct = computed(() => {
   return Math.min(100, Math.round(((limits.value.leads_this_month || 0) / limits.value.max_leads_per_month) * 100));
 });
 
-function showToast(msg) {
+function showToast(msg, isError = false) {
   toast.value = msg;
+  toastError.value = isError;
   setTimeout(() => { toast.value = ''; }, 4000);
 }
 
-function selectPlan(plan) {
+function openChangePlan(plan) {
   if (isCurrentPlan(plan.slug)) return;
-  showToast('Для смены тарифа свяжитесь с поддержкой: info@visabor.uz');
+  selectedPlan.value = plan;
+  showConfirmModal.value = true;
+}
+
+async function confirmChangePlan() {
+  if (!selectedPlan.value || changingPlan.value) return;
+  changingPlan.value = true;
+
+  try {
+    const res = await api.post('/billing/change-plan', {
+      plan_slug: selectedPlan.value.slug,
+      billing_period: selectedPeriod.value,
+    });
+
+    const data = res.data?.data ?? res.data;
+    showConfirmModal.value = false;
+    showToast(`Тариф изменён на ${data.plan_name || selectedPlan.value.name}`);
+
+    // Перезагрузить данные подписки и лимитов
+    const [subRes, limRes] = await Promise.allSettled([
+      api.get('/billing/subscription'),
+      api.get('/billing/limits'),
+    ]);
+
+    if (subRes.status === 'fulfilled') {
+      const d = subRes.value.data?.data ?? subRes.value.data ?? {};
+      sub.value = { ...sub.value, ...d };
+    }
+    if (limRes.status === 'fulfilled') {
+      limits.value = limRes.value.data?.data ?? limRes.value.data ?? null;
+    }
+  } catch (err) {
+    const msg = err.response?.data?.message || err.response?.data?.errors?.[Object.keys(err.response?.data?.errors || {})[0]]?.[0] || 'Ошибка при смене тарифа';
+    showToast(msg, true);
+  } finally {
+    changingPlan.value = false;
+  }
 }
 
 onMounted(async () => {
@@ -373,7 +522,7 @@ onMounted(async () => {
 
     if (plansRes.status === 'fulfilled') {
       const raw = plansRes.value.data?.data ?? plansRes.value.data ?? [];
-      availablePlans.value = (Array.isArray(raw) ? raw : []).filter(p => p.is_active && p.is_public);
+      availablePlans.value = (Array.isArray(raw) ? raw : []).filter(p => p.is_active !== false && p.is_public !== false);
     }
   } catch {
     // ignore
