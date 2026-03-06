@@ -130,7 +130,7 @@
                 <div class="mt-3">
                     <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.phone') }}</label>
                     <div class="flex items-center gap-2">
-                        <div class="flex-1 border border-amber-300 rounded-xl px-3 py-2.5 text-sm bg-amber-50 text-amber-800 font-medium">
+                        <div class="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 text-[#0A1F44] font-medium">
                             {{ formatPhone(publicAuth.user?.phone) }}
                         </div>
                         <button @click="showPhoneModal = true" type="button"
@@ -147,8 +147,8 @@
                         <span class="text-amber-600 font-normal">({{ $t('profile.recoveryEmailHint') }})</span>
                     </label>
                     <input v-model="form.recovery_email" type="email" placeholder="example@gmail.com"
-                        class="w-full border rounded-xl px-3 py-2.5 text-sm outline-none transition-colors"
-                        :class="form.recovery_email && isValidEmail(form.recovery_email) ? 'border-[#1BA97F]' : 'border-gray-200 focus:border-[#1BA97F]'"/>
+                        class="w-full border border-amber-300 rounded-xl px-3 py-2.5 text-sm outline-none transition-colors bg-amber-50"
+                        :class="form.recovery_email && isValidEmail(form.recovery_email) ? 'border-[#1BA97F] bg-white' : ''"/>
                 </div>
             </div>
         </div>
