@@ -630,8 +630,8 @@ function splitName(fullName) {
     return { first: parts[0] || '', last: parts.slice(1).join(' ') || '' };
 }
 const _nameParts = splitName(publicAuth.user?.name);
-const firstName = ref(_nameParts.first);
-const lastName  = ref(_nameParts.last);
+const firstName = ref((_nameParts.first || '').toUpperCase());
+const lastName  = ref((_nameParts.last || '').toUpperCase());
 
 function isLatinOnly(val) {
     return /^[A-Za-z\s\-']+$/.test(val || '');
@@ -639,7 +639,8 @@ function isLatinOnly(val) {
 
 function onLatinInput(field, e) {
     // Убираем кириллицу и спецсимволы, оставляем только латиницу, пробелы, дефис, апостроф
-    const clean = e.target.value.replace(/[^A-Za-z\s\-']/g, '');
+    // Автоматически переводим в UPPERCASE (как в загранпаспорте)
+    const clean = e.target.value.replace(/[^A-Za-z\s\-']/g, '').toUpperCase();
     if (field === 'firstName') firstName.value = clean;
     else lastName.value = clean;
     e.target.value = clean;
