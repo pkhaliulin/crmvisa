@@ -1271,12 +1271,21 @@ function formatPhoneDigits(d) {
 const newPhoneDisplay = computed(() => formatPhoneDigits(newPhoneDigits.value));
 
 function onNewPhoneInput(e) {
-    const raw = e.target.value.replace(/\D/g, '').slice(0, 9);
+    const oldVal = e.target.value;
+    const cursorPos = e.target.selectionStart;
+    // Считаем сколько цифр было до курсора в старом значении
+    const digitsBeforeCursor = oldVal.slice(0, cursorPos).replace(/\D/g, '').length;
+    const raw = oldVal.replace(/\D/g, '').slice(0, 9);
     newPhoneDigits.value = raw;
     const formatted = formatPhoneDigits(raw);
-    const pos = e.target.selectionStart;
     e.target.value = formatted;
-    const newPos = Math.min(pos, formatted.length);
+    // Находим позицию в новой строке, где столько же цифр
+    let digitsSeen = 0;
+    let newPos = formatted.length;
+    for (let i = 0; i < formatted.length; i++) {
+        if (/\d/.test(formatted[i])) digitsSeen++;
+        if (digitsSeen === digitsBeforeCursor) { newPos = i + 1; break; }
+    }
     e.target.setSelectionRange(newPos, newPos);
 }
 
