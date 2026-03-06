@@ -18,21 +18,37 @@ class AgencySubscription extends BaseModel
         'status',
         'billing_period',
         'payment_method',
+        'payment_model',
+        'earn_first_deducted_total',
+        'earn_first_target',
+        'activation_fee_paid',
+        'activation_paid_at',
         'stripe_subscription_id',
         'stripe_customer_id',
         'starts_at',
         'expires_at',
+        'grace_ends_at',
         'cancelled_at',
+        'auto_renew',
+        'coupon_id',
+        'discount_amount',
         'metadata',
     ];
 
     protected $casts = [
-        'starts_at'    => 'datetime',
-        'expires_at'   => 'datetime',
-        'cancelled_at' => 'datetime',
-        'metadata'     => 'array',
-        'created_at'   => 'datetime',
-        'updated_at'   => 'datetime',
+        'starts_at'                  => 'datetime',
+        'expires_at'                 => 'datetime',
+        'grace_ends_at'              => 'datetime',
+        'cancelled_at'               => 'datetime',
+        'activation_paid_at'         => 'datetime',
+        'activation_fee_paid'        => 'boolean',
+        'auto_renew'                 => 'boolean',
+        'earn_first_deducted_total'  => 'integer',
+        'earn_first_target'          => 'integer',
+        'discount_amount'            => 'integer',
+        'metadata'                   => 'array',
+        'created_at'                 => 'datetime',
+        'updated_at'                 => 'datetime',
     ];
 
     // -------------------------------------------------------------------------
@@ -76,7 +92,29 @@ class AgencySubscription extends BaseModel
 
     public function isExpired(): bool
     {
-        return $this->expires_at !== null && $this->expires_at->isPast();
+        if ($this->expires_at === null) return false;
+        if ($this->expires_at->isFuture()) return false;
+
+        // Grace-period: ещё не заблокирован
+        if ($this->grace_ends_at && $this->grace_ends_at->isFuture()) return false;
+
+        return true;
+    }
+
+    public function isInGracePeriod(): bool
+    {
+        return $this->expires_at?->isPast()
+            && $this->grace_ends_at?->isFuture();
+    }
+
+    public function isEarnFirst(): bool
+    {
+        return $this->payment_model === 'earn_first';
+    }
+
+    public function needsActivationFee(): bool
+    {
+        return ! $this->activation_fee_paid && $this->plan?->activation_fee_uzs > 0;
     }
 
     public function daysLeft(): ?int

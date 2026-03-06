@@ -187,6 +187,11 @@ const routes = [
                 component: () => import('@/pages/owner/OwnerMonitoringPage.vue'),
             },
             {
+                path: 'billing',
+                name: 'owner.billing',
+                component: () => import('@/pages/owner/OwnerBillingPage.vue'),
+            },
+            {
                 path: 'memory',
                 name: 'owner.memory',
                 component: () => import('@/pages/owner/OwnerMemoryPage.vue'),

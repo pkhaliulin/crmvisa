@@ -30,6 +30,7 @@ use App\Modules\Owner\Controllers\CountryDetailController;
 use App\Modules\Owner\Controllers\FeatureFlagController;
 use App\Modules\Owner\Controllers\MemoryController;
 use App\Modules\Owner\Controllers\MonitoringController;
+use App\Modules\Owner\Controllers\OwnerBillingController;
 use App\Modules\Owner\Controllers\OwnerController;
 use App\Modules\TelegramBot\Controllers\TelegramBotController;
 use App\Modules\User\Controllers\UserController;
@@ -182,7 +183,9 @@ Route::prefix('v1')->group(function () {
     Route::middleware(['auth:api', 'role:owner,superadmin', 'plan.active'])->group(function () {
         Route::get('billing/subscription',  [BillingController::class, 'subscription']);
         Route::get('billing/limits',        [BillingController::class, 'limits']);
+        Route::get('billing/wallet',        [BillingController::class, 'wallet']);
         Route::get('billing/transactions',  [BillingController::class, 'transactions']);
+        Route::get('billing/invoices',      [BillingController::class, 'invoices']);
         Route::post('billing/cancel',       [BillingController::class, 'cancel']);
     });
 
@@ -295,6 +298,27 @@ Route::prefix('v1')->group(function () {
         Route::post('services',            [ServiceCatalogController::class, 'storeGlobal']);
         Route::patch('services/{id}',      [ServiceCatalogController::class, 'updateGlobal']);
         Route::delete('services/{id}',     [ServiceCatalogController::class, 'destroyGlobal']);
+
+        // Биллинг: тарифы, купоны, настройки, дашборд
+        Route::prefix('billing')->group(function () {
+            Route::get('dashboard',               [OwnerBillingController::class, 'dashboard']);
+            Route::get('plans',                   [OwnerBillingController::class, 'plans']);
+            Route::post('plans',                  [OwnerBillingController::class, 'planStore']);
+            Route::patch('plans/{slug}',          [OwnerBillingController::class, 'planUpdate']);
+            Route::delete('plans/{slug}',         [OwnerBillingController::class, 'planDestroy']);
+            Route::get('settings',                [OwnerBillingController::class, 'settings']);
+            Route::patch('settings',              [OwnerBillingController::class, 'updateSettings']);
+            Route::get('coupons',                 [OwnerBillingController::class, 'coupons']);
+            Route::post('coupons',                [OwnerBillingController::class, 'couponStore']);
+            Route::patch('coupons/{id}',          [OwnerBillingController::class, 'couponUpdate']);
+            Route::delete('coupons/{id}',         [OwnerBillingController::class, 'couponDestroy']);
+            Route::get('addons',                  [OwnerBillingController::class, 'addons']);
+            Route::post('addons',                 [OwnerBillingController::class, 'addonStore']);
+            Route::patch('addons/{id}',           [OwnerBillingController::class, 'addonUpdate']);
+            Route::delete('addons/{id}',          [OwnerBillingController::class, 'addonDestroy']);
+            Route::get('invoices',                [OwnerBillingController::class, 'invoices']);
+            Route::post('activate',               [OwnerBillingController::class, 'activateSubscription']);
+        });
 
         // Feature Flags
         Route::get('feature-flags',          [FeatureFlagController::class, 'index']);

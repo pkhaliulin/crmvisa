@@ -146,6 +146,7 @@ const navGroups = [
   {
     title: 'Финансы',
     items: [
+      { to: '/crm/billing',  icon: '💳', label: 'Биллинг и тарифы' },
       { to: '/crm/finance',  icon: '💰', label: 'Транзакции' },
     ],
   },
@@ -162,6 +163,7 @@ const routeTitles = {
   '/crm/references': 'Справочники',
   '/crm/documents':  'Справочник документов',
   '/crm/services':   'Каталог услуг',
+  '/crm/billing':      'Биллинг и тарифы',
   '/crm/finance':      'Финансовые транзакции',
   '/crm/monitoring':   'Мониторинг системы',
   '/crm/memory':       'Память проекта',

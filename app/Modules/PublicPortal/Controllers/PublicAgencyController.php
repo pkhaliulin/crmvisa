@@ -29,6 +29,11 @@ class PublicAgencyController extends Controller
 
         $agencies = Agency::where('is_active', true)
             ->whereNull('blocked_at')
+            ->where(function ($q) {
+                // Только агентства с активным планом (не истёк, или plan_expires_at = null)
+                $q->whereNull('plan_expires_at')
+                  ->orWhere('plan_expires_at', '>', now());
+            })
             ->where(function ($q) use ($cc) {
                 if ($cc) {
                     $q->whereHas('workCountries', fn ($wq) =>

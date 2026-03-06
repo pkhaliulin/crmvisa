@@ -14,9 +14,13 @@ class PaymentTransaction extends BaseModel
     protected $fillable = [
         'agency_id',
         'subscription_id',
+        'type',
+        'direction',
         'provider',
         'provider_transaction_id',
         'amount',
+        'vat_amount',
+        'vat_rate',
         'currency',
         'status',
         'description',
@@ -26,6 +30,8 @@ class PaymentTransaction extends BaseModel
 
     protected $casts = [
         'amount'     => 'integer',
+        'vat_amount' => 'integer',
+        'vat_rate'   => 'decimal:2',
         'metadata'   => 'array',
         'paid_at'    => 'datetime',
         'created_at' => 'datetime',
