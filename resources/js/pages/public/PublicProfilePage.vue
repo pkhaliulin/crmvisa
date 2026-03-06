@@ -130,8 +130,10 @@
                 <div class="mt-3">
                     <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.phone') }}</label>
                     <div class="flex items-center gap-2">
-                        <div class="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 text-[#0A1F44] font-medium">
+                        <div class="flex-1 border border-[#1BA97F] bg-[#1BA97F]/5 rounded-xl px-3 py-2.5 text-sm text-[#0A1F44] font-medium flex items-center gap-2">
+                            <svg class="w-4 h-4 text-[#1BA97F] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
                             {{ formatPhone(publicAuth.user?.phone) }}
+                            <span class="ml-auto text-[10px] bg-[#1BA97F]/10 text-[#1BA97F] px-2 py-0.5 rounded-full font-semibold">{{ $t('profile.phoneVerified') }}</span>
                         </div>
                         <button @click="showPhoneModal = true" type="button"
                             class="shrink-0 text-xs text-[#1BA97F] hover:text-[#169B72] font-medium px-3 py-2.5 border border-[#1BA97F]/30 rounded-xl hover:bg-[#1BA97F]/5 transition-colors">
@@ -159,8 +161,8 @@
                             <span v-else class="ml-auto text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-semibold cursor-pointer hover:bg-amber-200" @click="resendVerification">{{ $t('profile.emailUnverified') }}</span>
                         </div>
                         <button @click="startEmailEdit" type="button"
-                            class="shrink-0 p-2.5 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors text-gray-500 hover:text-[#0A1F44]">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                            class="shrink-0 text-xs text-[#1BA97F] hover:text-[#169B72] font-medium px-3 py-2.5 border border-[#1BA97F]/30 rounded-xl hover:bg-[#1BA97F]/5 transition-colors">
+                            {{ $t('profile.changePhone') }}
                         </button>
                     </div>
 
