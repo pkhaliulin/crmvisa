@@ -791,14 +791,15 @@
                                         <div class="flex items-stretch rounded-xl border transition-colors overflow-hidden"
                                             :class="fmPassportValid ? 'border-[#1BA97F]' : 'border-gray-200 focus-within:border-[#1BA97F]'">
                                             <input
+                                                ref="fmPassportSeriesInput"
                                                 :value="fmPassportSeries"
                                                 @input="handleFmSeriesInput"
                                                 placeholder="AA"
                                                 maxlength="2"
                                                 autocomplete="off"
                                                 spellcheck="false"
-                                                class="w-16 py-2.5 text-center text-sm font-mono uppercase outline-none bg-gray-50 border-r border-gray-200 text-[#0A1F44] font-bold"/>
-                                            <div class="flex items-center px-1.5 text-gray-300 text-xs select-none">—</div>
+                                                class="w-16 py-2.5 px-3 text-sm font-mono uppercase outline-none bg-gray-50 border-r border-gray-200 text-[#0A1F44] font-bold"/>
+                                            <div class="flex items-center px-2.5 text-gray-300 text-sm select-none font-light">—</div>
                                             <input
                                                 ref="fmPassportNumberInput"
                                                 :value="fmPassportDigits"
@@ -807,7 +808,7 @@
                                                 maxlength="7"
                                                 inputmode="numeric"
                                                 autocomplete="off"
-                                                class="flex-1 px-1 py-2.5 text-sm font-mono outline-none tracking-[0.15em] text-[#0A1F44]"/>
+                                                class="flex-1 px-1 py-2.5 text-sm font-mono outline-none tracking-[0.2em] text-[#0A1F44]"/>
                                             <div v-if="fmPassportValid" class="flex items-center pr-2 shrink-0">
                                                 <div class="w-4 h-4 rounded-full bg-[#1BA97F] flex items-center justify-center">
                                                     <svg class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
