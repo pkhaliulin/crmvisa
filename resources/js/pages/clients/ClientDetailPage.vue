@@ -18,7 +18,7 @@
         <div class="flex-1 min-w-0">
           <h2 class="text-xl font-bold text-gray-900 truncate">{{ client.name }}</h2>
           <p class="text-sm text-gray-500">
-            {{ formatPhone(client.phone) }}<span v-if="client.email"> · {{ client.email }}</span>
+            <a v-if="client.phone" :href="`tel:${client.phone}`" class="hover:text-blue-600">{{ formatPhone(client.phone) }}</a><span v-if="client.email"> · {{ client.email }}</span>
           </p>
         </div>
         <RouterLink :to="{ name: 'clients.create', query: { edit: client.id } }">

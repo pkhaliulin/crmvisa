@@ -102,7 +102,7 @@
                         </div>
                         <div class="min-w-0 flex-1">
                             <div class="font-semibold text-[#0A1F44] text-sm leading-tight truncate group-hover:text-[#1BA97F] transition-colors">{{ displayName }}</div>
-                            <div class="text-xs text-gray-400 leading-tight mt-0.5 truncate">{{ formatPhone(publicAuth.user?.phone) }}</div>
+                            <a v-if="publicAuth.user?.phone" :href="`tel:${publicAuth.user.phone}`" class="text-xs text-gray-400 hover:text-blue-600 leading-tight mt-0.5 truncate block">{{ formatPhone(publicAuth.user.phone) }}</a>
                         </div>
                         <svg class="w-4 h-4 text-gray-300 group-hover:text-[#1BA97F] transition-colors shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>

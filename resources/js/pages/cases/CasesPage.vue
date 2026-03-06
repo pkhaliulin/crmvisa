@@ -55,7 +55,7 @@
                 </p>
                 <p class="text-sm text-gray-500 mt-0.5 truncate">
                   <span class="font-medium text-gray-700">{{ c.client?.name }}</span>
-                  <span v-if="c.client?.phone" class="text-gray-400"> · {{ formatPhone(c.client.phone) }}</span>
+                  <a v-if="c.client?.phone" :href="`tel:${c.client.phone}`" @click.stop class="text-gray-400 hover:text-blue-600"> · {{ formatPhone(c.client.phone) }}</a>
                 </p>
               </div>
             </div>

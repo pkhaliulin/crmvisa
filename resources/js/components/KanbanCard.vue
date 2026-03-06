@@ -28,7 +28,8 @@
         {{ item.client?.name ?? '—' }}
       </p>
     </div>
-    <p class="text-xs text-gray-400">{{ formatPhone(item.client?.phone) }}</p>
+    <a v-if="item.client?.phone" :href="`tel:${item.client.phone}`" @click.stop class="text-xs text-gray-400 hover:text-blue-600 block">{{ formatPhone(item.client.phone) }}</a>
+    <p v-else class="text-xs text-gray-400">—</p>
 
     <!-- SLA Stage timer -->
     <div v-if="item.stage_sla_hours_left !== null && item.stage_sla_hours_left !== undefined"

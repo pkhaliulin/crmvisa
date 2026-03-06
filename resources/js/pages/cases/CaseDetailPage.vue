@@ -55,7 +55,7 @@
     <div class="lg:hidden bg-white rounded-xl border border-gray-100 p-3 mb-4 flex items-center justify-between">
       <div class="min-w-0">
         <p class="text-sm font-bold text-gray-900 truncate">{{ caseData.client?.name ?? '---' }}</p>
-        <p v-if="caseData.client?.phone" class="text-xs text-gray-400">{{ formatPhone(caseData.client.phone) }}</p>
+        <a v-if="caseData.client?.phone" :href="`tel:${caseData.client.phone}`" class="text-xs text-gray-400 hover:text-blue-600">{{ formatPhone(caseData.client.phone) }}</a>
       </div>
       <div v-if="caseData.client?.phone" class="flex gap-2 shrink-0 ml-3">
         <a :href="'tel:' + caseData.client.phone" class="text-xs px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 font-medium">Звонок</a>
@@ -351,7 +351,7 @@
         <div class="bg-white rounded-xl border border-gray-100 p-4">
           <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Клиент</p>
           <p class="text-sm font-bold text-gray-900">{{ caseData.client?.name ?? '---' }}</p>
-          <p v-if="caseData.client?.phone" class="text-xs text-gray-500 mt-0.5">{{ formatPhone(caseData.client.phone) }}</p>
+          <a v-if="caseData.client?.phone" :href="`tel:${caseData.client.phone}`" class="text-xs text-gray-500 hover:text-blue-600 mt-0.5 block">{{ formatPhone(caseData.client.phone) }}</a>
           <p v-if="caseData.client?.email" class="text-xs text-gray-500">{{ caseData.client.email }}</p>
           <div v-if="caseData.client?.phone" class="mt-3 flex gap-2">
             <a :href="'tel:' + caseData.client.phone"

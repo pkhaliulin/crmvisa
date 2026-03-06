@@ -33,7 +33,7 @@
                 <p class="font-semibold text-blue-700 group-hover:underline">{{ c.name }}</p>
                 <p class="text-xs text-gray-400">{{ c.email ?? '' }}</p>
               </td>
-              <td class="px-4 py-3 text-gray-500 font-mono text-xs">{{ formatPhone(c.phone) }}</td>
+              <td class="px-4 py-3 text-gray-500 font-mono text-xs"><a v-if="c.phone" :href="`tel:${c.phone}`" @click.stop class="hover:text-blue-600">{{ formatPhone(c.phone) }}</a><span v-else>—</span></td>
               <td class="px-4 py-3">
                 <span v-if="c.nationality" class="flex items-center gap-1.5">
                   <span>{{ codeToFlag(c.nationality?.slice(0,2) ?? '') }}</span>

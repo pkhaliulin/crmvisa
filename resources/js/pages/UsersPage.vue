@@ -34,9 +34,9 @@
               <a v-if="u.telegram_username" :href="`https://t.me/${u.telegram_username}`" target="_blank"
                 @click.stop
                 class="text-[#229ED9] hover:underline text-xs">@{{ u.telegram_username }}</a>
-              <a v-else-if="u.phone" :href="`https://t.me/${u.phone}`" target="_blank"
+              <a v-else-if="u.phone" :href="`tel:${u.phone}`"
                 @click.stop
-                class="text-[#229ED9] hover:underline text-xs font-mono">{{ formatPhone(u.phone) }}</a>
+                class="text-gray-500 hover:text-blue-600 text-xs font-mono">{{ formatPhone(u.phone) }}</a>
               <span v-else class="text-gray-300 text-xs">--</span>
             </td>
             <td class="px-4 py-3">
