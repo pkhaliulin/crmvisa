@@ -1,11 +1,13 @@
 <template>
-  <div class="max-w-3xl mx-auto space-y-8">
+  <div class="max-w-3xl mx-auto space-y-4">
     <div>
       <h1 class="text-xl font-bold text-gray-900">Настройки агентства</h1>
       <p class="text-sm text-gray-500 mt-1">Профиль, команда и рабочие направления</p>
     </div>
 
-    <div v-if="loading" class="text-center py-12 text-gray-400">Загрузка...</div>
+    <div v-if="loading" class="flex items-center justify-center py-20">
+      <div class="animate-spin w-7 h-7 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+    </div>
 
     <template v-else>
       <!-- Общая информация -->

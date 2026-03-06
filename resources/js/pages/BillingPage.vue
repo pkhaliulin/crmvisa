@@ -1,12 +1,12 @@
 <template>
-  <div class="max-w-4xl mx-auto space-y-6">
+  <div class="max-w-4xl mx-auto space-y-4">
     <div>
       <h1 class="text-xl font-bold text-gray-900">Тариф и подписка</h1>
       <p class="text-sm text-gray-500 mt-1">Ваш текущий план, использование лимитов и история оплат</p>
     </div>
 
-    <div v-if="loading" class="flex justify-center py-16">
-      <div class="w-8 h-8 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+    <div v-if="loading" class="flex items-center justify-center py-20">
+      <div class="animate-spin w-7 h-7 border-2 border-blue-500 border-t-transparent rounded-full"></div>
     </div>
 
     <template v-else>

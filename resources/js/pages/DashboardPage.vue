@@ -1,5 +1,11 @@
 <template>
-  <div class="space-y-6">
+  <div class="space-y-4">
+    <!-- Loading -->
+    <div v-if="loading" class="flex items-center justify-center py-20">
+      <div class="animate-spin w-7 h-7 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+    </div>
+
+    <template v-else>
     <!-- Stats row -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
       <StatCard title="Активных заявок" :value="stats?.cases?.total_active ?? 0" icon="📋" color="blue" />
@@ -8,7 +14,7 @@
       <StatCard title="Без ответственного" :value="stats?.cases?.unassigned ?? 0" icon="👤" color="gray" />
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
       <!-- Stages breakdown -->
       <div class="bg-white rounded-xl border border-gray-200 p-5 lg:col-span-2">
         <h3 class="font-semibold text-gray-800 mb-4">Заявки по этапам</h3>
@@ -51,18 +57,18 @@
       <h3 class="font-semibold text-gray-800 mb-4">Нагрузка менеджеров</h3>
       <div class="overflow-x-auto">
         <table class="w-full text-sm">
-          <thead>
-            <tr class="border-b text-gray-500">
-              <th class="text-left py-2 font-medium">Менеджер</th>
-              <th class="text-right py-2 font-medium">Активных заявок</th>
-              <th class="py-2 w-40"></th>
+          <thead class="bg-gray-50 border-b text-gray-500 text-xs uppercase tracking-wide">
+            <tr>
+              <th class="text-left px-4 py-3 font-medium">Менеджер</th>
+              <th class="text-right px-4 py-3 font-medium">Активных заявок</th>
+              <th class="px-4 py-3 w-40"></th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100">
-            <tr v-for="m in stats.managers" :key="m.id">
-              <td class="py-2.5 font-medium text-gray-800">{{ m.name }}</td>
-              <td class="py-2.5 text-right font-bold text-gray-900">{{ m.active_cases }}</td>
-              <td class="py-2.5 pl-4">
+            <tr v-for="m in stats.managers" :key="m.id" class="hover:bg-gray-50 transition-colors">
+              <td class="px-4 py-2.5 font-medium text-gray-800">{{ m.name }}</td>
+              <td class="px-4 py-2.5 text-right font-bold text-gray-900">{{ m.active_cases }}</td>
+              <td class="px-4 py-2.5">
                 <div class="bg-gray-100 rounded-full h-2 overflow-hidden">
                   <div
                     class="bg-indigo-500 h-full rounded-full"
@@ -75,6 +81,7 @@
         </table>
       </div>
     </div>
+    </template>
   </div>
 </template>
 
@@ -82,6 +89,8 @@
 import { ref, computed, onMounted } from 'vue';
 import { dashboardApi } from '@/api/dashboard';
 import StatCard from '@/components/StatCard.vue';
+
+const loading = ref(true);
 
 const STAGES = [
   { key: 'lead',          label: 'Лид' },
@@ -111,7 +120,11 @@ const maxManagerLoad = computed(() =>
 );
 
 onMounted(async () => {
-  const { data } = await dashboardApi.index();
-  stats.value = data.data;
+  try {
+    const { data } = await dashboardApi.index();
+    stats.value = data.data;
+  } finally {
+    loading.value = false;
+  }
 });
 </script>

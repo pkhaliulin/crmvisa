@@ -44,11 +44,15 @@ Route::prefix('v1')->group(function () {
         Route::post('login',    [AuthController::class, 'login']);
     });
 
+    // Верификация email (подписанная ссылка, без авторизации)
+    Route::get('auth/verify-email/{id}', [AuthController::class, 'verifyEmail'])->name('auth.verify-email');
+
     // Auth — требуют токен
     Route::prefix('auth')->middleware('auth:api')->group(function () {
-        Route::post('logout',  [AuthController::class, 'logout']);
-        Route::post('refresh', [AuthController::class, 'refresh']);
-        Route::get('me',       [AuthController::class, 'me']);
+        Route::post('logout',              [AuthController::class, 'logout']);
+        Route::post('refresh',             [AuthController::class, 'refresh']);
+        Route::get('me',                   [AuthController::class, 'me']);
+        Route::post('resend-verification', [AuthController::class, 'resendVerification']);
     });
 
     // Защищённые роуты (JWT + роли + активный план)

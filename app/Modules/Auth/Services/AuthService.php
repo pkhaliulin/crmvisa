@@ -9,6 +9,8 @@ use App\Modules\Auth\DTOs\RegisterDTO;
 use App\Modules\User\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Validation\ValidationException;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 
@@ -43,8 +45,35 @@ class AuthService
 
             $token = JWTAuth::fromUser($user);
 
+            // Отправляем письмо верификации email
+            $this->sendVerificationEmail($user);
+
             return $this->tokenResponse($token, $user);
         });
+    }
+
+    public function sendVerificationEmail(User $user): void
+    {
+        try {
+            $verifyUrl = URL::temporarySignedRoute(
+                'auth.verify-email',
+                now()->addHours(24),
+                ['id' => $user->id],
+            );
+
+            Mail::send('emails.crm-verify-email', [
+                'userName'  => $user->name,
+                'verifyUrl' => $verifyUrl,
+            ], function ($message) use ($user) {
+                $message->to($user->email)
+                    ->subject('VisaBor — Подтвердите ваш email');
+            });
+        } catch (\Throwable $e) {
+            \Log::warning('Failed to send verification email', [
+                'user_id' => $user->id,
+                'error'   => $e->getMessage(),
+            ]);
+        }
     }
 
     public function login(LoginDTO $dto): array

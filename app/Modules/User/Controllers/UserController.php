@@ -177,20 +177,15 @@ class UserController extends Controller
     private function sendWelcomeEmail(User $user, string $password, string $agencyName): void
     {
         try {
-            Mail::raw(
-                "Здравствуйте, {$user->name}!\n\n" .
-                "Вам создан аккаунт в системе VisaBor для агентства \"{$agencyName}\".\n\n" .
-                "Данные для входа:\n" .
-                "Ссылка: https://visabor.uz/login\n" .
-                "Логин (email): {$user->email}\n" .
-                "Пароль: {$password}\n\n" .
-                "Рекомендуем сменить пароль после первого входа.\n\n" .
-                "С уважением,\nКоманда VisaBor",
-                function ($message) use ($user) {
-                    $message->to($user->email)
-                        ->subject('VisaBor — Данные для входа в систему');
-                }
-            );
+            Mail::send('emails.crm-welcome', [
+                'userName'   => $user->name,
+                'userEmail'  => $user->email,
+                'password'   => $password,
+                'agencyName' => $agencyName,
+            ], function ($message) use ($user) {
+                $message->to($user->email)
+                    ->subject('VisaBor — Данные для входа в систему');
+            });
         } catch (\Throwable $e) {
             \Log::warning('Failed to send welcome email', ['user_id' => $user->id, 'error' => $e->getMessage()]);
         }
@@ -199,19 +194,15 @@ class UserController extends Controller
     private function sendPasswordResetEmail(User $user, string $password, string $agencyName): void
     {
         try {
-            Mail::raw(
-                "Здравствуйте, {$user->name}!\n\n" .
-                "Ваш пароль в системе VisaBor был обновлён руководителем агентства \"{$agencyName}\".\n\n" .
-                "Новые данные для входа:\n" .
-                "Ссылка: https://visabor.uz/login\n" .
-                "Логин (email): {$user->email}\n" .
-                "Новый пароль: {$password}\n\n" .
-                "С уважением,\nКоманда VisaBor",
-                function ($message) use ($user) {
-                    $message->to($user->email)
-                        ->subject('VisaBor — Ваш пароль обновлён');
-                }
-            );
+            Mail::send('emails.crm-password-reset', [
+                'userName'   => $user->name,
+                'userEmail'  => $user->email,
+                'password'   => $password,
+                'agencyName' => $agencyName,
+            ], function ($message) use ($user) {
+                $message->to($user->email)
+                    ->subject('VisaBor — Ваш пароль обновлён');
+            });
         } catch (\Throwable $e) {
             \Log::warning('Failed to send password reset email', ['user_id' => $user->id, 'error' => $e->getMessage()]);
         }

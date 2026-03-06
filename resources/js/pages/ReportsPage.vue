@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-6">
+  <div class="space-y-4">
     <div>
       <h1 class="text-xl font-bold text-gray-900">Отчёты</h1>
       <p class="text-sm text-gray-500 mt-1">Аналитика по агентству</p>
@@ -17,10 +17,12 @@
       </button>
     </div>
 
-    <div v-if="loading" class="text-center py-12 text-gray-400">Загрузка...</div>
+    <div v-if="loading" class="flex items-center justify-center py-20">
+      <div class="animate-spin w-7 h-7 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+    </div>
 
     <!-- Обзор -->
-    <div v-else-if="activeTab === 'overview'" class="space-y-6">
+    <div v-else-if="activeTab === 'overview'" class="space-y-4">
       <div class="grid grid-cols-3 gap-4">
         <div class="bg-white rounded-xl border border-gray-200 p-5">
           <p class="text-xs text-gray-500 uppercase tracking-wide">Всего заявок</p>

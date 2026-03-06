@@ -52,6 +52,38 @@ class AuthController extends Controller
         }
     }
 
+    public function verifyEmail(Request $request, string $id): \Illuminate\Http\Response
+    {
+        if (! $request->hasValidSignature()) {
+            return response('<h1>Ссылка недействительна или истекла</h1><p>Запросите новое письмо для подтверждения.</p>', 403);
+        }
+
+        $user = \App\Modules\User\Models\User::find($id);
+
+        if (! $user) {
+            return response('<h1>Пользователь не найден</h1>', 404);
+        }
+
+        if (! $user->email_verified_at) {
+            $user->update(['email_verified_at' => now()]);
+        }
+
+        return response(view('emails.verify-success'));
+    }
+
+    public function resendVerification(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if ($user->email_verified_at) {
+            return ApiResponse::success(null, 'Email уже подтверждён');
+        }
+
+        $this->authService->sendVerificationEmail($user);
+
+        return ApiResponse::success(null, 'Письмо отправлено');
+    }
+
     public function logout(): JsonResponse
     {
         $this->authService->logout();
