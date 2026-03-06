@@ -797,7 +797,7 @@
                                                 maxlength="2"
                                                 autocomplete="off"
                                                 spellcheck="false"
-                                                class="w-14 py-2.5 text-center text-sm font-mono uppercase outline-none bg-gray-50 border-r border-gray-200 tracking-[0.15em] text-[#0A1F44] font-bold"/>
+                                                class="w-16 py-2.5 text-center text-sm font-mono uppercase outline-none bg-gray-50 border-r border-gray-200 text-[#0A1F44] font-bold"/>
                                             <div class="flex items-center px-1.5 text-gray-300 text-xs select-none">—</div>
                                             <input
                                                 ref="fmPassportNumberInput"
