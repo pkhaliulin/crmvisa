@@ -36,7 +36,7 @@
                 class="text-[#229ED9] hover:underline text-xs">@{{ u.telegram_username }}</a>
               <a v-else-if="u.phone" :href="`https://t.me/${u.phone}`" target="_blank"
                 @click.stop
-                class="text-[#229ED9] hover:underline text-xs font-mono">{{ u.phone }}</a>
+                class="text-[#229ED9] hover:underline text-xs font-mono">{{ formatPhone(u.phone) }}</a>
               <span v-else class="text-gray-300 text-xs">--</span>
             </td>
             <td class="px-4 py-3">
@@ -200,6 +200,7 @@ import AppBadge from '@/components/AppBadge.vue';
 import AppModal from '@/components/AppModal.vue';
 import AppPhoneInput from '@/components/AppPhoneInput.vue';
 import AppSelect from '@/components/AppSelect.vue';
+import { formatPhone } from '@/utils/format';
 
 const router = useRouter();
 const users         = ref([]);

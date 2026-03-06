@@ -257,7 +257,7 @@
                     </div>
                     <div>
                         <div class="text-xs text-gray-400">{{ t('agencyDetail.phone') }}</div>
-                        <div class="text-sm font-medium text-[#0A1F44] group-hover:text-blue-600">{{ agency.phone }}</div>
+                        <div class="text-sm font-medium text-[#0A1F44] group-hover:text-blue-600">{{ formatPhone(agency.phone) }}</div>
                     </div>
                 </a>
 
@@ -568,6 +568,7 @@ import { useI18n } from 'vue-i18n';
 import { publicPortalApi } from '@/api/public';
 import { countryName as getCountryName, codeToFlag } from '@/utils/countries';
 import i18n from '@/i18n';
+import { formatPhone } from '@/utils/format';
 
 const { t } = useI18n();
 const route  = useRoute();

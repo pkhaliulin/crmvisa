@@ -55,7 +55,7 @@
                 </p>
                 <p class="text-sm text-gray-500 mt-0.5 truncate">
                   <span class="font-medium text-gray-700">{{ c.client?.name }}</span>
-                  <span v-if="c.client?.phone" class="text-gray-400"> · {{ c.client.phone }}</span>
+                  <span v-if="c.client?.phone" class="text-gray-400"> · {{ formatPhone(c.client.phone) }}</span>
                 </p>
               </div>
             </div>
@@ -184,6 +184,7 @@ import { useCountries } from '@/composables/useCountries';
 import AppInput from '@/components/AppInput.vue';
 import AppSelect from '@/components/AppSelect.vue';
 import AppButton from '@/components/AppButton.vue';
+import { formatPhone } from '@/utils/format';
 
 const router     = useRouter();
 const auth       = useAuthStore();

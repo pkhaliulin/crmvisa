@@ -27,7 +27,7 @@
                     <tr v-else v-for="u in users" :key="u.id" class="hover:bg-gray-50 transition-colors">
                         <td class="px-5 py-3">
                             <div class="font-medium text-gray-800">{{ u.name || '—' }}</div>
-                            <div class="text-xs text-gray-400">{{ u.phone }}</div>
+                            <div class="text-xs text-gray-400">{{ formatPhone(u.phone) }}</div>
                         </td>
                         <td class="px-4 py-3 text-gray-600 text-xs">{{ empLabel(u.employment_type) }}</td>
                         <td class="px-4 py-3 text-center text-gray-600 text-xs">
@@ -74,6 +74,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import api from '@/api/index';
+import { formatPhone } from '@/utils/format';
 
 const users      = ref([]);
 const loading    = ref(true);

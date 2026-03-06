@@ -913,7 +913,7 @@
                             </div>
                             <div>
                                 <div class="text-xs text-gray-400">{{ $t('cases.phone') }}</div>
-                                <div class="text-sm font-semibold text-[#0A1F44]">{{ caseData.agency.phone }}</div>
+                                <div class="text-sm font-semibold text-[#0A1F44]">{{ formatPhone(caseData.agency.phone) }}</div>
                             </div>
                         </a>
 
@@ -1105,6 +1105,7 @@ import { publicPortalApi } from '@/api/public';
 import { codeToFlag, ALL_COUNTRIES } from '@/utils/countries';
 import AgencyCard from '@/components/AgencyCard.vue';
 import i18n from '@/i18n';
+import { formatPhone } from '@/utils/format';
 
 const { t } = useI18n();
 const route  = useRoute();

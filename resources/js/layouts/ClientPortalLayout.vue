@@ -102,7 +102,7 @@
                         </div>
                         <div class="min-w-0 flex-1">
                             <div class="font-semibold text-[#0A1F44] text-sm leading-tight truncate group-hover:text-[#1BA97F] transition-colors">{{ displayName }}</div>
-                            <div class="text-xs text-gray-400 leading-tight mt-0.5 truncate">{{ publicAuth.user?.phone }}</div>
+                            <div class="text-xs text-gray-400 leading-tight mt-0.5 truncate">{{ formatPhone(publicAuth.user?.phone) }}</div>
                         </div>
                         <svg class="w-4 h-4 text-gray-300 group-hover:text-[#1BA97F] transition-colors shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
@@ -288,6 +288,7 @@ import logoUrl from '@/assets/logo.png';
 import logoUrl2x from '@/assets/logo@2x.png';
 import { usePublicAuthStore } from '@/stores/publicAuth';
 import { publicPortalApi } from '@/api/public';
+import { formatPhone } from '@/utils/format';
 
 const { t } = useI18n();
 
@@ -369,12 +370,12 @@ async function createDraftCase() {
 
 const initials = computed(() => {
     const name = publicAuth.user?.name;
-    if (!name) return (publicAuth.user?.phone ?? '?').slice(-2);
+    if (!name) return String(publicAuth.user?.phone ?? '?').slice(-2);
     return name.split(' ').slice(0, 2).map(w => w[0]?.toUpperCase() ?? '').join('');
 });
 
 const displayName = computed(() =>
-    publicAuth.user?.name || publicAuth.user?.phone || t('common.guest')
+    publicAuth.user?.name || formatPhone(publicAuth.user?.phone) || t('common.guest')
 );
 
 // Active nav helper (highlights groups pages under cases too)

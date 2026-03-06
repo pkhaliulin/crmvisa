@@ -49,7 +49,7 @@
               </div>
               <div>
                 <div class="font-medium text-gray-900">{{ c.name }}</div>
-                <div class="text-xs text-gray-400">{{ c.phone }}</div>
+                <div class="text-xs text-gray-400">{{ formatPhone(c.phone) }}</div>
               </div>
             </button>
           </div>
@@ -226,6 +226,7 @@ import AppInput from '@/components/AppInput.vue';
 import AppTextarea from '@/components/AppTextarea.vue';
 import AppSelect from '@/components/AppSelect.vue';
 import AppButton from '@/components/AppButton.vue';
+import { formatPhone, titleCase } from '@/utils/format';
 
 const allVisaTypes = ref([]);
 function visaTypeName(slug) {
@@ -292,7 +293,7 @@ function onClientFocus() {
 
 function selectClient(c) {
   form.client_id       = c.id;
-  clientSearch.value   = `${c.name} — ${c.phone}`;
+  clientSearch.value   = `${c.name} — ${formatPhone(c.phone)}`;
   clientResults.value  = [];
   clientSearched.value = false;
   if (errors.value.client_id) delete errors.value.client_id;

@@ -28,7 +28,7 @@
                     </button>
                     <div class="text-right mr-1">
                         <div class="text-sm font-semibold text-[#0A1F44] leading-tight">
-                            {{ publicAuth.user?.name || publicAuth.user?.phone }}
+                            {{ publicAuth.user?.name || formatPhone(publicAuth.user?.phone) }}
                         </div>
                         <div class="text-xs text-[#1BA97F] font-medium leading-tight">
                             {{ $t('common.profilePercent', { percent: publicAuth.profilePercent }) }}
@@ -153,6 +153,7 @@ import { usePublicAuthStore } from '@/stores/publicAuth';
 import { setLocale, currentLocale } from '@/i18n';
 import logoUrl from '@/assets/logo.png';
 import logoUrl2x from '@/assets/logo@2x.png';
+import { formatPhone } from '@/utils/format';
 
 const { t } = useI18n();
 defineEmits(['open-auth']);
