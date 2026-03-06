@@ -374,7 +374,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import api from '@/services/api';
+import api from '@/api/index';
 
 const tabs = [
   { key: 'dashboard', label: 'Дашборд' },
