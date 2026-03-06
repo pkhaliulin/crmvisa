@@ -146,12 +146,43 @@
                         {{ $t('profile.recoveryEmail') }}
                         <span class="text-amber-600 font-normal">({{ $t('profile.recoveryEmailHint') }})</span>
                     </label>
-                    <input v-model="form.recovery_email" type="text" inputmode="email" autocomplete="email" placeholder="example@gmail.com"
-                        class="w-full border rounded-xl px-3 py-2.5 text-sm outline-none transition-colors"
-                        :class="form.recovery_email
-                            ? (isValidEmail(form.recovery_email) ? 'border-[#1BA97F] bg-white' : 'border-red-400 bg-red-50')
-                            : 'border-amber-300 bg-amber-50'"/>
-                    <p v-if="form.recovery_email && !isValidEmail(form.recovery_email)" class="text-[11px] text-red-500 mt-1">{{ $t('profile.invalidEmail') }}</p>
+
+                    <!-- Режим просмотра: email сохранён -->
+                    <div v-if="savedEmail && !emailEditing" class="flex items-center gap-2">
+                        <div class="flex-1 border border-[#1BA97F] rounded-xl px-3 py-2.5 text-sm bg-[#1BA97F]/5 text-[#0A1F44] font-medium flex items-center gap-2">
+                            <svg class="w-4 h-4 text-[#1BA97F] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                            {{ savedEmail }}
+                        </div>
+                        <button @click="startEmailEdit" type="button"
+                            class="shrink-0 p-2.5 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors text-gray-500 hover:text-[#0A1F44]">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                        </button>
+                    </div>
+
+                    <!-- Режим ввода/редактирования -->
+                    <div v-else class="flex items-center gap-2">
+                        <input v-model="emailDraft" type="text" inputmode="email" autocomplete="email" placeholder="example@gmail.com"
+                            class="flex-1 border rounded-xl px-3 py-2.5 text-sm outline-none transition-colors"
+                            :class="emailDraft
+                                ? (isValidEmail(emailDraft) ? 'border-[#1BA97F] bg-white' : 'border-red-400 bg-red-50')
+                                : 'border-amber-300 bg-amber-50'"
+                            @keyup.enter="saveEmailField" />
+                        <button @click="saveEmailField" type="button" :disabled="emailSaving || !emailDraft || !isValidEmail(emailDraft)"
+                            class="shrink-0 p-2.5 rounded-xl transition-colors"
+                            :class="emailDraft && isValidEmail(emailDraft)
+                                ? 'bg-[#1BA97F] text-white hover:bg-[#169B72]'
+                                : 'bg-gray-100 text-gray-400 cursor-not-allowed'">
+                            <svg v-if="!emailSaving" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            <svg v-else class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                        </button>
+                        <button v-if="savedEmail" @click="cancelEmailEdit" type="button"
+                            class="shrink-0 p-2.5 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors text-gray-400 hover:text-gray-600">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+
+                    <p v-if="emailDraft && !isValidEmail(emailDraft) && (!savedEmail || emailEditing)" class="text-[11px] text-red-500 mt-1">{{ $t('profile.invalidEmail') }}</p>
+                    <p v-if="emailMsg" class="text-[11px] mt-1" :class="emailMsgError ? 'text-red-500' : 'text-[#1BA97F]'">{{ emailMsg }}</p>
                 </div>
             </div>
         </div>
@@ -873,6 +904,51 @@ function isValidEmail(val) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val || '');
 }
 
+// --- Email: отдельная логика сохранения ---
+const savedEmail    = ref(publicAuth.user?.recovery_email ?? '');
+const emailDraft    = ref(savedEmail.value || '');
+const emailEditing  = ref(false);
+const emailSaving   = ref(false);
+const emailMsg      = ref('');
+const emailMsgError = ref(false);
+
+function startEmailEdit() {
+    emailDraft.value = savedEmail.value;
+    emailEditing.value = true;
+    emailMsg.value = '';
+}
+
+function cancelEmailEdit() {
+    emailEditing.value = false;
+    emailDraft.value = savedEmail.value;
+    emailMsg.value = '';
+}
+
+async function saveEmailField() {
+    if (!emailDraft.value || !isValidEmail(emailDraft.value)) return;
+    emailSaving.value = true;
+    emailMsg.value = '';
+    emailMsgError.value = false;
+    try {
+        const { data } = await publicPortalApi.saveEmail(emailDraft.value);
+        const updatedUser = data?.data?.user;
+        if (updatedUser) {
+            publicAuth.user = updatedUser;
+            try { localStorage.setItem('public_user', JSON.stringify(updatedUser)); } catch {}
+            form.recovery_email = updatedUser.recovery_email ?? '';
+        }
+        savedEmail.value = emailDraft.value;
+        emailEditing.value = false;
+        emailMsg.value = t('profile.emailSaved');
+        setTimeout(() => { emailMsg.value = ''; }, 4000);
+    } catch (e) {
+        emailMsgError.value = true;
+        emailMsg.value = e.response?.data?.message ?? t('profile.saveError');
+    } finally {
+        emailSaving.value = false;
+    }
+}
+
 function onLatinInput(field, e) {
     // Убираем кириллицу и спецсимволы, оставляем только латиницу, пробелы, дефис, апостроф
     // Автоматически переводим в UPPERCASE (как в загранпаспорте)
@@ -1216,34 +1292,25 @@ async function save() {
     saveMsg.value = '';
     saveError.value = false;
     try {
-        // Валидация email
-        if (form.recovery_email && !isValidEmail(form.recovery_email)) {
-            saveError.value = true;
-            saveMsg.value = t('profile.invalidEmail');
-            saving.value = false;
-            return;
-        }
         // Собираем name из firstName + lastName
         form.name = [firstName.value, lastName.value].filter(Boolean).join(' ').trim().toUpperCase();
         const payload = { ...form };
+        // Email сохраняется отдельно — убираем из общего payload
+        delete payload.recovery_email;
         // Удаляем пустые строки для integer-полей (бэкенд требует integer, '' не пройдёт)
         const intFields = ['monthly_income_usd', 'employed_years', 'children_count', 'visas_obtained_count', 'refusals_count', 'last_refusal_year'];
         for (const f of intFields) {
             if (payload[f] === '' || payload[f] === null || payload[f] === undefined) delete payload[f];
         }
-        // Удаляем пустые строки для остальных полей (кроме recovery_email — null = сброс)
+        // Удаляем пустые строки
         for (const [k, v] of Object.entries(payload)) {
-            if (v === '' && k !== 'recovery_email') delete payload[k];
+            if (v === '') delete payload[k];
         }
-        // Пустой email → null (сброс на сервере)
-        if (payload.recovery_email === '') payload.recovery_email = null;
         const { data } = await publicPortalApi.updateProfile(payload);
         const updatedUser = data?.data?.user;
         if (updatedUser) {
             publicAuth.user = updatedUser;
             try { localStorage.setItem('public_user', JSON.stringify(updatedUser)); } catch {}
-            // Синхронизируем form с ответом сервера (null → '')
-            form.recovery_email = updatedUser.recovery_email ?? '';
         }
         saveMsg.value = t('profile.profileSaved');
         setTimeout(() => { saveMsg.value = ''; }, 3000);
@@ -1427,6 +1494,9 @@ onMounted(async () => {
         firstName.value = (parts.first || '').toUpperCase();
         lastName.value = (parts.last || '').toUpperCase();
         initPassportFields(form.passport_number);
+        // Синхронизируем email-поле
+        savedEmail.value = publicAuth.user?.recovery_email ?? '';
+        emailDraft.value = savedEmail.value || '';
     } catch { /* ignore */ }
     loadFamilyMembers();
 });

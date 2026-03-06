@@ -351,6 +351,7 @@ Route::prefix('v1')->group(function () {
         Route::get('me',             [PublicProfileController::class, 'me']);
         Route::patch('me',           [PublicProfileController::class, 'update']);
         Route::post('me/passport',   [PublicProfileController::class, 'uploadPassport']);
+        Route::post('me/email',      [PublicProfileController::class, 'saveEmail']);
         Route::post('me/change-phone/send-otp', [PublicProfileController::class, 'changePhoneSendOtp']);
         Route::post('me/change-phone/verify',   [PublicProfileController::class, 'changePhoneVerify']);
         Route::get('me/cases',                                    [PublicProfileController::class, 'cases']);

@@ -11,12 +11,14 @@ use App\Modules\Case\Services\CaseService;
 use App\Modules\Document\Services\ChecklistService;
 use App\Modules\PublicPortal\Models\PublicLead;
 use App\Modules\Case\Models\CaseFamilyMember;
+use App\Mail\WelcomeEmail;
 use App\Support\Helpers\ApiResponse;
 use App\Support\Rules\ReferenceExists;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Validation\Rule;
 use App\Modules\Payment\Models\ClientPayment;
 use App\Modules\Service\Models\AgencyServicePackage;
 
@@ -80,6 +82,35 @@ class PublicProfileController extends Controller
             'user'            => $user->fresh(),
             'profile_percent' => $user->fresh()->profileCompleteness(),
         ], 'Профиль обновлён');
+    }
+
+    /**
+     * POST /public/me/email
+     * Сохранить recovery email + отправить welcome-письмо.
+     */
+    public function saveEmail(Request $request): JsonResponse
+    {
+        $user = $request->get('_public_user');
+
+        $data = $request->validate([
+            'recovery_email' => 'required|email|max:255',
+        ]);
+
+        $user->update(['recovery_email' => $data['recovery_email']]);
+
+        // Отправляем welcome-письмо (fire-and-forget, не блокируем ответ)
+        try {
+            Mail::to($data['recovery_email'])->send(new WelcomeEmail(
+                userName: $user->name ?? 'Пользователь',
+                userPhone: $user->phone,
+            ));
+        } catch (\Throwable $e) {
+            \Log::warning('Welcome email failed', ['email' => $data['recovery_email'], 'error' => $e->getMessage()]);
+        }
+
+        return ApiResponse::success([
+            'user' => $user->fresh(),
+        ], 'Email сохранён');
     }
 
     /**
