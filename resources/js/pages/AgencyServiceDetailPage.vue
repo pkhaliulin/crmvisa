@@ -1,0 +1,438 @@
+<template>
+  <div class="space-y-6">
+    <!-- Header -->
+    <div class="flex items-center gap-3">
+      <button @click="router.push({ name: 'services' })"
+        class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:text-gray-600 hover:border-gray-300 transition-colors">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+        </svg>
+      </button>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2">
+          <span v-if="pkg.country_code" class="text-2xl">{{ codeToFlag(pkg.country_code) }}</span>
+          <h1 class="text-xl font-bold text-gray-900 truncate">{{ pkg.name || 'Пакет услуг' }}</h1>
+          <span v-if="!pkg.is_active" class="text-xs px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full">Неактивен</span>
+        </div>
+        <p v-if="pkg.name_uz" class="text-sm text-gray-400 mt-0.5">{{ pkg.name_uz }}</p>
+      </div>
+      <div class="flex gap-2 shrink-0">
+        <button @click="editing = !editing"
+          class="px-3 py-2 text-sm font-medium rounded-lg border transition-colors"
+          :class="editing ? 'border-amber-300 bg-amber-50 text-amber-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50'">
+          {{ editing ? 'Отменить' : 'Редактировать' }}
+        </button>
+        <button @click="confirmDelete"
+          class="px-3 py-2 text-sm font-medium rounded-lg border border-red-200 text-red-500 hover:bg-red-50 transition-colors">
+          Удалить
+        </button>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div v-if="loading" class="flex items-center justify-center py-16">
+      <div class="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+    </div>
+
+    <template v-else>
+      <!-- Просмотр -->
+      <template v-if="!editing">
+        <!-- Основная информация -->
+        <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div class="grid grid-cols-2 sm:grid-cols-4 divide-x divide-gray-100">
+            <div class="px-4 py-4 text-center">
+              <div class="text-xs text-gray-400 mb-1">Стоимость</div>
+              <div class="font-bold text-lg text-gray-900">{{ formatPrice(pkg.price) }}</div>
+              <div class="text-xs text-gray-400">{{ pkg.currency || 'UZS' }}</div>
+            </div>
+            <div class="px-4 py-4 text-center">
+              <div class="text-xs text-gray-400 mb-1">Срок</div>
+              <div class="font-bold text-lg text-gray-900">{{ pkg.processing_days }}</div>
+              <div class="text-xs text-gray-400">дней</div>
+            </div>
+            <div class="px-4 py-4 text-center">
+              <div class="text-xs text-gray-400 mb-1">Страна</div>
+              <div class="font-bold text-sm text-gray-900">{{ countryName(pkg.country_code) }}</div>
+            </div>
+            <div class="px-4 py-4 text-center">
+              <div class="text-xs text-gray-400 mb-1">Тип визы</div>
+              <div class="font-bold text-sm text-gray-900">{{ visaTypeName(pkg.visa_type) }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Описание -->
+        <div class="bg-white rounded-xl border border-gray-200 p-5 space-y-3">
+          <h3 class="text-sm font-semibold text-gray-600">Описание</h3>
+          <div v-if="pkg.description" class="text-sm text-gray-700 leading-relaxed">
+            <span class="text-xs text-gray-400 mr-1">RU:</span>{{ pkg.description }}
+          </div>
+          <div v-if="pkg.description_uz" class="text-sm text-gray-700 leading-relaxed">
+            <span class="text-xs text-gray-400 mr-1">UZ:</span>{{ pkg.description_uz }}
+          </div>
+        </div>
+
+        <!-- Включённые услуги -->
+        <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div class="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
+            <h3 class="text-sm font-semibold text-gray-600">Включённые услуги</h3>
+            <span class="text-xs text-gray-400">{{ (pkg.items || []).length }}</span>
+          </div>
+          <div v-if="(pkg.items || []).length" class="divide-y divide-gray-50">
+            <div v-for="item in pkg.items" :key="item.id" class="px-5 py-3">
+              <div class="flex items-center gap-2">
+                <span class="text-sm font-medium text-gray-800">{{ item.service?.name }}</span>
+                <span v-if="item.service?.is_required"
+                  class="text-[9px] px-1.5 py-0.5 rounded-full bg-red-50 text-red-600 font-semibold">Обязательная</span>
+                <span class="text-xs text-gray-400 ml-auto">{{ categoryLabel(item.service?.category) }}</span>
+              </div>
+              <p v-if="item.service?.agency_hint" class="text-xs text-gray-500 mt-1 leading-relaxed">{{ item.service.agency_hint }}</p>
+              <p v-else-if="item.service?.description" class="text-xs text-gray-400 mt-1">{{ item.service.description }}</p>
+            </div>
+          </div>
+          <div v-else class="px-5 py-6 text-center text-sm text-gray-400">Нет услуг</div>
+        </div>
+
+        <!-- Статус -->
+        <div class="flex items-center gap-3">
+          <span class="text-sm text-gray-500">Статус:</span>
+          <span class="text-sm font-medium" :class="pkg.is_active ? 'text-green-600' : 'text-gray-400'">
+            {{ pkg.is_active ? 'Активен' : 'Неактивен' }}
+          </span>
+        </div>
+      </template>
+
+      <!-- Редактирование -->
+      <template v-else>
+        <div class="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
+          <!-- Ошибки -->
+          <div v-if="formErrors.length" class="bg-red-50 border border-red-200 rounded-lg p-3">
+            <ul class="text-xs text-red-600 space-y-0.5">
+              <li v-for="err in formErrors" :key="err">{{ err }}</li>
+            </ul>
+          </div>
+
+          <!-- Автоназвание -->
+          <div v-if="autoName" class="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3">
+            <div class="text-xs text-blue-500 font-medium mb-1">Название пакета</div>
+            <div class="font-semibold text-gray-900 text-sm">{{ autoName }}</div>
+            <div class="text-xs text-gray-500 mt-0.5">{{ autoNameUz }}</div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div class="relative">
+              <label class="block text-sm font-medium text-gray-700 mb-1">Страна</label>
+              <div class="relative">
+                <input v-model="countrySearch" @input="onCountryInput" @focus="countryDropdown = true"
+                  @blur="() => setTimeout(() => countryDropdown = false, 200)"
+                  placeholder="Начните вводить..."
+                  :class="['w-full border rounded-lg px-3 py-2 text-sm outline-none pr-6',
+                    form.country_code ? 'border-green-500 bg-green-50 text-green-800 font-medium' : 'border-gray-200 focus:border-blue-400']" />
+                <button v-if="form.country_code" type="button" @click="clearCountry"
+                  class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 text-sm">x</button>
+              </div>
+              <div v-if="countryDropdown && filteredCountries.length"
+                class="absolute left-0 right-0 z-30 mt-1 border border-gray-200 rounded-lg bg-white shadow-lg text-sm max-h-48 overflow-y-auto">
+                <button v-for="c in filteredCountries.slice(0, 20)" :key="c.country_code" type="button"
+                  class="w-full text-left px-3 py-2 hover:bg-blue-50 flex items-center gap-2"
+                  @mousedown.prevent="selectCountry(c)">
+                  <span class="text-base">{{ c.flag_emoji }}</span>
+                  <span class="text-gray-900">{{ c.name }}</span>
+                  <span class="ml-auto text-xs text-gray-400 font-mono">{{ c.country_code }}</span>
+                </button>
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Тип визы</label>
+              <select v-model="form.visa_type" :disabled="!form.country_code"
+                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400 disabled:bg-gray-50 disabled:text-gray-400">
+                <option value="">{{ form.country_code ? '-- выберите --' : '-- сначала страну --' }}</option>
+                <option v-for="slug in selectedCountryVisaTypes" :key="slug" :value="slug">{{ visaTypeName(slug) }}</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Цена (UZS)</label>
+              <input v-model.number="form.price" type="number" min="0" placeholder="2000000"
+                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Срок (дней)</label>
+              <input v-model.number="form.processing_days" type="number" min="1" placeholder="14"
+                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400" />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Описание (RU)</label>
+            <textarea v-model="form.description" rows="2" placeholder="Полное сопровождение..."
+              class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"></textarea>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Tavsif (UZ)</label>
+            <textarea v-model="form.description_uz" rows="2" placeholder="Viza rasmiylashtirish..."
+              class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"></textarea>
+          </div>
+
+          <!-- Услуги -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Включённые услуги</label>
+            <div class="space-y-0.5 border border-gray-200 rounded-lg overflow-hidden">
+              <div v-if="requiredServices.length" class="bg-red-50/50 px-3 py-1.5">
+                <span class="text-[10px] font-bold text-red-600 uppercase tracking-wide">Обязательные</span>
+              </div>
+              <div v-for="svc in requiredServices" :key="svc.id"
+                class="px-3 py-2 bg-red-50/30 border-b border-red-100/50">
+                <label class="flex items-start gap-2 cursor-not-allowed">
+                  <input type="checkbox" :checked="true" disabled class="w-4 h-4 text-red-500 rounded border-gray-300 mt-0.5" />
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2">
+                      <span class="text-sm font-medium text-gray-900">{{ svc.name }}</span>
+                      <span class="text-[9px] px-1.5 py-0.5 rounded-full bg-red-100 text-red-600 font-semibold">Обязательная</span>
+                    </div>
+                    <p v-if="svc.agency_hint" class="text-xs text-gray-500 mt-0.5">{{ svc.agency_hint }}</p>
+                  </div>
+                </label>
+              </div>
+              <div v-if="optionalServices.length" class="bg-gray-50 px-3 py-1.5 border-t border-gray-100">
+                <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Дополнительные</span>
+              </div>
+              <div v-for="svc in optionalServices" :key="svc.id"
+                class="px-3 py-2 border-b border-gray-50 hover:bg-blue-50/30 transition-colors">
+                <label class="flex items-start gap-2 cursor-pointer">
+                  <input type="checkbox" :value="svc.id" v-model="form.service_ids"
+                    class="w-4 h-4 text-blue-600 rounded border-gray-300 mt-0.5" />
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2">
+                      <span class="text-sm text-gray-800">{{ svc.name }}</span>
+                      <span class="text-xs text-gray-400">{{ categoryLabel(svc.category) }}</span>
+                    </div>
+                    <p v-if="svc.agency_hint" class="text-xs text-gray-500 mt-0.5">{{ svc.agency_hint }}</p>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <input type="checkbox" v-model="form.is_active" id="pkg-active"
+              class="w-4 h-4 text-blue-600 rounded border-gray-300" />
+            <label for="pkg-active" class="text-sm text-gray-700">Активный пакет</label>
+          </div>
+
+          <div class="flex justify-end gap-3 pt-2">
+            <button @click="editing = false"
+              class="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50">Отмена</button>
+            <button @click="save" :disabled="saving || !canSave"
+              class="px-4 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50">
+              {{ saving ? 'Сохранение...' : 'Сохранить' }}
+            </button>
+          </div>
+        </div>
+      </template>
+    </template>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed, onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import api from '@/api/index';
+import { countriesApi } from '@/api/countries';
+import { codeToFlag } from '@/utils/countries';
+
+const route = useRoute();
+const router = useRouter();
+
+const loading = ref(true);
+const saving = ref(false);
+const editing = ref(false);
+const pkg = ref({});
+const allPackages = ref([]);
+const globalServices = ref([]);
+const allCountries = ref([]);
+const allVisaTypes = ref([]);
+const formErrors = ref([]);
+
+const CATEGORY_ORDER = ['consultation', 'documents', 'translation', 'visa_center', 'financial', 'other'];
+const categoryLabels = {
+  consultation: 'Консультация', documents: 'Документы',
+  translation: 'Перевод', visa_center: 'Визовый центр',
+  financial: 'Финансы', other: 'Прочее',
+};
+function categoryLabel(cat) { return categoryLabels[cat] || cat; }
+
+const VISA_TYPE_RU = {
+  tourist: 'Туристическая виза', business: 'Бизнес-виза', student: 'Студенческая виза',
+  work: 'Рабочая виза', transit: 'Транзитная виза', medical: 'Медицинская виза',
+  family: 'Семейная виза',
+};
+const VISA_TYPE_UZ = {
+  tourist: 'Turistik viza', business: 'Biznes viza', student: 'Talaba vizasi',
+  work: 'Ish vizasi', transit: 'Tranzit viza', medical: 'Tibbiy viza',
+  family: 'Oilaviy viza',
+};
+
+function countryName(code) {
+  return allCountries.value.find(c => c.country_code === code)?.name ?? code;
+}
+function countryNameUz(code) {
+  return allCountries.value.find(c => c.country_code === code)?.name_uz ?? countryName(code);
+}
+function visaTypeName(slug) {
+  return allVisaTypes.value.find(t => t.slug === slug)?.name_ru ?? VISA_TYPE_RU[slug] ?? slug;
+}
+function formatPrice(val) {
+  if (!val) return '0';
+  return val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+}
+
+const requiredServices = computed(() => globalServices.value.filter(s => s.is_required && s.is_active));
+const optionalServices = computed(() => globalServices.value.filter(s => !s.is_required && s.is_active));
+
+// Форма редактирования
+const form = ref({
+  country_code: '', visa_type: '',
+  description: '', description_uz: '',
+  price: null, currency: 'UZS', processing_days: null,
+  is_active: true, service_ids: [],
+});
+const countrySearch = ref('');
+const countryDropdown = ref(false);
+
+const autoName = computed(() => {
+  if (!form.value.country_code || !form.value.visa_type) return '';
+  return `${VISA_TYPE_RU[form.value.visa_type] || form.value.visa_type} — ${countryName(form.value.country_code)}`;
+});
+const autoNameUz = computed(() => {
+  if (!form.value.country_code || !form.value.visa_type) return '';
+  return `${countryNameUz(form.value.country_code)} — ${VISA_TYPE_UZ[form.value.visa_type] || form.value.visa_type}`;
+});
+
+const canSave = computed(() =>
+  form.value.country_code &&
+  form.value.visa_type &&
+  form.value.price > 0 &&
+  form.value.processing_days >= 1 &&
+  form.value.description?.trim() &&
+  form.value.description_uz?.trim()
+);
+
+const filteredCountries = computed(() => {
+  const q = countrySearch.value.trim().toLowerCase();
+  if (!q) return allCountries.value;
+  return allCountries.value.filter(c =>
+    c.name.toLowerCase().includes(q) || c.country_code.toLowerCase().startsWith(q)
+  );
+});
+
+const selectedCountryVisaTypes = computed(() => {
+  if (!form.value.country_code) return [];
+  const c = allCountries.value.find(c => c.country_code === form.value.country_code);
+  return c?.visa_types ?? ['tourist', 'business'];
+});
+
+function onCountryInput() {
+  if (form.value.country_code) {
+    form.value.country_code = '';
+    form.value.visa_type = '';
+  }
+  countryDropdown.value = true;
+}
+
+function selectCountry(c) {
+  form.value.country_code = c.country_code;
+  form.value.visa_type = '';
+  countrySearch.value = c.name;
+  countryDropdown.value = false;
+}
+
+function clearCountry() {
+  form.value.country_code = '';
+  form.value.visa_type = '';
+  countrySearch.value = '';
+}
+
+function fillForm() {
+  form.value = {
+    country_code: pkg.value.country_code || '',
+    visa_type: pkg.value.visa_type || '',
+    description: pkg.value.description || '',
+    description_uz: pkg.value.description_uz || '',
+    price: pkg.value.price,
+    currency: pkg.value.currency || 'UZS',
+    processing_days: pkg.value.processing_days,
+    is_active: pkg.value.is_active,
+    service_ids: (pkg.value.items || []).map(i => i.service_id),
+  };
+  const c = allCountries.value.find(c => c.country_code === pkg.value.country_code);
+  countrySearch.value = c?.name ?? pkg.value.country_code ?? '';
+  formErrors.value = [];
+}
+
+async function save() {
+  const errors = [];
+  if (!form.value.country_code) errors.push('Выберите страну');
+  if (!form.value.visa_type) errors.push('Выберите тип визы');
+  if (!form.value.price || form.value.price <= 0) errors.push('Укажите стоимость');
+  if (!form.value.processing_days || form.value.processing_days < 1) errors.push('Укажите срок');
+  if (!form.value.description?.trim()) errors.push('Заполните описание (RU)');
+  if (!form.value.description_uz?.trim()) errors.push('Заполните описание (UZ)');
+
+  // Проверка дубликата
+  const dup = allPackages.value.find(p =>
+    p.country_code === form.value.country_code &&
+    p.visa_type === form.value.visa_type &&
+    p.id !== pkg.value.id
+  );
+  if (dup) errors.push(`Пакет для ${countryName(dup.country_code)} — ${visaTypeName(dup.visa_type)} уже существует`);
+
+  if (errors.length) { formErrors.value = errors; return; }
+
+  saving.value = true;
+  try {
+    const payload = { ...form.value };
+    payload.name = autoName.value;
+    payload.name_uz = autoNameUz.value;
+    const reqIds = requiredServices.value.map(s => s.id);
+    payload.service_ids = [...new Set([...payload.service_ids, ...reqIds])];
+
+    const res = await api.patch(`/agency/packages/${pkg.value.id}`, payload);
+    pkg.value = res.data.data;
+    editing.value = false;
+  } catch (e) {
+    formErrors.value = [e?.response?.data?.message || 'Ошибка сохранения'];
+  } finally {
+    saving.value = false;
+  }
+}
+
+async function confirmDelete() {
+  if (!confirm('Удалить этот пакет?')) return;
+  await api.delete(`/agency/packages/${pkg.value.id}`);
+  router.push({ name: 'services' });
+}
+
+onMounted(async () => {
+  const id = route.params.id;
+  const [pkgRes, pkgsRes, svcRes, cRes, vtRes] = await Promise.all([
+    api.get(`/agency/packages/${id}`).catch(() => null),
+    api.get('/agency/packages').catch(() => ({ data: { data: [] } })),
+    api.get('/services').catch(() => ({ data: { data: [] } })),
+    countriesApi.list().catch(() => ({ data: { data: [] } })),
+    countriesApi.visaTypes().catch(() => ({ data: { data: [] } })),
+  ]);
+
+  if (!pkgRes?.data?.data) {
+    router.push({ name: 'services' });
+    return;
+  }
+
+  pkg.value = pkgRes.data.data;
+  allPackages.value = pkgsRes.data.data || [];
+  globalServices.value = svcRes.data.data || [];
+  allCountries.value = cRes.data.data || [];
+  allVisaTypes.value = vtRes.data.data || [];
+  fillForm();
+  loading.value = false;
+});
+</script>

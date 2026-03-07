@@ -95,6 +95,16 @@ class ServiceCatalogController extends Controller
         return ApiResponse::success($packages);
     }
 
+    public function showPackage(Request $request, string $id): JsonResponse
+    {
+        $agencyId = $request->user()->agency_id;
+        $package = AgencyServicePackage::where('agency_id', $agencyId)
+            ->with(['items.service'])
+            ->findOrFail($id);
+
+        return ApiResponse::success($package);
+    }
+
     public function store(Request $request): JsonResponse
     {
         $agencyId = $request->user()->agency_id;

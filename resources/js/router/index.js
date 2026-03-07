@@ -278,6 +278,12 @@ const routes = [
                 meta: { roles: ['owner', 'superadmin'] },
             },
             {
+                path: 'services/:id',
+                name: 'service.detail',
+                component: () => import('@/pages/AgencyServiceDetailPage.vue'),
+                meta: { roles: ['owner', 'superadmin'] },
+            },
+            {
                 path: 'overdue',
                 name: 'overdue',
                 component: () => import('@/pages/OverdueCasesPage.vue'),

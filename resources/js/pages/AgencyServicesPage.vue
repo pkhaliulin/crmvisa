@@ -123,7 +123,8 @@
       <!-- Список пакетов (одна колонка) -->
       <div v-else class="space-y-2">
         <div v-for="pkg in filteredPackages" :key="pkg.id"
-          class="bg-white rounded-xl border border-gray-200 hover:shadow-md transition-all"
+          @click="router.push({ name: 'service.detail', params: { id: pkg.id } })"
+          class="bg-white rounded-xl border border-gray-200 hover:shadow-md hover:border-blue-200 transition-all cursor-pointer"
           :class="pkg.is_active ? '' : 'opacity-60'">
 
           <div class="px-4 py-3 flex items-center gap-4">
@@ -162,21 +163,10 @@
               </span>
             </div>
 
-            <!-- Кнопки -->
-            <div class="flex gap-1.5 shrink-0">
-              <button @click="openEdit(pkg)"
-                class="w-7 h-7 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:text-blue-600 hover:border-blue-300 transition-colors">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
-                </svg>
-              </button>
-              <button @click="deletePackage(pkg.id)"
-                class="w-7 h-7 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:text-red-600 hover:border-red-300 transition-colors">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                </svg>
-              </button>
-            </div>
+            <!-- Стрелка -->
+            <svg class="w-4 h-4 text-gray-300 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+            </svg>
           </div>
         </div>
       </div>
@@ -187,9 +177,7 @@
       class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div class="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <div class="p-5 border-b border-gray-100">
-          <h2 class="font-semibold text-gray-900">
-            {{ editingId ? 'Редактировать пакет' : 'Новый пакет' }}
-          </h2>
+          <h2 class="font-semibold text-gray-900">Новый пакет</h2>
         </div>
 
         <div class="p-5 space-y-4">
@@ -200,8 +188,16 @@
             </ul>
           </div>
 
+          <!-- Предупреждение о дубликате -->
+          <div v-if="duplicateWarning" class="bg-amber-50 border border-amber-300 rounded-lg px-4 py-3 flex items-center gap-2">
+            <svg class="w-5 h-5 text-amber-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+            </svg>
+            <span class="text-sm text-amber-700">{{ duplicateWarning }}</span>
+          </div>
+
           <!-- Автоназвание -->
-          <div v-if="autoName" class="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3">
+          <div v-if="autoName && !duplicateWarning" class="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3">
             <div class="text-xs text-blue-500 font-medium mb-1">Название пакета</div>
             <div class="font-semibold text-gray-900 text-sm">{{ autoName }}</div>
             <div class="text-xs text-gray-500 mt-0.5">{{ autoNameUz }}</div>
@@ -348,9 +344,12 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import api from '@/api/index';
 import { countriesApi } from '@/api/countries';
 import { codeToFlag } from '@/utils/countries';
+
+const router = useRouter();
 
 const loadingPackages = ref(true);
 const loadingServices = ref(true);
@@ -489,9 +488,21 @@ const autoNameUz = computed(() => {
   return `${country} — ${visa}`;
 });
 
+const duplicateWarning = computed(() => {
+  if (!modalForm.value.country_code || !modalForm.value.visa_type) return '';
+  const dup = packages.value.find(p =>
+    p.country_code === modalForm.value.country_code &&
+    p.visa_type === modalForm.value.visa_type &&
+    p.id !== editingId.value
+  );
+  if (dup) return `Пакет «${dup.name}» для этой страны и типа визы уже существует`;
+  return '';
+});
+
 const canSave = computed(() =>
   modalForm.value.country_code &&
   modalForm.value.visa_type &&
+  !duplicateWarning.value &&
   modalForm.value.price > 0 &&
   modalForm.value.processing_days >= 1 &&
   modalForm.value.description?.trim() &&
@@ -524,6 +535,20 @@ function validateForm() {
   if (!modalForm.value.visa_type) {
     fe.visa_type = 'Выберите тип визы';
     errors.push('Выберите тип визы');
+  }
+
+  // Проверка дубликата: страна + тип визы
+  if (modalForm.value.country_code && modalForm.value.visa_type) {
+    const dup = packages.value.find(p =>
+      p.country_code === modalForm.value.country_code &&
+      p.visa_type === modalForm.value.visa_type &&
+      p.id !== editingId.value
+    );
+    if (dup) {
+      const msg = `Пакет для ${countryName(dup.country_code)} — ${visaTypeName(dup.visa_type)} уже существует`;
+      fe.visa_type = msg;
+      errors.push(msg);
+    }
   }
   if (!modalForm.value.price || modalForm.value.price <= 0) {
     fe.price = 'Укажите стоимость';
@@ -623,22 +648,6 @@ function openCreate() {
   showModal.value = true;
 }
 
-function openEdit(pkg) {
-  editingId.value = pkg.id;
-  formErrors.value = [];
-  fieldErrors.value = {};
-  modalForm.value = {
-    country_code: pkg.country_code || '', visa_type: pkg.visa_type || '',
-    description: pkg.description || '', description_uz: pkg.description_uz || '',
-    price: pkg.price, currency: pkg.currency || 'UZS',
-    processing_days: pkg.processing_days, is_active: pkg.is_active,
-    service_ids: (pkg.items || []).map(i => i.service_id),
-  };
-  const c = allCountries.value.find(c => c.country_code === pkg.country_code);
-  countrySearch.value = c?.name ?? pkg.country_code ?? '';
-  showModal.value = true;
-}
-
 async function savePackage() {
   if (!validateForm()) return;
   saving.value = true;
@@ -651,23 +660,13 @@ async function savePackage() {
     const merged = new Set([...payload.service_ids, ...reqIds]);
     payload.service_ids = [...merged];
 
-    if (editingId.value) {
-      const res = await api.patch(`/agency/packages/${editingId.value}`, payload);
-      const idx = packages.value.findIndex(p => p.id === editingId.value);
-      if (idx !== -1) packages.value[idx] = res.data.data;
-    } else {
-      const res = await api.post('/agency/packages', payload);
-      packages.value.unshift(res.data.data);
-    }
+    const res = await api.post('/agency/packages', payload);
+    const created = res.data.data;
     showModal.value = false;
+    router.push({ name: 'service.detail', params: { id: created.id } });
   } catch { /* ignore */ } finally {
     saving.value = false;
   }
 }
 
-async function deletePackage(id) {
-  if (!confirm('Удалить пакет?')) return;
-  await api.delete(`/agency/packages/${id}`);
-  packages.value = packages.value.filter(p => p.id !== id);
-}
 </script>

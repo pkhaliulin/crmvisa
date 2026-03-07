@@ -132,6 +132,7 @@ Route::prefix('v1')->group(function () {
 
         // Пакеты услуг агентства
         Route::get('agency/packages',          [ServiceCatalogController::class, 'myPackages']);
+        Route::get('agency/packages/{id}',     [ServiceCatalogController::class, 'showPackage']);
         Route::post('agency/packages',         [ServiceCatalogController::class, 'store']);
         Route::patch('agency/packages/{id}',   [ServiceCatalogController::class, 'update']);
         Route::delete('agency/packages/{id}',  [ServiceCatalogController::class, 'destroy']);
