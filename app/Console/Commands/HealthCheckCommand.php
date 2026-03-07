@@ -81,8 +81,8 @@ class HealthCheckCommand extends Command
         $this->info('[2/5] RLS политики');
 
         $rlsTables = [
-            'cases', 'clients', 'users', 'case_stages', 'case_checklist',
-            'agency_work_countries', 'agency_service_packages', 'agency_service_package_items',
+            'cases', 'clients', 'users', 'case_checklist',
+            'agency_work_countries', 'agency_service_packages',
         ];
 
         foreach ($rlsTables as $table) {
@@ -264,7 +264,7 @@ class HealthCheckCommand extends Command
             'GET /agency/work-countries' => '/api/v1/agency/work-countries',
             'GET /agency/packages'      => '/api/v1/agency/packages',
             'GET /services'             => '/api/v1/services',
-            'GET /billing/status'       => '/api/v1/billing/status',
+            'GET /billing/subscription'  => '/api/v1/billing/subscription',
             'GET /reports/overview'     => '/api/v1/reports/overview',
             'GET /reports/managers'     => '/api/v1/reports/managers',
             'GET /reports/countries'    => '/api/v1/reports/countries',
