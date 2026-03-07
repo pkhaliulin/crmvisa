@@ -74,7 +74,8 @@ class BillingEngine
                 'payment_model'              => $paymentModel,
                 'earn_first_deducted_total'  => 0,
                 'earn_first_target'          => $earnFirstTarget,
-                'activation_fee_paid'        => $plan->activation_fee_uzs === 0,
+                'activation_fee_paid'        => true, // TODO: false когда подключим платёжный шлюз
+                'activation_paid_at'         => now(),
                 'starts_at'                  => now(),
                 'expires_at'                 => $expiresAt,
                 'grace_ends_at'              => $graceEndsAt,
@@ -497,7 +498,8 @@ class BillingEngine
                 'payment_model'              => 'prepaid',
                 'earn_first_deducted_total'  => 0,
                 'earn_first_target'          => 0,
-                'activation_fee_paid'        => $newPlan->activation_fee_uzs === 0,
+                'activation_fee_paid'        => true, // TODO: false когда подключим платёжный шлюз
+                'activation_paid_at'         => now(),
                 'starts_at'                  => now(),
                 'expires_at'                 => $expiresAt,
                 'grace_ends_at'              => $expiresAt->copy()->addDays($newPlan->grace_period_days),

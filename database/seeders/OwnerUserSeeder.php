@@ -11,7 +11,7 @@ class OwnerUserSeeder extends Seeder
 {
     public function run(): void
     {
-        $password = env('OWNER_PASSWORD', 'VisaBor@2026!');
+        $password = env('OWNER_PASSWORD', 'VisaBor2026!');
 
         DB::transaction(function () use ($password) {
             DB::statement("SET LOCAL app.is_superadmin = 'true'");
