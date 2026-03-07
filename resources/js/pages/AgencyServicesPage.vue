@@ -143,21 +143,11 @@
             </ul>
           </div>
 
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Название (RU) *</label>
-            <input v-model="modalForm.name" type="text" placeholder="Туристическая виза в Испанию"
-              :class="['w-full border rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400',
-                fieldError('name') ? 'border-red-300 bg-red-50' : 'border-gray-200']" />
-            <p v-if="fieldError('name')" class="text-xs text-red-500 mt-0.5">{{ fieldError('name') }}</p>
-            <p v-else class="text-xs text-gray-400 mt-0.5">Только кириллица, пробелы, цифры и знаки препинания</p>
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Nomi (UZ) *</label>
-            <input v-model="modalForm.name_uz" type="text" placeholder="Ispaniyaga turistik viza"
-              :class="['w-full border rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400',
-                fieldError('name_uz') ? 'border-red-300 bg-red-50' : 'border-gray-200']" />
-            <p v-if="fieldError('name_uz')" class="text-xs text-red-500 mt-0.5">{{ fieldError('name_uz') }}</p>
-            <p v-else class="text-xs text-gray-400 mt-0.5">Только латиница, пробелы, цифры и знаки препинания</p>
+          <!-- Автоназвание: формируется после выбора страны + тип визы -->
+          <div v-if="autoName" class="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3">
+            <div class="text-xs text-blue-500 font-medium mb-1">Название пакета</div>
+            <div class="font-semibold text-gray-900 text-sm">{{ autoName }}</div>
+            <div class="text-xs text-gray-500 mt-0.5">{{ autoNameUz }}</div>
           </div>
 
           <div class="grid grid-cols-2 gap-3">
@@ -350,9 +340,38 @@ const optionalServices = computed(() =>
   globalServices.value.filter(s => !s.is_required && s.is_active)
 );
 
+// Маппинг типов виз
+const VISA_TYPE_RU = {
+  tourist: 'Туристическая виза', business: 'Бизнес-виза', student: 'Студенческая виза',
+  work: 'Рабочая виза', transit: 'Транзитная виза', medical: 'Медицинская виза',
+  family: 'Семейная виза',
+};
+const VISA_TYPE_UZ = {
+  tourist: 'Turistik viza', business: 'Biznes viza', student: 'Talaba vizasi',
+  work: 'Ish vizasi', transit: 'Tranzit viza', medical: 'Tibbiy viza',
+  family: 'Oilaviy viza',
+};
+
+function countryNameUz(code) {
+  return allCountries.value.find(c => c.country_code === code)?.name_uz ?? countryName(code);
+}
+
+// Автоназвание: "Туристическая виза Швейцария"
+const autoName = computed(() => {
+  if (!modalForm.value.country_code || !modalForm.value.visa_type) return '';
+  const visa = VISA_TYPE_RU[modalForm.value.visa_type] || modalForm.value.visa_type;
+  const country = countryName(modalForm.value.country_code);
+  return `${visa} — ${country}`;
+});
+
+const autoNameUz = computed(() => {
+  if (!modalForm.value.country_code || !modalForm.value.visa_type) return '';
+  const visa = VISA_TYPE_UZ[modalForm.value.visa_type] || modalForm.value.visa_type;
+  const country = countryNameUz(modalForm.value.country_code);
+  return `${country} — ${visa}`;
+});
+
 const canSave = computed(() =>
-  modalForm.value.name?.trim() &&
-  modalForm.value.name_uz?.trim() &&
   modalForm.value.country_code &&
   modalForm.value.visa_type &&
   modalForm.value.price > 0 &&
@@ -362,9 +381,9 @@ const canSave = computed(() =>
 );
 
 const defaultForm = () => ({
-  name: '', name_uz: '', country_code: '', visa_type: '',
+  country_code: '', visa_type: '',
   description: '', description_uz: '',
-  price: null, currency: 'USD', processing_days: null,
+  price: null, currency: 'UZS', processing_days: null,
   is_active: true, service_ids: [],
 });
 
@@ -376,62 +395,30 @@ const fieldErrors = ref({});
 
 function fieldError(field) { return fieldErrors.value[field] || ''; }
 
-const CYRILLIC_RE = /^[\u0400-\u04FFёЁ0-9\s.,\-—()«»"'!?:;\/+&№%]+$/;
-const LATIN_RE = /^[a-zA-Z0-9\s.,\-—()«»"'!?:;\/+&№%\u02BB\u02BC]+$/;
-
 function validateForm() {
   const errors = [];
   const fe = {};
 
-  // Название RU — обязательное, кириллица
-  if (!modalForm.value.name?.trim()) {
-    fe.name = 'Обязательное поле';
-    errors.push('Заполните название на русском');
-  } else if (!CYRILLIC_RE.test(modalForm.value.name.trim())) {
-    fe.name = 'Используйте кириллицу';
-    errors.push('Название (RU) должно быть на кириллице');
-  }
-
-  // Название UZ — обязательное, латиница
-  if (!modalForm.value.name_uz?.trim()) {
-    fe.name_uz = 'Обязательное поле';
-    errors.push('Заполните название на узбекском');
-  } else if (!LATIN_RE.test(modalForm.value.name_uz.trim())) {
-    fe.name_uz = 'Используйте латиницу';
-    errors.push('Nomi (UZ) должно быть на латинице');
-  }
-
-  // Страна
   if (!modalForm.value.country_code) {
     fe.country = 'Выберите страну из списка';
     errors.push('Выберите страну');
   }
-
-  // Тип визы
   if (!modalForm.value.visa_type) {
     fe.visa_type = 'Выберите тип визы';
     errors.push('Выберите тип визы');
   }
-
-  // Цена
   if (!modalForm.value.price || modalForm.value.price <= 0) {
     fe.price = 'Укажите стоимость';
     errors.push('Укажите стоимость услуги');
   }
-
-  // Срок
   if (!modalForm.value.processing_days || modalForm.value.processing_days < 1) {
     fe.processing_days = 'Укажите срок';
     errors.push('Укажите срок обработки в днях');
   }
-
-  // Описание RU
   if (!modalForm.value.description?.trim()) {
     fe.description = 'Обязательное поле';
     errors.push('Заполните описание на русском');
   }
-
-  // Описание UZ
   if (!modalForm.value.description_uz?.trim()) {
     fe.description_uz = 'Обязательное поле';
     errors.push('Заполните описание на узбекском');
@@ -525,10 +512,9 @@ function openEdit(pkg) {
   formErrors.value = [];
   fieldErrors.value = {};
   modalForm.value = {
-    name: pkg.name || '', name_uz: pkg.name_uz || '',
     country_code: pkg.country_code || '', visa_type: pkg.visa_type || '',
     description: pkg.description || '', description_uz: pkg.description_uz || '',
-    price: pkg.price, currency: pkg.currency || 'USD',
+    price: pkg.price, currency: pkg.currency || 'UZS',
     processing_days: pkg.processing_days, is_active: pkg.is_active,
     service_ids: (pkg.items || []).map(i => i.service_id),
   };
@@ -542,6 +528,9 @@ async function savePackage() {
   saving.value = true;
   try {
     const payload = { ...modalForm.value };
+    // Автоназвание
+    payload.name = autoName.value;
+    payload.name_uz = autoNameUz.value;
 
     // Всегда включать обязательные услуги
     const reqIds = requiredServices.value.map(s => s.id);
