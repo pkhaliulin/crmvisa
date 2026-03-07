@@ -108,29 +108,19 @@
                             <select v-model="form.country_code"
                                 class="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-[#0A1F44] focus:outline-none focus:border-[#1BA97F] transition-colors bg-white">
                                 <option value="">{{ $t('profile.selectCountry') }}</option>
-                                <option value="DE">{{ $t('countries.DE') }}</option>
-                                <option value="ES">{{ $t('countries.ES') }}</option>
-                                <option value="FR">{{ $t('countries.FR') }}</option>
-                                <option value="IT">{{ $t('countries.IT') }}</option>
-                                <option value="PL">{{ $t('countries.PL') }}</option>
-                                <option value="CZ">{{ $t('countries.CZ') }}</option>
-                                <option value="GB">{{ $t('countries.GB') }}</option>
-                                <option value="US">{{ $t('countries.US') }}</option>
-                                <option value="CA">{{ $t('countries.CA') }}</option>
-                                <option value="KR">{{ $t('countries.KR') }}</option>
-                                <option value="AE">{{ $t('countries.AE') }}</option>
+                                <option v-for="c in servedCountries" :key="c.country_code" :value="c.country_code">
+                                    {{ countryName(c.country_code) }}
+                                </option>
                             </select>
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-gray-500 mb-1">{{ $t('portal.visaTypeLabel') }}</label>
                             <select v-model="form.visa_type"
                                 class="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-[#0A1F44] focus:outline-none focus:border-[#1BA97F] transition-colors bg-white">
-                                <option value="">{{ $t('portal.selectType') }}</option>
-                                <option value="tourist">{{ $t('portal.tourist') }}</option>
-                                <option value="business">{{ $t('portal.business') }}</option>
-                                <option value="student">{{ $t('portal.studentVisa') }}</option>
-                                <option value="work">{{ $t('portal.work') }}</option>
-                                <option value="transit">{{ $t('portal.transit') }}</option>
+                                <option value="">{{ form.country_code ? $t('portal.selectType') : $t('selectCountryFirst') }}</option>
+                                <option v-for="vt in availableVisaTypes" :key="vt" :value="vt">
+                                    {{ $t(VISA_TYPE_LABELS[vt] || vt) }}
+                                </option>
                             </select>
                         </div>
                         <div>
@@ -161,16 +151,27 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { publicPortalApi } from '@/api/public';
 import { codeToFlag } from '@/utils/countries';
 
+const VISA_TYPE_LABELS = {
+    tourist: 'portal.tourist',
+    business: 'portal.business',
+    student: 'portal.studentVisa',
+    medical: 'portal.medical',
+    family: 'portal.family',
+    transit: 'portal.transit',
+    work: 'portal.work',
+};
+
 const { t } = useI18n();
 const router = useRouter();
 const loading = ref(true);
 const groups = ref([]);
+const servedCountries = ref([]);
 const showCreate = ref(false);
 const creating = ref(false);
 const createError = ref('');
@@ -185,6 +186,16 @@ const form = ref({
 function countryName(code) {
     return t(`countries.${code}`) !== `countries.${code}` ? t(`countries.${code}`) : code;
 }
+
+const availableVisaTypes = computed(() => {
+    if (!form.value.country_code) return [];
+    const country = servedCountries.value.find(c => c.country_code === form.value.country_code);
+    return country?.visa_types ?? [];
+});
+
+watch(() => form.value.country_code, () => {
+    form.value.visa_type = '';
+});
 
 function statusBadge(status) {
     const map = {
@@ -227,5 +238,17 @@ async function loadGroups() {
     }
 }
 
-onMounted(loadGroups);
+async function loadServedCountries() {
+    try {
+        const { data } = await publicPortalApi.servedCountries();
+        servedCountries.value = data.data ?? [];
+    } catch {
+        servedCountries.value = [];
+    }
+}
+
+onMounted(() => {
+    loadGroups();
+    loadServedCountries();
+});
 </script>
