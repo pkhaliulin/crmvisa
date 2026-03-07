@@ -32,6 +32,9 @@ class AgencySubscription extends BaseModel
         'auto_renew',
         'coupon_id',
         'discount_amount',
+        'pending_plan_slug',
+        'pending_billing_period',
+        'pending_change_at',
         'metadata',
     ];
 
@@ -46,6 +49,7 @@ class AgencySubscription extends BaseModel
         'earn_first_deducted_total'  => 'integer',
         'earn_first_target'          => 'integer',
         'discount_amount'            => 'integer',
+        'pending_change_at'          => 'datetime',
         'metadata'                   => 'array',
         'created_at'                 => 'datetime',
         'updated_at'                 => 'datetime',
@@ -115,6 +119,20 @@ class AgencySubscription extends BaseModel
     public function needsActivationFee(): bool
     {
         return ! $this->activation_fee_paid && $this->plan?->activation_fee_uzs > 0;
+    }
+
+    public function hasPendingDowngrade(): bool
+    {
+        return $this->pending_plan_slug !== null;
+    }
+
+    public function cancelPendingDowngrade(): void
+    {
+        $this->update([
+            'pending_plan_slug'     => null,
+            'pending_billing_period' => null,
+            'pending_change_at'     => null,
+        ]);
     }
 
     public function daysLeft(): ?int

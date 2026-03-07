@@ -81,6 +81,30 @@
         </div>
       </section>
 
+      <!-- Запланированный downgrade -->
+      <section v-if="sub.pending_downgrade" class="bg-amber-50 rounded-xl border border-amber-200 p-5">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <div class="flex items-center gap-2 mb-1">
+              <svg class="w-5 h-5 text-amber-600 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              <h3 class="font-semibold text-amber-800">Запланирована смена тарифа</h3>
+            </div>
+            <p class="text-sm text-amber-700">
+              Переход на <span class="font-bold">{{ sub.pending_downgrade.plan_name }}</span>
+              ({{ sub.pending_downgrade.billing_period === 'yearly' ? 'годовой' : 'ежемесячный' }})
+              состоится <span class="font-bold">{{ formatDate(sub.pending_downgrade.change_at) }}</span>.
+              До этой даты вы продолжаете работать на текущем плане.
+            </p>
+          </div>
+          <button @click="cancelDowngrade"
+            class="shrink-0 px-3 py-1.5 text-xs font-medium text-amber-700 bg-white border border-amber-300 rounded-lg hover:bg-amber-100 transition-colors">
+            Отменить
+          </button>
+        </div>
+      </section>
+
       <!-- Лимиты -->
       <section v-if="limits" class="bg-white rounded-xl border border-gray-200 p-6">
         <h2 class="font-semibold text-gray-700 text-sm uppercase tracking-wide mb-4">Использование лимитов</h2>
@@ -299,11 +323,15 @@
                 </div>
               </div>
 
-              <div v-if="isUpgrade(selectedPlan)" class="mt-3 p-3 bg-green-50 rounded-lg">
-                <p class="text-xs text-green-700">Повышение тарифа. Новые лимиты и возможности вступят в силу сразу после подтверждения.</p>
+              <div v-if="isUpgrade(selectedPlan)" class="mt-3 p-3 bg-green-50 rounded-lg space-y-1">
+                <p class="text-xs text-green-700 font-medium">Повышение тарифа — вступает в силу немедленно.</p>
+                <p class="text-xs text-green-600">Остаток текущего плана будет пересчитан пропорционально и зачислен как кредит. Счёт выставляется только на разницу.</p>
               </div>
-              <div v-else class="mt-3 p-3 bg-amber-50 rounded-lg">
-                <p class="text-xs text-amber-700">Понижение тарифа. Новые лимиты вступят в силу сразу. Убедитесь, что текущее использование не превышает лимиты нового плана.</p>
+              <div v-else class="mt-3 p-3 bg-amber-50 rounded-lg space-y-1">
+                <p class="text-xs text-amber-700 font-medium">Понижение тарифа — вступит в силу в конце текущего оплаченного периода.</p>
+                <p v-if="sub.expires_at" class="text-xs text-amber-600">
+                  До {{ formatDate(sub.expires_at) }} вы продолжите работать на текущем плане с полными лимитами.
+                </p>
               </div>
 
               <div class="mt-5 flex gap-3">
@@ -349,6 +377,7 @@ const sub = ref({
   earn_first_progress: null,
   is_in_grace_period: false,
   grace_ends_at: null,
+  pending_downgrade: null,
 });
 
 const limits = ref(null);
@@ -474,26 +503,49 @@ async function confirmChangePlan() {
 
     const data = res.data?.data ?? res.data;
     showConfirmModal.value = false;
-    showToast(`Тариф изменён на ${data.plan_name || selectedPlan.value.name}`);
 
-    // Перезагрузить данные подписки и лимитов
-    const [subRes, limRes] = await Promise.allSettled([
-      api.get('/billing/subscription'),
-      api.get('/billing/limits'),
-    ]);
+    if (data.type === 'downgrade_scheduled') {
+      const dateStr = data.change_at ? new Date(data.change_at).toLocaleDateString('ru-RU') : '';
+      showToast(`Переход на ${data.plan_name} запланирован на ${dateStr}`);
+    } else {
+      const creditMsg = data.credit > 0 ? ` (кредит: ${fmtMoney(data.credit)})` : '';
+      showToast(`Тариф изменён на ${data.plan_name}${creditMsg}`);
+    }
 
-    if (subRes.status === 'fulfilled') {
-      const d = subRes.value.data?.data ?? subRes.value.data ?? {};
-      sub.value = { ...sub.value, ...d };
+    if (data.warnings?.length) {
+      setTimeout(() => showToast(data.warnings[0], true), 2000);
     }
-    if (limRes.status === 'fulfilled') {
-      limits.value = limRes.value.data?.data ?? limRes.value.data ?? null;
-    }
+
+    await reloadBillingData();
   } catch (err) {
     const msg = err.response?.data?.message || err.response?.data?.errors?.[Object.keys(err.response?.data?.errors || {})[0]]?.[0] || 'Ошибка при смене тарифа';
     showToast(msg, true);
   } finally {
     changingPlan.value = false;
+  }
+}
+
+async function cancelDowngrade() {
+  try {
+    await api.post('/billing/cancel-downgrade');
+    showToast('Запланированное понижение отменено');
+    await reloadBillingData();
+  } catch (err) {
+    showToast(err.response?.data?.message || 'Ошибка', true);
+  }
+}
+
+async function reloadBillingData() {
+  const [subRes, limRes] = await Promise.allSettled([
+    api.get('/billing/subscription'),
+    api.get('/billing/limits'),
+  ]);
+  if (subRes.status === 'fulfilled') {
+    const d = subRes.value.data?.data ?? subRes.value.data ?? {};
+    sub.value = { ...sub.value, ...d };
+  }
+  if (limRes.status === 'fulfilled') {
+    limits.value = limRes.value.data?.data ?? limRes.value.data ?? null;
   }
 }
 

@@ -34,7 +34,6 @@
     </div>
 
     <p v-if="error" class="text-xs text-red-600">{{ error }}</p>
-    <p v-else-if="operatorWarning" class="text-xs text-red-600">{{ operatorWarning }}</p>
     <p v-else-if="hint" class="text-xs text-gray-400">{{ hint }}</p>
   </div>
 </template>
@@ -57,24 +56,7 @@ const emit = defineEmits(['update:modelValue', 'blur']);
 const focused  = ref(false);
 const inputRef = ref(null);
 
-// Валидные коды операторов Узбекистана
-const VALID_PREFIXES = [
-  '20', '33', '50', '55', '65', '66', '67',
-  '70', '71', '73', '74', '75', '77', '78',
-  '88', '90', '91', '93', '94', '95', '97', '98', '99',
-];
-
-const operatorWarning = computed(() => {
-  const digits = digitsFromModel.value;
-  if (digits.length < 2) return '';
-  const prefix = digits.slice(0, 2);
-  if (!VALID_PREFIXES.includes(prefix)) {
-    return `Код "${prefix}" не является кодом оператора Узбекистана. Допустимые: 90, 91, 93, 94, 95, 97, 98, 99, 33, 55, 71, 77...`;
-  }
-  return '';
-});
-
-const hasError = computed(() => !!props.error || !!operatorWarning.value);
+const hasError = computed(() => !!props.error);
 
 // Из modelValue (+998XXXXXXXXX или +998 XX XXX XX XX) извлекаем 9 цифр
 const digitsFromModel = computed(() => {
@@ -98,20 +80,32 @@ function formatDigits(digits) {
 const displayValue = computed(() => formatDigits(digitsFromModel.value));
 
 function onInput(e) {
-  const raw     = e.target.value.replace(/\D/g, '').slice(0, 9);
-  const formatted = formatDigits(raw);
+  const cursorPos = e.target.selectionStart;
+  const inputVal  = e.target.value;
 
-  // Сохраняем позицию курсора (с учётом пробелов)
-  const selStart = e.target.selectionStart;
+  // Считаем сколько цифр было ДО курсора в сыром вводе
+  const digitsBefore = inputVal.slice(0, cursorPos).replace(/\D/g, '').length;
+
+  const raw       = inputVal.replace(/\D/g, '').slice(0, 9);
+  const formatted = formatDigits(raw);
 
   e.target.value = formatted;
 
-  // Восстанавливаем курсор
-  const newPos = Math.min(selStart, formatted.length);
+  // Находим позицию в отформатированной строке, где ровно столько же цифр до курсора
+  let digitsCount = 0;
+  let newPos = formatted.length;
+  for (let i = 0; i < formatted.length; i++) {
+    if (/\d/.test(formatted[i])) digitsCount++;
+    if (digitsCount === digitsBefore) {
+      newPos = i + 1;
+      break;
+    }
+  }
+
   e.target.setSelectionRange(newPos, newPos);
 
   // Emit: +998XXXXXXXXX (без пробелов)
-  const full = raw.length === 9 ? `+998${raw}` : raw ? `+998${raw}` : '';
+  const full = raw ? `+998${raw}` : '';
   emit('update:modelValue', full);
 }
 

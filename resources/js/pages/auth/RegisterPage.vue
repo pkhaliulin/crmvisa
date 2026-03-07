@@ -48,7 +48,8 @@
         placeholder="Минимум 8 символов"
         required
         :error="errors.password"
-        hint="Используйте буквы, цифры и спецсимволы для надёжного пароля"
+        hint="Минимум 8 символов: заглавная, строчная, цифра и спецсимвол"
+        @blur="validatePassword"
       />
       <AppInput
         v-model="form.password_confirmation"
@@ -111,17 +112,30 @@ function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
 }
 
-const VALID_PREFIXES = [
-  '20', '33', '50', '55', '65', '66', '67',
-  '70', '71', '73', '74', '75', '77', '78',
-  '88', '90', '91', '93', '94', '95', '97', '98', '99',
-];
-
 function isValidPhone(phone) {
   const digits = phone.replace(/\D/g, '');
-  if (!digits.startsWith('998') || digits.length !== 12) return false;
-  const prefix = digits.slice(3, 5);
-  return VALID_PREFIXES.includes(prefix);
+  return digits.startsWith('998') && digits.length === 12;
+}
+
+function isStrongPassword(pw) {
+  if (pw.length < 8) return false;
+  if (!/[A-Z]/.test(pw)) return false;
+  if (!/[a-z]/.test(pw)) return false;
+  if (!/[0-9]/.test(pw)) return false;
+  if (!/[^A-Za-z0-9]/.test(pw)) return false;
+  return true;
+}
+
+function validatePassword() {
+  if (!form.value.password) {
+    delete errors.value.password;
+    return;
+  }
+  if (!isStrongPassword(form.value.password)) {
+    errors.value.password = 'Пароль должен содержать заглавную, строчную букву, цифру и спецсимвол (минимум 8 символов)';
+  } else {
+    delete errors.value.password;
+  }
 }
 
 function hasNonAscii(str) {
@@ -161,8 +175,6 @@ function validatePhone() {
   const digits = form.value.phone.replace(/\D/g, '');
   if (digits.length > 3 && digits.length < 12) {
     errors.value.phone = 'Введите полный номер: XX XXX XX XX';
-  } else if (digits.length === 12 && !isValidPhone(form.value.phone)) {
-    errors.value.phone = 'Некорректный код оператора';
   } else {
     delete errors.value.phone;
   }
@@ -196,8 +208,8 @@ async function handleSubmit() {
     errors.value.phone = 'Введите полный номер: XX XXX XX XX';
     return;
   }
-  if (!form.value.password || form.value.password.length < 8) {
-    errors.value.password = 'Минимум 8 символов';
+  if (!form.value.password || !isStrongPassword(form.value.password)) {
+    errors.value.password = 'Пароль должен содержать заглавную, строчную букву, цифру и спецсимвол (минимум 8 символов)';
     return;
   }
   if (form.value.password !== form.value.password_confirmation) {

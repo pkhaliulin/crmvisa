@@ -11,3 +11,6 @@ Artisan::command('inspire', function () {
 Schedule::command('visabor:sla-check')->dailyAt('09:00');
 Schedule::command('visabor:payment-timeout')->everyFifteenMinutes();
 Schedule::command('monitoring:prune')->dailyAt('03:00');
+Schedule::call(function () {
+    app(\App\Modules\Payment\Services\BillingEngine::class)->applyPendingDowngrades();
+})->dailyAt('00:05')->name('billing:apply-pending-downgrades');

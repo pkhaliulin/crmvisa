@@ -3,6 +3,7 @@
 namespace App\Modules\Payment\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Payment\Models\BillingPlan;
 use App\Modules\Payment\Models\Invoice;
 use App\Modules\Payment\Services\BillingEngine;
 use App\Modules\Payment\Services\BillingService;
@@ -122,6 +123,12 @@ class BillingController extends Controller
             'activation_fee_paid' => $subscription->activation_fee_paid,
             'earn_first_progress' => $earnFirstProgress,
             'is_in_grace_period'  => $subscription->isInGracePeriod(),
+            'pending_downgrade'   => $subscription->hasPendingDowngrade() ? [
+                'plan_slug'      => $subscription->pending_plan_slug,
+                'plan_name'      => BillingPlan::find($subscription->pending_plan_slug)?->name,
+                'billing_period' => $subscription->pending_billing_period,
+                'change_at'      => $subscription->pending_change_at,
+            ] : null,
         ]);
     }
 
@@ -203,38 +210,72 @@ class BillingController extends Controller
             'billing_period' => 'required|in:monthly,yearly',
         ]);
 
-        $agency = $request->user()->agency;
+        $agency      = $request->user()->agency;
         $newPlanSlug = $validated['plan_slug'];
-        $currentPlanSlug = $agency->plan instanceof \BackedEnum
-            ? $agency->plan->value
-            : (string) $agency->plan;
-
-        if ($newPlanSlug === $currentPlanSlug) {
-            return ApiResponse::error('Вы уже на этом тарифе', null, 422);
-        }
 
         $newPlan = \App\Modules\Payment\Models\BillingPlan::findOrFail($newPlanSlug);
         if (! $newPlan->is_active || ! $newPlan->is_public) {
             return ApiResponse::error('Этот тариф недоступен', null, 422);
         }
 
-        $subscription = $this->engine->subscribe(
-            $agency,
-            $newPlanSlug,
-            $validated['billing_period'],
-            'prepaid',
-            null,
-            $request->user()->id,
-        );
+        // Проверяем: тот же план + тот же период?
+        $current = $this->engine->activeSubscription($agency);
+        if ($current
+            && $current->plan_slug === $newPlanSlug
+            && $current->billing_period === $validated['billing_period']
+        ) {
+            return ApiResponse::error('Вы уже на этом тарифе с этим периодом оплаты', null, 422);
+        }
 
-        return ApiResponse::success([
-            'subscription_id' => $subscription->id,
-            'plan_slug'       => $subscription->plan_slug,
+        try {
+            $result = $this->engine->changePlan(
+                $agency,
+                $newPlanSlug,
+                $validated['billing_period'],
+                $request->user()->id,
+            );
+        } catch (\RuntimeException $e) {
+            return ApiResponse::error($e->getMessage(), null, 422);
+        }
+
+        $sub = $result['subscription'];
+
+        $response = [
+            'type'            => $result['type'],
+            'subscription_id' => $sub->id,
+            'plan_slug'       => $result['type'] === 'downgrade_scheduled' ? $sub->pending_plan_slug : $sub->plan_slug,
             'plan_name'       => $newPlan->name,
-            'status'          => $subscription->status,
-            'expires_at'      => $subscription->expires_at,
-            'billing_period'  => $subscription->billing_period,
-        ], 'Тариф успешно изменён');
+            'status'          => $sub->status,
+            'expires_at'      => $sub->expires_at,
+            'billing_period'  => $result['type'] === 'downgrade_scheduled' ? $sub->pending_billing_period : $sub->billing_period,
+            'credit'          => $result['credit'],
+            'charge'          => $result['charge'],
+            'warnings'        => $result['warnings'],
+        ];
+
+        if ($result['type'] === 'downgrade_scheduled') {
+            $response['change_at'] = $result['change_at'];
+            $msg = "Переход на {$newPlan->name} запланирован на " . $result['change_at']->format('d.m.Y');
+        } else {
+            $msg = "Тариф изменён на {$newPlan->name}";
+        }
+
+        return ApiResponse::success($response, $msg);
+    }
+
+    /**
+     * POST /api/v1/billing/cancel-downgrade
+     */
+    public function cancelDowngrade(Request $request): JsonResponse
+    {
+        $agency  = $request->user()->agency;
+        $success = $this->engine->cancelPendingDowngrade($agency, $request->user()->id);
+
+        if (! $success) {
+            return ApiResponse::error('Нет запланированного понижения тарифа', null, 422);
+        }
+
+        return ApiResponse::success(null, 'Запланированное понижение отменено');
     }
 
     /**
