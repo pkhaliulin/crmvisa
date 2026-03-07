@@ -31,7 +31,8 @@
         placeholder="director@agency.com"
         required
         :error="errors.email"
-        hint="На этот адрес придёт письмо для подтверждения и данные для входа"
+        :hint="!errors.email ? 'На этот адрес придёт письмо для подтверждения и данные для входа' : ''"
+        @input="validateEmailLive"
         @blur="validateEmail"
       />
       <AppPhoneInput
@@ -110,9 +111,38 @@ function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
 }
 
+const VALID_PREFIXES = [
+  '20', '33', '50', '55', '65', '66', '67',
+  '70', '71', '73', '74', '75', '77', '78',
+  '88', '90', '91', '93', '94', '95', '97', '98', '99',
+];
+
 function isValidPhone(phone) {
   const digits = phone.replace(/\D/g, '');
-  return digits.startsWith('998') && digits.length === 12;
+  if (!digits.startsWith('998') || digits.length !== 12) return false;
+  const prefix = digits.slice(3, 5);
+  return VALID_PREFIXES.includes(prefix);
+}
+
+function hasNonAscii(str) {
+  return /[^\x00-\x7F]/.test(str);
+}
+
+function validateEmailLive() {
+  const val = form.value.email;
+  if (!val) {
+    delete errors.value.email;
+    return;
+  }
+  if (hasNonAscii(val)) {
+    errors.value.email = 'Email может содержать только латинские буквы, цифры и символы @._-';
+    form.value.email = val.replace(/[^\x00-\x7F]/g, '');
+    return;
+  }
+  // Убираем ошибку при вводе, финальная проверка на blur
+  if (errors.value.email && isValidEmail(val)) {
+    delete errors.value.email;
+  }
 }
 
 function validateEmail() {
@@ -124,8 +154,15 @@ function validateEmail() {
 }
 
 function validatePhone() {
-  if (form.value.phone && !isValidPhone(form.value.phone)) {
+  if (!form.value.phone) {
+    delete errors.value.phone;
+    return;
+  }
+  const digits = form.value.phone.replace(/\D/g, '');
+  if (digits.length > 3 && digits.length < 12) {
     errors.value.phone = 'Введите полный номер: XX XXX XX XX';
+  } else if (digits.length === 12 && !isValidPhone(form.value.phone)) {
+    errors.value.phone = 'Некорректный код оператора';
   } else {
     delete errors.value.phone;
   }
