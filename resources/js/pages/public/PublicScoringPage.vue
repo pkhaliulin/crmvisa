@@ -307,11 +307,9 @@ const PROFILE_BLOCKS = computed(() => [
 
 // Все 5 блоков (для объяснения)
 const ALL_BLOCKS = computed(() => [
-    { key: 'finances',     label: t('scoring.finances'),         weight: '25%', color: '#1BA97F', desc: t('scoring.financesDesc') },
-    { key: 'visa_history', label: t('scoring.visaHistoryBlock'),  weight: '30%', color: '#3B82F6', desc: t('scoring.visaHistoryDesc') },
-    { key: 'social_ties',  label: t('scoring.socialTies'),       weight: '20%', color: '#8B5CF6', desc: t('scoring.socialTiesDesc') },
-    { key: 'destination',  label: t('scoring.destination'),      weight: '15%', color: '#F59E0B', desc: t('scoring.destinationDesc') },
-    { key: 'visa_type',    label: t('scoring.visaType'),         weight: '10%', color: '#EF4444', desc: t('scoring.visaTypeDesc') },
+    { key: 'finances',     label: t('scoring.finances'),         weight: '30%', color: '#1BA97F', desc: t('scoring.financesDesc') },
+    { key: 'visa_history', label: t('scoring.visaHistoryBlock'),  weight: '40%', color: '#3B82F6', desc: t('scoring.visaHistoryDesc') },
+    { key: 'social_ties',  label: t('scoring.socialTies'),       weight: '30%', color: '#8B5CF6', desc: t('scoring.socialTiesDesc') },
 ]);
 
 const LEVELS = computed(() => [

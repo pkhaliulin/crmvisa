@@ -192,10 +192,10 @@ class PublicScoringService
 
         if ($user->dob) {
             $age = now()->diffInYears($user->dob);
-            if ($age >= 30 && $age <= 55) $score += 15;
-            elseif ($age >= 25)           $score += 10;
-            elseif ($age >= 18)           $score += 5;
-            elseif ($age > 55)            $score += 8;
+            if ($age >= 30 && $age <= 55) $score += 15; // оптимальный: семья, стабильность
+            elseif ($age > 55)            $score += 8;  // предпенсионный/пенсионный
+            elseif ($age >= 25)           $score += 10; // молодой специалист
+            elseif ($age >= 18)           $score += 5;  // студент / начало карьеры
         }
 
         return min(100, $score);

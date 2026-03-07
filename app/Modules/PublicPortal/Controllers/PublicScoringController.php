@@ -190,7 +190,7 @@ class PublicScoringController extends Controller
         $data = $request->validate([
             'countries'   => ['required', 'array', 'min:1', 'max:50'],
             'countries.*' => ['string', 'size:2'],
-            'visa_type'   => ['sometimes', 'string', 'max:20'],
+            'visa_type'   => ['sometimes', 'string', 'in:tourist,business,student,work,transit'],
         ]);
 
         $visaType = $data['visa_type'] ?? 'tourist';
@@ -213,6 +213,9 @@ class PublicScoringController extends Controller
     {
         $user     = $request->get('_public_user');
         $visaType = $request->query('visa_type', 'tourist');
+        if (! in_array($visaType, ['tourist', 'business', 'student', 'work', 'transit'])) {
+            $visaType = 'tourist';
+        }
         $result   = $this->scoring->score($user, strtoupper($country), $visaType);
 
         return ApiResponse::success($result);
@@ -226,6 +229,9 @@ class PublicScoringController extends Controller
     {
         $user     = $request->get('_public_user');
         $visaType = $request->query('visa_type', 'tourist');
+        if (! in_array($visaType, ['tourist', 'business', 'student', 'work', 'transit'])) {
+            $visaType = 'tourist';
+        }
         $results  = $this->scoring->scoreAll($user, $visaType);
 
         return ApiResponse::success([

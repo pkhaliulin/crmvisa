@@ -439,7 +439,7 @@ Route::prefix('v1')->group(function () {
         Route::get('me/cases/{id}/payment',        [ClientPaymentController::class, 'status']);
         Route::get('me/billing',                   [ClientPaymentController::class, 'history']);
 
-        Route::get('scoring',            [PublicScoringController::class, 'scoreAll']);
+        Route::get('scoring',            [PublicScoringController::class, 'scoreAll'])->middleware('throttle:5,1');
         Route::get('scoring/profile',    [PublicScoringController::class, 'scoreProfile']);
         Route::post('scoring/batch',     [PublicScoringController::class, 'scoreBatch'])->middleware('throttle:10,1');
         Route::get('scoring/{cc}',       [PublicScoringController::class, 'scoreCountry']);
