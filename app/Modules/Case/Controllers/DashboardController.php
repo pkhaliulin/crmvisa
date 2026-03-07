@@ -65,7 +65,7 @@ class DashboardController extends Controller
         $byLeadSource = VisaCase::where('cases.agency_id', $agencyId)
             ->leftJoin('clients', 'clients.id', '=', 'cases.client_id')
             ->selectRaw("COALESCE(cases.lead_source, clients.source, 'direct') as source, COUNT(*) as count")
-            ->groupBy('source')
+            ->groupByRaw("COALESCE(cases.lead_source, clients.source, 'direct')")
             ->orderByDesc('count')
             ->get();
 
