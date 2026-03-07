@@ -24,6 +24,8 @@ class CaseController extends Controller
             'priority'     => ['nullable', 'string', 'in:low,normal,high,urgent'],
             'country_code' => ['nullable', 'string', 'size:2', 'regex:/^[A-Za-z]{2}$/'],
             'q'            => ['nullable', 'string', 'max:100'],
+            'date_from'    => ['nullable', 'date'],
+            'date_to'      => ['nullable', 'date'],
         ]);
 
         $query = VisaCase::where('cases.agency_id', $agencyId)
@@ -66,10 +68,23 @@ class CaseController extends Controller
             $query->where('country_code', strtoupper($filters['country_code']));
         }
 
-        // Поиск по имени клиента (параметризованный запрос)
+        // Поиск по имени клиента или номеру заявки
         if (!empty($filters['q'])) {
-            $query->join('clients', 'clients.id', '=', 'cases.client_id')
-                  ->where('clients.name', 'ilike', '%' . str_replace(['%', '_'], ['\\%', '\\_'], $filters['q']) . '%');
+            $search = str_replace(['%', '_'], ['\\%', '\\_'], $filters['q']);
+            $query->where(function ($sub) use ($search) {
+                $sub->where('cases.case_number', 'ilike', '%' . $search . '%')
+                    ->orWhereHas('client', function ($cq) use ($search) {
+                        $cq->where('name', 'ilike', '%' . $search . '%');
+                    });
+            });
+        }
+
+        // Фильтр по дате создания
+        if (!empty($filters['date_from'])) {
+            $query->whereDate('cases.created_at', '>=', $filters['date_from']);
+        }
+        if (!empty($filters['date_to'])) {
+            $query->whereDate('cases.created_at', '<=', $filters['date_to']);
         }
 
         // Сортировка: сначала просроченные, потом горящие, остальные по дате

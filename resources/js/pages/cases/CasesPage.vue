@@ -2,19 +2,65 @@
   <div class="space-y-4">
     <!-- Toolbar -->
     <div class="flex flex-wrap items-center gap-3">
-      <AppInput v-model="filters.q" placeholder="Поиск по клиенту..." class="w-52" @input="debouncedFetch" />
-      <AppSelect v-model="filters.stage"       :options="stageOptions"   placeholder="Этап"      @change="fetchCases" />
-      <AppSelect v-model="filters.priority"    :options="priorityOptions" placeholder="Приоритет" @change="fetchCases" />
+      <!-- Поиск по номеру / имени клиента -->
+      <div class="relative">
+        <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="m21 21-4.35-4.35"/>
+        </svg>
+        <input v-model="filters.q" type="text"
+          class="pl-8 pr-8 py-2 w-60 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+          placeholder="VB-XXXXXX / имя клиента..."
+          @input="debouncedFetch" />
+        <button v-if="filters.q" @click="filters.q = ''; fetchCases()"
+          class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
 
-      <!-- Фильтр по менеджеру -->
+      <!-- Фильтры -->
+      <AppSelect v-model="filters.stage" :options="stageOptions" placeholder="Этап" @change="fetchCases" />
+      <AppSelect v-model="filters.priority" :options="priorityOptions" placeholder="Приоритет" @change="fetchCases" />
+
+      <!-- Страна -->
+      <select v-model="filters.country_code" @change="fetchCases"
+        class="border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400 text-gray-700 bg-white">
+        <option value="">Все страны</option>
+        <option v-for="cc in availableCountries" :key="cc.code" :value="cc.code">
+          {{ cc.flag }} {{ cc.name }}
+        </option>
+      </select>
+
+      <!-- Менеджер -->
       <select v-model="filters.assigned_to" @change="fetchCases"
-        class="border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500 text-gray-700 bg-white">
+        class="border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400 text-gray-700 bg-white">
         <option value="">Все менеджеры</option>
         <option value="unassigned" class="font-medium text-amber-700">Без менеджера</option>
         <option v-for="m in managers" :key="m.id" :value="m.id">{{ m.name }}</option>
       </select>
 
-      <!-- Счётчик без менеджера (если он есть) -->
+      <!-- Дата -->
+      <div class="flex items-center gap-1.5">
+        <input v-model="filters.date_from" type="date"
+          class="border border-gray-200 rounded-lg px-2.5 py-2 text-sm outline-none focus:border-blue-400 text-gray-600"
+          @change="fetchCases" />
+        <span class="text-gray-300 text-xs">--</span>
+        <input v-model="filters.date_to" type="date"
+          class="border border-gray-200 rounded-lg px-2.5 py-2 text-sm outline-none focus:border-blue-400 text-gray-600"
+          @change="fetchCases" />
+      </div>
+
+      <!-- Сброс фильтров -->
+      <button v-if="hasActiveFilters" @click="resetFilters"
+        class="text-xs text-gray-400 hover:text-red-500 transition-colors flex items-center gap-1">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+        Сбросить
+      </button>
+
+      <!-- Счётчик без менеджера -->
       <button v-if="unassignedCount > 0 && !filters.assigned_to"
         class="flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-3 py-1.5 hover:bg-amber-100 transition-colors"
         @click="filters.assigned_to = 'unassigned'; fetchCases()">
@@ -51,9 +97,10 @@
               <div class="min-w-0">
                 <p class="font-semibold text-gray-900 group-hover:text-blue-700 transition-colors text-base leading-tight truncate">
                   {{ countryName(c.country_code) }}
-                  <span class="text-gray-400 font-normal"> — {{ visaTypeName(c.visa_type) }}</span>
+                  <span class="text-gray-400 font-normal"> -- {{ visaTypeName(c.visa_type) }}</span>
                 </p>
                 <p class="text-sm text-gray-500 mt-0.5 truncate">
+                  <span v-if="c.case_number" class="font-mono text-gray-400 text-xs mr-2">{{ c.case_number }}</span>
                   <span class="font-medium text-gray-700">{{ c.client?.name }}</span>
                   <a v-if="c.client?.phone" :href="`tel:${c.client.phone}`" @click.stop class="text-gray-400 hover:text-blue-600"> · {{ formatPhone(c.client.phone) }}</a>
                 </p>
@@ -195,8 +242,28 @@ const cases        = ref([]);
 const meta         = ref(null);
 const loading      = ref(false);
 const managers     = ref([]);
-const assigningId  = ref(null); // ID заявки, для которой открыт выбор менеджера
-const filters      = reactive({ q: '', stage: '', priority: '', assigned_to: '', page: 1 });
+const assigningId  = ref(null);
+const filters      = reactive({ q: '', stage: '', priority: '', assigned_to: '', country_code: '', date_from: '', date_to: '', page: 1 });
+
+const hasActiveFilters = computed(() =>
+  filters.q || filters.stage || filters.priority || filters.assigned_to || filters.country_code || filters.date_from || filters.date_to
+);
+
+function resetFilters() {
+  Object.assign(filters, { q: '', stage: '', priority: '', assigned_to: '', country_code: '', date_from: '', date_to: '', page: 1 });
+  fetchCases();
+}
+
+const COUNTRY_LIST = [
+  { code: 'DE', flag: '🇩🇪', name: 'Германия' }, { code: 'FR', flag: '🇫🇷', name: 'Франция' },
+  { code: 'IT', flag: '🇮🇹', name: 'Италия' }, { code: 'ES', flag: '🇪🇸', name: 'Испания' },
+  { code: 'CZ', flag: '🇨🇿', name: 'Чехия' }, { code: 'PL', flag: '🇵🇱', name: 'Польша' },
+  { code: 'US', flag: '🇺🇸', name: 'США' }, { code: 'GB', flag: '🇬🇧', name: 'Великобритания' },
+  { code: 'AE', flag: '🇦🇪', name: 'ОАЭ' }, { code: 'TR', flag: '🇹🇷', name: 'Турция' },
+  { code: 'KR', flag: '🇰🇷', name: 'Южная Корея' }, { code: 'CN', flag: '🇨🇳', name: 'Китай' },
+  { code: 'JP', flag: '🇯🇵', name: 'Япония' }, { code: 'IN', flag: '🇮🇳', name: 'Индия' },
+];
+const availableCountries = COUNTRY_LIST;
 
 // Счётчик незакреплённых (из текущей страницы — для уведомления)
 const unassignedCount = computed(() => cases.value.filter(c => !c.assignee).length);
@@ -206,9 +273,10 @@ const PRIORITY_LABELS = { low: 'Низкий', normal: 'Обычный', high: '
 const stageOptions = [
   { value: 'lead',          label: 'Лид' },
   { value: 'qualification', label: 'Квалификация' },
-  { value: 'documents',     label: 'Документы' },
+  { value: 'documents',     label: 'Сбор документов' },
+  { value: 'doc_review',    label: 'Проверка документов' },
   { value: 'translation',   label: 'Перевод' },
-  { value: 'appointment',   label: 'Запись' },
+  { value: 'ready',         label: 'Готов к подаче' },
   { value: 'review',        label: 'Рассмотрение' },
   { value: 'result',        label: 'Результат' },
 ];
@@ -220,12 +288,14 @@ const priorityOptions = [
 ];
 
 const STAGE_LABELS = {
-  lead: 'Лид', qualification: 'Квалификация', documents: 'Документы',
-  translation: 'Перевод', appointment: 'Запись', review: 'Рассмотрение', result: 'Результат',
+  lead: 'Лид', qualification: 'Квалификация', documents: 'Сбор документов',
+  doc_review: 'Проверка док.', translation: 'Перевод', ready: 'Готов к подаче',
+  review: 'Рассмотрение', result: 'Результат',
 };
 const STAGE_DOTS = {
   lead: 'bg-gray-400', qualification: 'bg-blue-500', documents: 'bg-purple-500',
-  translation: 'bg-yellow-500', appointment: 'bg-orange-500', review: 'bg-indigo-500', result: 'bg-green-500',
+  doc_review: 'bg-cyan-500', translation: 'bg-yellow-500', ready: 'bg-orange-500',
+  review: 'bg-indigo-500', result: 'bg-green-500',
 };
 
 const stageLabel = (s) => STAGE_LABELS[s] ?? s;
@@ -302,10 +372,13 @@ async function fetchCases() {
   assigningId.value = null;
   try {
     const params = {};
-    if (filters.q)           params.q           = filters.q;
-    if (filters.stage)       params.stage       = filters.stage;
-    if (filters.priority)    params.priority    = filters.priority;
-    if (filters.assigned_to) params.assigned_to = filters.assigned_to;
+    if (filters.q)            params.q            = filters.q;
+    if (filters.stage)        params.stage        = filters.stage;
+    if (filters.priority)     params.priority     = filters.priority;
+    if (filters.assigned_to)  params.assigned_to  = filters.assigned_to;
+    if (filters.country_code) params.country_code = filters.country_code;
+    if (filters.date_from)    params.date_from    = filters.date_from;
+    if (filters.date_to)      params.date_to      = filters.date_to;
     params.page = filters.page;
     const { data } = await casesApi.list(params);
     cases.value = data.data ?? [];

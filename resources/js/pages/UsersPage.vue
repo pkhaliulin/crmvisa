@@ -1,69 +1,81 @@
 <template>
   <div class="space-y-4">
     <div class="flex items-center justify-between">
-      <h2 class="text-lg font-semibold text-gray-800">Сотрудники</h2>
+      <div class="flex items-center gap-3">
+        <h2 class="text-lg font-semibold text-gray-800">Сотрудники</h2>
+        <span class="text-sm text-gray-400">{{ users.length }} чел.</span>
+      </div>
       <AppButton @click="openCreate">+ Добавить сотрудника</AppButton>
     </div>
 
-    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
-      <table class="w-full text-sm" v-if="users.length">
-        <thead class="bg-gray-50 border-b text-gray-500 text-xs uppercase tracking-wide">
-          <tr>
-            <th class="text-left px-4 py-3">Сотрудник</th>
-            <th class="text-left px-4 py-3">Email</th>
-            <th class="text-left px-4 py-3">Контакт</th>
-            <th class="text-left px-4 py-3">Роль</th>
-            <th class="text-center px-4 py-3">Статус</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-100">
-          <tr v-for="u in users" :key="u.id"
-            class="hover:bg-gray-50 transition-colors cursor-pointer"
-            @click="router.push({ name: 'users.show', params: { id: u.id } })">
-            <td class="px-4 py-3">
-              <div class="flex items-center gap-2.5">
-                <img v-if="u.avatar_url" :src="u.avatar_url" class="w-8 h-8 rounded-lg object-cover shrink-0"/>
-                <div v-else class="w-8 h-8 rounded-lg bg-gradient-to-br from-[#0A1F44] to-[#1a3a6e] flex items-center justify-center text-white font-bold text-xs shrink-0">
-                  {{ u.name?.[0]?.toUpperCase() ?? '?' }}
-                </div>
-                <span class="font-medium text-gray-900">{{ u.name }}</span>
-              </div>
-            </td>
-            <td class="px-4 py-3 text-gray-500">{{ u.email }}</td>
-            <td class="px-4 py-3">
-              <a v-if="u.telegram_username" :href="`https://t.me/${u.telegram_username}`" target="_blank"
-                @click.stop
-                class="text-[#229ED9] hover:underline text-xs">@{{ u.telegram_username }}</a>
-              <a v-else-if="u.phone" :href="`tel:${u.phone}`"
-                @click.stop
-                class="text-gray-500 hover:text-blue-600 text-xs font-mono">{{ formatPhone(u.phone) }}</a>
-              <span v-else class="text-gray-300 text-xs">--</span>
-            </td>
-            <td class="px-4 py-3">
-              <AppBadge :color="roleColor(u.role)">{{ roleLabel(u.role) }}</AppBadge>
-            </td>
-            <td class="px-4 py-3 text-center" @click.stop>
-              <button v-if="u.role !== 'owner'"
-                @click="toggleActive(u)"
-                :disabled="toggling === u.id"
-                class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 focus:outline-none"
-                :class="u.is_active ? 'bg-[#1BA97F]' : 'bg-gray-300'">
-                <span class="inline-block h-3.5 w-3.5 rounded-full bg-white shadow-sm transition-transform duration-200"
-                  :class="u.is_active ? 'translate-x-[18px]' : 'translate-x-[3px]'"></span>
-              </button>
-              <span v-else class="text-xs text-gray-400">--</span>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <!-- Cards grid -->
+    <div v-if="users.length" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+      <div v-for="u in users" :key="u.id"
+        class="group bg-white rounded-xl border border-gray-200 p-4 hover:border-blue-300 hover:shadow-md transition-all cursor-pointer"
+        @click="router.push({ name: 'users.show', params: { id: u.id } })">
 
-      <div v-else class="py-16 text-center text-gray-400">
-        <svg class="w-12 h-12 mx-auto text-gray-200 mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"/>
-        </svg>
-        <p class="text-sm">Сотрудников нет</p>
-        <p class="text-xs mt-1 text-gray-300">Добавьте первого менеджера</p>
+        <!-- Header -->
+        <div class="flex items-center gap-3 mb-3">
+          <img v-if="u.avatar_url" :src="u.avatar_url" class="w-10 h-10 rounded-full object-cover shrink-0"/>
+          <div v-else class="w-10 h-10 rounded-full bg-gradient-to-br from-[#0A1F44] to-[#1a3a6e] flex items-center justify-center text-white font-bold text-sm shrink-0">
+            {{ u.name?.[0]?.toUpperCase() ?? '?' }}
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="font-semibold text-gray-900 group-hover:text-blue-700 transition-colors truncate">{{ u.name }}</p>
+            <p class="text-xs text-gray-400 truncate">{{ u.email }}</p>
+          </div>
+          <div class="flex items-center gap-2 shrink-0">
+            <AppBadge :color="roleColor(u.role)">{{ roleLabel(u.role) }}</AppBadge>
+          </div>
+        </div>
+
+        <!-- Info -->
+        <div class="space-y-1.5">
+          <!-- Contact -->
+          <div class="flex items-center gap-2 text-sm">
+            <svg class="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z"/>
+            </svg>
+            <a v-if="u.phone" :href="`tel:${u.phone}`" @click.stop class="text-gray-600 hover:text-blue-600 text-xs font-mono">{{ formatPhone(u.phone) }}</a>
+            <span v-else class="text-gray-300 text-xs">--</span>
+          </div>
+
+          <!-- Telegram -->
+          <div class="flex items-center gap-2 text-sm">
+            <svg class="w-3.5 h-3.5 text-gray-400 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.479.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+            </svg>
+            <a v-if="u.telegram_username" :href="`https://t.me/${u.telegram_username}`" target="_blank" @click.stop
+              class="text-[#229ED9] hover:underline text-xs">@{{ u.telegram_username }}</a>
+            <span v-else class="text-gray-300 text-xs">--</span>
+          </div>
+        </div>
+
+        <!-- Status toggle -->
+        <div class="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between" @click.stop>
+          <span class="text-xs" :class="u.is_active ? 'text-green-600' : 'text-gray-400'">
+            {{ u.is_active ? 'Активен' : 'Отключён' }}
+          </span>
+          <button v-if="u.role !== 'owner'"
+            @click="toggleActive(u)"
+            :disabled="toggling === u.id"
+            class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 focus:outline-none"
+            :class="u.is_active ? 'bg-[#1BA97F]' : 'bg-gray-300'">
+            <span class="inline-block h-3.5 w-3.5 rounded-full bg-white shadow-sm transition-transform duration-200"
+              :class="u.is_active ? 'translate-x-[18px]' : 'translate-x-[3px]'"></span>
+          </button>
+          <span v-else class="text-xs text-gray-300">--</span>
+        </div>
       </div>
+    </div>
+
+    <!-- Empty -->
+    <div v-else class="bg-white rounded-xl border border-gray-200 py-16 text-center text-gray-400">
+      <svg class="w-12 h-12 mx-auto text-gray-200 mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"/>
+      </svg>
+      <p class="text-sm">Сотрудников нет</p>
+      <p class="text-xs mt-1 text-gray-300">Добавьте первого менеджера</p>
     </div>
   </div>
 
@@ -102,7 +114,7 @@
                 </div>
                 <span class="text-[9px] font-semibold text-blue-500">VisaBor</span>
               </div>
-              <p class="text-[11px] text-[#0A1F44] leading-relaxed">Фото повышает доверие клиентов на 40%. Рекомендуем деловое фото в белой рубашке — так команда выглядит профессионально.</p>
+              <p class="text-[11px] text-[#0A1F44] leading-relaxed">Фото повышает доверие клиентов на 40%. Рекомендуем деловое фото в белой рубашке -- так команда выглядит профессионально.</p>
             </div>
           </div>
         </div>
