@@ -53,7 +53,7 @@
                             {{ formatPrice(invoiceTotalAmount, invoiceCurrency) }}
                         </div>
                     </div>
-                    <button @click="scrollToPayment"
+                    <button @click="router.push({ name: 'me.billing' })"
                         class="shrink-0 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl transition-colors">
                         {{ $t('payment.payNow') }}
                     </button>
@@ -450,40 +450,15 @@
                         <span class="text-sm font-medium text-amber-700">{{ $t('payment.pending') }}</span>
                     </div>
 
-                    <!-- Способы оплаты -->
+                    <!-- Кнопка перехода к оплате в разделе Счета -->
                     <div v-else>
-                        <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">{{ $t('payment.chooseMethod') }}</div>
-                        <div class="grid grid-cols-3 gap-3">
-                            <button v-for="p in PAYMENT_PROVIDERS" :key="p.id"
-                                @click="initiatePayment(p.id)"
-                                :disabled="paymentLoading"
-                                class="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-gray-100 hover:border-[#1BA97F] transition-colors disabled:opacity-50">
-                                <div class="w-12 h-12 rounded-lg flex items-center justify-center text-2xl font-bold"
-                                    :class="p.bgClass">
-                                    {{ p.icon }}
-                                </div>
-                                <span class="text-xs font-semibold text-[#0A1F44]">{{ p.label }}</span>
-                            </button>
-                        </div>
-
-                        <!-- Тестовая кнопка -->
-                        <div class="mt-3 pt-3 border-t border-dashed border-gray-200">
-                            <button @click="testMarkAsPaid"
-                                :disabled="markingPaid"
-                                class="w-full py-2.5 px-4 rounded-xl text-xs font-semibold transition-colors
-                                    bg-gray-100 text-gray-600 hover:bg-[#1BA97F]/10 hover:text-[#1BA97F]
-                                    disabled:opacity-50 flex items-center justify-center gap-2">
-                                <svg v-if="markingPaid" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                                </svg>
-                                <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-                                </svg>
-                                {{ $t('payment.markAsPaid') }}
-                            </button>
-                            <p class="text-[10px] text-gray-400 text-center mt-1">{{ $t('payment.markAsPaidHint') }}</p>
-                        </div>
+                        <button @click="router.push({ name: 'me.billing' })"
+                            class="w-full py-3.5 bg-[#1BA97F] hover:bg-[#0d7a5c] text-white text-sm font-bold rounded-xl transition-colors flex items-center justify-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+                            </svg>
+                            {{ $t('payment.payNow') }}
+                        </button>
                     </div>
 
                     <!-- Безопасность -->

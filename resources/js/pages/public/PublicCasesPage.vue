@@ -182,9 +182,9 @@
                                 </span>
                             </div>
                         </div>
-                        <!-- Pay button -->
+                        <!-- Pay button → billing page -->
                         <div class="px-4 pb-3">
-                            <button @click.stop="router.push({ name: 'me.cases.show', params: { id: c.id } })"
+                            <button @click.stop="router.push({ name: 'me.billing' })"
                                 class="w-full py-3 rounded-xl text-sm font-bold text-white transition-colors flex items-center justify-center gap-2"
                                 :class="isPaymentOverdue(c) ? 'bg-red-500 hover:bg-red-600' : 'bg-[#1BA97F] hover:bg-[#0d7a5c]'">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
