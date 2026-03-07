@@ -82,9 +82,12 @@
                                 {{ countryName(caseData.country_code) }}
                             </h1>
                             <p class="text-sm text-gray-400 mt-0.5">{{ visaTypeLabel(caseData.visa_type) }}</p>
-                            <p v-if="caseData.case_number" class="text-xs font-mono font-semibold text-[#0A1F44]/60 mt-1">
-                                {{ $t('cases.caseNumber') }} {{ caseData.case_number }}
-                            </p>
+                            <div class="flex items-center gap-2 mt-1 flex-wrap">
+                                <p v-if="caseData.case_number" class="text-xs font-mono font-semibold text-[#0A1F44]/60">
+                                    {{ $t('cases.caseNumber') }} {{ caseData.case_number }}
+                                </p>
+                                <span class="text-[10px] text-gray-400">{{ formatDate(caseData.created_at) }}</span>
+                            </div>
                         </div>
                     </div>
                     <span class="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full"
@@ -230,10 +233,6 @@
                         <div v-else-if="!caseData.travel_date" class="text-[10px] text-gray-300 mt-1">{{ $t('cases.setDepartureFirst') }}</div>
                         <div v-else-if="tripDaysWarning" class="text-[10px] text-amber-600 mt-1">{{ tripDaysWarning }}</div>
                     </div>
-                    <div class="p-3 rounded-xl bg-gray-50">
-                        <div class="text-xs text-gray-400 mb-0.5">{{ $t('cases.created') }}</div>
-                        <div class="text-sm font-semibold text-[#0A1F44]">{{ formatDate(caseData.created_at) }}</div>
-                    </div>
                     <!-- Срок пребывания -->
                     <div v-if="caseData.travel_date && caseData.return_date" class="p-3 rounded-xl bg-gray-50">
                         <div class="text-xs text-gray-400 mb-0.5">{{ $t('cases.tripDuration') }}</div>
@@ -243,6 +242,20 @@
                                 / {{ $t('cases.maxStayDays', { days: caseData.max_stay_days }) }}
                             </span>
                         </div>
+                    </div>
+                    <!-- Примерная стоимость поездки -->
+                    <div class="p-3 rounded-xl bg-gray-50">
+                        <div class="text-xs text-gray-400 mb-0.5">{{ $t('cases.estimatedCost') }}</div>
+                        <template v-if="caseData.travel_date && caseData.return_date && tripDays > 0 && estimatedCost > 0">
+                            <div class="text-sm font-bold text-[#1BA97F]">~${{ estimatedCost.toLocaleString('ru-RU') }}</div>
+                            <div class="text-[9px] text-gray-400 mt-0.5 leading-tight">{{ $t('cases.estimatedCostNote') }}</div>
+                        </template>
+                        <template v-else-if="!caseData.return_date">
+                            <div class="text-xs text-gray-400 leading-tight">{{ $t('cases.setReturnForEstimate') }}</div>
+                        </template>
+                        <template v-else>
+                            <div class="text-xs text-gray-400">--</div>
+                        </template>
                     </div>
                 </div>
 
@@ -1218,11 +1231,24 @@ const returnDateMin = computed(() => {
     return caseData.value?.travel_date || todayStr;
 });
 
+const countryInfo = ref(null);
+
 const tripDays = computed(() => {
     const d = caseData.value;
     if (!d?.travel_date || !d?.return_date) return 0;
     const ms = new Date(d.return_date) - new Date(d.travel_date);
     return Math.max(0, Math.round(ms / 86400000));
+});
+
+// Примерная стоимость поездки: виза + страховка + билеты (туда-обратно) + отель * дни
+const estimatedCost = computed(() => {
+    const ci = countryInfo.value;
+    const days = tripDays.value;
+    if (!ci || days <= 0) return 0;
+    const visaFee    = ci.visa_fee_usd || ci.evisa_fee_usd || 0;
+    const flights    = (ci.avg_flight_cost_usd || 0) * 2; // туда + обратно
+    const hotel      = (ci.avg_hotel_per_night_usd || 0) * days;
+    return Math.round(visaFee + flights + hotel);
 });
 
 const tripDaysOverLimit = computed(() => {
@@ -1830,6 +1856,12 @@ onMounted(async () => {
         // Загружаем inline-агентства для draft без агентства
         if (caseData.value?.public_status === 'draft' && !caseData.value?.agency) {
             loadInlineAgencies();
+        }
+        // Загружаем данные страны для расчёта примерной стоимости
+        if (caseData.value?.country_code) {
+            publicPortalApi.countryDetail(caseData.value.country_code)
+                .then(r => { countryInfo.value = r.data.data ?? null; })
+                .catch(() => {});
         }
         // Загружаем семью из профиля (для модала)
         publicPortalApi.familyMembers().then(r => { profileFamily.value = r.data.data ?? []; }).catch(() => {});
