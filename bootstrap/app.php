@@ -11,6 +11,7 @@ use App\Http\Middleware\SetTenantContext;
 use App\Modules\PublicPortal\Middleware\AuthPublicUser;
 use App\Support\Helpers\ApiResponse;
 use Illuminate\Auth\AuthenticationException;
+use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -84,6 +85,13 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->render(function (ModelNotFoundException|NotFoundHttpException $e, $request) {
             if ($request->is('api/*') || $request->expectsJson()) {
                 return ApiResponse::notFound('Resource not found.');
+            }
+        });
+
+        // 401 DecryptException — невалидный/повреждённый токен
+        $exceptions->render(function (DecryptException $e, $request) {
+            if ($request->is('api/*') || $request->expectsJson()) {
+                return ApiResponse::unauthorized('Invalid token. Please re-login.');
             }
         });
 

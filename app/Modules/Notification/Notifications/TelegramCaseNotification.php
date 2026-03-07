@@ -12,6 +12,8 @@ class TelegramCaseNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
+    public bool $deleteWhenMissingModels = true;
+
     public function __construct(
         private readonly VisaCase $case,
         private readonly string $previousStage,
