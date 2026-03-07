@@ -235,10 +235,14 @@
               </li>
             </ul>
 
+            <button @click="openPlanDetail(plan)"
+              class="mt-4 w-full py-1.5 text-xs font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors">
+              Подробнее
+            </button>
             <button @click="openChangePlan(plan)"
               :disabled="isCurrentPlan(plan.slug) || changingPlan"
               :class="[
-                'mt-4 w-full py-2 rounded-lg text-sm font-medium transition-colors',
+                'mt-1.5 w-full py-2 rounded-lg text-sm font-medium transition-colors',
                 isCurrentPlan(plan.slug)
                   ? 'bg-[#1BA97F]/10 text-[#1BA97F] cursor-default'
                   : isUpgrade(plan)
@@ -355,6 +359,136 @@
           </div>
         </Transition>
       </Teleport>
+      <!-- Модалка подробнее о тарифе -->
+      <Teleport to="body">
+        <Transition enter-active-class="transition duration-200 ease-out" enter-from-class="opacity-0"
+          leave-active-class="transition duration-150 ease-in" leave-to-class="opacity-0">
+          <div v-if="showDetailModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" @click.self="showDetailModal = false">
+            <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[85vh] overflow-y-auto">
+              <div class="sticky top-0 bg-white px-6 pt-6 pb-3 border-b border-gray-100 flex items-start justify-between">
+                <div>
+                  <h3 class="text-lg font-bold text-[#0A1F44]">{{ detailPlan?.name }}</h3>
+                  <p class="text-sm text-gray-500 mt-0.5">{{ detailPlan ? (planPrice(detailPlan) > 0 ? fmtMoney(planPrice(detailPlan)) + ' / ' + (selectedPeriod === 'yearly' ? 'год' : 'мес') : 'Бесплатно') : '' }}</p>
+                </div>
+                <button @click="showDetailModal = false" class="text-gray-400 hover:text-gray-600 p-1">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+              </div>
+              <div class="px-6 py-5 space-y-5" v-if="detailPlan">
+                <!-- Для кого -->
+                <div>
+                  <h4 class="text-sm font-semibold text-[#0A1F44] mb-2">Кому подходит</h4>
+                  <p class="text-sm text-gray-600 leading-relaxed">{{ planInfo[detailPlan.slug]?.audience }}</p>
+                </div>
+
+                <!-- Преимущества -->
+                <div>
+                  <h4 class="text-sm font-semibold text-[#0A1F44] mb-2">Преимущества</h4>
+                  <ul class="space-y-2">
+                    <li v-for="(adv, i) in planInfo[detailPlan.slug]?.advantages" :key="i" class="flex items-start gap-2 text-sm text-gray-600">
+                      <span class="text-[#1BA97F] mt-0.5 shrink-0 font-bold">+</span>
+                      <span>{{ adv }}</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <!-- Что входит -->
+                <div>
+                  <h4 class="text-sm font-semibold text-[#0A1F44] mb-2">Включено в тариф</h4>
+                  <div class="grid grid-cols-2 gap-2">
+                    <div class="flex items-center gap-2 text-sm text-gray-600">
+                      <span class="w-1.5 h-1.5 bg-[#1BA97F] rounded-full shrink-0"></span>
+                      {{ detailPlan.max_managers === 0 ? 'Безлимит менеджеров' : 'До ' + detailPlan.max_managers + ' менеджеров' }}
+                    </div>
+                    <div class="flex items-center gap-2 text-sm text-gray-600">
+                      <span class="w-1.5 h-1.5 bg-[#1BA97F] rounded-full shrink-0"></span>
+                      {{ detailPlan.max_cases === 0 ? 'Безлимит заявок' : 'До ' + detailPlan.max_cases + ' заявок' }}
+                    </div>
+                    <div v-if="detailPlan.max_leads_per_month" class="flex items-center gap-2 text-sm text-gray-600">
+                      <span class="w-1.5 h-1.5 bg-[#1BA97F] rounded-full shrink-0"></span>
+                      До {{ detailPlan.max_leads_per_month }} лидов/мес
+                    </div>
+                    <div v-else class="flex items-center gap-2 text-sm text-gray-600">
+                      <span class="w-1.5 h-1.5 bg-[#1BA97F] rounded-full shrink-0"></span>
+                      Безлимит лидов
+                    </div>
+                    <div v-if="detailPlan.has_marketplace" class="flex items-center gap-2 text-sm text-gray-600">
+                      <span class="w-1.5 h-1.5 bg-[#1BA97F] rounded-full shrink-0"></span>
+                      Маркетплейс
+                    </div>
+                    <div v-if="detailPlan.has_analytics" class="flex items-center gap-2 text-sm text-gray-600">
+                      <span class="w-1.5 h-1.5 bg-[#1BA97F] rounded-full shrink-0"></span>
+                      Аналитика и отчёты
+                    </div>
+                    <div v-if="detailPlan.has_api_access" class="flex items-center gap-2 text-sm text-gray-600">
+                      <span class="w-1.5 h-1.5 bg-[#1BA97F] rounded-full shrink-0"></span>
+                      API-доступ
+                    </div>
+                    <div v-if="detailPlan.has_white_label" class="flex items-center gap-2 text-sm text-gray-600">
+                      <span class="w-1.5 h-1.5 bg-[#1BA97F] rounded-full shrink-0"></span>
+                      White-label
+                    </div>
+                    <div v-if="detailPlan.has_custom_domain" class="flex items-center gap-2 text-sm text-gray-600">
+                      <span class="w-1.5 h-1.5 bg-[#1BA97F] rounded-full shrink-0"></span>
+                      Свой домен
+                    </div>
+                    <div v-if="detailPlan.has_priority_support" class="flex items-center gap-2 text-sm text-gray-600">
+                      <span class="w-1.5 h-1.5 bg-[#1BA97F] rounded-full shrink-0"></span>
+                      Приоритетная поддержка
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Собственные клиенты -->
+                <div class="p-4 bg-blue-50 rounded-xl">
+                  <h4 class="text-sm font-semibold text-blue-800 mb-1.5">Собственные клиенты</h4>
+                  <p class="text-xs text-blue-700 leading-relaxed">
+                    На любом тарифе вы можете добавлять собственных клиентов напрямую в CRM и вести их по воронке продаж.
+                    Менеджеры создают заявки, назначают этапы, контролируют SLA-дедлайны и доводят клиента до результата.
+                  </p>
+                </div>
+
+                <!-- API блок для Enterprise -->
+                <div v-if="detailPlan.has_api_access" class="p-4 bg-green-50 rounded-xl">
+                  <h4 class="text-sm font-semibold text-green-800 mb-1.5">Интеграция с соцсетями через API</h4>
+                  <p class="text-xs text-green-700 leading-relaxed">
+                    Подключите рекламу в Instagram, Facebook или на своём сайте.
+                    Когда потенциальный клиент нажимает кнопку «Оставить контакты» в рекламном объявлении --
+                    его данные автоматически попадают в вашу CRM как новый лид.
+                    Менеджеры получают уведомление и сразу начинают обработку по воронке продаж.
+                    Никакого ручного ввода -- полная автоматизация от рекламы до заявки.
+                  </p>
+                </div>
+
+                <!-- Earn-first -->
+                <div v-if="detailPlan.earn_first_enabled" class="p-4 bg-amber-50 rounded-xl">
+                  <h4 class="text-sm font-semibold text-amber-800 mb-1.5">Earn-first: оплата из дохода</h4>
+                  <p class="text-xs text-amber-700 leading-relaxed">
+                    Вы можете начать работу без предоплаты. Система автоматически удерживает {{ detailPlan.earn_first_deduction_pct }}%
+                    с каждого оплаченного заказа до полного погашения стоимости тарифа. Вы зарабатываете первым -- платите потом.
+                  </p>
+                </div>
+              </div>
+
+              <div class="px-6 pb-6 pt-2 flex gap-3">
+                <button @click="showDetailModal = false"
+                  class="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                  Закрыть
+                </button>
+                <button v-if="!isCurrentPlan(detailPlan?.slug)" @click="showDetailModal = false; openChangePlan(detailPlan)"
+                  :class="[
+                    'flex-1 px-4 py-2.5 rounded-lg text-sm font-medium text-white transition-colors',
+                    isUpgrade(detailPlan)
+                      ? 'bg-[#1BA97F] hover:bg-[#158a68]'
+                      : 'bg-[#0A1F44] hover:bg-[#0d2a5e]',
+                  ]">
+                  {{ isUpgrade(detailPlan) ? 'Перейти на этот план' : 'Выбрать этот план' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </Transition>
+      </Teleport>
     </template>
   </div>
 </template>
@@ -387,6 +521,63 @@ const selectedPeriod = ref('monthly');
 const showConfirmModal = ref(false);
 const selectedPlan = ref(null);
 const changingPlan = ref(false);
+const showDetailModal = ref(false);
+const detailPlan = ref(null);
+
+const planInfo = {
+  trial: {
+    audience: 'Для агентств, которые хотят попробовать CRM без финансовых обязательств. Идеально подходит для оценки возможностей системы перед принятием решения о покупке.',
+    advantages: [
+      '45 дней бесплатного доступа ко всем базовым функциям',
+      'Канбан-доска для визуального управления заявками',
+      'SLA-дедлайны -- контроль сроков по каждому этапу',
+      'Добавляйте собственных клиентов и ведите их по воронке продаж',
+      'Полноценная работа с документами и чеклистами',
+    ],
+  },
+  starter: {
+    audience: 'Для небольших агентств (1-3 менеджера), которые начинают автоматизировать свою работу. Подходит тем, кто ведёт клиентов вручную и хочет навести порядок.',
+    advantages: [
+      'Базовая аналитика -- отчёты по менеджерам, странам, воронке',
+      'Скоринг-движок -- автоматическая оценка шансов клиента на визу',
+      'Telegram-уведомления клиентам о статусе их заявки',
+      'SLA-контроль с уведомлениями о просрочках',
+      'Создавайте клиентов напрямую -- из обращений, рекомендаций, звонков',
+      'Менеджеры обрабатывают каждого клиента по воронке: от лида до выдачи визы',
+    ],
+  },
+  pro: {
+    audience: 'Для растущих агентств (до 10 менеджеров), которые хотят привлекать клиентов через маркетплейс VisaBor и масштабировать бизнес.',
+    advantages: [
+      'Листинг на маркетплейсе VisaBor -- клиенты находят вас сами',
+      'Входящие лиды с маркетплейса автоматически попадают в CRM',
+      'White-label Telegram-бот с вашим брендом для клиентов',
+      'Расширенная аналитика с детализацией по странам и менеджерам',
+      'Авто-распределение лидов между менеджерами (round-robin, по нагрузке, по стране)',
+      'Создавайте собственных клиентов и комбинируйте с потоком из маркетплейса',
+      'Earn-first: начните работать без предоплаты, платите из дохода',
+    ],
+  },
+  enterprise: {
+    audience: 'Для крупных агентств и сетей без ограничений. Полная автоматизация, собственный домен, API для интеграции с рекламой в соцсетях и внешними системами.',
+    advantages: [
+      'Безлимитные менеджеры, заявки и лиды -- масштабируйтесь без потолка',
+      'API-доступ: подключите Instagram, Facebook, свой сайт -- лиды автоматом в CRM',
+      'Реклама в соцсетях: клиент нажимает «Оставить контакты» -- данные сразу в вашей CRM',
+      'Менеджеры получают уведомление и обрабатывают лид по воронке продаж',
+      'Custom домен -- CRM на вашем собственном адресе',
+      'Приоритетный значок на маркетплейсе -- вы выше в выдаче',
+      'Персональный менеджер от VisaBor',
+      'SLA-гарантия доступности 99.9%',
+      'Минимальный процент удержания по earn-first (7%)',
+    ],
+  },
+};
+
+function openPlanDetail(plan) {
+  detailPlan.value = plan;
+  showDetailModal.value = true;
+}
 
 const currentPlanName = computed(() => {
   if (sub.value.plan?.name) return sub.value.plan.name;
