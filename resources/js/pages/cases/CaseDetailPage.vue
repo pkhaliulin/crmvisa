@@ -853,7 +853,7 @@ async function loadManagers() {
     const { data } = await usersApi.list();
     const list = Array.isArray(data.data) ? data.data : (data.data?.data ?? []);
     managers.value = list.filter(u => u.role === 'manager' || u.role === 'owner');
-  } catch {}
+  } catch { /* silent */ }
 }
 
 async function doAssign() {

@@ -47,8 +47,8 @@ class PublicFamilyController extends Controller
             'dob'                => ['nullable', 'date', 'before:today'],
             'gender'             => ['nullable', Rule::in(['M', 'F'])],
             'citizenship'        => ['nullable', 'string', 'size:2'],
-            'passport_number'    => ['nullable', 'string', 'max:20'],
-            'passport_expires_at'=> ['nullable', 'date'],
+            'passport_number'    => ['nullable', 'string', 'regex:/^[A-Z]{2}[0-9]{7}$/'],
+            'passport_expires_at'=> ['nullable', 'date', 'after:today'],
         ]);
 
         $data['public_user_id'] = $publicUser->id;
@@ -74,8 +74,8 @@ class PublicFamilyController extends Controller
             'dob'                => ['sometimes', 'nullable', 'date', 'before:today'],
             'gender'             => ['sometimes', 'nullable', Rule::in(['M', 'F'])],
             'citizenship'        => ['sometimes', 'nullable', 'string', 'size:2'],
-            'passport_number'    => ['sometimes', 'nullable', 'string', 'max:20'],
-            'passport_expires_at'=> ['sometimes', 'nullable', 'date'],
+            'passport_number'    => ['sometimes', 'nullable', 'string', 'regex:/^[A-Z]{2}[0-9]{7}$/'],
+            'passport_expires_at'=> ['sometimes', 'nullable', 'date', 'after:today'],
         ]);
 
         $member->update($data);

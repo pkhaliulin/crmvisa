@@ -692,6 +692,12 @@ class PublicProfileController extends Controller
 
         $case->update(['public_status' => 'cancelled']);
 
+        \App\Support\Helpers\AuditLog::log('case.cancelled', [
+            'case_id' => $case->id,
+            'agency_id' => $case->agency_id,
+            'public_user_id' => $publicUser->id,
+        ]);
+
         return ApiResponse::success(['id' => $case->id, 'public_status' => 'cancelled'], 'Заявка отменена.');
     }
 

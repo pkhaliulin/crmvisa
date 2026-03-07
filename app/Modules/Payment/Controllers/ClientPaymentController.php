@@ -51,6 +51,13 @@ class ClientPaymentController extends Controller
 
         $payment = $this->paymentService->createPayment($case, $publicUser, $data['provider']);
 
+        \App\Support\Helpers\AuditLog::log('payment.initiated', [
+            'payment_id' => $payment->id,
+            'case_id' => $case->id,
+            'provider' => $data['provider'],
+            'public_user_id' => $publicUser->id,
+        ]);
+
         return ApiResponse::success([
             'payment_id'  => $payment->id,
             'payment_url' => $this->paymentService->getPaymentUrl($payment),
@@ -140,6 +147,12 @@ class ClientPaymentController extends Controller
         $this->paymentService->handleCallback('test', [
             'payment_id' => $payment->id,
             'provider_transaction_id' => 'TEST-' . now()->timestamp,
+        ]);
+
+        \App\Support\Helpers\AuditLog::log('payment.marked_paid', [
+            'payment_id' => $payment->id,
+            'case_id' => $case->id,
+            'public_user_id' => $publicUser->id,
         ]);
 
         return ApiResponse::success([

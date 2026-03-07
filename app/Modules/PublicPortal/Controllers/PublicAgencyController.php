@@ -382,6 +382,14 @@ class PublicAgencyController extends Controller
                 ]);
             }
 
+            \App\Support\Helpers\AuditLog::log('lead.submitted', [
+                'case_id' => $case->id,
+                'agency_id' => $agency->id,
+                'country_code' => $cc,
+                'visa_type' => $data['visa_type'],
+                'public_user_id' => $publicUser->id,
+            ]);
+
             return ApiResponse::created([
                 'case_id' => $case->id,
             ], __('public.lead_sent', ['name' => $agency->name]));

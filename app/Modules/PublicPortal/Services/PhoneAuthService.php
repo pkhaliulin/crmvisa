@@ -100,6 +100,11 @@ class PhoneAuthService
         $plainToken = $this->rotateToken($user);
         $user->update(['last_login_at' => now()]);
 
+        \App\Support\Helpers\AuditLog::log('auth.login', [
+            'public_user_id' => $user->id,
+            'phone' => $phone,
+        ]);
+
         app(GroupService::class)->linkPendingInvitations($user);
 
         return ['user' => $user->fresh(), 'token' => $plainToken];

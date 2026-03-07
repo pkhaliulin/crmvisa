@@ -108,6 +108,13 @@ class AuthService
                 ]);
             }
 
+            \App\Support\Helpers\AuditLog::log('auth.crm_login', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'role' => $user->role,
+                'agency_id' => $user->agency_id,
+            ]);
+
             return $this->tokenResponse($token, $user);
         });
     }

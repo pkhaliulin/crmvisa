@@ -144,12 +144,27 @@ class OwnerController extends Controller
 
         $agency->update($data);
 
+        \App\Support\Helpers\AuditLog::log('agency.updated', [
+            'agency_id' => $agency->id,
+            'agency_name' => $agency->name,
+            'changes' => $data,
+            'admin' => auth()->user()?->email,
+        ]);
+
         return ApiResponse::success($agency->fresh());
     }
 
     public function agencyDestroy(string $id): JsonResponse
     {
-        Agency::findOrFail($id)->delete();
+        $agency = Agency::findOrFail($id);
+
+        \App\Support\Helpers\AuditLog::log('agency.deleted', [
+            'agency_id' => $agency->id,
+            'agency_name' => $agency->name,
+            'admin' => auth()->user()?->email,
+        ]);
+
+        $agency->delete();
         return ApiResponse::success(null, 'Агентство удалено');
     }
 

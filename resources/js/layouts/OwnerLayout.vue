@@ -101,7 +101,7 @@ async function pollAlerts() {
     const { data } = await monitoringApi.alerts();
     alertCount.value = data.data.count;
     alertLevel.value = data.data.level;
-  } catch {}
+  } catch { /* silent */ }
 }
 
 onMounted(() => {

@@ -386,14 +386,14 @@ async function loadAlerts() {
   try {
     const { data } = await monitoringApi.alerts();
     alerts.value = data.data;
-  } catch {}
+  } catch { /* silent */ }
 }
 
 async function retryJob(id) {
   try {
     await monitoringApi.retryJob(id);
     queueData.value.failed = queueData.value.failed.filter(j => j.id !== id);
-  } catch {}
+  } catch { /* silent */ }
 }
 
 const deleteJobId = ref(null);
@@ -408,7 +408,7 @@ async function doDeleteJob() {
   try {
     await monitoringApi.deleteJob(id);
     queueData.value.failed = queueData.value.failed.filter(j => j.id !== id);
-  } catch {}
+  } catch { /* silent */ }
 }
 
 let mainInterval, alertInterval;
