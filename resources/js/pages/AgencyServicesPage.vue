@@ -136,32 +136,46 @@
         </div>
 
         <div class="p-5 space-y-4">
+          <!-- Ошибки валидации -->
+          <div v-if="formErrors.length" class="bg-red-50 border border-red-200 rounded-lg p-3">
+            <ul class="text-xs text-red-600 space-y-0.5">
+              <li v-for="err in formErrors" :key="err">{{ err }}</li>
+            </ul>
+          </div>
+
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Название (RU) *</label>
-            <input v-model="modalForm.name" type="text"
-              class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400" />
+            <input v-model="modalForm.name" type="text" placeholder="Туристическая виза в Испанию"
+              :class="['w-full border rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400',
+                fieldError('name') ? 'border-red-300 bg-red-50' : 'border-gray-200']" />
+            <p v-if="fieldError('name')" class="text-xs text-red-500 mt-0.5">{{ fieldError('name') }}</p>
+            <p v-else class="text-xs text-gray-400 mt-0.5">Только кириллица, пробелы, цифры и знаки препинания</p>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Nomi (UZ)</label>
-            <input v-model="modalForm.name_uz" type="text"
-              class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400" />
+            <label class="block text-sm font-medium text-gray-700 mb-1">Nomi (UZ) *</label>
+            <input v-model="modalForm.name_uz" type="text" placeholder="Ispaniyaga turistik viza"
+              :class="['w-full border rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400',
+                fieldError('name_uz') ? 'border-red-300 bg-red-50' : 'border-gray-200']" />
+            <p v-if="fieldError('name_uz')" class="text-xs text-red-500 mt-0.5">{{ fieldError('name_uz') }}</p>
+            <p v-else class="text-xs text-gray-400 mt-0.5">Только латиница, пробелы, цифры и знаки препинания</p>
           </div>
 
           <div class="grid grid-cols-2 gap-3">
-            <div>
+            <div class="relative">
               <label class="block text-sm font-medium text-gray-700 mb-1">Страна *</label>
               <div class="relative">
                 <input v-model="countrySearch" @input="onCountryInput" @focus="countryDropdown = true"
-                  @blur="() => setTimeout(() => countryDropdown = false, 150)"
-                  placeholder="Испания, DE..."
+                  @blur="() => setTimeout(() => countryDropdown = false, 200)"
+                  placeholder="Начните вводить..."
                   :class="['w-full border rounded-lg px-3 py-2 text-sm outline-none pr-6',
-                    modalForm.country_code ? 'border-green-500 bg-green-50 text-green-800 font-medium' : 'border-gray-200 focus:border-blue-400']" />
+                    modalForm.country_code ? 'border-green-500 bg-green-50 text-green-800 font-medium'
+                      : fieldError('country') ? 'border-red-300 bg-red-50' : 'border-gray-200 focus:border-blue-400']" />
                 <button v-if="modalForm.country_code" type="button" @click="clearCountry"
                   class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 text-sm leading-none">x</button>
               </div>
               <div v-if="countryDropdown && filteredCountries.length"
-                class="absolute z-30 w-56 mt-1 border border-gray-200 rounded-lg bg-white shadow-lg text-sm max-h-48 overflow-y-auto">
-                <button v-for="c in filteredCountries" :key="c.country_code" type="button"
+                class="absolute left-0 right-0 z-30 mt-1 border border-gray-200 rounded-lg bg-white shadow-lg text-sm max-h-48 overflow-y-auto">
+                <button v-for="c in filteredCountries.slice(0, 20)" :key="c.country_code" type="button"
                   class="w-full text-left px-3 py-2 hover:bg-blue-50 flex items-center gap-2"
                   @mousedown.prevent="selectCountry(c)">
                   <span class="text-base">{{ c.flag_emoji }}</span>
@@ -169,37 +183,48 @@
                   <span class="ml-auto text-xs text-gray-400 font-mono">{{ c.country_code }}</span>
                 </button>
               </div>
+              <p v-if="fieldError('country')" class="text-xs text-red-500 mt-0.5">{{ fieldError('country') }}</p>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Тип визы *</label>
               <select v-model="modalForm.visa_type" :disabled="!modalForm.country_code"
                 @change="onVisaTypeChange"
-                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400 disabled:bg-gray-50 disabled:text-gray-400">
+                :class="['w-full border rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400 disabled:bg-gray-50 disabled:text-gray-400',
+                  fieldError('visa_type') ? 'border-red-300 bg-red-50' : 'border-gray-200']">
                 <option value="">{{ modalForm.country_code ? '-- выберите --' : '-- сначала страну --' }}</option>
                 <option v-for="slug in selectedCountryVisaTypes" :key="slug" :value="slug">{{ visaTypeName(slug) }}</option>
               </select>
+              <p v-if="fieldError('visa_type')" class="text-xs text-red-500 mt-0.5">{{ fieldError('visa_type') }}</p>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Цена</label>
-              <input v-model.number="modalForm.price" type="number" min="0"
-                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400" />
+              <label class="block text-sm font-medium text-gray-700 mb-1">Цена (UZS) *</label>
+              <input v-model.number="modalForm.price" type="number" min="0" placeholder="2000000"
+                :class="['w-full border rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400',
+                  fieldError('price') ? 'border-red-300 bg-red-50' : 'border-gray-200']" />
+              <p v-if="fieldError('price')" class="text-xs text-red-500 mt-0.5">{{ fieldError('price') }}</p>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Срок (дней)</label>
-              <input v-model.number="modalForm.processing_days" type="number" min="1"
-                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400" />
+              <label class="block text-sm font-medium text-gray-700 mb-1">Срок (дней) *</label>
+              <input v-model.number="modalForm.processing_days" type="number" min="1" placeholder="14"
+                :class="['w-full border rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400',
+                  fieldError('processing_days') ? 'border-red-300 bg-red-50' : 'border-gray-200']" />
+              <p v-if="fieldError('processing_days')" class="text-xs text-red-500 mt-0.5">{{ fieldError('processing_days') }}</p>
             </div>
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Описание (RU)</label>
-            <textarea v-model="modalForm.description" rows="2"
-              class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"></textarea>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Описание (RU) *</label>
+            <textarea v-model="modalForm.description" rows="2" placeholder="Полное сопровождение оформления визы..."
+              :class="['w-full border rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400',
+                fieldError('description') ? 'border-red-300 bg-red-50' : 'border-gray-200']"></textarea>
+            <p v-if="fieldError('description')" class="text-xs text-red-500 mt-0.5">{{ fieldError('description') }}</p>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Tavsif (UZ)</label>
-            <textarea v-model="modalForm.description_uz" rows="2"
-              class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"></textarea>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Tavsif (UZ) *</label>
+            <textarea v-model="modalForm.description_uz" rows="2" placeholder="Viza rasmiylashtirish bo'yicha to'liq xizmat..."
+              :class="['w-full border rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400',
+                fieldError('description_uz') ? 'border-red-300 bg-red-50' : 'border-gray-200']"></textarea>
+            <p v-if="fieldError('description_uz')" class="text-xs text-red-500 mt-0.5">{{ fieldError('description_uz') }}</p>
           </div>
 
           <!-- Услуги с подсказками -->
@@ -266,7 +291,7 @@
         <div class="p-5 border-t border-gray-100 flex justify-end gap-3">
           <button @click="showModal = false"
             class="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50">Отмена</button>
-          <button @click="savePackage" :disabled="saving"
+          <button @click="savePackage" :disabled="saving || !canSave"
             class="px-4 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50">
             {{ saving ? 'Сохранение...' : 'Сохранить' }}
           </button>
@@ -325,6 +350,17 @@ const optionalServices = computed(() =>
   globalServices.value.filter(s => !s.is_required && s.is_active)
 );
 
+const canSave = computed(() =>
+  modalForm.value.name?.trim() &&
+  modalForm.value.name_uz?.trim() &&
+  modalForm.value.country_code &&
+  modalForm.value.visa_type &&
+  modalForm.value.price > 0 &&
+  modalForm.value.processing_days >= 1 &&
+  modalForm.value.description?.trim() &&
+  modalForm.value.description_uz?.trim()
+);
+
 const defaultForm = () => ({
   name: '', name_uz: '', country_code: '', visa_type: '',
   description: '', description_uz: '',
@@ -335,6 +371,76 @@ const defaultForm = () => ({
 const modalForm = ref(defaultForm());
 const countrySearch = ref('');
 const countryDropdown = ref(false);
+const formErrors = ref([]);
+const fieldErrors = ref({});
+
+function fieldError(field) { return fieldErrors.value[field] || ''; }
+
+const CYRILLIC_RE = /^[\u0400-\u04FFёЁ0-9\s.,\-—()«»"'!?:;\/+&№%]+$/;
+const LATIN_RE = /^[a-zA-Z0-9\s.,\-—()«»"'!?:;\/+&№%\u02BB\u02BC]+$/;
+
+function validateForm() {
+  const errors = [];
+  const fe = {};
+
+  // Название RU — обязательное, кириллица
+  if (!modalForm.value.name?.trim()) {
+    fe.name = 'Обязательное поле';
+    errors.push('Заполните название на русском');
+  } else if (!CYRILLIC_RE.test(modalForm.value.name.trim())) {
+    fe.name = 'Используйте кириллицу';
+    errors.push('Название (RU) должно быть на кириллице');
+  }
+
+  // Название UZ — обязательное, латиница
+  if (!modalForm.value.name_uz?.trim()) {
+    fe.name_uz = 'Обязательное поле';
+    errors.push('Заполните название на узбекском');
+  } else if (!LATIN_RE.test(modalForm.value.name_uz.trim())) {
+    fe.name_uz = 'Используйте латиницу';
+    errors.push('Nomi (UZ) должно быть на латинице');
+  }
+
+  // Страна
+  if (!modalForm.value.country_code) {
+    fe.country = 'Выберите страну из списка';
+    errors.push('Выберите страну');
+  }
+
+  // Тип визы
+  if (!modalForm.value.visa_type) {
+    fe.visa_type = 'Выберите тип визы';
+    errors.push('Выберите тип визы');
+  }
+
+  // Цена
+  if (!modalForm.value.price || modalForm.value.price <= 0) {
+    fe.price = 'Укажите стоимость';
+    errors.push('Укажите стоимость услуги');
+  }
+
+  // Срок
+  if (!modalForm.value.processing_days || modalForm.value.processing_days < 1) {
+    fe.processing_days = 'Укажите срок';
+    errors.push('Укажите срок обработки в днях');
+  }
+
+  // Описание RU
+  if (!modalForm.value.description?.trim()) {
+    fe.description = 'Обязательное поле';
+    errors.push('Заполните описание на русском');
+  }
+
+  // Описание UZ
+  if (!modalForm.value.description_uz?.trim()) {
+    fe.description_uz = 'Обязательное поле';
+    errors.push('Заполните описание на узбекском');
+  }
+
+  formErrors.value = errors;
+  fieldErrors.value = fe;
+  return errors.length === 0;
+}
 
 const filteredCountries = computed(() => {
   const q = countrySearch.value.trim().toLowerCase();
@@ -409,11 +515,15 @@ function openCreate() {
   editingId.value = null;
   modalForm.value = defaultForm();
   countrySearch.value = '';
+  formErrors.value = [];
+  fieldErrors.value = {};
   showModal.value = true;
 }
 
 function openEdit(pkg) {
   editingId.value = pkg.id;
+  formErrors.value = [];
+  fieldErrors.value = {};
   modalForm.value = {
     name: pkg.name || '', name_uz: pkg.name_uz || '',
     country_code: pkg.country_code || '', visa_type: pkg.visa_type || '',
@@ -428,11 +538,10 @@ function openEdit(pkg) {
 }
 
 async function savePackage() {
+  if (!validateForm()) return;
   saving.value = true;
   try {
     const payload = { ...modalForm.value };
-    if (!payload.country_code) delete payload.country_code;
-    if (!payload.visa_type) delete payload.visa_type;
 
     // Всегда включать обязательные услуги
     const reqIds = requiredServices.value.map(s => s.id);
