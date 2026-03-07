@@ -212,6 +212,14 @@ class CaseController extends Controller
         ]);
 
         $case = $this->service->findOrFail($id);
+
+        // Дата записи должна быть определена до подачи
+        if (! $case->appointment_date) {
+            return ApiResponse::validationError([
+                'appointment_date' => ['Укажите дату записи в посольство перед подачей документов.'],
+            ]);
+        }
+
         $case->update([
             'submitted_at'         => $data['submitted_at'],
             'expected_result_date' => $data['expected_result_date'],
