@@ -15,13 +15,14 @@
             <div class="hidden sm:flex items-center ml-auto gap-3">
                 <!-- Status badges -->
                 <div v-if="publicAuth.isLoggedIn" class="flex items-center gap-2 mr-2">
-                    <div v-if="statusSummary.activeCases > 0"
-                        class="flex items-center gap-1 px-2 py-1 rounded-lg bg-blue-50 text-blue-600 text-xs font-medium">
+                    <router-link v-if="statusSummary.activeCases > 0"
+                        :to="{ name: 'me.cases' }"
+                        class="flex items-center gap-1 px-2 py-1 rounded-lg bg-blue-50 text-blue-600 text-xs font-medium cursor-pointer hover:bg-blue-100 transition-colors">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                         </svg>
                         {{ statusSummary.activeCases }}
-                    </div>
+                    </router-link>
                     <div v-if="statusSummary.docsNeeded > 0"
                         class="flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-50 text-amber-600 text-xs font-medium">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -259,13 +260,12 @@
                             <div>
                                 <label class="block text-xs font-medium text-gray-500 mb-1">{{ $t('portal.visaTypeLabel') }}</label>
                                 <select v-model="newCaseForm.visa_type"
-                                    class="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-[#0A1F44] focus:outline-none focus:border-[#1BA97F] transition-colors bg-white">
-                                    <option value="">{{ $t('portal.selectType') }}</option>
-                                    <option value="tourist">{{ $t('portal.tourist') }}</option>
-                                    <option value="business">{{ $t('portal.business') }}</option>
-                                    <option value="student">{{ $t('portal.studentVisa') }}</option>
-                                    <option value="work">{{ $t('portal.work') }}</option>
-                                    <option value="transit">{{ $t('portal.transit') }}</option>
+                                    :disabled="!newCaseForm.country_code"
+                                    class="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-[#0A1F44] focus:outline-none focus:border-[#1BA97F] transition-colors bg-white disabled:bg-gray-50 disabled:text-gray-400">
+                                    <option value="">{{ newCaseForm.country_code ? $t('portal.selectType') : $t('portal.selectCountryFirst') }}</option>
+                                    <option v-for="vt in availableVisaTypes" :key="vt" :value="vt">
+                                        {{ VISA_TYPE_LABELS[vt] || vt }}
+                                    </option>
                                 </select>
                             </div>
                             <div v-if="newCaseError" class="text-xs text-red-500">{{ newCaseError }}</div>
@@ -289,7 +289,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { setLocale, currentLocale } from '@/i18n';
@@ -312,6 +312,28 @@ const showNewCase = ref(false);
 const newCaseForm = ref({ country_code: '', visa_type: '' });
 const newCaseSubmitting = ref(false);
 const newCaseError = ref('');
+
+const VISA_TYPE_LABELS = {
+    tourist: t('portal.tourist'),
+    business: t('portal.business'),
+    student: t('portal.studentVisa'),
+    work: t('portal.work'),
+    transit: t('portal.transit'),
+    medical: t('portal.medical') || 'Медицинская',
+    family: t('portal.family') || 'Семейная',
+};
+
+// Типы виз доступные для выбранной страны
+const availableVisaTypes = computed(() => {
+    if (!newCaseForm.value.country_code) return [];
+    const country = servedCountries.value.find(c => c.country_code === newCaseForm.value.country_code);
+    return country?.visa_types ?? [];
+});
+
+// Сбрасываем тип визы при смене страны
+watch(() => newCaseForm.value.country_code, () => {
+    newCaseForm.value.visa_type = '';
+});
 
 // Страны, по которым работает хотя бы одно агентство
 const servedCountries = ref([]);
@@ -348,10 +370,13 @@ async function loadStatusSummary() {
         unpaidCount = payments.filter(p => p.status === 'pending').length;
     } catch { /* ignore */ }
 
+    const TERMINAL = ['rejected', 'cancelled', 'completed'];
+    const activeCases = cases.filter(c => !TERMINAL.includes(c.public_status));
+
     statusSummary.value = {
-        activeCases: cases.filter(c => c.stage !== 'result').length,
-        docsNeeded: cases.filter(c => c.stage === 'documents').length,
-        awaitingResult: cases.filter(c => c.stage === 'review').length,
+        activeCases: activeCases.length,
+        docsNeeded: activeCases.filter(c => c.public_status === 'document_collection').length,
+        awaitingResult: activeCases.filter(c => c.public_status === 'under_review').length,
         unpaidCases: unpaidCount,
         unpaidCaseId: null,
     };
