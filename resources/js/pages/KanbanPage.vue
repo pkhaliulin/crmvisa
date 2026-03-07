@@ -51,6 +51,7 @@
           :column="col"
           @move="handleMove"
           @open="openCase"
+          @assign="handleAssign"
         />
       </div>
     </div>
@@ -76,7 +77,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted, provide } from 'vue';
 import { useRouter, RouterLink } from 'vue-router';
 import { useCasesStore } from '@/stores/cases';
 import KanbanColumn from '@/components/KanbanColumn.vue';
@@ -84,6 +85,7 @@ import AppButton from '@/components/AppButton.vue';
 import AppModal from '@/components/AppModal.vue';
 import AppSelect from '@/components/AppSelect.vue';
 import AppInput from '@/components/AppInput.vue';
+import api from '@/api/index';
 
 const STAGES = [
   {
@@ -165,6 +167,22 @@ const router     = useRouter();
 const stageOptions = STAGES.map(s => ({ value: s.value, label: `${s.icon} ${s.label}` }));
 
 const searchQuery = ref('');
+const managers = ref([]);
+provide('kanbanManagers', managers);
+
+async function loadManagers() {
+  try {
+    const { data } = await api.get('/users');
+    managers.value = (data.data ?? data ?? []).filter(u => u.is_active !== false);
+  } catch { /* ignore */ }
+}
+
+async function handleAssign({ caseId, managerId }) {
+  try {
+    await api.patch(`/cases/${caseId}`, { assigned_to: managerId });
+    await casesStore.fetchKanban();
+  } catch { /* ignore */ }
+}
 
 // Обогащаем колонки метаданными + фильтрация по поисковому запросу
 const boardWithMeta = computed(() => {
@@ -194,7 +212,10 @@ const moveModal = reactive({
   show: false, caseId: null, stage: '', notes: '', loading: false,
 });
 
-onMounted(() => casesStore.fetchKanban());
+onMounted(() => {
+  casesStore.fetchKanban();
+  loadManagers();
+});
 
 function handleMove({ caseId, stage }) {
   moveModal.caseId = caseId;

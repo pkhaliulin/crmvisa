@@ -40,6 +40,7 @@
           :item="element"
           @click="$emit('open', element.id)"
           @move="$emit('move', { caseId: element.id, stage: '' })"
+          @assign="$emit('assign', $event)"
         />
       </template>
     </draggable>
@@ -83,7 +84,7 @@ import draggable from 'vuedraggable';
 import KanbanCard from './KanbanCard.vue';
 
 const props = defineProps({ column: Object });
-const emit  = defineEmits(['move', 'open']);
+const emit  = defineEmits(['move', 'open', 'assign']);
 
 // ── Tooltip ──────────────────────────────────────────────────────────────────
 const tipBtn     = ref(null);

@@ -114,6 +114,7 @@ class VisaCase extends BaseModel
         'reapply_recommendation',
         'previous_case_id',
         'last_manager_update_at',
+        'lead_source',
     ];
 
     protected $casts = [

@@ -63,23 +63,61 @@
       <span>Дата приема не назначена</span>
     </div>
 
-    <!-- Assignee -->
-    <div v-if="item.assignee" class="flex items-center gap-1 mt-2">
-      <div class="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center text-xs text-blue-600 font-bold">
-        {{ item.assignee.name[0] }}
+    <!-- Assignee / Assign button -->
+    <div class="mt-2 relative">
+      <div v-if="item.assignee && !showAssignDropdown" class="flex items-center gap-1 group"
+        @click.stop="managers?.length ? showAssignDropdown = true : null">
+        <div class="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center text-xs text-blue-600 font-bold">
+          {{ item.assignee.name[0] }}
+        </div>
+        <span class="text-xs text-gray-400 truncate flex-1">{{ item.assignee.name }}</span>
+        <svg v-if="managers?.length" class="w-3 h-3 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+        </svg>
       </div>
-      <span class="text-xs text-gray-400 truncate">{{ item.assignee.name }}</span>
+      <button v-else-if="!showAssignDropdown" @click.stop="showAssignDropdown = true"
+        class="flex items-center gap-1 text-xs text-purple-500 hover:text-purple-700 font-medium animate-pulse">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+        </svg>
+        Назначить
+      </button>
+      <!-- Dropdown -->
+      <div v-if="showAssignDropdown" @click.stop
+        class="absolute bottom-full left-0 mb-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-20 py-1 max-h-40 overflow-y-auto">
+        <button v-for="m in managers" :key="m.id" @click.stop="assignManager(m.id)"
+          :class="['w-full text-left px-3 py-1.5 text-xs hover:bg-blue-50 flex items-center gap-2 transition-colors',
+            item.assigned_to === m.id ? 'bg-blue-50 font-semibold text-blue-700' : 'text-gray-700']">
+          <div class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
+            :class="item.assigned_to === m.id ? 'bg-blue-200 text-blue-700' : 'bg-gray-100 text-gray-500'">
+            {{ m.name[0] }}
+          </div>
+          {{ m.name }}
+        </button>
+        <button @click.stop="showAssignDropdown = false"
+          class="w-full text-left px-3 py-1.5 text-xs text-gray-400 hover:bg-gray-50 border-t border-gray-100 mt-1">
+          Отмена
+        </button>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { ref, computed, inject } from 'vue';
 import AppBadge from './AppBadge.vue';
 import { formatPhone } from '@/utils/format';
 
 const props = defineProps({ item: Object });
-defineEmits(['click', 'move']);
+const emit = defineEmits(['click', 'move', 'assign']);
+
+const managers = inject('kanbanManagers', ref([]));
+const showAssignDropdown = ref(false);
+
+function assignManager(managerId) {
+  showAssignDropdown.value = false;
+  emit('assign', { caseId: props.item.id, managerId });
+}
 
 const COUNTRY_FLAGS = {
   DE: '🇩🇪', FR: '🇫🇷', IT: '🇮🇹', ES: '🇪🇸', CZ: '🇨🇿', PL: '🇵🇱',
