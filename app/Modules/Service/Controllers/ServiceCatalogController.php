@@ -35,8 +35,10 @@ class ServiceCatalogController extends Controller
             'name'          => ['required', 'string', 'max:255'],
             'category'      => ['required', 'in:consultation,documents,translation,visa_center,financial,other'],
             'description'   => ['sometimes', 'nullable', 'string'],
+            'agency_hint'   => ['sometimes', 'nullable', 'string'],
             'is_combinable' => ['sometimes', 'boolean'],
             'is_optional'   => ['sometimes', 'boolean'],
+            'is_required'   => ['sometimes', 'boolean'],
             'sort_order'    => ['sometimes', 'integer'],
             'is_active'     => ['sometimes', 'boolean'],
         ]);
@@ -56,8 +58,10 @@ class ServiceCatalogController extends Controller
             'name'          => ['sometimes', 'string', 'max:255'],
             'category'      => ['sometimes', 'in:consultation,documents,translation,visa_center,financial,other'],
             'description'   => ['sometimes', 'nullable', 'string'],
+            'agency_hint'   => ['sometimes', 'nullable', 'string'],
             'is_combinable' => ['sometimes', 'boolean'],
             'is_optional'   => ['sometimes', 'boolean'],
+            'is_required'   => ['sometimes', 'boolean'],
             'sort_order'    => ['sometimes', 'integer'],
             'is_active'     => ['sometimes', 'boolean'],
         ]);

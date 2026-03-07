@@ -102,7 +102,9 @@
                         </div>
                         <div class="min-w-0 flex-1">
                             <div class="font-semibold text-[#0A1F44] text-sm leading-tight truncate group-hover:text-[#1BA97F] transition-colors">{{ displayName }}</div>
-                            <a v-if="publicAuth.user?.phone" :href="`tel:${publicAuth.user.phone}`" class="text-xs text-gray-400 hover:text-blue-600 leading-tight mt-0.5 truncate block">{{ formatPhone(publicAuth.user.phone) }}</a>
+                            <span v-if="publicAuth.user?.phone"
+                                @click.prevent.stop="callPhone"
+                                class="text-xs text-gray-400 hover:text-blue-600 leading-tight mt-0.5 truncate block cursor-pointer">{{ formatPhone(publicAuth.user.phone) }}</span>
                         </div>
                         <svg class="w-4 h-4 text-gray-300 group-hover:text-[#1BA97F] transition-colors shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
@@ -399,6 +401,12 @@ function isActiveNav(name) {
     if (name === 'me.cases') {
         return ['me.cases', 'me.cases.show', 'me.groups', 'me.groups.show'].includes(route.name);
     }
+    if (name === 'me.countries') {
+        return ['me.countries', 'me.countries.show'].includes(route.name);
+    }
+    if (name === 'me.agencies') {
+        return ['me.agencies', 'me.agencies.show'].includes(route.name);
+    }
     return route.name === name;
 }
 
@@ -458,6 +466,12 @@ const TITLES = computed(() => ({
 }));
 
 const currentTitle = computed(() => TITLES.value[route.name] ?? t('portal.cabinet'));
+
+function callPhone() {
+    if (publicAuth.user?.phone) {
+        location.href = `tel:${publicAuth.user.phone}`;
+    }
+}
 
 function logout() {
     publicAuth.logout();

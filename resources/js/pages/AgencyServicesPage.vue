@@ -30,10 +30,21 @@
           </div>
           <div class="divide-y divide-gray-50">
             <div v-for="svc in cat.items" :key="svc.id"
-              class="px-4 py-2.5 flex items-center gap-3 text-sm hover:bg-blue-50/50 transition-colors">
+              class="px-4 py-2.5 flex items-center gap-3 text-sm hover:bg-blue-50/50 transition-colors group">
               <span class="text-gray-800 flex-1">{{ svc.name }}</span>
-              <span v-if="svc.is_mandatory"
+              <span v-if="svc.is_required"
                 class="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-red-50 text-red-600">Обязательная</span>
+              <!-- Tooltip с описанием -->
+              <div v-if="svc.description" class="relative">
+                <svg class="w-4 h-4 text-gray-300 hover:text-blue-500 cursor-help transition-colors peer"
+                  fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/>
+                </svg>
+                <div class="absolute right-0 bottom-full mb-2 w-64 p-3 bg-gray-800 text-white text-xs rounded-lg shadow-lg
+                            opacity-0 invisible peer-hover:opacity-100 peer-hover:visible transition-all z-30 pointer-events-none">
+                  {{ svc.description }}
+                </div>
+              </div>
               <span class="text-xs text-gray-400 shrink-0">{{ categoryLabel(svc.category) }}</span>
             </div>
           </div>
@@ -106,7 +117,7 @@
           <div v-if="pkg.items?.length" class="flex flex-wrap gap-1">
             <span v-for="item in pkg.items" :key="item.id"
               class="text-[10px] px-2 py-0.5 rounded-full"
-              :class="item.service?.is_mandatory ? 'bg-red-50 text-red-600 font-semibold' : 'bg-blue-50 text-blue-700'">
+              :class="item.service?.is_required ? 'bg-red-50 text-red-600 font-semibold' : 'bg-blue-50 text-blue-700'">
               {{ item.service?.name }}
             </span>
           </div>
@@ -138,7 +149,7 @@
 
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Страна</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Страна *</label>
               <div class="relative">
                 <input v-model="countrySearch" @input="onCountryInput" @focus="countryDropdown = true"
                   @blur="() => setTimeout(() => countryDropdown = false, 150)"
@@ -160,8 +171,9 @@
               </div>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Тип визы</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Тип визы *</label>
               <select v-model="modalForm.visa_type" :disabled="!modalForm.country_code"
+                @change="onVisaTypeChange"
                 class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400 disabled:bg-gray-50 disabled:text-gray-400">
                 <option value="">{{ modalForm.country_code ? '-- выберите --' : '-- сначала страну --' }}</option>
                 <option v-for="slug in selectedCountryVisaTypes" :key="slug" :value="slug">{{ visaTypeName(slug) }}</option>
@@ -190,17 +202,57 @@
               class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"></textarea>
           </div>
 
+          <!-- Услуги с подсказками -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Включённые услуги</label>
-            <div class="max-h-48 overflow-y-auto space-y-1 border border-gray-200 rounded-lg p-2">
-              <label v-for="svc in globalServices" :key="svc.id"
-                class="flex items-center gap-2 text-sm cursor-pointer hover:bg-gray-50 p-1 rounded">
-                <input type="checkbox" :value="svc.id" v-model="modalForm.service_ids"
-                  class="w-4 h-4 text-blue-600 rounded border-gray-300" />
-                <span>{{ svc.name }}</span>
-                <span v-if="svc.is_mandatory" class="text-[10px] text-red-500 font-medium">*</span>
-                <span class="text-xs text-gray-400 ml-auto">{{ categoryLabel(svc.category) }}</span>
-              </label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Включённые услуги</label>
+            <p v-if="!modalForm.country_code || !modalForm.visa_type" class="text-xs text-amber-600 bg-amber-50 px-3 py-2 rounded-lg">
+              Выберите страну и тип визы, чтобы увидеть обязательные и рекомендуемые услуги
+            </p>
+            <div v-else class="space-y-0.5 border border-gray-200 rounded-lg overflow-hidden">
+              <!-- Обязательные (всегда отмечены, нельзя снять) -->
+              <div v-if="requiredServices.length" class="bg-red-50/50 px-3 py-1.5">
+                <span class="text-[10px] font-bold text-red-600 uppercase tracking-wide">Обязательные услуги</span>
+              </div>
+              <div v-for="svc in requiredServices" :key="svc.id"
+                class="px-3 py-2 bg-red-50/30 border-b border-red-100/50">
+                <label class="flex items-start gap-2 cursor-not-allowed">
+                  <input type="checkbox" :checked="true" disabled
+                    class="w-4 h-4 text-red-500 rounded border-gray-300 mt-0.5" />
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2">
+                      <span class="text-sm font-medium text-gray-900">{{ svc.name }}</span>
+                      <span class="text-[9px] px-1.5 py-0.5 rounded-full bg-red-100 text-red-600 font-semibold shrink-0">Обязательная</span>
+                    </div>
+                    <p v-if="svc.agency_hint" class="text-xs text-gray-500 mt-0.5 leading-relaxed">{{ svc.agency_hint }}</p>
+                    <p v-else-if="svc.description" class="text-xs text-gray-400 mt-0.5">{{ svc.description }}</p>
+                  </div>
+                </label>
+              </div>
+
+              <!-- Опциональные (можно отмечать) -->
+              <div v-if="optionalServices.length" class="bg-gray-50 px-3 py-1.5 border-t border-gray-100">
+                <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Дополнительные услуги (на выбор)</span>
+              </div>
+              <div v-for="svc in optionalServices" :key="svc.id"
+                class="px-3 py-2 border-b border-gray-50 hover:bg-blue-50/30 transition-colors">
+                <label class="flex items-start gap-2 cursor-pointer">
+                  <input type="checkbox" :value="svc.id" v-model="modalForm.service_ids"
+                    class="w-4 h-4 text-blue-600 rounded border-gray-300 mt-0.5" />
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2">
+                      <span class="text-sm text-gray-800">{{ svc.name }}</span>
+                      <span class="text-xs text-gray-400 shrink-0">{{ categoryLabel(svc.category) }}</span>
+                    </div>
+                    <p v-if="svc.agency_hint" class="text-xs text-gray-500 mt-0.5 leading-relaxed">{{ svc.agency_hint }}</p>
+                    <p v-else-if="svc.description" class="text-xs text-gray-400 mt-0.5">{{ svc.description }}</p>
+                  </div>
+                </label>
+              </div>
+
+              <div v-if="!requiredServices.length && !optionalServices.length"
+                class="px-3 py-4 text-center text-sm text-gray-400">
+                Нет доступных услуг
+              </div>
             </div>
           </div>
 
@@ -225,7 +277,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import api from '@/api/index';
 import { countriesApi } from '@/api/countries';
 import { codeToFlag } from '@/utils/countries';
@@ -264,6 +316,14 @@ const groupedServices = computed(() => {
   }
   return CATEGORY_ORDER.filter(c => groups[c]).map(c => ({ key: c, items: groups[c] }));
 });
+
+// Обязательные и опциональные активные услуги
+const requiredServices = computed(() =>
+  globalServices.value.filter(s => s.is_required && s.is_active)
+);
+const optionalServices = computed(() =>
+  globalServices.value.filter(s => !s.is_required && s.is_active)
+);
 
 const defaultForm = () => ({
   name: '', name_uz: '', country_code: '', visa_type: '',
@@ -309,6 +369,17 @@ function clearCountry() {
   modalForm.value.country_code = '';
   modalForm.value.visa_type = '';
   countrySearch.value = '';
+}
+
+// Авто-добавить обязательные услуги при выборе типа визы
+function onVisaTypeChange() {
+  if (!modalForm.value.visa_type) return;
+  // При создании нового пакета авто-добавляем обязательные
+  if (!editingId.value) {
+    const reqIds = requiredServices.value.map(s => s.id);
+    const merged = new Set([...modalForm.value.service_ids, ...reqIds]);
+    modalForm.value.service_ids = [...merged];
+  }
 }
 
 function countryName(code) {
@@ -362,6 +433,12 @@ async function savePackage() {
     const payload = { ...modalForm.value };
     if (!payload.country_code) delete payload.country_code;
     if (!payload.visa_type) delete payload.visa_type;
+
+    // Всегда включать обязательные услуги
+    const reqIds = requiredServices.value.map(s => s.id);
+    const merged = new Set([...payload.service_ids, ...reqIds]);
+    payload.service_ids = [...merged];
+
     if (editingId.value) {
       const res = await api.patch(`/agency/packages/${editingId.value}`, payload);
       const idx = packages.value.findIndex(p => p.id === editingId.value);

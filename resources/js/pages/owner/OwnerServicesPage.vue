@@ -30,29 +30,39 @@
         <thead class="bg-gray-50">
           <tr class="text-left">
             <th class="px-4 py-3 font-medium text-gray-500">Название</th>
-            <th class="px-4 py-3 font-medium text-gray-500">Slug</th>
             <th class="px-4 py-3 font-medium text-gray-500">Категория</th>
-            <th class="px-4 py-3 font-medium text-gray-500">Статус</th>
+            <th class="px-4 py-3 font-medium text-gray-500 text-center w-28">Обязательная</th>
+            <th class="px-4 py-3 font-medium text-gray-500 text-center w-24">Активна</th>
             <th class="px-4 py-3 font-medium text-gray-500 w-24">Действия</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="svc in filteredServices" :key="svc.id"
             class="border-t border-gray-100 hover:bg-gray-50 transition-colors">
-            <td class="px-4 py-3 font-medium text-gray-900">{{ svc.name }}</td>
-            <td class="px-4 py-3 text-gray-500 font-mono text-xs">{{ svc.slug }}</td>
+            <td class="px-4 py-3">
+              <div class="font-medium text-gray-900">{{ svc.name }}</div>
+              <div v-if="svc.description" class="text-xs text-gray-400 mt-0.5 line-clamp-1">{{ svc.description }}</div>
+              <div class="text-[10px] text-gray-300 font-mono mt-0.5">{{ svc.slug }}</div>
+            </td>
             <td class="px-4 py-3">
               <span class="text-xs px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full">
                 {{ categoryLabel(svc.category) }}
               </span>
             </td>
-            <td class="px-4 py-3">
+            <td class="px-4 py-3 text-center">
+              <button @click="toggleRequired(svc)"
+                class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none"
+                :class="svc.is_required ? 'bg-red-500' : 'bg-gray-200'">
+                <span class="inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform"
+                  :class="svc.is_required ? 'translate-x-[18px]' : 'translate-x-[3px]'"></span>
+              </button>
+            </td>
+            <td class="px-4 py-3 text-center">
               <button @click="toggleActive(svc)"
-                :class="['text-xs px-2 py-0.5 rounded-full font-medium transition-colors',
-                  svc.is_active
-                    ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                    : 'bg-gray-100 text-gray-500 hover:bg-gray-200']">
-                {{ svc.is_active ? 'Активна' : 'Неактивна' }}
+                class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none"
+                :class="svc.is_active ? 'bg-green-500' : 'bg-gray-200'">
+                <span class="inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform"
+                  :class="svc.is_active ? 'translate-x-[18px]' : 'translate-x-[3px]'"></span>
               </button>
             </td>
             <td class="px-4 py-3">
@@ -78,7 +88,7 @@
     <!-- Модал -->
     <div v-if="showModal"
       class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div class="bg-white rounded-xl shadow-xl w-full max-w-md">
+      <div class="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <div class="p-5 border-b border-gray-100">
           <h2 class="font-semibold text-gray-900">
             {{ editingId ? 'Редактировать услугу' : 'Новая услуга' }}
@@ -105,25 +115,41 @@
             </select>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Описание</label>
-            <textarea v-model="form.description" rows="2"
-              class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Описание для клиентов</label>
+            <textarea v-model="form.description" rows="3"
+              class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Что входит в эту услугу..."></textarea>
           </div>
-          <div class="flex gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Подсказка для агентства</label>
+            <textarea v-model="form.agency_hint" rows="3"
+              class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Что обязано сделать агентство при выборе этой услуги..."></textarea>
+            <p class="text-xs text-gray-400 mt-1">Эта подсказка будет видна агентствам при создании пакета</p>
+          </div>
+          <div class="flex gap-6">
             <label class="flex items-center gap-2 text-sm cursor-pointer">
-              <input type="checkbox" v-model="form.is_active"
-                class="w-4 h-4 text-blue-600 rounded border-gray-300" />
+              <button type="button" @click="form.is_required = !form.is_required"
+                class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors"
+                :class="form.is_required ? 'bg-red-500' : 'bg-gray-200'">
+                <span class="inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform"
+                  :class="form.is_required ? 'translate-x-[18px]' : 'translate-x-[3px]'"></span>
+              </button>
+              Обязательная
+            </label>
+            <label class="flex items-center gap-2 text-sm cursor-pointer">
+              <button type="button" @click="form.is_active = !form.is_active"
+                class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors"
+                :class="form.is_active ? 'bg-green-500' : 'bg-gray-200'">
+                <span class="inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform"
+                  :class="form.is_active ? 'translate-x-[18px]' : 'translate-x-[3px]'"></span>
+              </button>
               Активна
             </label>
             <label class="flex items-center gap-2 text-sm cursor-pointer">
               <input type="checkbox" v-model="form.is_combinable"
                 class="w-4 h-4 text-blue-600 rounded border-gray-300" />
               Комбинируемая
-            </label>
-            <label class="flex items-center gap-2 text-sm cursor-pointer">
-              <input type="checkbox" v-model="form.is_optional"
-                class="w-4 h-4 text-blue-600 rounded border-gray-300" />
-              Опциональная
             </label>
           </div>
         </div>
@@ -174,8 +200,8 @@ const filteredServices = computed(() => {
 });
 
 const defaultForm = () => ({
-  slug: '', name: '', category: 'consultation', description: '',
-  is_active: true, is_combinable: true, is_optional: true, sort_order: 0,
+  slug: '', name: '', category: 'consultation', description: '', agency_hint: '',
+  is_active: true, is_combinable: true, is_optional: true, is_required: false, sort_order: 0,
 });
 
 const form = ref(defaultForm());
@@ -206,12 +232,14 @@ function openEdit(svc) {
 async function saveService() {
   saving.value = true;
   try {
+    const payload = { ...form.value };
+    payload.is_optional = !payload.is_required;
     if (editingId.value) {
-      const res = await api.patch(`/owner/services/${editingId.value}`, form.value);
+      const res = await api.patch(`/owner/services/${editingId.value}`, payload);
       const idx = services.value.findIndex(s => s.id === editingId.value);
       if (idx !== -1) services.value[idx] = res.data.data;
     } else {
-      const res = await api.post('/owner/services', form.value);
+      const res = await api.post('/owner/services', payload);
       services.value.unshift(res.data.data);
     }
     showModal.value = false;
@@ -226,6 +254,15 @@ async function toggleActive(svc) {
   svc.is_active = !svc.is_active;
   await api.patch(`/owner/services/${svc.id}`, { is_active: svc.is_active }).catch(() => {
     svc.is_active = !svc.is_active;
+  });
+}
+
+async function toggleRequired(svc) {
+  svc.is_required = !svc.is_required;
+  svc.is_optional = !svc.is_required;
+  await api.patch(`/owner/services/${svc.id}`, { is_required: svc.is_required, is_optional: !svc.is_required }).catch(() => {
+    svc.is_required = !svc.is_required;
+    svc.is_optional = !svc.is_required;
   });
 }
 

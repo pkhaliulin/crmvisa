@@ -15,8 +15,10 @@ class GlobalService extends BaseModel
         'name',
         'category',
         'description',
+        'agency_hint',
         'is_combinable',
         'is_optional',
+        'is_required',
         'sort_order',
         'is_active',
     ];
@@ -24,6 +26,7 @@ class GlobalService extends BaseModel
     protected $casts = [
         'is_combinable' => 'boolean',
         'is_optional'   => 'boolean',
+        'is_required'   => 'boolean',
         'is_active'     => 'boolean',
         'sort_order'    => 'integer',
     ];
