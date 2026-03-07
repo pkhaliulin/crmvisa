@@ -36,7 +36,7 @@
         <template v-else-if="caseData">
 
             <!-- === Баннер: неоплаченный счет === -->
-            <div v-if="caseData.agency && caseData.public_status === 'awaiting_payment' && caseData.payment_status !== 'paid'"
+            <div v-if="caseData.agency && caseData.public_status === 'awaiting_payment' && caseData.payment_status !== 'paid' && !isTerminal"
                 class="bg-amber-50 border border-amber-200 rounded-2xl p-4 space-y-3">
                 <div class="flex items-start gap-3">
                     <div class="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center shrink-0">
@@ -207,7 +207,7 @@
                         </div>
                         <input type="date" :value="caseData.travel_date || ''" @change="onTravelDateChange($event)"
                             :min="todayStr"
-                            :disabled="savingTravelDate"
+                            :disabled="savingTravelDate || isTerminal"
                             class="text-sm border rounded-lg px-2 py-1.5 w-full outline-none transition-colors cursor-pointer"
                             :class="savingTravelDate ? 'border-gray-100 bg-gray-100 text-gray-400' : 'border-gray-200 focus:border-[#1BA97F] hover:border-[#1BA97F]'"/>
                         <div v-if="savingTravelDate" class="text-[10px] text-[#1BA97F] mt-1">{{ $t('common.saving') }}...</div>
@@ -223,7 +223,7 @@
                         </div>
                         <input type="date" :value="caseData.return_date || ''" @change="onReturnDateChange($event)"
                             :min="returnDateMin"
-                            :disabled="savingReturnDate || !caseData.travel_date"
+                            :disabled="savingReturnDate || !caseData.travel_date || isTerminal"
                             class="text-sm border rounded-lg px-2 py-1.5 w-full outline-none transition-colors cursor-pointer"
                             :class="savingReturnDate ? 'border-gray-100 bg-gray-100 text-gray-400' : !caseData.travel_date ? 'border-gray-100 bg-gray-100 text-gray-300' : 'border-gray-200 focus:border-[#1BA97F] hover:border-[#1BA97F]'"/>
                         <div v-if="savingReturnDate" class="text-[10px] text-[#1BA97F] mt-1">{{ $t('common.saving') }}...</div>
@@ -295,7 +295,7 @@
             </div>
 
             <!-- === СЧЕТ НА ОПЛАТУ (awaiting_payment) === -->
-            <div v-if="caseData.agency && caseData.public_status === 'awaiting_payment' && (caseData.payment_status === 'unpaid' || caseData.payment_status === 'pending')"
+            <div v-if="caseData.agency && caseData.public_status === 'awaiting_payment' && (caseData.payment_status === 'unpaid' || caseData.payment_status === 'pending') && !isTerminal"
                 ref="paymentSection"
                 class="bg-white rounded-2xl border-2 border-amber-200 shadow-sm overflow-hidden">
 
@@ -497,7 +497,7 @@
             </div>
 
             <!-- === Оплачено === -->
-            <div v-if="caseData.payment_status === 'paid'"
+            <div v-if="caseData.payment_status === 'paid' && !isTerminal"
                 class="bg-[#1BA97F]/5 border border-[#1BA97F]/20 rounded-2xl p-5 flex items-center gap-3">
                 <div class="w-10 h-10 bg-[#1BA97F] rounded-xl flex items-center justify-center shrink-0">
                     <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
@@ -510,7 +510,7 @@
             </div>
 
             <!-- === Дата приема в посольство === -->
-            <div v-if="caseData.public_status !== 'draft' && caseData.public_status !== 'awaiting_payment'"
+            <div v-if="caseData.public_status !== 'draft' && caseData.public_status !== 'awaiting_payment' && !isTerminal"
                 class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
                 <h2 class="font-bold text-[#0A1F44] text-sm mb-3">{{ $t('appointment.title') }}</h2>
                 <div v-if="caseData.appointment_date" class="space-y-2">
@@ -533,7 +533,7 @@
             </div>
 
             <!-- === Сменить агентство (до оплаты) === -->
-            <div v-if="caseData.agency && caseData.payment_status !== 'paid' && caseData.public_status !== 'draft'"
+            <div v-if="caseData.agency && caseData.payment_status !== 'paid' && caseData.public_status !== 'draft' && !isTerminal"
                 class="flex justify-end">
                 <button @click="showChangeAgencyModal = true"
                     class="text-xs text-gray-400 hover:text-red-500 transition-colors underline underline-offset-2">
@@ -624,7 +624,7 @@
                                 {{ statusLabel(item.status, item.is_required) }}
                             </div>
 
-                            <label v-if="item.responsibility !== 'agency' && item.status !== 'approved'"
+                            <label v-if="item.responsibility !== 'agency' && item.status !== 'approved' && !isTerminal"
                                 class="inline-flex items-center gap-1.5 text-xs text-[#1BA97F] font-medium
                                        cursor-pointer hover:text-[#169B72] mt-1.5 select-none"
                                 :class="{ 'opacity-50 pointer-events-none': uploading[item.id] }">
@@ -660,7 +660,7 @@
                         <h2 class="font-bold text-[#0A1F44] text-sm">{{ $t('family.title') }}</h2>
                         <p class="text-xs text-gray-400 mt-0.5">{{ $t('family.hint') }}</p>
                     </div>
-                    <button @click="showFamilyModal = true"
+                    <button v-if="!isTerminal" @click="showFamilyModal = true"
                         class="text-xs font-semibold text-[#1BA97F] hover:text-[#0d7a5c] transition-colors flex items-center gap-1">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
@@ -691,7 +691,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <button @click="detachFamilyFromCase(fm)"
+                            <button v-if="!isTerminal" @click="detachFamilyFromCase(fm)"
                                 class="text-xs text-gray-400 hover:text-red-500 transition-colors shrink-0">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
@@ -1009,7 +1009,7 @@
             <!-- Менеджер уже отображается в header блоке -->
 
             <!-- === Отзыв об агентстве === -->
-            <div v-if="caseData.agency?.id && reviewState.loaded"
+            <div v-if="caseData.agency?.id && reviewState.loaded && !isTerminal"
                 class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
 
                 <!-- Форма -->
@@ -1188,6 +1188,11 @@ const uploadToast = ref('');
 // --- Отмена заявки ---
 const showCancelConfirm = ref(false);
 const cancelling = ref(false);
+const isTerminal = computed(() => {
+    const s = caseData.value?.public_status;
+    return s === 'rejected' || s === 'cancelled';
+});
+
 const canCancel = computed(() => {
     const c = caseData.value;
     if (!c) return false;
