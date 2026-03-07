@@ -18,7 +18,32 @@
             </button>
         </div>
 
-        <!-- Search + regime + sort -->
+        <!-- Quick filters -->
+        <div class="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+            <button @click="applyQuick('high_chance')"
+                class="shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors border"
+                :class="quickFilter === 'high_chance'
+                    ? 'bg-green-100 text-green-700 border-green-200'
+                    : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'">
+                {{ t('countriesList.quickHighChance') }}
+            </button>
+            <button @click="applyQuick('cheaper')"
+                class="shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors border"
+                :class="quickFilter === 'cheaper'
+                    ? 'bg-blue-100 text-blue-700 border-blue-200'
+                    : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'">
+                {{ t('countriesList.quickCheaper') }}
+            </button>
+            <button @click="applyQuick('faster')"
+                class="shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors border"
+                :class="quickFilter === 'faster'
+                    ? 'bg-amber-100 text-amber-700 border-amber-200'
+                    : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'">
+                {{ t('countriesList.quickFaster') }}
+            </button>
+        </div>
+
+        <!-- Search + regime + visa type + sort -->
         <div class="flex gap-2 flex-wrap">
             <div class="relative flex-1 min-w-[160px]">
                 <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -34,6 +59,14 @@
                 <option value="evisa">{{ t('visaRegime.evisa') }}</option>
                 <option value="visa_on_arrival">{{ t('visaRegime.visa_on_arrival') }}</option>
                 <option value="visa_free">{{ t('visaRegime.visa_free') }}</option>
+            </select>
+            <select v-model="filterVisaType"
+                class="rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-[#1BA97F] transition-colors bg-white">
+                <option value="">{{ t('countriesList.visaTypeAll') }}</option>
+                <option value="tourist">{{ t('countriesList.visaTypeTourist') }}</option>
+                <option value="work">{{ t('countriesList.visaTypeWork') }}</option>
+                <option value="study">{{ t('countriesList.visaTypeStudy') }}</option>
+                <option value="business">{{ t('countriesList.visaTypeBusiness') }}</option>
             </select>
             <select v-model="sortBy"
                 class="rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-[#1BA97F] transition-colors bg-white">
@@ -94,7 +127,7 @@
                         </div>
                     </div>
 
-                    <!-- Scoring badge -->
+                    <!-- Scoring badge with label -->
                     <div v-if="scoreMap[c.country_code] != null" class="shrink-0 flex flex-col items-center">
                         <div class="relative w-14 h-14 sm:w-16 sm:h-16">
                             <svg class="w-full h-full -rotate-90" viewBox="0 0 48 48">
@@ -111,6 +144,9 @@
                                 </span>
                             </div>
                         </div>
+                        <span class="text-[9px] font-semibold mt-0.5" :style="{ color: scoreColor(scoreMap[c.country_code]) }">
+                            {{ chanceLabel(scoreMap[c.country_code]) }}
+                        </span>
                     </div>
                     <div v-else-if="scoringLoading" class="shrink-0 w-14 h-14 sm:w-16 sm:h-16 bg-gray-50 rounded-full animate-pulse"></div>
 
@@ -211,13 +247,14 @@ const countries = ref([]);
 const search = ref('');
 const filterRegime = ref('visa_required');
 const filterContinent = ref('Europe');
+const filterVisaType = ref('');
 const sortBy = ref('name');
 const showAll = ref(false);
+const quickFilter = ref('');
 
 // Scoring
 const scoreMap = ref({});       // { CC: score }
 const scoringLoading = ref(false);
-const scoredContinents = ref(new Set());
 
 const continentOptions = computed(() => [
     { value: '',          label: t('countriesList.all') },
@@ -273,6 +310,13 @@ function scoreColor(score) {
     return '#EF4444';
 }
 
+function chanceLabel(score) {
+    if (score >= 80) return t('countriesList.chanceHigh');
+    if (score >= 60) return t('countriesList.chanceMedium');
+    if (score >= 40) return t('countriesList.chanceLow');
+    return t('countriesList.chanceRisk');
+}
+
 function showFinanceHint(c) {
     return c.visa_regime === 'visa_required' && c.min_monthly_income_usd && c.min_monthly_income_usd > 0;
 }
@@ -295,6 +339,22 @@ function applyLocation(c) {
     if (c.has_embassy && c.embassy_name) return c.embassy_name + (c.embassy_city ? ', ' + c.embassy_city : '');
     if (!c.has_embassy && c.referral_embassy_country) return t('countriesList.referralAbroad') + ' (' + c.referral_embassy_city + ', ' + c.referral_embassy_country + ')';
     return '';
+}
+
+function applyQuick(type) {
+    if (quickFilter.value === type) {
+        quickFilter.value = '';
+        sortBy.value = 'name';
+        return;
+    }
+    quickFilter.value = type;
+    if (type === 'high_chance') {
+        sortBy.value = 'score_desc';
+    } else if (type === 'cheaper') {
+        sortBy.value = 'fee_asc';
+    } else if (type === 'faster') {
+        sortBy.value = 'processing';
+    }
 }
 
 function sortFn(a, b) {
@@ -327,6 +387,22 @@ const filtered = computed(() => {
 
     if (filterRegime.value) list = list.filter(c => c.visa_regime === filterRegime.value);
 
+    if (filterVisaType.value) {
+        list = list.filter(c => {
+            const types = c.available_visa_types || c.visa_types || [];
+            return types.includes(filterVisaType.value);
+        });
+    }
+
+    // Quick filter extra conditions
+    if (quickFilter.value === 'high_chance') {
+        list = list.filter(c => (scoreMap.value[c.country_code] ?? 0) >= 60);
+    } else if (quickFilter.value === 'cheaper') {
+        list = list.filter(c => c.visa_fee_usd != null && c.visa_fee_usd > 0);
+    } else if (quickFilter.value === 'faster') {
+        list = list.filter(c => c.processing_days_standard != null && c.processing_days_standard > 0);
+    }
+
     if (search.value) {
         const q = search.value.toLowerCase();
         list = list.filter(c =>
@@ -345,16 +421,15 @@ const displayList = computed(() => showAll.value ? filtered.value : filtered.val
 // Load scoring for current continent/filter subset
 async function loadScoresForVisible() {
     const codes = filtered.value.map(c => c.country_code);
-    // Filter out already scored
     const toScore = codes.filter(cc => scoreMap.value[cc] == null);
     if (!toScore.length) return;
 
     scoringLoading.value = true;
     try {
-        // Batch in chunks of 30
         for (let i = 0; i < toScore.length; i += 30) {
             const chunk = toScore.slice(i, i + 30);
-            const res = await publicPortalApi.scoreBatch(chunk);
+            const visaType = filterVisaType.value || 'tourist';
+            const res = await publicPortalApi.scoreBatch(chunk, visaType);
             const scores = res.data.data ?? [];
             scores.forEach(s => {
                 scoreMap.value[s.country_code] = s.score;
@@ -370,10 +445,22 @@ function selectContinent(val) {
     showAll.value = false;
 }
 
-// Watch continent/regime changes to lazy-load scores
+// Watch continent/regime/visaType changes to lazy-load scores
 watch([filterContinent, filterRegime], () => {
-    // Slight delay to let filtered computed update
     setTimeout(loadScoresForVisible, 50);
+});
+
+// When visa type changes, clear cached scores and reload
+watch(filterVisaType, () => {
+    scoreMap.value = {};
+    setTimeout(loadScoresForVisible, 50);
+});
+
+// Reset quick filter when sort changes manually
+watch(sortBy, (val) => {
+    if (quickFilter.value === 'high_chance' && val !== 'score_desc') quickFilter.value = '';
+    if (quickFilter.value === 'cheaper' && val !== 'fee_asc') quickFilter.value = '';
+    if (quickFilter.value === 'faster' && val !== 'processing') quickFilter.value = '';
 });
 
 onMounted(async () => {
@@ -383,7 +470,6 @@ onMounted(async () => {
     } catch { /* ignore */ } finally {
         loading.value = false;
     }
-    // Load scores for initial view
     loadScoresForVisible();
 });
 </script>

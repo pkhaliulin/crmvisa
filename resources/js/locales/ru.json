@@ -1238,7 +1238,19 @@
     "sortFlightAsc": "Перелёт: дешевле",
     "sortProcessing": "Обработка: быстрее",
     "sortScoreDesc": "Шанс: высокий",
-    "sortScoreAsc": "Шанс: низкий"
+    "sortScoreAsc": "Шанс: низкий",
+    "quickHighChance": "Выше шанс",
+    "quickCheaper": "Дешевле",
+    "quickFaster": "Быстрее",
+    "chanceHigh": "высокий",
+    "chanceMedium": "средний",
+    "chanceLow": "низкий",
+    "chanceRisk": "риск",
+    "visaTypeAll": "Все типы виз",
+    "visaTypeTourist": "Туристическая",
+    "visaTypeWork": "Рабочая",
+    "visaTypeStudy": "Студенческая",
+    "visaTypeBusiness": "Бизнес"
   },
   "countriesPage": {
     "title": "Страны",

@@ -1238,7 +1238,19 @@
     "sortFlightAsc": "Parvoz: arzon",
     "sortProcessing": "Ko'rib chiqish: tez",
     "sortScoreDesc": "Imkoniyat: yuqori",
-    "sortScoreAsc": "Imkoniyat: past"
+    "sortScoreAsc": "Imkoniyat: past",
+    "quickHighChance": "Yuqori imkoniyat",
+    "quickCheaper": "Arzonroq",
+    "quickFaster": "Tezroq",
+    "chanceHigh": "yuqori",
+    "chanceMedium": "o'rtacha",
+    "chanceLow": "past",
+    "chanceRisk": "xavfli",
+    "visaTypeAll": "Barcha viza turlari",
+    "visaTypeTourist": "Turistik",
+    "visaTypeWork": "Ish",
+    "visaTypeStudy": "Talaba",
+    "visaTypeBusiness": "Biznes"
   },
   "countriesPage": {
     "title": "Davlatlar",
