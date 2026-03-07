@@ -664,7 +664,15 @@ async function savePackage() {
     const created = res.data.data;
     showModal.value = false;
     router.push({ name: 'service.detail', params: { id: created.id } });
-  } catch { /* ignore */ } finally {
+  } catch (e) {
+    const msg = e?.response?.data?.message || e?.response?.data?.error || 'Ошибка сохранения';
+    formErrors.value = [msg];
+    // Показать ошибки валидации из Laravel
+    const errs = e?.response?.data?.errors;
+    if (errs) {
+      Object.values(errs).forEach(arr => arr.forEach(m => formErrors.value.push(m)));
+    }
+  } finally {
     saving.value = false;
   }
 }

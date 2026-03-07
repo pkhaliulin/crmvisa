@@ -76,21 +76,41 @@
         <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
           <div class="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
             <h3 class="text-sm font-semibold text-gray-600">Включённые услуги</h3>
-            <span class="text-xs text-gray-400">{{ (pkg.items || []).length }}</span>
+            <span class="text-xs text-gray-400">{{ viewServices.length }}</span>
           </div>
-          <div v-if="(pkg.items || []).length" class="divide-y divide-gray-50">
-            <div v-for="item in pkg.items" :key="item.id" class="px-5 py-3">
+
+          <!-- Обязательные услуги -->
+          <div v-if="viewRequiredServices.length">
+            <div class="bg-red-50/50 px-5 py-1.5 border-b border-red-100/50">
+              <span class="text-[10px] font-bold text-red-600 uppercase tracking-wide">Обязательные услуги</span>
+            </div>
+            <div v-for="svc in viewRequiredServices" :key="svc.id" class="px-5 py-3 bg-red-50/20 border-b border-red-100/30">
+              <div class="flex items-center gap-2">
+                <span class="text-sm font-medium text-gray-800">{{ svc.name }}</span>
+                <span class="text-[9px] px-1.5 py-0.5 rounded-full bg-red-100 text-red-600 font-semibold">Обязательная</span>
+                <span class="text-xs text-gray-400 ml-auto">{{ categoryLabel(svc.category) }}</span>
+              </div>
+              <p v-if="svc.agency_hint" class="text-xs text-gray-500 mt-1 leading-relaxed">{{ svc.agency_hint }}</p>
+              <p v-else-if="svc.description" class="text-xs text-gray-400 mt-1">{{ svc.description }}</p>
+            </div>
+          </div>
+
+          <!-- Дополнительные услуги из пакета -->
+          <div v-if="viewOptionalItems.length">
+            <div class="bg-gray-50 px-5 py-1.5 border-b border-gray-100">
+              <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Дополнительные услуги</span>
+            </div>
+            <div v-for="item in viewOptionalItems" :key="item.id" class="px-5 py-3 border-b border-gray-50">
               <div class="flex items-center gap-2">
                 <span class="text-sm font-medium text-gray-800">{{ item.service?.name }}</span>
-                <span v-if="item.service?.is_required"
-                  class="text-[9px] px-1.5 py-0.5 rounded-full bg-red-50 text-red-600 font-semibold">Обязательная</span>
                 <span class="text-xs text-gray-400 ml-auto">{{ categoryLabel(item.service?.category) }}</span>
               </div>
               <p v-if="item.service?.agency_hint" class="text-xs text-gray-500 mt-1 leading-relaxed">{{ item.service.agency_hint }}</p>
               <p v-else-if="item.service?.description" class="text-xs text-gray-400 mt-1">{{ item.service.description }}</p>
             </div>
           </div>
-          <div v-else class="px-5 py-6 text-center text-sm text-gray-400">Нет услуг</div>
+
+          <div v-if="!viewServices.length" class="px-5 py-6 text-center text-sm text-gray-400">Нет услуг</div>
         </div>
 
         <!-- Статус -->
@@ -289,6 +309,16 @@ function formatPrice(val) {
 const requiredServices = computed(() => globalServices.value.filter(s => s.is_required && s.is_active));
 const optionalServices = computed(() => globalServices.value.filter(s => !s.is_required && s.is_active));
 
+// Для режима просмотра: обязательные всегда показываем, плюс дополнительные из pkg.items
+const viewRequiredServices = computed(() => requiredServices.value);
+const viewOptionalItems = computed(() =>
+  (pkg.value.items || []).filter(item => !item.service?.is_required)
+);
+const viewServices = computed(() => [
+  ...viewRequiredServices.value,
+  ...viewOptionalItems.value,
+]);
+
 // Форма редактирования
 const form = ref({
   country_code: '', visa_type: '',
@@ -400,7 +430,12 @@ async function save() {
     pkg.value = res.data.data;
     editing.value = false;
   } catch (e) {
-    formErrors.value = [e?.response?.data?.message || 'Ошибка сохранения'];
+    const msg = e?.response?.data?.message || e?.response?.data?.error || 'Ошибка сохранения';
+    formErrors.value = [msg];
+    const errs = e?.response?.data?.errors;
+    if (errs) {
+      Object.values(errs).forEach(arr => arr.forEach(m => formErrors.value.push(m)));
+    }
   } finally {
     saving.value = false;
   }
