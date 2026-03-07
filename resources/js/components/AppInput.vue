@@ -29,6 +29,7 @@
       ]"
     />
     <p v-if="error" class="text-xs text-red-600">{{ error }}</p>
+    <p v-else-if="hint" class="text-xs text-gray-400">{{ hint }}</p>
   </div>
 </template>
 
@@ -40,6 +41,7 @@ const props = defineProps({
   label:      { type: String,  default: '' },
   id:         { type: String,  default: () => `input-${Math.random().toString(36).slice(2)}` },
   error:      { type: String,  default: '' },
+  hint:       { type: String,  default: '' },
   required:   { type: Boolean, default: false },
   maxlength:  { type: Number,  default: null },
 });

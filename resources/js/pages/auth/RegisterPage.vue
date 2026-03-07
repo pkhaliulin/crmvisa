@@ -6,19 +6,23 @@
       <AppInput
         v-model="form.agency_name"
         label="Название агентства"
-        placeholder="Визовый центр Ташкент"
+        placeholder="Silk Road Visa Center"
         required
         :error="errors.agency_name"
         :maxlength="100"
+        hint="Только латиница. Это название будет отображаться в системе и маркетплейсе"
+        @input="onLatinInput('agency_name')"
       />
       <AppInput
-        v-model="form.name"
+        v-model="form.owner_name"
         label="Ваше имя (руководитель)"
         placeholder="Islom Karimov"
         required
-        :error="errors.name"
+        :error="errors.owner_name"
         :maxlength="80"
-        @blur="form.name = titleCase(form.name)"
+        hint="Только латиница, каждое слово с заглавной буквы"
+        @blur="form.owner_name = titleCase(form.owner_name)"
+        @input="onLatinInput('owner_name')"
       />
       <AppInput
         v-model="form.email"
@@ -27,6 +31,7 @@
         placeholder="director@agency.com"
         required
         :error="errors.email"
+        hint="На этот адрес придёт письмо для подтверждения и данные для входа"
         @blur="validateEmail"
       />
       <AppPhoneInput
@@ -42,6 +47,15 @@
         placeholder="Минимум 8 символов"
         required
         :error="errors.password"
+        hint="Используйте буквы, цифры и спецсимволы для надёжного пароля"
+      />
+      <AppInput
+        v-model="form.password_confirmation"
+        label="Подтверждение пароля"
+        type="password"
+        placeholder="Повторите пароль"
+        required
+        :error="errors.password_confirmation"
       />
 
       <p v-if="errorMsg" class="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{{ errorMsg }}</p>
@@ -75,10 +89,22 @@ import { titleCase } from '@/utils/format';
 const auth   = useAuthStore();
 const router = useRouter();
 
-const form = ref({ agency_name: '', name: '', email: '', phone: '', password: '' });
+const form = ref({ agency_name: '', owner_name: '', email: '', phone: '', password: '', password_confirmation: '' });
 const errors   = ref({});
 const errorMsg = ref('');
 const loading  = ref(false);
+
+const latinRegex = /^[A-Za-z0-9\s\-'&.,()]+$/;
+
+function onLatinInput(field) {
+  const val = form.value[field];
+  if (val && !latinRegex.test(val)) {
+    errors.value[field] = 'Только латинские буквы';
+    form.value[field] = val.replace(/[^A-Za-z0-9\s\-'&.,()]/g, '');
+  } else {
+    delete errors.value[field];
+  }
+}
 
 function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
@@ -109,12 +135,36 @@ async function handleSubmit() {
   errors.value   = {};
   errorMsg.value = '';
 
+  if (!form.value.agency_name.trim()) {
+    errors.value.agency_name = 'Обязательное поле';
+    return;
+  }
+  if (!latinRegex.test(form.value.agency_name)) {
+    errors.value.agency_name = 'Только латинские буквы';
+    return;
+  }
+  if (!form.value.owner_name.trim()) {
+    errors.value.owner_name = 'Обязательное поле';
+    return;
+  }
+  if (!latinRegex.test(form.value.owner_name)) {
+    errors.value.owner_name = 'Только латинские буквы';
+    return;
+  }
   if (!isValidEmail(form.value.email)) {
     errors.value.email = 'Введите корректный email';
     return;
   }
   if (form.value.phone && !isValidPhone(form.value.phone)) {
     errors.value.phone = 'Введите полный номер: XX XXX XX XX';
+    return;
+  }
+  if (!form.value.password || form.value.password.length < 8) {
+    errors.value.password = 'Минимум 8 символов';
+    return;
+  }
+  if (form.value.password !== form.value.password_confirmation) {
+    errors.value.password_confirmation = 'Пароли не совпадают';
     return;
   }
 
