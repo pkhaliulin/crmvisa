@@ -77,6 +77,7 @@ Route::prefix('v1')->group(function () {
         Route::post('cases/{id}/move-stage',        [CaseController::class, 'moveStage']);
         Route::post('cases/{id}/complete',          [CaseController::class, 'complete']);
         Route::post('cases/{id}/submit-to-embassy', [CaseController::class, 'submitToEmbassy']);
+        Route::post('cases/{id}/cancel',            [CaseController::class, 'cancel']);
         Route::patch('cases/{id}/expected-date',    [CaseController::class, 'updateExpectedDate']);
         Route::apiResource('cases', CaseController::class)->middleware([
             'plan.limit:max_cases',

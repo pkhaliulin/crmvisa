@@ -91,6 +91,11 @@ class AgencyService extends BaseService
         return $manager;
     }
 
+    public function assignByWorkloadPublic(Agency $agency): ?User
+    {
+        return $this->assignByWorkload($agency);
+    }
+
     private function assignByWorkload(Agency $agency): ?User
     {
         return User::where('agency_id', $agency->id)

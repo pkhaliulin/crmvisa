@@ -171,11 +171,15 @@ class CaseService extends BaseService
             // Устанавливаем SLA дедлайн для нового этапа
             $this->slaService->applyStageSla($newCaseStage, $case);
 
-            // Авто-маппинг stage -> public_status
+            // Авто-маппинг stage -> public_status (только при движении вперёд)
             $updateData = ['stage' => $newStage];
-            $mappedStatus = $this->mapStageToPublicStatus($newStage);
-            if ($mappedStatus) {
-                $updateData['public_status'] = $mappedStatus;
+            $stageOrder = array_flip(array_keys(self::ALLOWED_TRANSITIONS));
+            $isForward = ($stageOrder[$newStage] ?? 0) >= ($stageOrder[$case->stage] ?? 0);
+            if ($isForward) {
+                $mappedStatus = $this->mapStageToPublicStatus($newStage);
+                if ($mappedStatus) {
+                    $updateData['public_status'] = $mappedStatus;
+                }
             }
             $case->update($updateData);
 
@@ -243,11 +247,15 @@ class CaseService extends BaseService
 
             $this->slaService->applyStageSla($newCaseStage, $case);
 
-            // Авто-маппинг stage -> public_status
+            // Авто-маппинг stage -> public_status (только при движении вперёд)
             $updateData = ['stage' => $newStage];
-            $mappedStatus = $this->mapStageToPublicStatus($newStage);
-            if ($mappedStatus) {
-                $updateData['public_status'] = $mappedStatus;
+            $stageOrder = array_flip(array_keys(self::ALLOWED_TRANSITIONS));
+            $isForward = ($stageOrder[$newStage] ?? 0) >= ($stageOrder[$case->stage] ?? 0);
+            if ($isForward) {
+                $mappedStatus = $this->mapStageToPublicStatus($newStage);
+                if ($mappedStatus) {
+                    $updateData['public_status'] = $mappedStatus;
+                }
             }
             $case->update($updateData);
 
@@ -408,6 +416,40 @@ class CaseService extends BaseService
 
             // Переход на этап result
             $this->moveToStage($case->fresh(), 'result', "Результат: {$resultType}");
+
+            return $case->fresh(['client', 'assignee', 'stageHistory']);
+        });
+    }
+
+    /**
+     * Отменить заявку. Допускается на этапах до подачи в посольство (до review).
+     */
+    public function cancelCase(VisaCase $case, ?string $reason = null): VisaCase
+    {
+        $nonCancellable = ['review', 'result'];
+        if (in_array($case->stage, $nonCancellable)) {
+            throw ValidationException::withMessages([
+                'stage' => ['Отменить заявку на этапе «' . ($case->stage === 'review' ? 'Рассмотрение' : 'Результат') . '» невозможно.'],
+            ]);
+        }
+
+        if ($case->public_status === 'cancelled') {
+            throw ValidationException::withMessages([
+                'status' => ['Заявка уже отменена.'],
+            ]);
+        }
+
+        return DB::transaction(function () use ($case, $reason) {
+            CaseStage::where('case_id', $case->id)
+                ->whereNull('exited_at')
+                ->update(['exited_at' => now()]);
+
+            $case->update([
+                'public_status' => 'cancelled',
+                'notes'         => $case->notes
+                    ? $case->notes . "\n\nОтмена: " . ($reason ?? 'без причины')
+                    : 'Отмена: ' . ($reason ?? 'без причины'),
+            ]);
 
             return $case->fresh(['client', 'assignee', 'stageHistory']);
         });

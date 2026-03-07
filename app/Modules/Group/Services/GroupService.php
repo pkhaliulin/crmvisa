@@ -392,9 +392,47 @@ class GroupService
     public function handleGroupPaymentSuccess(ClientPayment $payment): void
     {
         DB::transaction(function () use ($payment) {
-            VisaCase::where('group_id', $payment->group_id)->update([
-                'payment_status' => 'paid',
-            ]);
+            $cases = VisaCase::where('group_id', $payment->group_id)->get();
+
+            foreach ($cases as $case) {
+                $case->update([
+                    'payment_status' => 'paid',
+                    'public_status'  => 'submitted',
+                    'stage'          => 'lead',
+                ]);
+
+                // Создать запись в case_stages (SLA + история)
+                $hasStageEntry = \App\Modules\Case\Models\CaseStage::where('case_id', $case->id)
+                    ->where('stage', 'lead')
+                    ->exists();
+                if (! $hasStageEntry) {
+                    $stageEntry = \App\Modules\Case\Models\CaseStage::create([
+                        'case_id'    => $case->id,
+                        'user_id'    => null,
+                        'stage'      => 'lead',
+                        'entered_at' => now(),
+                        'notes'      => 'Групповая оплата подтверждена',
+                    ]);
+                    app(\App\Modules\Workflow\Services\SlaService::class)->applyStageSla($stageEntry, $case);
+                }
+
+                // Авто-назначение менеджера (by_workload для групповых)
+                if ($case->agency_id) {
+                    $agency = \App\Modules\Agency\Models\Agency::find($case->agency_id);
+                    if ($agency && $agency->lead_assignment_mode !== 'manual') {
+                        $agencyService = app(\App\Modules\Agency\Services\AgencyService::class);
+                        $manager = $agencyService->assignByWorkloadPublic($agency);
+                        if ($manager) {
+                            $case->update([
+                                'assigned_to'   => $manager->id,
+                                'public_status' => 'manager_assigned',
+                            ]);
+                            app(\App\Modules\Case\Services\CaseService::class)
+                                ->moveToStageSystem($case->fresh(), 'qualification', 'Менеджер назначен автоматически');
+                        }
+                    }
+                }
+            }
 
             CaseGroupMember::where('group_id', $payment->group_id)
                 ->update(['payment_covered' => true]);

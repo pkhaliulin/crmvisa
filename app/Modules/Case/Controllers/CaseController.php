@@ -258,4 +258,19 @@ class CaseController extends Controller
 
         return ApiResponse::success($case->fresh());
     }
+
+    /**
+     * POST /cases/{id}/cancel — Отменить заявку (owner/superadmin).
+     */
+    public function cancel(Request $request, string $id): JsonResponse
+    {
+        $data = $request->validate([
+            'reason' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $case = $this->service->findOrFail($id);
+        $case = $this->service->cancelCase($case, $data['reason'] ?? null);
+
+        return ApiResponse::success($case);
+    }
 }
