@@ -199,12 +199,29 @@ class ClientPaymentService
                 $case = VisaCase::find($payment->case_id);
                 if (! $case) return;
 
+                $caseService = app(CaseService::class);
+
                 // Обновить payment_status
                 $case->update([
                     'payment_status' => 'paid',
                     'public_status'  => 'submitted',
                     'stage'          => 'lead',
                 ]);
+
+                // Создать запись в case_stages (SLA + история) если её нет
+                $hasStageEntry = \App\Modules\Case\Models\CaseStage::where('case_id', $case->id)
+                    ->where('stage', 'lead')
+                    ->exists();
+                if (! $hasStageEntry) {
+                    $stageEntry = \App\Modules\Case\Models\CaseStage::create([
+                        'case_id'    => $case->id,
+                        'user_id'    => null,
+                        'stage'      => 'lead',
+                        'entered_at' => now(),
+                        'notes'      => 'Оплата подтверждена',
+                    ]);
+                    app(\App\Modules\Workflow\Services\SlaService::class)->applyStageSla($stageEntry, $case);
+                }
 
                 // Создать PublicLead
                 $score = (int) DB::table('public_score_cache')
@@ -229,11 +246,13 @@ class ClientPaymentService
                     if ($agency && $agency->lead_assignment_mode !== 'manual') {
                         $manager = app(AgencyService::class)->assignLead($lead, $agency);
                         if ($manager) {
+                            $case->refresh();
                             $case->update([
-                                'assigned_to'   => $manager->id,
+                                'assigned_to'    => $manager->id,
                                 'public_status'  => 'manager_assigned',
-                                'stage'          => 'qualification',
                             ]);
+                            // Переход lead -> qualification через CaseService (SLA + история)
+                            $caseService->moveToStageSystem($case->fresh(), 'qualification', 'Менеджер назначен автоматически');
                             $lead->update(['status' => 'assigned']);
                         }
                     }

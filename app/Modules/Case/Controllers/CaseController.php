@@ -196,6 +196,11 @@ class CaseController extends Controller
         ]);
 
         $case = $this->service->findOrFail($id);
+
+        if ($case->stage !== 'review') {
+            return ApiResponse::error('Завершить заявку можно только на этапе «Рассмотрение».', null, 422);
+        }
+
         $case = $this->service->completeCase($case, $data['result_type'], $data);
 
         return ApiResponse::success($case);
@@ -212,6 +217,10 @@ class CaseController extends Controller
         ]);
 
         $case = $this->service->findOrFail($id);
+
+        if ($case->stage !== 'ready') {
+            return ApiResponse::error('Подать в посольство можно только на этапе «Готов к подаче».', null, 422);
+        }
 
         // Дата записи должна быть определена до подачи
         if (! $case->appointment_date) {
