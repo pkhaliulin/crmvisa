@@ -291,15 +291,108 @@
                 <p class="text-sm font-semibold text-amber-700">{{ $t('portal.noAgenciesForCountry') }}</p>
                 <p class="text-xs text-amber-600 mt-1">{{ $t('portal.noAgenciesHint') }}</p>
             </div>
-            <button v-else @click="createDraftCase"
-                :disabled="creatingCase"
-                class="w-full py-3.5 bg-[#0A1F44] hover:bg-[#0d2a5e] text-white text-sm font-semibold rounded-2xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
-                <svg v-if="creatingCase" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+            <button v-else @click="showCaseForm = true"
+                class="w-full py-3.5 bg-[#0A1F44] hover:bg-[#0d2a5e] text-white text-sm font-semibold rounded-2xl transition-colors flex items-center justify-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
                 </svg>
-                {{ creatingCase ? $t('portal.creating') : $t('landing.submitApplication') }}
+                {{ $t('landing.submitApplication') }}
             </button>
+
+            <!-- Модалка: Детали заявки -->
+            <teleport to="body">
+                <div v-if="showCaseForm" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+                    <div class="absolute inset-0 bg-black/40" @click="showCaseForm = false"></div>
+                    <div class="relative bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl shadow-xl max-h-[90vh] overflow-y-auto">
+                        <!-- Заголовок -->
+                        <div class="sticky top-0 bg-white px-5 py-4 border-b border-gray-100 flex items-center justify-between z-10 rounded-t-2xl">
+                            <div>
+                                <h2 class="font-bold text-[#0A1F44] text-base">{{ $t('portal.newApplication') || 'Новая заявка на визу' }}</h2>
+                                <p class="text-xs text-gray-400 mt-0.5">{{ codeToFlag(c.country_code) }} {{ localName }}</p>
+                            </div>
+                            <button @click="showCaseForm = false" class="text-gray-400 hover:text-gray-600 p-1">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/>
+                                </svg>
+                            </button>
+                        </div>
+
+                        <div class="p-5 space-y-4">
+                            <!-- Тип визы -->
+                            <div>
+                                <label class="block text-sm font-medium text-[#0A1F44] mb-2">{{ $t('portal.visaType') || 'Тип визы' }} <span class="text-red-500">*</span></label>
+                                <div class="grid grid-cols-1 gap-2">
+                                    <label v-for="vt in visaTypeOptions" :key="vt.value"
+                                        class="flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all"
+                                        :class="caseForm.visa_type === vt.value ? 'border-[#0A1F44] bg-[#0A1F44]/5' : 'border-gray-200 hover:border-gray-300'">
+                                        <input type="radio" v-model="caseForm.visa_type" :value="vt.value" class="sr-only" />
+                                        <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors"
+                                            :class="caseForm.visa_type === vt.value ? 'border-[#0A1F44]' : 'border-gray-300'">
+                                            <div v-if="caseForm.visa_type === vt.value" class="w-2.5 h-2.5 rounded-full bg-[#0A1F44]"></div>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-medium text-[#0A1F44]">{{ vt.label }}</p>
+                                            <p class="text-xs text-gray-400">{{ vt.hint }}</p>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Даты -->
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('portal.travelDate') || 'Дата вылета' }}</label>
+                                    <input v-model="caseForm.planned_travel_date" type="date" :min="minDate"
+                                        class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#0A1F44] transition-colors" />
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('portal.returnDate') || 'Дата возврата' }}</label>
+                                    <input v-model="caseForm.planned_return_date" type="date" :min="caseForm.planned_travel_date || minDate"
+                                        class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#0A1F44] transition-colors" />
+                                </div>
+                            </div>
+
+                            <!-- Количество путешественников -->
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('portal.travelersCount') || 'Количество путешественников' }}</label>
+                                <div class="flex items-center gap-3">
+                                    <button type="button" @click="caseForm.travelers_count = Math.max(1, caseForm.travelers_count - 1)"
+                                        class="w-9 h-9 rounded-xl border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M5 12h14"/></svg>
+                                    </button>
+                                    <span class="text-lg font-bold text-[#0A1F44] w-8 text-center">{{ caseForm.travelers_count }}</span>
+                                    <button type="button" @click="caseForm.travelers_count = Math.min(20, caseForm.travelers_count + 1)"
+                                        class="w-9 h-9 rounded-xl border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M12 5v14m7-7H5"/></svg>
+                                    </button>
+                                    <span class="text-xs text-gray-400">{{ $t('portal.includingYou') || 'включая вас' }}</span>
+                                </div>
+                            </div>
+
+                            <!-- Комментарий -->
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('portal.notes') || 'Комментарий' }}</label>
+                                <textarea v-model="caseForm.notes" rows="2" maxlength="1000"
+                                    :placeholder="$t('portal.notesPlaceholder') || 'Цель поездки, особые пожелания...'"
+                                    class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#0A1F44] transition-colors resize-none"></textarea>
+                            </div>
+
+                            <!-- Ошибка -->
+                            <p v-if="caseFormError" class="text-xs text-red-600 bg-red-50 p-2.5 rounded-xl">{{ caseFormError }}</p>
+
+                            <!-- Кнопка -->
+                            <button @click="submitCaseForm" :disabled="creatingCase || !caseForm.visa_type"
+                                class="w-full py-3 bg-[#0A1F44] hover:bg-[#0d2a5e] text-white text-sm font-semibold rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+                                <svg v-if="creatingCase" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                                </svg>
+                                {{ creatingCase ? ($t('portal.creating') || 'Создание...') : ($t('portal.createApplication') || 'Создать заявку') }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </teleport>
         </template>
 
         <div v-else class="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center">
@@ -309,7 +402,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, h } from 'vue';
+import { ref, reactive, computed, onMounted, h } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { publicPortalApi } from '@/api/public';
@@ -322,6 +415,41 @@ const router  = useRouter();
 const loading = ref(true);
 const c       = ref(null);
 const creatingCase = ref(false);
+const showCaseForm = ref(false);
+const caseFormError = ref('');
+
+const caseForm = reactive({
+    visa_type: '',
+    planned_travel_date: '',
+    planned_return_date: '',
+    travelers_count: 1,
+    notes: '',
+});
+
+const VISA_TYPE_META = {
+    tourist:   { label: 'Туристическая', hint: 'Отдых, экскурсии, посещение друзей' },
+    business:  { label: 'Бизнес', hint: 'Деловые встречи, конференции, переговоры' },
+    student:   { label: 'Студенческая', hint: 'Учёба, языковые курсы, стажировка' },
+    work:      { label: 'Рабочая', hint: 'Трудоустройство, командировка' },
+    transit:   { label: 'Транзитная', hint: 'Пересадка, краткосрочное пребывание' },
+    medical:   { label: 'Медицинская', hint: 'Лечение, обследование' },
+    family:    { label: 'Семейная', hint: 'Воссоединение с семьёй' },
+};
+
+const visaTypeOptions = computed(() => {
+    const types = c.value?.available_visa_types ?? ['tourist'];
+    return types.map(vt => ({
+        value: vt,
+        label: VISA_TYPE_META[vt]?.label ?? vt,
+        hint: VISA_TYPE_META[vt]?.hint ?? '',
+    }));
+});
+
+const minDate = computed(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().split('T')[0];
+});
 
 // --- Компонент чат-пузырь ---
 const ChatBubble = (props, { slots }) => {
@@ -463,17 +591,29 @@ const countryTip = computed(() => {
 });
 
 // --- Actions ---
-async function createDraftCase() {
+async function submitCaseForm() {
+    if (!caseForm.visa_type) {
+        caseFormError.value = 'Выберите тип визы';
+        return;
+    }
+    caseFormError.value = '';
     creatingCase.value = true;
     try {
-        const res = await publicPortalApi.createCase({
+        const payload = {
             country_code: c.value.country_code,
-            visa_type: 'tourist',
-        });
+            visa_type: caseForm.visa_type,
+        };
+        if (caseForm.planned_travel_date) payload.planned_travel_date = caseForm.planned_travel_date;
+        if (caseForm.planned_return_date) payload.planned_return_date = caseForm.planned_return_date;
+        if (caseForm.travelers_count > 1) payload.travelers_count = caseForm.travelers_count;
+        if (caseForm.notes?.trim()) payload.notes = caseForm.notes.trim();
+
+        const res = await publicPortalApi.createCase(payload);
         const caseId = res.data?.data?.id;
+        showCaseForm.value = false;
         router.push(caseId ? { name: 'me.cases.show', params: { id: caseId } } : { name: 'me.cases' });
     } catch (e) {
-        alert(e?.response?.data?.message ?? t('portal.createError'));
+        caseFormError.value = e?.response?.data?.message ?? t('portal.createError');
     } finally {
         creatingCase.value = false;
     }

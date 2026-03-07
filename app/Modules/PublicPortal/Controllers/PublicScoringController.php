@@ -70,6 +70,21 @@ class PublicScoringController extends Controller
         $country->agencies_count = $count;
         $country->has_agencies = $count > 0;
 
+        // Доступные типы виз из пакетов агентств
+        $visaTypes = \DB::table('agency_service_packages')
+            ->where('country_code', strtoupper($code))
+            ->where('is_active', true)
+            ->whereIn('agency_id', function ($q) {
+                $q->select('id')->from('agencies')
+                  ->where('is_active', true)
+                  ->whereNull('blocked_at');
+            })
+            ->distinct()
+            ->pluck('visa_type')
+            ->filter()
+            ->values();
+        $country->available_visa_types = $visaTypes;
+
         return ApiResponse::success($country);
     }
 

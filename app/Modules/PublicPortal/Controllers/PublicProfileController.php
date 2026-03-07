@@ -282,6 +282,8 @@ class PublicProfileController extends Controller
             'visa_type'           => ['required', 'string', 'max:50'],
             'planned_travel_date'  => ['nullable', 'date', 'after:today'],
             'planned_return_date'  => ['nullable', 'date', 'after:today'],
+            'travelers_count'      => ['nullable', 'integer', 'min:1', 'max:20'],
+            'notes'                => ['nullable', 'string', 'max:1000'],
         ]);
 
         // Проверяем, есть ли хотя бы одно агентство, работающее с этой страной
@@ -318,6 +320,14 @@ class PublicProfileController extends Controller
                 $client = Client::find($clientId);
             }
 
+            $noteParts = [];
+            if (!empty($data['travelers_count']) && $data['travelers_count'] > 1) {
+                $noteParts[] = "Путешественников: {$data['travelers_count']}";
+            }
+            if (!empty($data['notes'])) {
+                $noteParts[] = $data['notes'];
+            }
+
             $case = VisaCase::create([
                 'agency_id'     => null,
                 'client_id'     => $client->id,
@@ -328,6 +338,7 @@ class PublicProfileController extends Controller
                 'priority'      => 'normal',
                 'travel_date'   => $data['planned_travel_date'] ?? null,
                 'return_date'   => $data['planned_return_date'] ?? null,
+                'notes'         => $noteParts ? implode("\n", $noteParts) : null,
             ]);
 
             app(ChecklistService::class)->createForCase($case);
