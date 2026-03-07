@@ -18,9 +18,16 @@ class DashboardController extends Controller
         $agencyId = $request->user()->agency_id;
         $today    = now()->toDateString();
 
+        // Исключаем неоплаченные заявки из всей статистики агентства
+        $excludeUnpaid = fn ($q) => $q->where(function ($sub) {
+            $sub->whereNotIn('public_status', ['draft', 'awaiting_payment', 'cancelled'])
+                ->orWhereNull('public_status');
+        });
+
         // Заявки по этапам
         $byStage = VisaCase::where('agency_id', $agencyId)
             ->whereNotIn('stage', ['result'])
+            ->where($excludeUnpaid)
             ->select('stage', DB::raw('count(*) as count'))
             ->groupBy('stage')
             ->pluck('count', 'stage');
@@ -28,6 +35,7 @@ class DashboardController extends Controller
         // Горящие — дедлайн через <=5 дней
         $critical = VisaCase::where('agency_id', $agencyId)
             ->whereNotIn('stage', ['result'])
+            ->where($excludeUnpaid)
             ->whereNotNull('critical_date')
             ->whereDate('critical_date', '>=', $today)
             ->whereDate('critical_date', '<=', now()->addDays(5)->toDateString())
@@ -36,6 +44,7 @@ class DashboardController extends Controller
         // Просроченные
         $overdue = VisaCase::where('agency_id', $agencyId)
             ->whereNotIn('stage', ['result'])
+            ->where($excludeUnpaid)
             ->whereNotNull('critical_date')
             ->whereDate('critical_date', '<', $today)
             ->count();
@@ -43,15 +52,18 @@ class DashboardController extends Controller
         // Без ответственного
         $unassigned = VisaCase::where('agency_id', $agencyId)
             ->whereNotIn('stage', ['result'])
+            ->where($excludeUnpaid)
             ->whereNull('assigned_to')
             ->count();
 
         $totalActive = VisaCase::where('agency_id', $agencyId)
-            ->whereNotIn('stage', ['result'])->count();
+            ->whereNotIn('stage', ['result'])
+            ->where($excludeUnpaid)->count();
 
         // Нагрузка менеджеров
         $managerLoad = VisaCase::where('cases.agency_id', $agencyId)
             ->whereNotIn('cases.stage', ['result'])
+            ->where($excludeUnpaid)
             ->whereNotNull('assigned_to')
             ->join('users', 'users.id', '=', 'cases.assigned_to')
             ->select('users.id', 'users.name', DB::raw('count(cases.id) as active_cases'))
@@ -63,6 +75,7 @@ class DashboardController extends Controller
 
         // По источникам лидов (lead_source из cases + source из clients)
         $byLeadSource = VisaCase::where('cases.agency_id', $agencyId)
+            ->where($excludeUnpaid)
             ->leftJoin('clients', 'clients.id', '=', 'cases.client_id')
             ->selectRaw("COALESCE(cases.lead_source, clients.source, 'direct') as source, COUNT(*) as count")
             ->groupByRaw("COALESCE(cases.lead_source, clients.source, 'direct')")
@@ -71,6 +84,7 @@ class DashboardController extends Controller
 
         // Динамика за 30 дней (по дням)
         $dailyTrend = VisaCase::where('agency_id', $agencyId)
+            ->where($excludeUnpaid)
             ->where('created_at', '>=', now()->subDays(30))
             ->selectRaw("DATE(created_at) as date, COUNT(*) as created, COUNT(CASE WHEN stage='result' THEN 1 END) as completed")
             ->groupBy('date')
@@ -80,25 +94,29 @@ class DashboardController extends Controller
         // Ключевые метрики за 30 дней
         $period30 = now()->subDays(30);
         $newLeads = VisaCase::where('agency_id', $agencyId)
+            ->where($excludeUnpaid)
             ->where('created_at', '>=', $period30)->count();
 
         $completedTotal = VisaCase::where('agency_id', $agencyId)
+            ->where($excludeUnpaid)
             ->where('stage', 'result')->count();
 
         $completed30 = VisaCase::where('agency_id', $agencyId)
+            ->where($excludeUnpaid)
             ->where('stage', 'result')
             ->where('created_at', '>=', $period30)->count();
 
         $visaIssued = VisaCase::where('agency_id', $agencyId)
+            ->where($excludeUnpaid)
             ->where('stage', 'result')
             ->where('result_type', 'approved')
             ->where('created_at', '>=', $period30)->count();
 
-        $totalAll = VisaCase::where('agency_id', $agencyId)->count();
+        $totalAll = VisaCase::where('agency_id', $agencyId)->where($excludeUnpaid)->count();
 
         // Конверсии
         $conversionLeadToCase = $totalAll > 0
-            ? round(($totalAll - VisaCase::where('agency_id', $agencyId)->where('stage', 'lead')->count()) / $totalAll * 100, 1)
+            ? round(($totalAll - VisaCase::where('agency_id', $agencyId)->where($excludeUnpaid)->where('stage', 'lead')->count()) / $totalAll * 100, 1)
             : 0;
         $conversionCaseToVisa = $totalAll > 0
             ? round($visaIssued / max(1, $completedTotal) * 100, 1)
@@ -110,6 +128,7 @@ class DashboardController extends Controller
 
         // По странам (top-5)
         $topCountries = VisaCase::where('agency_id', $agencyId)
+            ->where($excludeUnpaid)
             ->select('country_code', DB::raw('COUNT(*) as total'))
             ->groupBy('country_code')
             ->orderByDesc('total')
@@ -119,6 +138,7 @@ class DashboardController extends Controller
         // По приоритетам
         $byPriority = VisaCase::where('agency_id', $agencyId)
             ->whereNotIn('stage', ['result'])
+            ->where($excludeUnpaid)
             ->select('priority', DB::raw('COUNT(*) as count'))
             ->groupBy('priority')
             ->pluck('count', 'priority');
@@ -213,6 +233,7 @@ class DashboardController extends Controller
 
         $cases = VisaCase::where('agency_id', $agencyId)
             ->whereNotIn('stage', ['result'])
+            ->whereNotIn('public_status', ['draft', 'awaiting_payment', 'cancelled'])
             ->whereNotNull('critical_date')
             ->whereDate('critical_date', '<', now()->toDateString())
             ->with(['client:id,name,phone', 'assignee:id,name'])
@@ -237,6 +258,7 @@ class DashboardController extends Controller
         $cases = VisaCase::where('agency_id', $agencyId)
             ->where('assigned_to', $userId)
             ->whereNotIn('stage', ['result'])
+            ->whereNotIn('public_status', ['draft', 'awaiting_payment', 'cancelled'])
             ->with(['client:id,name,phone'])
             ->orderByRaw("CASE WHEN critical_date IS NULL THEN 1 ELSE 0 END, critical_date ASC")
             ->get();

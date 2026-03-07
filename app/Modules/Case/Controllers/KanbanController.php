@@ -27,7 +27,7 @@ class KanbanController extends Controller
 
         // Исключаем черновики и отменённые — они точно не на канбане
         $query->where(function ($q) {
-            $q->whereNotIn('public_status', ['draft', 'cancelled'])
+            $q->whereNotIn('public_status', ['draft', 'awaiting_payment', 'cancelled'])
               ->orWhereNull('public_status');
         });
 

@@ -29,6 +29,7 @@ class CaseController extends Controller
         ]);
 
         $query = VisaCase::where('cases.agency_id', $agencyId)
+            ->whereNotIn('cases.public_status', ['draft', 'awaiting_payment', 'cancelled'])
             ->with(['client:id,name,phone', 'assignee:id,name'])
             ->selectRaw("
                 cases.*,
