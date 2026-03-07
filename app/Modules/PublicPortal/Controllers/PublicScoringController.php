@@ -9,10 +9,15 @@ use App\Modules\PublicPortal\Services\PublicScoringService;
 use App\Support\Helpers\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class PublicScoringController extends Controller
 {
-    public function __construct(private PublicScoringService $scoring) {}
+    public function __construct(private PublicScoringService $scoring)
+    {
+        // Публичные эндпоинты без auth.public — нужно открыть RLS для мультитенантных таблиц
+        DB::statement("SET app.is_public_user = 'true'");
+    }
 
     /**
      * GET /public/countries
