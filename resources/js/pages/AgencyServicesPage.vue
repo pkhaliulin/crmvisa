@@ -11,30 +11,40 @@
       </button>
     </div>
 
-    <!-- Каталог услуг — полный список по категориям -->
+    <!-- Каталог услуг — сворачиваемый блок -->
     <div v-if="loadingServices" class="flex items-center justify-center py-8">
       <div class="animate-spin w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full"></div>
     </div>
-    <div v-else>
-      <div class="flex items-center gap-3 mb-3">
-        <h2 class="text-sm font-semibold text-gray-600">Каталог услуг</h2>
-        <span class="text-xs text-gray-400">{{ globalServices.length }} услуг</span>
-      </div>
-      <div class="space-y-3">
-        <div v-for="cat in groupedServices" :key="cat.key"
-          class="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div class="px-4 py-2.5 bg-gray-50 border-b border-gray-100 flex items-center gap-2">
+    <div v-else class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <button @click="catalogOpen = !catalogOpen"
+        class="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors">
+        <div class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-gray-400 transition-transform" :class="catalogOpen ? 'rotate-90' : ''" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+          </svg>
+          <h2 class="text-sm font-semibold text-gray-700">Каталог услуг</h2>
+          <span class="text-xs text-gray-400">{{ globalServices.length }} услуг</span>
+        </div>
+        <span class="text-[10px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">Справочная информация</span>
+      </button>
+
+      <div v-if="catalogOpen" class="border-t border-gray-100">
+        <div v-for="cat in groupedServices" :key="cat.key">
+          <button @click="toggleCat(cat.key)"
+            class="w-full px-4 py-2 flex items-center gap-2 bg-gray-50 hover:bg-gray-100 transition-colors border-b border-gray-100">
+            <svg class="w-3 h-3 text-gray-400 transition-transform" :class="openCats[cat.key] ? 'rotate-90' : ''" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+            </svg>
             <span class="w-2 h-2 rounded-full shrink-0" :class="catDot(cat.key)"></span>
-            <h3 class="text-xs font-semibold text-gray-600 uppercase tracking-wide">{{ categoryLabel(cat.key) }}</h3>
+            <span class="text-xs font-semibold text-gray-600 uppercase tracking-wide">{{ categoryLabel(cat.key) }}</span>
             <span class="text-xs text-gray-400 ml-auto">{{ cat.items.length }}</span>
-          </div>
-          <div class="divide-y divide-gray-50">
+          </button>
+          <div v-if="openCats[cat.key]" class="divide-y divide-gray-50">
             <div v-for="svc in cat.items" :key="svc.id"
-              class="px-4 py-2.5 flex items-center gap-3 text-sm hover:bg-blue-50/50 transition-colors group">
+              class="px-4 py-2 flex items-center gap-3 text-sm hover:bg-blue-50/30 transition-colors pl-10">
               <span class="text-gray-800 flex-1">{{ svc.name }}</span>
               <span v-if="svc.is_required"
                 class="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-red-50 text-red-600">Обязательная</span>
-              <!-- Tooltip с описанием -->
               <div v-if="svc.description" class="relative">
                 <svg class="w-4 h-4 text-gray-300 hover:text-blue-500 cursor-help transition-colors peer"
                   fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -45,7 +55,6 @@
                   {{ svc.description }}
                 </div>
               </div>
-              <span class="text-xs text-gray-400 shrink-0">{{ categoryLabel(svc.category) }}</span>
             </div>
           </div>
         </div>
@@ -56,7 +65,49 @@
     <div>
       <div class="flex items-center gap-3 mb-3">
         <h2 class="text-sm font-semibold text-gray-600">Пакеты услуг</h2>
-        <span class="text-xs text-gray-400">{{ packages.length }}</span>
+        <span class="text-xs text-gray-400">{{ filteredPackages.length }} из {{ packages.length }}</span>
+      </div>
+
+      <!-- Средняя стоимость -->
+      <div v-if="packages.length" class="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 mb-3 flex items-center gap-4 flex-wrap">
+        <div class="flex items-center gap-2 text-sm">
+          <span class="text-blue-600 font-medium">Средняя стоимость:</span>
+          <span class="font-bold text-gray-900">{{ formatPrice(avgPrice) }} UZS</span>
+          <span class="text-xs text-gray-400">({{ packages.length }} пакетов)</span>
+        </div>
+        <div v-if="avgPriceFiltered !== null && filteredPackages.length !== packages.length" class="flex items-center gap-2 text-sm">
+          <span class="text-blue-500">По фильтру:</span>
+          <span class="font-semibold text-gray-800">{{ formatPrice(avgPriceFiltered) }} UZS</span>
+          <span class="text-xs text-gray-400">({{ filteredPackages.length }})</span>
+        </div>
+      </div>
+
+      <!-- Фильтры -->
+      <div v-if="packages.length" class="flex flex-wrap gap-2 mb-3">
+        <select v-model="filter.country" class="border border-gray-200 rounded-lg px-3 py-1.5 text-sm bg-white focus:outline-none focus:border-blue-400">
+          <option value="">Все страны</option>
+          <option v-for="cc in uniqueCountries" :key="cc" :value="cc">{{ codeToFlag(cc) }} {{ countryName(cc) }}</option>
+        </select>
+        <select v-model="filter.visa_type" class="border border-gray-200 rounded-lg px-3 py-1.5 text-sm bg-white focus:outline-none focus:border-blue-400">
+          <option value="">Все типы виз</option>
+          <option v-for="vt in uniqueVisaTypes" :key="vt" :value="vt">{{ visaTypeName(vt) }}</option>
+        </select>
+        <select v-model="filter.status" class="border border-gray-200 rounded-lg px-3 py-1.5 text-sm bg-white focus:outline-none focus:border-blue-400">
+          <option value="">Все статусы</option>
+          <option value="active">Активные</option>
+          <option value="inactive">Неактивные</option>
+        </select>
+        <select v-model="filter.sort" class="border border-gray-200 rounded-lg px-3 py-1.5 text-sm bg-white focus:outline-none focus:border-blue-400">
+          <option value="name">По названию</option>
+          <option value="price_asc">Цена: по возрастанию</option>
+          <option value="price_desc">Цена: по убыванию</option>
+          <option value="days_asc">Срок: по возрастанию</option>
+          <option value="days_desc">Срок: по убыванию</option>
+        </select>
+        <button v-if="hasActiveFilters" @click="resetFilters"
+          class="text-xs text-red-500 hover:text-red-700 px-2 py-1 border border-red-200 rounded-lg hover:bg-red-50 transition-colors">
+          Сбросить
+        </button>
       </div>
 
       <div v-if="loadingPackages" class="flex items-center justify-center py-8">
@@ -71,22 +122,54 @@
         <p class="text-xs text-gray-300 mt-1">Создайте первый пакет услуг для клиентов</p>
       </div>
 
-      <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div v-for="pkg in packages" :key="pkg.id"
-          class="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-md transition-all"
+      <div v-else-if="filteredPackages.length === 0" class="bg-white rounded-xl border border-gray-200 py-8 text-center text-gray-400">
+        <p class="text-sm">Нет пакетов по выбранным фильтрам</p>
+      </div>
+
+      <!-- Список пакетов (одна колонка) -->
+      <div v-else class="space-y-2">
+        <div v-for="pkg in filteredPackages" :key="pkg.id"
+          class="bg-white rounded-xl border border-gray-200 hover:shadow-md transition-all"
           :class="pkg.is_active ? '' : 'opacity-60'">
 
-          <!-- Header -->
-          <div class="flex items-start justify-between mb-3">
-            <div class="min-w-0 flex-1">
-              <div class="flex items-center gap-2">
-                <h3 class="font-semibold text-gray-900 truncate">{{ pkg.name }}</h3>
-                <span v-if="!pkg.is_active"
-                  class="text-[10px] px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded-full shrink-0">Неактивен</span>
+          <div class="px-4 py-3 flex items-center gap-4">
+            <!-- Флаг и название -->
+            <div class="flex items-center gap-3 min-w-0 flex-1">
+              <span v-if="pkg.country_code" class="text-2xl shrink-0">{{ codeToFlag(pkg.country_code) }}</span>
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <h3 class="font-semibold text-gray-900 text-sm truncate">{{ pkg.name }}</h3>
+                  <span v-if="!pkg.is_active"
+                    class="text-[10px] px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded-full shrink-0">Неактивен</span>
+                </div>
+                <div class="flex items-center gap-3 text-xs text-gray-400 mt-0.5 flex-wrap">
+                  <span v-if="pkg.visa_type">{{ visaTypeName(pkg.visa_type) }}</span>
+                  <span v-if="pkg.processing_days">{{ pkg.processing_days }} дн.</span>
+                  <span v-if="pkg.items?.length" class="text-gray-300">{{ pkg.items.length }} услуг</span>
+                </div>
               </div>
-              <p v-if="pkg.description" class="text-xs text-gray-500 mt-1 line-clamp-2">{{ pkg.description }}</p>
             </div>
-            <div class="flex gap-1.5 shrink-0 ml-2">
+
+            <!-- Цена -->
+            <div v-if="pkg.price" class="text-right shrink-0">
+              <div class="font-bold text-gray-900 text-sm">{{ formatPrice(pkg.price) }}</div>
+              <div class="text-[10px] text-gray-400">{{ pkg.currency || 'UZS' }}</div>
+            </div>
+
+            <!-- Теги услуг (компактно) -->
+            <div class="hidden sm:flex items-center gap-1 shrink-0 max-w-[200px] flex-wrap">
+              <span v-for="item in (pkg.items || []).slice(0, 3)" :key="item.id"
+                class="text-[9px] px-1.5 py-0.5 rounded-full whitespace-nowrap"
+                :class="item.service?.is_required ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600'">
+                {{ item.service?.name }}
+              </span>
+              <span v-if="(pkg.items || []).length > 3" class="text-[9px] text-gray-400">
+                +{{ pkg.items.length - 3 }}
+              </span>
+            </div>
+
+            <!-- Кнопки -->
+            <div class="flex gap-1.5 shrink-0">
               <button @click="openEdit(pkg)"
                 class="w-7 h-7 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:text-blue-600 hover:border-blue-300 transition-colors">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -100,26 +183,6 @@
                 </svg>
               </button>
             </div>
-          </div>
-
-          <!-- Meta -->
-          <div class="flex flex-wrap items-center gap-3 text-xs text-gray-500 mb-3">
-            <span v-if="pkg.country_code" class="flex items-center gap-1">
-              <span class="text-base">{{ codeToFlag(pkg.country_code) }}</span>
-              {{ countryName(pkg.country_code) }}
-            </span>
-            <span v-if="pkg.visa_type" class="text-gray-400">{{ visaTypeName(pkg.visa_type) }}</span>
-            <span v-if="pkg.price" class="font-semibold text-gray-700">{{ pkg.price }} {{ pkg.currency }}</span>
-            <span v-if="pkg.processing_days">{{ pkg.processing_days }} дн.</span>
-          </div>
-
-          <!-- Items tags -->
-          <div v-if="pkg.items?.length" class="flex flex-wrap gap-1">
-            <span v-for="item in pkg.items" :key="item.id"
-              class="text-[10px] px-2 py-0.5 rounded-full"
-              :class="item.service?.is_required ? 'bg-red-50 text-red-600 font-semibold' : 'bg-blue-50 text-blue-700'">
-              {{ item.service?.name }}
-            </span>
           </div>
         </div>
       </div>
@@ -143,7 +206,7 @@
             </ul>
           </div>
 
-          <!-- Автоназвание: формируется после выбора страны + тип визы -->
+          <!-- Автоназвание -->
           <div v-if="autoName" class="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3">
             <div class="text-xs text-blue-500 font-medium mb-1">Название пакета</div>
             <div class="font-semibold text-gray-900 text-sm">{{ autoName }}</div>
@@ -224,7 +287,6 @@
               Выберите страну и тип визы, чтобы увидеть обязательные и рекомендуемые услуги
             </p>
             <div v-else class="space-y-0.5 border border-gray-200 rounded-lg overflow-hidden">
-              <!-- Обязательные (всегда отмечены, нельзя снять) -->
               <div v-if="requiredServices.length" class="bg-red-50/50 px-3 py-1.5">
                 <span class="text-[10px] font-bold text-red-600 uppercase tracking-wide">Обязательные услуги</span>
               </div>
@@ -244,7 +306,6 @@
                 </label>
               </div>
 
-              <!-- Опциональные (можно отмечать) -->
               <div v-if="optionalServices.length" class="bg-gray-50 px-3 py-1.5 border-t border-gray-100">
                 <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Дополнительные услуги (на выбор)</span>
               </div>
@@ -292,7 +353,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, reactive, computed, onMounted } from 'vue';
 import api from '@/api/index';
 import { countriesApi } from '@/api/countries';
 import { codeToFlag } from '@/utils/countries';
@@ -302,11 +363,20 @@ const loadingServices = ref(true);
 const saving = ref(false);
 const showModal = ref(false);
 const editingId = ref(null);
+const catalogOpen = ref(false);
+const openCats = reactive({});
 
 const packages = ref([]);
 const globalServices = ref([]);
 const allCountries = ref([]);
 const allVisaTypes = ref([]);
+
+const filter = reactive({
+  country: '',
+  visa_type: '',
+  status: '',
+  sort: 'name',
+});
 
 const CATEGORY_ORDER = ['consultation', 'documents', 'translation', 'visa_center', 'financial', 'other'];
 const categoryLabels = {
@@ -321,6 +391,7 @@ const catDots = {
 };
 function categoryLabel(cat) { return categoryLabels[cat] || cat; }
 function catDot(cat) { return catDots[cat] || 'bg-gray-400'; }
+function toggleCat(key) { openCats[key] = !openCats[key]; }
 
 const groupedServices = computed(() => {
   const groups = {};
@@ -332,13 +403,61 @@ const groupedServices = computed(() => {
   return CATEGORY_ORDER.filter(c => groups[c]).map(c => ({ key: c, items: groups[c] }));
 });
 
-// Обязательные и опциональные активные услуги
 const requiredServices = computed(() =>
   globalServices.value.filter(s => s.is_required && s.is_active)
 );
 const optionalServices = computed(() =>
   globalServices.value.filter(s => !s.is_required && s.is_active)
 );
+
+// Фильтрация и сортировка пакетов
+const uniqueCountries = computed(() => [...new Set(packages.value.map(p => p.country_code).filter(Boolean))].sort());
+const uniqueVisaTypes = computed(() => [...new Set(packages.value.map(p => p.visa_type).filter(Boolean))].sort());
+
+const hasActiveFilters = computed(() => filter.country || filter.visa_type || filter.status);
+
+function resetFilters() {
+  filter.country = '';
+  filter.visa_type = '';
+  filter.status = '';
+  filter.sort = 'name';
+}
+
+const filteredPackages = computed(() => {
+  let list = [...packages.value];
+
+  if (filter.country) list = list.filter(p => p.country_code === filter.country);
+  if (filter.visa_type) list = list.filter(p => p.visa_type === filter.visa_type);
+  if (filter.status === 'active') list = list.filter(p => p.is_active);
+  if (filter.status === 'inactive') list = list.filter(p => !p.is_active);
+
+  switch (filter.sort) {
+    case 'price_asc':  list.sort((a, b) => (a.price || 0) - (b.price || 0)); break;
+    case 'price_desc': list.sort((a, b) => (b.price || 0) - (a.price || 0)); break;
+    case 'days_asc':   list.sort((a, b) => (a.processing_days || 0) - (b.processing_days || 0)); break;
+    case 'days_desc':  list.sort((a, b) => (b.processing_days || 0) - (a.processing_days || 0)); break;
+    default:           list.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+  }
+
+  return list;
+});
+
+// Средние цены
+const avgPrice = computed(() => {
+  const prices = packages.value.map(p => p.price).filter(p => p > 0);
+  return prices.length ? Math.round(prices.reduce((s, p) => s + p, 0) / prices.length) : 0;
+});
+
+const avgPriceFiltered = computed(() => {
+  const prices = filteredPackages.value.map(p => p.price).filter(p => p > 0);
+  if (!prices.length) return null;
+  return Math.round(prices.reduce((s, p) => s + p, 0) / prices.length);
+});
+
+function formatPrice(val) {
+  if (!val) return '0';
+  return val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+}
 
 // Маппинг типов виз
 const VISA_TYPE_RU = {
@@ -356,7 +475,6 @@ function countryNameUz(code) {
   return allCountries.value.find(c => c.country_code === code)?.name_uz ?? countryName(code);
 }
 
-// Автоназвание: "Туристическая виза Швейцария"
 const autoName = computed(() => {
   if (!modalForm.value.country_code || !modalForm.value.visa_type) return '';
   const visa = VISA_TYPE_RU[modalForm.value.visa_type] || modalForm.value.visa_type;
@@ -464,10 +582,8 @@ function clearCountry() {
   countrySearch.value = '';
 }
 
-// Авто-добавить обязательные услуги при выборе типа визы
 function onVisaTypeChange() {
   if (!modalForm.value.visa_type) return;
-  // При создании нового пакета авто-добавляем обязательные
   if (!editingId.value) {
     const reqIds = requiredServices.value.map(s => s.id);
     const merged = new Set([...modalForm.value.service_ids, ...reqIds]);
@@ -480,7 +596,7 @@ function countryName(code) {
 }
 
 function visaTypeName(slug) {
-  return allVisaTypes.value.find(t => t.slug === slug)?.name_ru ?? slug;
+  return allVisaTypes.value.find(t => t.slug === slug)?.name_ru ?? VISA_TYPE_RU[slug] ?? slug;
 }
 
 onMounted(async () => {
@@ -528,11 +644,9 @@ async function savePackage() {
   saving.value = true;
   try {
     const payload = { ...modalForm.value };
-    // Автоназвание
     payload.name = autoName.value;
     payload.name_uz = autoNameUz.value;
 
-    // Всегда включать обязательные услуги
     const reqIds = requiredServices.value.map(s => s.id);
     const merged = new Set([...payload.service_ids, ...reqIds]);
     payload.service_ids = [...merged];
