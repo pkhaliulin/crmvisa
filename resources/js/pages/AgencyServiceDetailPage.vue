@@ -183,13 +183,23 @@
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Описание (RU)</label>
-            <textarea v-model="form.description" rows="2" placeholder="Полное сопровождение..."
+            <div class="flex items-center justify-between mb-1">
+              <label class="block text-sm font-medium text-gray-700">Описание (RU)</label>
+              <span class="text-xs" :class="(form.description?.length || 0) > 450 ? 'text-red-500' : 'text-gray-400'">
+                {{ form.description?.length || 0 }}/500
+              </span>
+            </div>
+            <textarea v-model="form.description" rows="2" maxlength="500" placeholder="Полное сопровождение..."
               class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"></textarea>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Tavsif (UZ)</label>
-            <textarea v-model="form.description_uz" rows="2" placeholder="Viza rasmiylashtirish..."
+            <div class="flex items-center justify-between mb-1">
+              <label class="block text-sm font-medium text-gray-700">Tavsif (UZ)</label>
+              <span class="text-xs" :class="(form.description_uz?.length || 0) > 450 ? 'text-red-500' : 'text-gray-400'">
+                {{ form.description_uz?.length || 0 }}/500
+              </span>
+            </div>
+            <textarea v-model="form.description_uz" rows="2" maxlength="500" placeholder="Viza rasmiylashtirish..."
               class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"></textarea>
           </div>
 

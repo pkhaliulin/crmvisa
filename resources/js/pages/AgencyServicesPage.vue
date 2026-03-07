@@ -254,15 +254,25 @@
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Описание (RU) *</label>
-            <textarea v-model="modalForm.description" rows="2" placeholder="Полное сопровождение оформления визы..."
+            <div class="flex items-center justify-between mb-1">
+              <label class="block text-sm font-medium text-gray-700">Описание (RU) *</label>
+              <span class="text-xs" :class="(modalForm.description?.length || 0) > 450 ? 'text-red-500' : 'text-gray-400'">
+                {{ modalForm.description?.length || 0 }}/500
+              </span>
+            </div>
+            <textarea v-model="modalForm.description" rows="2" maxlength="500" placeholder="Полное сопровождение оформления визы..."
               :class="['w-full border rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400',
                 fieldError('description') ? 'border-red-300 bg-red-50' : 'border-gray-200']"></textarea>
             <p v-if="fieldError('description')" class="text-xs text-red-500 mt-0.5">{{ fieldError('description') }}</p>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Tavsif (UZ) *</label>
-            <textarea v-model="modalForm.description_uz" rows="2" placeholder="Viza rasmiylashtirish bo'yicha to'liq xizmat..."
+            <div class="flex items-center justify-between mb-1">
+              <label class="block text-sm font-medium text-gray-700">Tavsif (UZ) *</label>
+              <span class="text-xs" :class="(modalForm.description_uz?.length || 0) > 450 ? 'text-red-500' : 'text-gray-400'">
+                {{ modalForm.description_uz?.length || 0 }}/500
+              </span>
+            </div>
+            <textarea v-model="modalForm.description_uz" rows="2" maxlength="500" placeholder="Viza rasmiylashtirish bo'yicha to'liq xizmat..."
               :class="['w-full border rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400',
                 fieldError('description_uz') ? 'border-red-300 bg-red-50' : 'border-gray-200']"></textarea>
             <p v-if="fieldError('description_uz')" class="text-xs text-red-500 mt-0.5">{{ fieldError('description_uz') }}</p>
