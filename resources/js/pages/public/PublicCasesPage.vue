@@ -36,10 +36,44 @@
 
         <!-- Cases list -->
         <template v-if="!loading && cases.length">
-            <button v-for="c in cases" :key="c.id"
-                @click="router.push({ name: 'me.cases.show', params: { id: c.id } })"
-                class="w-full text-left bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden
-                       hover:border-[#1BA97F]/30 hover:shadow-md active:scale-[0.99] transition-all cursor-pointer">
+            <template v-for="c in cases" :key="c.id">
+
+                <!-- Компактная карточка для отменённых/отклонённых -->
+                <button v-if="isCancelledOrRejected(c)"
+                    @click="router.push({ name: 'me.cases.show', params: { id: c.id } })"
+                    class="w-full text-left bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden
+                           hover:border-gray-200 active:scale-[0.99] transition-all cursor-pointer opacity-60">
+                    <div class="px-5 py-3.5 flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <span class="text-xl shrink-0">{{ codeToFlag(c.country_code) }}</span>
+                            <div class="min-w-0">
+                                <div class="font-semibold text-gray-500 text-sm leading-tight">
+                                    {{ countryName(c.country_code) }}
+                                    <span class="text-gray-400 font-normal"> — {{ c.visa_type }}</span>
+                                </div>
+                                <div class="text-xs text-gray-400 mt-0.5">
+                                    <span v-if="c.agency">{{ c.agency.name }}</span>
+                                    <span v-if="c.case_number" class="font-mono ml-2">{{ c.case_number }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 shrink-0">
+                            <span class="text-xs font-semibold px-2.5 py-1 rounded-full"
+                                :class="publicStatusBadge(c.public_status)">
+                                {{ c.public_status_label }}
+                            </span>
+                            <svg class="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                            </svg>
+                        </div>
+                    </div>
+                </button>
+
+                <!-- Полная карточка для активных заявок -->
+                <button v-else
+                    @click="router.push({ name: 'me.cases.show', params: { id: c.id } })"
+                    class="w-full text-left bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden
+                           hover:border-[#1BA97F]/30 hover:shadow-md active:scale-[0.99] transition-all cursor-pointer">
 
                 <!-- Card header -->
                 <div class="px-5 pt-4 pb-2 flex items-start justify-between gap-3">
@@ -184,7 +218,7 @@
                         </span>
                     </div>
                 </div>
-                <div v-else-if="c.public_status !== 'draft' && c.public_status !== 'awaiting_payment' && c.public_status !== 'completed' && c.public_status !== 'rejected'" class="px-5 pb-2">
+                <div v-else-if="c.public_status !== 'draft' && c.public_status !== 'awaiting_payment' && c.public_status !== 'completed'" class="px-5 pb-2">
                     <div class="flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-50">
                         <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
@@ -242,7 +276,9 @@
                         {{ $t('cases.chooseAgencyBtn') }}
                     </button>
                 </div>
-            </button>
+                </button>
+
+            </template>
         </template>
 
         <!-- Empty state -->
@@ -363,6 +399,10 @@ function currentStepIndex(c) {
 
 function isTerminal(c) {
     return c.public_status === 'completed' || c.public_status === 'rejected';
+}
+
+function isCancelledOrRejected(c) {
+    return c.public_status === 'rejected' || c.public_status === 'cancelled';
 }
 
 function countryName(code) { return t(`countries.${code}`) !== `countries.${code}` ? t(`countries.${code}`) : code; }
@@ -488,7 +528,11 @@ onMounted(async () => {
             publicPortalApi.cases(),
             publicPortalApi.groups().catch(() => ({ data: { data: [] } })),
         ]);
-        cases.value = casesRes.data.data ?? [];
+        const all = casesRes.data.data ?? [];
+        // Отменённые и отклонённые — в конец
+        const active = all.filter(c => c.public_status !== 'rejected' && c.public_status !== 'cancelled');
+        const terminal = all.filter(c => c.public_status === 'rejected' || c.public_status === 'cancelled');
+        cases.value = [...active, ...terminal];
         groupsCount.value = (groupsRes.data.data ?? []).length;
     } catch {
         cases.value = [];
