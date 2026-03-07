@@ -247,11 +247,25 @@
                     <div class="p-3 rounded-xl bg-gray-50">
                         <div class="text-xs text-gray-400 mb-0.5">{{ $t('cases.estimatedCost') }}</div>
                         <template v-if="caseData.travel_date && caseData.return_date && tripDays > 0 && estimatedCost > 0">
-                            <div class="text-sm font-bold text-[#1BA97F]">~${{ estimatedCost.toLocaleString('ru-RU') }}</div>
-                            <div class="text-[9px] text-gray-400 mt-0.5 leading-tight">{{ $t('cases.estimatedCostNote') }}</div>
+                            <div class="text-sm font-bold text-[#1BA97F]">~${{ estimatedCostTotal.toLocaleString('ru-RU') }}</div>
+                            <div class="mt-1 space-y-0.5">
+                                <div v-if="costBreakdown.visa" class="flex justify-between text-[9px] text-gray-400">
+                                    <span>{{ $t('cases.costVisa') }}</span><span>${{ costBreakdown.visa }}</span>
+                                </div>
+                                <div v-if="costBreakdown.flights" class="flex justify-between text-[9px] text-gray-400">
+                                    <span>{{ $t('cases.costFlights') }}</span><span>${{ costBreakdown.flights }}</span>
+                                </div>
+                                <div v-if="costBreakdown.hotel" class="flex justify-between text-[9px] text-gray-400">
+                                    <span>{{ $t('cases.costHotel') }}</span><span>${{ costBreakdown.hotel }}</span>
+                                </div>
+                                <div v-if="costBreakdown.agency" class="flex justify-between text-[9px] text-gray-500 font-medium border-t border-gray-200 pt-0.5 mt-0.5">
+                                    <span>{{ $t('cases.costAgency') }}</span><span>{{ costBreakdown.agencyFormatted }}</span>
+                                </div>
+                            </div>
+                            <div class="text-[8px] text-gray-400 mt-1 leading-tight">{{ $t('cases.estimatedCostNote') }}</div>
                         </template>
                         <template v-else-if="!caseData.return_date">
-                            <div class="text-xs text-gray-400 leading-tight">{{ $t('cases.setReturnForEstimate') }}</div>
+                            <div class="text-[10px] text-gray-400 leading-tight">{{ $t('cases.setReturnForEstimate') }}</div>
                         </template>
                         <template v-else>
                             <div class="text-xs text-gray-400">--</div>
@@ -1240,15 +1254,41 @@ const tripDays = computed(() => {
     return Math.max(0, Math.round(ms / 86400000));
 });
 
-// Примерная стоимость поездки: виза + страховка + билеты (туда-обратно) + отель * дни
-const estimatedCost = computed(() => {
+// Примерная стоимость поездки: виза + билеты (туда-обратно) + отель * дни + услуги агентства
+const costBreakdown = computed(() => {
     const ci = countryInfo.value;
     const days = tripDays.value;
-    if (!ci || days <= 0) return 0;
-    const visaFee    = ci.visa_fee_usd || ci.evisa_fee_usd || 0;
-    const flights    = (ci.avg_flight_cost_usd || 0) * 2; // туда + обратно
-    const hotel      = (ci.avg_hotel_per_night_usd || 0) * days;
-    return Math.round(visaFee + flights + hotel);
+    if (!ci || days <= 0) return {};
+    const visa    = Math.round(ci.visa_fee_usd || ci.evisa_fee_usd || 0);
+    const flights = Math.round((ci.avg_flight_cost_usd || 0) * 2);
+    const hotel   = Math.round((ci.avg_hotel_per_night_usd || 0) * days);
+    // Услуги агентства
+    const pkg = caseData.value?.package;
+    const agencyPrice = pkg?.price || 0;
+    const agencyCurrency = pkg?.currency || 'UZS';
+    return {
+        visa:    visa || 0,
+        flights: flights || 0,
+        hotel:   hotel || 0,
+        agency:  agencyPrice,
+        agencyFormatted: agencyPrice ? formatPrice(agencyPrice, agencyCurrency) : null,
+    };
+});
+
+const estimatedCost = computed(() => {
+    const b = costBreakdown.value;
+    return (b.visa || 0) + (b.flights || 0) + (b.hotel || 0);
+});
+
+// Общая сумма с учётом агентства (конвертация UZS→USD ~12800)
+const estimatedCostTotal = computed(() => {
+    const base = estimatedCost.value;
+    const pkg = caseData.value?.package;
+    if (!pkg?.price) return base;
+    const cur = pkg.currency || 'UZS';
+    if (cur === 'USD') return base + pkg.price;
+    // UZS → USD (приблизительно)
+    return base + Math.round(pkg.price / 12800);
 });
 
 const tripDaysOverLimit = computed(() => {
