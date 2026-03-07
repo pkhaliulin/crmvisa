@@ -18,7 +18,7 @@
         </div>
 
         <template v-else-if="c">
-            <!-- Заголовок + бейджи -->
+            <!-- Заголовок + бейджи + скоринг -->
             <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
                 <div class="flex items-start justify-between mb-4">
                     <div class="flex items-center gap-3">
@@ -44,6 +44,29 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Скоринг по стране -->
+                    <div v-if="countryScore" class="shrink-0 flex flex-col items-center">
+                        <div class="relative w-20 h-20 sm:w-24 sm:h-24">
+                            <svg class="w-full h-full -rotate-90" viewBox="0 0 80 80">
+                                <circle cx="40" cy="40" r="32" fill="none" stroke="#f1f5f9" stroke-width="6"/>
+                                <circle cx="40" cy="40" r="32" fill="none"
+                                        :stroke="sColor(countryScore.score)" stroke-width="6"
+                                        stroke-linecap="round"
+                                        :stroke-dasharray="`${countryScore.score * 2.01} 201`"
+                                        class="transition-all duration-700"/>
+                            </svg>
+                            <div class="absolute inset-0 flex items-center justify-center text-center">
+                                <div>
+                                    <div class="text-lg sm:text-xl font-bold text-[#0A1F44]">{{ countryScore.score }}%</div>
+                                    <div class="text-[9px] sm:text-[10px] font-medium" :style="{ color: sColor(countryScore.score) }">
+                                        {{ countryScore.label }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div v-else-if="scoreLoading" class="shrink-0 w-20 h-20 sm:w-24 sm:h-24 bg-gray-50 rounded-full animate-pulse"></div>
                 </div>
 
                 <!-- Ключевые метрики -->
@@ -86,6 +109,31 @@
                             :class="c.risk_level === 'low' ? 'text-green-500' : c.risk_level === 'high' ? 'text-red-500' : 'text-yellow-500'">
                             {{ $t('countryPage.riskLevel') }}
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Детальный скоринг по стране -->
+            <div v-if="countryScore" class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+                <h2 class="font-bold text-[#0A1F44] text-sm mb-3">{{ $t('scoring.yourScoring') }}</h2>
+                <div class="space-y-2.5 mb-3">
+                    <div v-for="block in SCORE_BLOCKS" :key="block.key" class="flex items-center gap-2">
+                        <span class="text-xs text-gray-400 w-28 shrink-0">{{ block.label }}</span>
+                        <div class="flex-1 bg-gray-100 rounded-full h-2">
+                            <div class="h-2 rounded-full transition-all duration-700"
+                                 :style="{ width: (countryScore.breakdown?.[block.key] ?? 0) + '%', background: sColor(countryScore.breakdown?.[block.key] ?? 0) }"></div>
+                        </div>
+                        <span class="text-xs font-bold text-gray-600 w-7 text-right">{{ countryScore.breakdown?.[block.key] ?? 0 }}</span>
+                    </div>
+                </div>
+                <div v-if="countryScore.red_flags?.length" class="p-3 bg-red-50 rounded-xl mb-3">
+                    <div v-for="flag in countryScore.red_flags" :key="flag" class="text-xs text-red-600">{{ flag }}</div>
+                </div>
+                <div v-if="countryScore.recommendations?.length" class="p-3 bg-amber-50 rounded-xl space-y-1.5">
+                    <div class="text-xs font-semibold text-amber-700 mb-1">{{ $t('scoring.improveTips') }}</div>
+                    <div v-for="rec in countryScore.recommendations" :key="rec" class="flex items-start gap-1.5 text-xs text-amber-800">
+                        <span class="shrink-0 mt-px">&rarr;</span>
+                        <span>{{ rec }}</span>
                     </div>
                 </div>
             </div>
@@ -417,6 +465,33 @@ const c       = ref(null);
 const creatingCase = ref(false);
 const showCaseForm = ref(false);
 const caseFormError = ref('');
+const countryScore = ref(null);
+const scoreLoading = ref(false);
+
+const SCORE_BLOCKS = computed(() => [
+    { key: 'finances',     label: t('scoring.finances') },
+    { key: 'visa_history', label: t('scoring.visaHistoryBlock') },
+    { key: 'social_ties',  label: t('scoring.socialTies') },
+    { key: 'destination',  label: t('scoring.destination') },
+    { key: 'visa_type',    label: t('scoring.visaType') },
+]);
+
+function sColor(score) {
+    if (score >= 80) return '#1BA97F';
+    if (score >= 60) return '#3B82F6';
+    if (score >= 40) return '#F59E0B';
+    return '#EF4444';
+}
+
+async function loadCountryScore(code) {
+    scoreLoading.value = true;
+    try {
+        const res = await publicPortalApi.scoreCountry(code);
+        countryScore.value = res.data.data;
+    } catch { /* silent */ } finally {
+        scoreLoading.value = false;
+    }
+}
 
 const caseForm = reactive({
     visa_type: '',
@@ -632,6 +707,7 @@ onMounted(async () => {
         } catch { /* ignore */ }
     } finally {
         loading.value = false;
+        if (c.value) loadCountryScore(c.value.country_code);
     }
 });
 </script>

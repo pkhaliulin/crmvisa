@@ -143,7 +143,7 @@ class PublicScoringService
     // Этап 2 — Блоки расчёта (0-100 баллов каждый)
     // -------------------------------------------------------------------------
 
-    private function calcFinances(PublicUser $user): int
+    public function calcFinances(PublicUser $user): int
     {
         $score = 0;
 
@@ -170,7 +170,7 @@ class PublicScoringService
         return min(100, $score);
     }
 
-    private function calcVisaHistory(PublicUser $user): int
+    public function calcVisaHistory(PublicUser $user): int
     {
         $score = 50; // нейтральная база
 
@@ -197,7 +197,7 @@ class PublicScoringService
         return max(0, min(100, $score));
     }
 
-    private function calcSocialTies(PublicUser $user): int
+    public function calcSocialTies(PublicUser $user): int
     {
         $score = 0;
 
@@ -369,7 +369,7 @@ class PublicScoringService
     // Вспомогательные методы
     // -------------------------------------------------------------------------
 
-    private function getRedFlagDescriptions(PublicUser $user, float $multiplier): array
+    public function getRedFlagDescriptions(PublicUser $user, float $multiplier): array
     {
         if ($multiplier >= 1.0) return [];
 
@@ -426,6 +426,65 @@ class PublicScoringService
         }
 
         return array_slice($recs, 0, 4);
+    }
+
+    /**
+     * Рекомендации по профилю (без привязки к стране).
+     */
+    public function profileRecommendations(PublicUser $user, array $blocks): array
+    {
+        $recs = [];
+
+        // Финансы
+        if ($blocks['finances'] < 50) {
+            if (!$user->monthly_income_usd) {
+                $recs[] = ['type' => 'finances', 'priority' => 'high', 'text' => 'Укажите ежемесячный доход — это значительно повысит скоринг', 'docs' => ['Справка о доходах с места работы', 'Банковская выписка за 3-6 месяцев']];
+            } else {
+                $recs[] = ['type' => 'finances', 'priority' => 'medium', 'text' => 'Подготовьте документы, подтверждающие финансовую стабильность', 'docs' => ['Справка о доходах с места работы', 'Банковская выписка за 3-6 месяцев', 'Справка о балансе сберегательного счёта']];
+            }
+            if (!$user->employment_type || $user->employment_type === 'unemployed') {
+                $recs[] = ['type' => 'finances', 'priority' => 'high', 'text' => 'Официальное трудоустройство значительно повышает шансы', 'docs' => ['Трудовой договор', 'Приказ о назначении на должность', 'Приказ о предоставлении отпуска']];
+            }
+        } elseif ($blocks['finances'] < 70) {
+            $recs[] = ['type' => 'finances', 'priority' => 'low', 'text' => 'Финансовый профиль достаточный, но можно усилить дополнительными документами', 'docs' => ['Налоговая декларация', 'Справка о депозитах']];
+        }
+
+        // Визовая история
+        if ($blocks['visa_history'] < 50) {
+            if (!$user->has_schengen_visa && !$user->has_us_visa) {
+                $recs[] = ['type' => 'visa_history', 'priority' => 'medium', 'text' => 'Наличие шенгенской или американской визы значительно повышает доверие', 'docs' => ['Копии предыдущих виз', 'Копии штампов в паспорте']];
+            }
+            if (($user->refusals_count ?? 0) > 0) {
+                $recs[] = ['type' => 'visa_history', 'priority' => 'high', 'text' => 'При наличии отказов особенно важно подготовить полный пакет документов', 'docs' => ['Письмо-объяснение причин предыдущего отказа', 'Дополнительные подтверждающие документы']];
+            }
+        }
+
+        // Привязанность
+        if ($blocks['social_ties'] < 50) {
+            if (!$user->has_property) {
+                $recs[] = ['type' => 'social_ties', 'priority' => 'medium', 'text' => 'Укажите наличие недвижимости — это главный фактор привязанности к родине', 'docs' => ['Свидетельство о праве собственности на недвижимость']];
+            }
+            if (!$user->has_car) {
+                $recs[] = ['type' => 'social_ties', 'priority' => 'low', 'text' => 'Наличие автомобиля подтверждает имущественную привязанность', 'docs' => ['Техпаспорт автомобиля']];
+            }
+            if ($user->marital_status !== 'married') {
+                $recs[] = ['type' => 'social_ties', 'priority' => 'medium', 'text' => 'Семейные связи — важный фактор привязанности', 'docs' => ['Свидетельство о браке', 'Свидетельства о рождении детей']];
+            }
+            if (!$user->employment_type || !in_array($user->employment_type, ['employed', 'business_owner'])) {
+                $recs[] = ['type' => 'social_ties', 'priority' => 'medium', 'text' => 'Стабильная занятость — ключевой фактор для консульства', 'docs' => ['Приказ о назначении на должность', 'Приказ о предоставлении отпуска', 'Справка с места работы']];
+            }
+        }
+
+        // Профиль неполный
+        if ($user->profileCompleteness() < 60) {
+            $recs[] = ['type' => 'profile', 'priority' => 'high', 'text' => 'Заполните профиль полностью — это увеличит точность прогноза и улучшит скоринг', 'docs' => []];
+        }
+
+        // Sort by priority: high > medium > low
+        $priorityOrder = ['high' => 0, 'medium' => 1, 'low' => 2];
+        usort($recs, fn ($a, $b) => ($priorityOrder[$a['priority']] ?? 9) - ($priorityOrder[$b['priority']] ?? 9));
+
+        return array_slice($recs, 0, 6);
     }
 
     private function scoreLabel(int $score, array $thresholds): string

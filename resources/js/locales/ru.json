@@ -383,7 +383,19 @@
     "income1000to2000": "$1 000–2 000",
     "income2000to4000": "$2 000–4 000",
     "incomeOver4000": "Более $4 000",
-    "reducesScoring": "снижают скоринг!"
+    "reducesScoring": "снижают скоринг!",
+    "profileSubtitle": "Ваш скоринговый профиль и рекомендации",
+    "yourProfile": "Ваш профиль",
+    "baseScoreTitle": "Базовый скоринг",
+    "recommendationsTitle": "Рекомендации по улучшению",
+    "countriesHintTitle": "Скоринг по странам",
+    "countriesHintDesc": "Откройте раздел «Страны», чтобы увидеть свои шансы по каждой стране с учётом визового режима, стоимости и сроков.",
+    "goToCountries": "Перейти к странам",
+    "editProfileData": "Изменить данные профиля",
+    "priorityHigh": "Важно",
+    "priorityMedium": "Рекомендуется",
+    "priorityLow": "Дополнительно",
+    "yourScoring": "Ваш скоринг по этой стране"
   },
   "cases": {
     "title": "Мои заявки",
@@ -681,7 +693,7 @@
     "standardDays": "Стандартный",
     "expeditedDays": "Ускоренный",
     "appointmentWait": "Ожидание записи",
-    "bufferDays": "Буфер",
+    "bufferDays": "Запас (буфер)",
     "embassyInfo": "Информация о посольстве",
     "embassy": "Посольство",
     "embassyName": "Название посольства",
@@ -732,7 +744,6 @@
     "processingTimeline": "Сроки обработки (дни)",
     "preparationDays": "Подготовка документов",
     "appointmentWaitDays": "Ожидание приема",
-    "bufferDays": "Запас (буфер)",
     "processingTime": "Обработка",
     "minDaysBefore": "Мин. дней до вылета",
     "fees": "Сборы",
@@ -1104,8 +1115,7 @@
     "showDetails": "Показать детали",
     "hideDetails": "Скрыть детали",
     "paidVia": "Оплачено через",
-    "andMore": "и ещё {count}",
-    "persons": "чел."
+    "andMore": "и ещё {count}"
   },
   "agencySelection": {
     "title": "Выберите агентство",
@@ -1226,7 +1236,9 @@
     "sortFeeAsc": "Сбор: дешевле",
     "sortFeeDesc": "Сбор: дороже",
     "sortFlightAsc": "Перелёт: дешевле",
-    "sortProcessing": "Обработка: быстрее"
+    "sortProcessing": "Обработка: быстрее",
+    "sortScoreDesc": "Шанс: высокий",
+    "sortScoreAsc": "Шанс: низкий"
   },
   "countriesPage": {
     "title": "Страны",

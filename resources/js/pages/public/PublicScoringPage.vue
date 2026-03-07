@@ -1,29 +1,104 @@
 <template>
-    <div>
+    <div class="space-y-5">
 
-            <!-- Хедер страницы -->
-            <div class="mb-6 sm:mb-8">
-                <div class="flex items-start justify-between gap-4">
-                    <div>
-                        <h1 class="text-xl sm:text-2xl font-bold text-[#0A1F44]">{{ $t('scoring.title') }}</h1>
-                        <p class="text-gray-500 text-sm mt-0.5">{{ $t('scoring.subtitle') }}</p>
+        <!-- Header -->
+        <div class="flex items-start justify-between gap-4">
+            <div>
+                <h1 class="text-xl sm:text-2xl font-bold text-[#0A1F44]">{{ $t('scoring.title') }}</h1>
+                <p class="text-gray-500 text-sm mt-0.5">{{ $t('scoring.profileSubtitle') }}</p>
+            </div>
+            <div class="text-right shrink-0">
+                <div class="text-xs text-gray-400 mb-1">{{ $t('common.profile') }}</div>
+                <div class="flex items-center gap-2">
+                    <div class="w-20 sm:w-32 bg-gray-200 rounded-full h-2">
+                        <div class="h-2 rounded-full bg-[#1BA97F] transition-all duration-500"
+                             :style="{ width: profilePercent + '%' }"></div>
                     </div>
-                    <!-- Прогресс профиля -->
-                    <div class="text-right shrink-0">
-                        <div class="text-xs text-gray-400 mb-1">{{ $t('common.profile') }}</div>
-                        <div class="flex items-center gap-2">
-                            <div class="w-20 sm:w-32 bg-gray-200 rounded-full h-2">
-                                <div class="h-2 rounded-full bg-[#1BA97F] transition-all duration-500"
-                                     :style="{ width: profilePercent + '%' }"></div>
+                    <span class="text-sm font-bold text-[#0A1F44]">{{ profilePercent }}%</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading -->
+        <div v-if="loading" class="space-y-4">
+            <div v-for="i in 4" :key="i" class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 animate-pulse">
+                <div class="h-5 bg-gray-100 rounded w-48 mb-3"></div>
+                <div class="h-4 bg-gray-50 rounded w-full mb-2"></div>
+                <div class="h-4 bg-gray-50 rounded w-3/4"></div>
+            </div>
+        </div>
+
+        <template v-else>
+            <!-- Общий скоринговый профиль -->
+            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sm:p-6">
+                <div class="flex items-center justify-between mb-5">
+                    <div>
+                        <div class="text-xs text-gray-400 mb-1">{{ $t('scoring.yourProfile') }}</div>
+                        <div class="font-bold text-[#0A1F44] text-lg">{{ $t('scoring.baseScoreTitle') }}</div>
+                    </div>
+                    <!-- Круговой скор -->
+                    <div class="relative flex items-center justify-center">
+                        <svg class="w-24 h-24 sm:w-28 sm:h-28 -rotate-90" viewBox="0 0 80 80">
+                            <circle cx="40" cy="40" r="32" fill="none" stroke="#f1f5f9" stroke-width="7"/>
+                            <circle cx="40" cy="40" r="32" fill="none"
+                                    :stroke="scoreColor(profile.base_score)" stroke-width="7"
+                                    stroke-linecap="round"
+                                    :stroke-dasharray="`${profile.base_score * 2.01} 201`"
+                                    class="transition-all duration-700"/>
+                        </svg>
+                        <div class="absolute text-center">
+                            <div class="text-xl sm:text-2xl font-bold text-[#0A1F44]">{{ profile.base_score }}%</div>
+                            <div class="text-[10px] font-medium" :style="{ color: scoreColor(profile.base_score) }">
+                                {{ scoreLabel(profile.base_score) }}
                             </div>
-                            <span class="text-sm font-bold text-[#0A1F44]">{{ profilePercent }}%</span>
                         </div>
                     </div>
                 </div>
+
+                <!-- Разбивка по 3 базовым блокам -->
+                <div class="space-y-3 mb-4">
+                    <div v-for="block in PROFILE_BLOCKS" :key="block.key"
+                        class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-white text-xs font-bold"
+                             :style="{ background: block.color }">
+                            {{ block.weight }}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-sm font-medium text-[#0A1F44]">{{ block.label }}</span>
+                                <span class="text-sm font-bold" :style="{ color: blockColor(profile.blocks?.[block.key]) }">
+                                    {{ profile.blocks?.[block.key] ?? 0 }}/100
+                                </span>
+                            </div>
+                            <div class="bg-gray-100 rounded-full h-2.5">
+                                <div class="h-2.5 rounded-full transition-all duration-700"
+                                     :style="{ width: (profile.blocks?.[block.key] ?? 0) + '%', background: blockColor(profile.blocks?.[block.key]) }"></div>
+                            </div>
+                            <p class="text-[11px] text-gray-400 mt-1">{{ block.desc }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Красные флаги -->
+                <div v-if="profile.red_flags?.length" class="p-3.5 bg-red-50 rounded-xl space-y-1.5 mb-4">
+                    <div class="text-xs font-semibold text-red-700 flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                        </svg>
+                        {{ $t('scoring.redFlags') }} (&times;{{ profile.red_flag_multiplier?.toFixed(1) }})
+                    </div>
+                    <div v-for="flag in profile.red_flags" :key="flag" class="text-xs text-red-600">{{ flag }}</div>
+                </div>
+
+                <!-- Кнопка пересчитать -->
+                <button @click="loadProfile" :disabled="loading"
+                    class="w-full py-3 bg-[#0A1F44] text-white text-sm font-semibold rounded-xl hover:bg-[#0d2a5e] active:scale-[0.98] transition-all disabled:opacity-60">
+                    {{ $t('scoring.recalculate') }}
+                </button>
             </div>
 
-            <!-- Аккордеон "Как рассчитывается вероятность" -->
-            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm mb-5 overflow-hidden">
+            <!-- Как рассчитывается -->
+            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                 <button @click="howOpen = !howOpen"
                     class="w-full px-5 py-4 flex items-center justify-between text-left hover:bg-gray-50 transition-colors">
                     <div class="flex items-center gap-3">
@@ -43,7 +118,7 @@
                 <div v-if="howOpen" class="px-5 pb-5 border-t border-gray-50">
                     <p class="text-sm text-gray-500 mt-3 mb-4">{{ $t('scoring.howDesc') }}</p>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div v-for="block in HOW_BLOCKS" :key="block.key"
+                        <div v-for="block in ALL_BLOCKS" :key="block.key"
                             class="flex items-start gap-3 p-3 rounded-xl bg-gray-50">
                             <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-white text-xs font-bold"
                                  :style="{ background: block.color }">
@@ -73,138 +148,115 @@
                 </div>
             </div>
 
-            <!-- Список стран + детальный скоринг -->
-            <div class="space-y-4">
-
-                    <!-- Детальный скоринг выбранной страны -->
-                    <div v-if="activeScore" class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sm:p-6">
-                        <div class="flex items-center justify-between mb-5 sm:mb-6">
-                            <div>
-                                <div class="text-xs text-gray-400 mb-1">{{ $t('scoring.selectedCountry') }}</div>
-                                <div class="font-bold text-[#0A1F44] text-lg">
-                                    {{ countryFlag(activeScore.country_code) }}
-                                    {{ countryName(activeScore.country_code) }}
-                                </div>
-                            </div>
-                            <!-- Круговой скор -->
-                            <div class="relative flex items-center justify-center">
-                                <svg class="w-20 h-20 sm:w-24 sm:h-24 -rotate-90" viewBox="0 0 80 80">
-                                    <circle cx="40" cy="40" r="32" fill="none" stroke="#f1f5f9" stroke-width="7"/>
-                                    <circle cx="40" cy="40" r="32" fill="none"
-                                            :stroke="scoreColor(activeScore.score)" stroke-width="7"
-                                            stroke-linecap="round"
-                                            :stroke-dasharray="`${activeScore.score * 2.01} 201`"
-                                            class="transition-all duration-700"/>
+            <!-- Рекомендации -->
+            <div v-if="profile.recommendations?.length" class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+                <h3 class="font-bold text-[#0A1F44] text-sm mb-4">{{ $t('scoring.recommendationsTitle') }}</h3>
+                <div class="space-y-3">
+                    <div v-for="(rec, idx) in profile.recommendations" :key="idx"
+                        class="p-4 rounded-xl border"
+                        :class="recStyle(rec.priority)">
+                        <div class="flex items-start gap-3">
+                            <div class="w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5"
+                                 :class="recIconStyle(rec.priority)">
+                                <svg v-if="rec.priority === 'high'" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01"/>
                                 </svg>
-                                <div class="absolute text-center">
-                                    <div class="text-lg sm:text-xl font-bold text-[#0A1F44]">{{ activeScore.score }}%</div>
-                                    <div class="text-[9px] sm:text-[10px]" :style="{ color: scoreColor(activeScore.score) }">
-                                        {{ activeScore.label }}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Красные флаги -->
-                        <div v-if="activeScore.red_flags?.length" class="mb-4 p-3 bg-red-50 rounded-xl space-y-1.5">
-                            <div class="text-xs font-semibold text-red-700 flex items-center gap-1.5">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                                <svg v-else-if="rec.priority === 'medium'" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
                                 </svg>
-                                {{ $t('scoring.redFlags') }} (&times;{{ activeScore.red_flag_multiplier?.toFixed(1) }})
+                                <svg v-else class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                                </svg>
                             </div>
-                            <div v-for="flag in activeScore.red_flags" :key="flag" class="text-xs text-red-600">{{ flag }}</div>
-                        </div>
-
-                        <!-- Разбивка по 5 блокам -->
-                        <div class="space-y-3 mb-5 sm:mb-6">
-                            <div v-for="block in HOW_BLOCKS" :key="block.key"
-                                class="flex items-center gap-2 sm:gap-3">
-                                <span class="text-xs text-gray-400 w-28 sm:w-32 shrink-0">{{ block.label }}</span>
-                                <div class="flex-1 bg-gray-100 rounded-full h-2.5">
-                                    <div class="h-2.5 rounded-full transition-all duration-700"
-                                         :class="blockBarColor(activeScore.breakdown?.[block.key])"
-                                         :style="{ width: (activeScore.breakdown?.[block.key] ?? 0) + '%' }"></div>
-                                </div>
-                                <span class="text-xs font-bold text-gray-600 w-7 text-right">
-                                    {{ activeScore.breakdown?.[block.key] ?? 0 }}
-                                </span>
-                            </div>
-                        </div>
-
-                        <!-- Рекомендации -->
-                        <div v-if="activeScore.recommendations?.length"
-                            class="p-4 bg-amber-50 rounded-xl space-y-2">
-                            <div class="text-xs font-semibold text-amber-700 mb-2">{{ $t('scoring.improveTips') }}</div>
-                            <div v-for="rec in activeScore.recommendations" :key="rec"
-                                class="flex items-start gap-2 text-sm text-amber-800">
-                                <span class="shrink-0 mt-px">&rarr;</span>
-                                <span>{{ rec }}</span>
-                            </div>
-                        </div>
-
-                        <!-- Найти агентство -->
-                        <button @click="goToAgencies(activeScore)"
-                            class="mt-4 w-full py-3.5 bg-[#1BA97F] text-white font-semibold rounded-xl
-                                  hover:bg-[#17956f] active:scale-[0.98] transition-all">
-                            {{ $t('scoring.findAgencyFor', { country: countryName(activeScore.country_code) }) }}
-                        </button>
-                    </div>
-
-                    <!-- Список всех стран -->
-                    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                        <div class="px-5 sm:px-6 py-4 border-b border-gray-50 flex items-center justify-between">
-                            <h3 class="font-bold text-[#0A1F44]">{{ $t('scoring.allCountries') }}</h3>
-                            <span class="text-xs text-gray-400">{{ $t('scoring.countryCount', { count: scores.length }) }}</span>
-                        </div>
-
-                        <div v-if="scoringLoading" class="p-5 sm:p-6 space-y-3">
-                            <div v-for="i in 8" :key="i"
-                                class="h-14 bg-gray-50 rounded-xl animate-pulse"></div>
-                        </div>
-
-                        <div v-else class="divide-y divide-gray-50">
-                            <button
-                                v-for="s in scores"
-                                :key="s.country_code"
-                                @click="selectCountry(s)"
-                                class="w-full px-4 sm:px-6 py-4 flex items-center gap-3 sm:gap-4
-                                       hover:bg-slate-50 active:bg-slate-100 transition-colors text-left"
-                                :class="{ 'bg-[#1BA97F]/5': activeScore?.country_code === s.country_code }">
-                                <span class="text-xl sm:text-2xl">{{ countryFlag(s.country_code) }}</span>
-                                <div class="flex-1 min-w-0">
-                                    <div class="font-medium text-[#0A1F44] text-sm truncate">
-                                        {{ countryName(s.country_code) }}
-                                    </div>
-                                </div>
-                                <!-- Мини бар -->
-                                <div class="w-16 sm:w-24 bg-gray-100 rounded-full h-2 shrink-0">
-                                    <div class="h-2 rounded-full transition-all duration-700"
-                                         :class="s.score >= 80 ? 'bg-[#1BA97F]' : s.score >= 60 ? 'bg-blue-400' : s.score >= 40 ? 'bg-amber-400' : 'bg-red-400'"
-                                         :style="{ width: s.score + '%' }"></div>
-                                </div>
-                                <div class="w-10 sm:w-12 text-right shrink-0">
-                                    <span class="text-sm font-bold"
-                                          :class="s.score >= 80 ? 'text-[#1BA97F]' : s.score >= 60 ? 'text-blue-500' : s.score >= 40 ? 'text-amber-500' : 'text-red-500'">
-                                        {{ s.score }}%
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                                          :class="recBadgeStyle(rec.type)">
+                                        {{ blockLabel(rec.type) }}
+                                    </span>
+                                    <span class="text-[10px] font-medium"
+                                          :class="rec.priority === 'high' ? 'text-red-500' : rec.priority === 'medium' ? 'text-amber-500' : 'text-green-500'">
+                                        {{ priorityLabel(rec.priority) }}
                                     </span>
                                 </div>
-                                <span class="text-gray-300 text-sm hidden sm:block">&rsaquo;</span>
-                            </button>
+                                <p class="text-sm text-[#0A1F44] font-medium">{{ rec.text }}</p>
+                                <div v-if="rec.docs?.length" class="mt-2 space-y-1">
+                                    <div v-for="doc in rec.docs" :key="doc"
+                                        class="flex items-center gap-1.5 text-xs text-gray-500">
+                                        <svg class="w-3 h-3 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                        </svg>
+                                        {{ doc }}
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
+                </div>
             </div>
+
+            <!-- Подсказка: перейти в страны -->
+            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl border border-blue-100 p-5">
+                <div class="flex items-start gap-3">
+                    <div class="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center shrink-0">
+                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
+                        </svg>
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-sm font-semibold text-blue-800 mb-1">{{ $t('scoring.countriesHintTitle') }}</p>
+                        <p class="text-xs text-blue-600 mb-3">{{ $t('scoring.countriesHintDesc') }}</p>
+                        <router-link :to="{ name: 'me.countries' }"
+                            class="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition-colors">
+                            {{ $t('scoring.goToCountries') }}
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                            </svg>
+                        </router-link>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Редактирование профиля -->
+            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                <button @click="editOpen = !editOpen"
+                    class="w-full px-5 py-4 flex items-center justify-between text-left hover:bg-gray-50 transition-colors">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 bg-[#1BA97F]/10 rounded-lg flex items-center justify-center shrink-0">
+                            <svg class="w-4 h-4 text-[#1BA97F]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                            </svg>
+                        </div>
+                        <span class="font-semibold text-[#0A1F44] text-sm">{{ $t('scoring.editProfileData') }}</span>
+                    </div>
+                    <svg class="w-5 h-5 text-gray-400 transition-transform duration-200"
+                         :class="editOpen ? 'rotate-180' : ''"
+                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+                <div v-if="editOpen" class="px-5 pb-5 border-t border-gray-50 pt-4">
+                    <ProfileFormInline
+                        v-model:profile="formData"
+                        :loading="saving"
+                        :employment-types="employmentTypes"
+                        :marital-statuses="maritalStatuses"
+                        :current-locale="locale"
+                        @update="saveProfile"
+                        @recalculate="saveAndRecalculate"
+                    />
+                </div>
+            </div>
+        </template>
     </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed, defineComponent, h } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { ref, onMounted, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { publicPortalApi } from '@/api/public';
 import { usePublicAuthStore } from '@/stores/publicAuth';
 import { usePublicReferences } from '@/composables/usePublicReferences';
-import { countryName as getCountryName, codeToFlag } from '@/utils/countries';
 
 const { t, locale } = useI18n();
 const { activeItems: refItems } = usePublicReferences();
@@ -212,34 +264,24 @@ const { activeItems: refItems } = usePublicReferences();
 const employmentTypes = computed(() => refItems('employment_type'));
 const maritalStatuses = computed(() => refItems('marital_status'));
 
-const route          = useRoute();
-const router         = useRouter();
-const publicAuth     = usePublicAuthStore();
-const scores         = ref([]);
-const activeScore    = ref(null);
-const scoringLoading = ref(false);
-const profileOpen    = ref(false);
-const howOpen        = ref(false);
-
-const profilePercent = computed(() => publicAuth.profilePercent);
-
-// 5 блоков скоринга (computed для реактивности i18n)
-const HOW_BLOCKS = computed(() => [
-    { key: 'finances',     label: t('scoring.finances'),          weight: '25%', color: '#1BA97F', desc: t('scoring.financesDesc') },
-    { key: 'visa_history', label: t('scoring.visaHistoryBlock'),   weight: '30%', color: '#3B82F6', desc: t('scoring.visaHistoryDesc') },
-    { key: 'social_ties',  label: t('scoring.socialTies'),        weight: '20%', color: '#8B5CF6', desc: t('scoring.socialTiesDesc') },
-    { key: 'destination',  label: t('scoring.destination'),       weight: '15%', color: '#F59E0B', desc: t('scoring.destinationDesc') },
-    { key: 'visa_type',    label: t('scoring.visaType'),          weight: '10%', color: '#EF4444', desc: t('scoring.visaTypeDesc') },
-]);
-
-const LEVELS = computed(() => [
-    { range: '80\u2013100%', label: t('scoring.levelHigh'),   color: '#1BA97F', bg: '#f0fdf4' },
-    { range: '60\u201379%',  label: t('scoring.levelMedium'), color: '#3B82F6', bg: '#eff6ff' },
-    { range: '40\u201359%',  label: t('scoring.levelLow'),    color: '#F59E0B', bg: '#fffbeb' },
-    { range: '<40%',         label: t('scoring.levelRisk'),   color: '#EF4444', bg: '#fef2f2' },
-]);
+const publicAuth = usePublicAuthStore();
+const loading    = ref(true);
+const saving     = ref(false);
+const howOpen    = ref(false);
+const editOpen   = ref(false);
 
 const profile = ref({
+    base_score: 0,
+    blocks: {},
+    red_flags: [],
+    red_flag_multiplier: 1.0,
+    recommendations: [],
+    profile_percent: 0,
+});
+
+const profilePercent = computed(() => profile.value.profile_percent ?? publicAuth.profilePercent);
+
+const formData = ref({
     employment_type:       publicAuth.user?.employment_type       ?? '',
     monthly_income_usd:    publicAuth.user?.monthly_income_usd    ?? '',
     marital_status:        publicAuth.user?.marital_status        ?? '',
@@ -256,71 +298,119 @@ const profile = ref({
     employed_years:        publicAuth.user?.employed_years        ?? 0,
 });
 
-const countryMapDynamic = ref({});
+// 3 базовых блока профиля (без destination и visa_type — они зависят от страны)
+const PROFILE_BLOCKS = computed(() => [
+    { key: 'finances',     label: t('scoring.finances'),        weight: '30%', color: '#1BA97F', desc: t('scoring.financesDesc') },
+    { key: 'visa_history', label: t('scoring.visaHistoryBlock'), weight: '40%', color: '#3B82F6', desc: t('scoring.visaHistoryDesc') },
+    { key: 'social_ties',  label: t('scoring.socialTies'),      weight: '30%', color: '#8B5CF6', desc: t('scoring.socialTiesDesc') },
+]);
 
-function countryName(code) { return countryMapDynamic.value[code]?.name ?? getCountryName(code) ?? code; }
-function countryFlag(code) { return countryMapDynamic.value[code]?.flag ?? codeToFlag(code); }
+// Все 5 блоков (для объяснения)
+const ALL_BLOCKS = computed(() => [
+    { key: 'finances',     label: t('scoring.finances'),         weight: '25%', color: '#1BA97F', desc: t('scoring.financesDesc') },
+    { key: 'visa_history', label: t('scoring.visaHistoryBlock'),  weight: '30%', color: '#3B82F6', desc: t('scoring.visaHistoryDesc') },
+    { key: 'social_ties',  label: t('scoring.socialTies'),       weight: '20%', color: '#8B5CF6', desc: t('scoring.socialTiesDesc') },
+    { key: 'destination',  label: t('scoring.destination'),      weight: '15%', color: '#F59E0B', desc: t('scoring.destinationDesc') },
+    { key: 'visa_type',    label: t('scoring.visaType'),         weight: '10%', color: '#EF4444', desc: t('scoring.visaTypeDesc') },
+]);
+
+const LEVELS = computed(() => [
+    { range: '80\u2013100%', label: t('scoring.levelHigh'),   color: '#1BA97F', bg: '#f0fdf4' },
+    { range: '60\u201379%',  label: t('scoring.levelMedium'), color: '#3B82F6', bg: '#eff6ff' },
+    { range: '40\u201359%',  label: t('scoring.levelLow'),    color: '#F59E0B', bg: '#fffbeb' },
+    { range: '<40%',         label: t('scoring.levelRisk'),   color: '#EF4444', bg: '#fef2f2' },
+]);
+
 function scoreColor(score) {
     if (score >= 80) return '#1BA97F';
     if (score >= 60) return '#3B82F6';
     if (score >= 40) return '#F59E0B';
     return '#EF4444';
 }
-function blockBarColor(val) {
+
+function blockColor(val) {
     val = val ?? 0;
-    if (val >= 60) return 'bg-[#1BA97F]';
-    if (val >= 40) return 'bg-amber-400';
-    return 'bg-red-400';
+    if (val >= 70) return '#1BA97F';
+    if (val >= 50) return '#3B82F6';
+    if (val >= 30) return '#F59E0B';
+    return '#EF4444';
 }
 
-function goToAgencies(score) {
-    router.push({ name: 'me.agencies', query: { country_code: score.country_code } });
+function scoreLabel(score) {
+    if (score >= 80) return t('scoring.levelHigh');
+    if (score >= 60) return t('scoring.levelMedium');
+    if (score >= 40) return t('scoring.levelLow');
+    return t('scoring.levelRisk');
 }
 
-function selectCountry(s) {
-    activeScore.value = s;
-    if (window.innerWidth < 768) {
-        setTimeout(() => {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }, 50);
+function blockLabel(type) {
+    const labels = {
+        finances: t('scoring.finances'),
+        visa_history: t('scoring.visaHistoryBlock'),
+        social_ties: t('scoring.socialTies'),
+        profile: t('common.profile'),
+    };
+    return labels[type] || type;
+}
+
+function priorityLabel(p) {
+    return { high: t('scoring.priorityHigh'), medium: t('scoring.priorityMedium'), low: t('scoring.priorityLow') }[p] || p;
+}
+
+function recStyle(priority) {
+    return {
+        high:   'border-red-100 bg-red-50/50',
+        medium: 'border-amber-100 bg-amber-50/30',
+        low:    'border-green-100 bg-green-50/30',
+    }[priority] || 'border-gray-100';
+}
+
+function recIconStyle(priority) {
+    return {
+        high:   'bg-red-100 text-red-600',
+        medium: 'bg-amber-100 text-amber-600',
+        low:    'bg-green-100 text-green-600',
+    }[priority] || 'bg-gray-100 text-gray-500';
+}
+
+function recBadgeStyle(type) {
+    return {
+        finances:     'bg-emerald-100 text-emerald-700',
+        visa_history: 'bg-blue-100 text-blue-700',
+        social_ties:  'bg-purple-100 text-purple-700',
+        profile:      'bg-gray-100 text-gray-700',
+    }[type] || 'bg-gray-100 text-gray-600';
+}
+
+async function loadProfile() {
+    loading.value = true;
+    try {
+        const res = await publicPortalApi.scoreProfile();
+        profile.value = res.data.data;
+    } catch { /* silent */ } finally {
+        loading.value = false;
     }
 }
 
-async function updateProfile() {
+async function saveProfile() {
     try {
-        await publicPortalApi.updateProfile(profile.value);
+        await publicPortalApi.updateProfile(formData.value);
         await publicAuth.fetchMe();
-    } catch { /* тихо */ }
+    } catch { /* silent */ }
 }
 
-async function loadScores() {
-    scoringLoading.value = true;
+async function saveAndRecalculate() {
+    saving.value = true;
     try {
-        const [scoresRes, countriesRes] = await Promise.all([
-            publicPortalApi.scoreAll(),
-            publicPortalApi.countries().catch(() => null),
-        ]);
-        if (countriesRes?.data?.data) {
-            const map = {};
-            countriesRes.data.data.forEach(c => {
-                map[c.code] = { name: c.name, flag: c.flag ?? codeToFlag(c.code) };
-            });
-            countryMapDynamic.value = map;
-        }
-        scores.value = scoresRes.data.data.scores ?? [];
-        const preselect = route.query.country?.toUpperCase();
-        activeScore.value = scores.value.find(s => s.country_code === preselect) ?? scores.value[0] ?? null;
-    } catch {
-        scores.value = [];
-    } finally {
-        scoringLoading.value = false;
+        await publicPortalApi.updateProfile(formData.value);
+        await publicAuth.fetchMe();
+        await loadProfile();
+    } catch { /* silent */ } finally {
+        saving.value = false;
     }
 }
 
-// -------------------------------------------------------------------------
-// Инлайн компонент формы профиля — расширенная версия
-// -------------------------------------------------------------------------
-
+// Инлайн компонент формы профиля
 const ProfileFormInline = {
     name: 'ProfileFormInline',
     props: ['profile', 'loading', 'employmentTypes', 'maritalStatuses', 'currentLocale'],
@@ -422,7 +512,7 @@ const ProfileFormInline = {
                         <div class="w-5 h-5 border-2 border-gray-300 rounded peer-checked:bg-[#1BA97F]
                                     peer-checked:border-[#1BA97F] transition-colors"></div>
                         <div class="absolute inset-0 flex items-center justify-center
-                                    text-white text-xs font-bold opacity-0 peer-checked:opacity-100">\u2713</div>
+                                    text-white text-xs font-bold opacity-0 peer-checked:opacity-100">&#10003;</div>
                     </div>
                     <span class="text-sm text-gray-600 group-hover:text-gray-900 leading-tight"
                           :class="cb.danger ? 'text-red-600' : ''">{{ cb.label }}</span>
@@ -454,5 +544,5 @@ const ProfileFormInline = {
     },
 };
 
-onMounted(loadScores);
+onMounted(loadProfile);
 </script>

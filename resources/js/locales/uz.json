@@ -383,7 +383,19 @@
     "income1000to2000": "$1 000–2 000",
     "income2000to4000": "$2 000–4 000",
     "incomeOver4000": "$4 000 dan ko'p",
-    "reducesScoring": "skoringni pasaytiradi!"
+    "reducesScoring": "skoringni pasaytiradi!",
+    "profileSubtitle": "Sizning scoring profilingiz va tavsiyalar",
+    "yourProfile": "Sizning profilingiz",
+    "baseScoreTitle": "Asosiy scoring",
+    "recommendationsTitle": "Yaxshilash bo'yicha tavsiyalar",
+    "countriesHintTitle": "Mamlakatlar bo'yicha scoring",
+    "countriesHintDesc": "Har bir mamlakat bo'yicha imkoniyatlaringizni ko'rish uchun \"Mamlakatlar\" bo'limini oching.",
+    "goToCountries": "Mamlakatlarga o'tish",
+    "editProfileData": "Profil ma'lumotlarini o'zgartirish",
+    "priorityHigh": "Muhim",
+    "priorityMedium": "Tavsiya etiladi",
+    "priorityLow": "Qo'shimcha",
+    "yourScoring": "Ushbu mamlakat bo'yicha scoringiz"
   },
   "cases": {
     "title": "Mening arizalarim",
@@ -681,7 +693,7 @@
     "standardDays": "Standart",
     "expeditedDays": "Tezlashtirilgan",
     "appointmentWait": "Yozilish kutish",
-    "bufferDays": "Zaxira",
+    "bufferDays": "Zaxira (bufer)",
     "embassyInfo": "Elchixona haqida ma'lumot",
     "embassy": "Elchixona",
     "embassyName": "Elchixona nomi",
@@ -732,7 +744,6 @@
     "processingTimeline": "Ko'rib chiqish muddatlari (kun)",
     "preparationDays": "Hujjatlarni tayyorlash",
     "appointmentWaitDays": "Qabul kutish",
-    "bufferDays": "Zaxira (bufer)",
     "processingTime": "Ko'rib chiqish",
     "minDaysBefore": "Min. kun uchishdan oldin",
     "fees": "To'lovlar",
@@ -1104,8 +1115,7 @@
     "showDetails": "Tafsilotlarni ko'rsatish",
     "hideDetails": "Tafsilotlarni yashirish",
     "paidVia": "Orqali to'langan",
-    "andMore": "va yana {count}",
-    "persons": "kishi"
+    "andMore": "va yana {count}"
   },
   "agencySelection": {
     "title": "Agentlikni tanlang",
@@ -1226,7 +1236,9 @@
     "sortFeeAsc": "To'lov: arzon",
     "sortFeeDesc": "To'lov: qimmat",
     "sortFlightAsc": "Parvoz: arzon",
-    "sortProcessing": "Ko'rib chiqish: tez"
+    "sortProcessing": "Ko'rib chiqish: tez",
+    "sortScoreDesc": "Imkoniyat: yuqori",
+    "sortScoreAsc": "Imkoniyat: past"
   },
   "countriesPage": {
     "title": "Davlatlar",

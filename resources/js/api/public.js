@@ -101,6 +101,8 @@ export const publicPortalApi = {
     countryDetail:(code) => publicApi.get(`/countries/${code}`),
     scoreAll:     ()     => publicApi.get('/scoring'),
     scoreCountry: (code) => publicApi.get(`/scoring/${code}`),
+    scoreProfile: ()     => publicApi.get('/scoring/profile'),
+    scoreBatch:   (countries, visaType = 'tourist') => publicApi.post('/scoring/batch', { countries, visa_type: visaType }),
 
     // Recovery (no auth)
     recoveryRequest:     (phone) => publicApi.post('/recovery/request', { phone }),

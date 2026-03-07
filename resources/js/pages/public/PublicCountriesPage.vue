@@ -9,7 +9,7 @@
         <!-- Continent chips -->
         <div class="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
             <button v-for="opt in continentOptions" :key="opt.value"
-                @click="filterContinent = opt.value"
+                @click="selectContinent(opt.value)"
                 class="shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-colors"
                 :class="filterContinent === opt.value
                     ? 'bg-[#0A1F44] text-white shadow-sm'
@@ -38,10 +38,12 @@
             <select v-model="sortBy"
                 class="rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-[#1BA97F] transition-colors bg-white">
                 <option value="name">{{ t('countriesList.sortName') }}</option>
+                <option value="score_desc">{{ t('countriesList.sortScoreDesc') }}</option>
+                <option value="score_asc">{{ t('countriesList.sortScoreAsc') }}</option>
                 <option value="fee_asc">{{ t('countriesList.sortFeeAsc') }}</option>
                 <option value="fee_desc">{{ t('countriesList.sortFeeDesc') }}</option>
-                <option value="flight_asc">{{ t('countriesList.sortFlightAsc') }}</option>
                 <option value="processing">{{ t('countriesList.sortProcessing') }}</option>
+                <option value="flight_asc">{{ t('countriesList.sortFlightAsc') }}</option>
             </select>
         </div>
 
@@ -59,11 +61,7 @@
                         <div class="h-5 bg-gray-100 rounded w-36 mb-2"></div>
                         <div class="h-3 bg-gray-50 rounded w-24"></div>
                     </div>
-                </div>
-                <div class="flex gap-4 mt-4">
-                    <div class="h-3 bg-gray-50 rounded w-20"></div>
-                    <div class="h-3 bg-gray-50 rounded w-16"></div>
-                    <div class="h-3 bg-gray-50 rounded w-24"></div>
+                    <div class="w-14 h-14 bg-gray-100 rounded-xl shrink-0"></div>
                 </div>
             </div>
         </div>
@@ -74,7 +72,7 @@
                 :to="{ name: 'me.countries.show', params: { code: c.country_code } }"
                 class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:shadow-md hover:border-[#1BA97F]/30 transition-all block group">
 
-                <!-- Top: flag + name + badges -->
+                <!-- Top: flag + name + badges + scoring -->
                 <div class="flex items-start gap-3">
                     <span class="text-3xl leading-none mt-0.5">{{ codeToFlag(c.country_code) }}</span>
                     <div class="flex-1 min-w-0">
@@ -93,19 +91,36 @@
                                 class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700">
                                 {{ t('countriesList.popular') }}
                             </span>
-                            <span v-if="c.evisa_available && c.visa_regime !== 'evisa'"
-                                class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-cyan-50 text-cyan-700">
-                                eVisa
-                            </span>
                         </div>
                     </div>
-                    <svg class="w-5 h-5 text-gray-300 shrink-0 mt-1 group-hover:text-[#1BA97F] transition-colors"
+
+                    <!-- Scoring badge -->
+                    <div v-if="scoreMap[c.country_code] != null" class="shrink-0 flex flex-col items-center">
+                        <div class="relative w-14 h-14 sm:w-16 sm:h-16">
+                            <svg class="w-full h-full -rotate-90" viewBox="0 0 48 48">
+                                <circle cx="24" cy="24" r="19" fill="none" stroke="#f1f5f9" stroke-width="4"/>
+                                <circle cx="24" cy="24" r="19" fill="none"
+                                        :stroke="scoreColor(scoreMap[c.country_code])" stroke-width="4"
+                                        stroke-linecap="round"
+                                        :stroke-dasharray="`${scoreMap[c.country_code] * 1.194} 119.4`"
+                                        class="transition-all duration-500"/>
+                            </svg>
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <span class="text-xs sm:text-sm font-bold" :style="{ color: scoreColor(scoreMap[c.country_code]) }">
+                                    {{ scoreMap[c.country_code] }}%
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div v-else-if="scoringLoading" class="shrink-0 w-14 h-14 sm:w-16 sm:h-16 bg-gray-50 rounded-full animate-pulse"></div>
+
+                    <svg class="w-5 h-5 text-gray-300 shrink-0 mt-4 group-hover:text-[#1BA97F] transition-colors"
                         fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
                     </svg>
                 </div>
 
-                <!-- Metrics row: visa_required or evisa -->
+                <!-- Metrics row -->
                 <div v-if="c.visa_regime === 'visa_required' || c.visa_regime === 'evisa'"
                     class="flex items-center gap-x-4 gap-y-1.5 mt-3 text-xs text-gray-500 flex-wrap">
                     <div v-if="c.processing_days_standard" class="flex items-center gap-1">
@@ -142,11 +157,11 @@
                     {{ t('countriesList.voaPeriod', { days: c.visa_on_arrival_days }) }}
                 </div>
 
-                <!-- Financial hint (compact) -->
+                <!-- Financial hint -->
                 <div v-if="showFinanceHint(c)" class="mt-2 text-[11px] text-gray-400 flex items-center gap-1.5">
                     <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path d="M2 17l10 5 10-5M2 12l10 5 10-5M12 2L2 7l10 5 10-5-10-5z"/></svg>
-                    <span>{{ t('countriesList.financeHint', { income: c.min_monthly_income_usd, balance: c.min_balance_usd || '—' }) }}</span>
+                    <span>{{ t('countriesList.financeHint', { income: c.min_monthly_income_usd, balance: c.min_balance_usd || '\u2014' }) }}</span>
                 </div>
 
                 <!-- Requirements tags -->
@@ -184,7 +199,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { publicPortalApi } from '@/api/public';
 import { codeToFlag } from '@/utils/countries';
@@ -198,6 +213,11 @@ const filterRegime = ref('visa_required');
 const filterContinent = ref('Europe');
 const sortBy = ref('name');
 const showAll = ref(false);
+
+// Scoring
+const scoreMap = ref({});       // { CC: score }
+const scoringLoading = ref(false);
+const scoredContinents = ref(new Set());
 
 const continentOptions = computed(() => [
     { value: '',          label: t('countriesList.all') },
@@ -238,12 +258,19 @@ function riskBadge(level) {
 function regimeLabel(c) {
     const label = t(`visaRegime.${c.visa_regime}`);
     if (c.visa_regime === 'visa_free' && c.visa_free_days) {
-        return `${label} · ${c.visa_free_days} ${t('common.days')}`;
+        return `${label} \u00B7 ${c.visa_free_days} ${t('common.days')}`;
     }
     if (c.visa_regime === 'visa_on_arrival' && c.visa_on_arrival_days) {
-        return `${label} · ${c.visa_on_arrival_days} ${t('common.days')}`;
+        return `${label} \u00B7 ${c.visa_on_arrival_days} ${t('common.days')}`;
     }
     return label;
+}
+
+function scoreColor(score) {
+    if (score >= 80) return '#1BA97F';
+    if (score >= 60) return '#3B82F6';
+    if (score >= 40) return '#F59E0B';
+    return '#EF4444';
 }
 
 function showFinanceHint(c) {
@@ -264,20 +291,18 @@ function requirementTags(c) {
 
 function applyLocation(c) {
     if (c.visa_regime === 'visa_free') return '';
-    if (c.has_visa_center && c.visa_center_name) {
-        return c.visa_center_name;
-    }
-    if (c.has_embassy && c.embassy_name) {
-        return c.embassy_name + (c.embassy_city ? ', ' + c.embassy_city : '');
-    }
-    if (!c.has_embassy && c.referral_embassy_country) {
-        return t('countriesList.referralAbroad') + ' (' + c.referral_embassy_city + ', ' + c.referral_embassy_country + ')';
-    }
+    if (c.has_visa_center && c.visa_center_name) return c.visa_center_name;
+    if (c.has_embassy && c.embassy_name) return c.embassy_name + (c.embassy_city ? ', ' + c.embassy_city : '');
+    if (!c.has_embassy && c.referral_embassy_country) return t('countriesList.referralAbroad') + ' (' + c.referral_embassy_city + ', ' + c.referral_embassy_country + ')';
     return '';
 }
 
 function sortFn(a, b) {
     switch (sortBy.value) {
+        case 'score_desc':
+            return (scoreMap.value[b.country_code] ?? -1) - (scoreMap.value[a.country_code] ?? -1);
+        case 'score_asc':
+            return (scoreMap.value[a.country_code] ?? 999) - (scoreMap.value[b.country_code] ?? 999);
         case 'fee_asc':
             return (a.visa_fee_usd || 999) - (b.visa_fee_usd || 999);
         case 'fee_desc':
@@ -317,6 +342,40 @@ const filtered = computed(() => {
 
 const displayList = computed(() => showAll.value ? filtered.value : filtered.value.slice(0, 30));
 
+// Load scoring for current continent/filter subset
+async function loadScoresForVisible() {
+    const codes = filtered.value.map(c => c.country_code);
+    // Filter out already scored
+    const toScore = codes.filter(cc => scoreMap.value[cc] == null);
+    if (!toScore.length) return;
+
+    scoringLoading.value = true;
+    try {
+        // Batch in chunks of 30
+        for (let i = 0; i < toScore.length; i += 30) {
+            const chunk = toScore.slice(i, i + 30);
+            const res = await publicPortalApi.scoreBatch(chunk);
+            const scores = res.data.data ?? [];
+            scores.forEach(s => {
+                scoreMap.value[s.country_code] = s.score;
+            });
+        }
+    } catch { /* silent */ } finally {
+        scoringLoading.value = false;
+    }
+}
+
+function selectContinent(val) {
+    filterContinent.value = val;
+    showAll.value = false;
+}
+
+// Watch continent/regime changes to lazy-load scores
+watch([filterContinent, filterRegime], () => {
+    // Slight delay to let filtered computed update
+    setTimeout(loadScoresForVisible, 50);
+});
+
 onMounted(async () => {
     try {
         const res = await publicPortalApi.countries();
@@ -324,6 +383,8 @@ onMounted(async () => {
     } catch { /* ignore */ } finally {
         loading.value = false;
     }
+    // Load scores for initial view
+    loadScoresForVisible();
 });
 </script>
 

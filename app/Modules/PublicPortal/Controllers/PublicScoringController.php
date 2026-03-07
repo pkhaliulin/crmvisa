@@ -138,6 +138,74 @@ class PublicScoringController extends Controller
     }
 
     /**
+     * GET /public/scoring/profile
+     * Базовый скоринговый профиль клиента (без привязки к стране).
+     */
+    public function scoreProfile(Request $request): JsonResponse
+    {
+        $user = $request->get('_public_user');
+
+        // Calculate base blocks
+        $blocks = [
+            'finances'     => $this->scoring->calcFinances($user),
+            'visa_history' => $this->scoring->calcVisaHistory($user),
+            'social_ties'  => $this->scoring->calcSocialTies($user),
+        ];
+
+        $redFlagMultiplier = $this->scoring->applyRedFlags($user);
+        $redFlags = [];
+        if ($redFlagMultiplier < 1.0) {
+            $redFlags = $this->scoring->getRedFlagDescriptions($user, $redFlagMultiplier);
+        }
+
+        // Base score (average of 3 blocks, weighted)
+        $baseScore = (int) round(
+            $blocks['finances'] * 0.30 +
+            $blocks['visa_history'] * 0.40 +
+            $blocks['social_ties'] * 0.30
+        );
+        $baseScore = (int) round($baseScore * $redFlagMultiplier);
+        $baseScore = max(5, min(100, $baseScore));
+
+        // Recommendations
+        $recs = $this->scoring->profileRecommendations($user, $blocks);
+
+        return ApiResponse::success([
+            'base_score'          => $baseScore,
+            'blocks'              => $blocks,
+            'red_flags'           => $redFlags,
+            'red_flag_multiplier' => $redFlagMultiplier,
+            'recommendations'     => $recs,
+            'profile_percent'     => $user->profileCompleteness(),
+        ]);
+    }
+
+    /**
+     * POST /public/scoring/batch
+     * Скоринг по набору стран (для ленивой загрузки в разделе "Страны").
+     */
+    public function scoreBatch(Request $request): JsonResponse
+    {
+        $user = $request->get('_public_user');
+        $data = $request->validate([
+            'countries'   => ['required', 'array', 'min:1', 'max:50'],
+            'countries.*' => ['string', 'size:2'],
+            'visa_type'   => ['sometimes', 'string', 'max:20'],
+        ]);
+
+        $visaType = $data['visa_type'] ?? 'tourist';
+        $results = [];
+        foreach ($data['countries'] as $cc) {
+            $results[] = $this->scoring->score($user, strtoupper($cc), $visaType);
+        }
+
+        // Sort by score desc
+        usort($results, fn ($a, $b) => $b['score'] - $a['score']);
+
+        return ApiResponse::success($results);
+    }
+
+    /**
      * GET /public/scoring/{country}
      * Скоринг по конкретной стране (требует авторизацию).
      */
