@@ -40,7 +40,7 @@
           <!-- Connector line -->
           <div v-if="idx > 0" class="flex-1 h-0.5 mx-0.5 rounded-full transition-colors duration-500" :class="stageIdx >= idx ? 'bg-blue-500' : 'bg-gray-200'"></div>
           <!-- Step circle + label -->
-          <button class="flex flex-col items-center gap-1 shrink-0 group" @click="stageIdx !== idx && (moveForm.stage = st.key, showMoveModal = true)">
+          <button class="flex flex-col items-center gap-1 shrink-0 group" :disabled="!canMoveTo(st.key)" @click="canMoveTo(st.key) && (moveForm.stage = st.key, showMoveModal = true)">
             <div :class="['w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 group-hover:scale-110', stepClass(idx)]">
               <svg v-if="stageIdx > idx" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
               <span v-else>{{ idx + 1 }}</span>
@@ -631,7 +631,21 @@ const STAGE_COLORS = {
   lead: 'gray', qualification: 'blue', documents: 'purple',
   doc_review: 'orange', translation: 'yellow', ready: 'blue', review: 'blue', result: 'green',
 };
-const stageOptions = STAGES.map(s => ({ value: s.key, label: s.label }));
+const ALLOWED_TRANSITIONS = {
+  lead:          ['qualification'],
+  qualification: ['lead', 'documents'],
+  documents:     ['qualification', 'doc_review'],
+  doc_review:    ['documents', 'translation', 'ready'],
+  translation:   ['doc_review', 'ready'],
+  ready:         ['translation', 'review'],
+  review:        ['ready', 'result'],
+  result:        [],
+};
+const stageOptions = computed(() => {
+  const current = caseData.value?.stage;
+  const allowed = ALLOWED_TRANSITIONS[current] || [];
+  return STAGES.filter(s => allowed.includes(s.key)).map(s => ({ value: s.key, label: s.label }));
+});
 
 const STAGE_CONFIG = {
   lead: { manager_goal: 'Связаться с клиентом в течение 1 часа', manager_tasks: ['Позвонить или написать клиенту', 'Уточнить цель поездки и сроки', 'Выяснить состав группы', 'Подтвердить контактные данные'], manager_result: 'Клиент на связи, потребность понятна' },
@@ -650,6 +664,12 @@ const stageLabel = computed(() => STAGE_LABELS[caseData.value?.stage] ?? '');
 const stageColor = computed(() => STAGE_COLORS[caseData.value?.stage] ?? 'gray');
 const stageIdx = computed(() => STAGES.findIndex(s => s.key === caseData.value?.stage));
 const currentStageConfig = computed(() => STAGE_CONFIG[caseData.value?.stage]);
+
+function canMoveTo(stageKey) {
+  const current = caseData.value?.stage;
+  if (!current || current === stageKey) return false;
+  return (ALLOWED_TRANSITIONS[current] || []).includes(stageKey);
+}
 
 const priorityMap = { low: 'Низкий', normal: 'Обычный', high: 'Высокий', urgent: 'Срочный' };
 const priorityColorMap = { low: 'gray', normal: 'blue', high: 'orange', urgent: 'red' };

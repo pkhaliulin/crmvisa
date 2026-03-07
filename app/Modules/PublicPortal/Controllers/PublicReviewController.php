@@ -170,6 +170,14 @@ class PublicReviewController extends Controller
             'is_published'    => true,
         ]);
 
+        // Закрываем заявку — отзыв = триггер закрытия
+        if ($review->case_id) {
+            VisaCase::where('id', $review->case_id)
+                ->whereIn('public_status', ['completed', 'rejected'])
+                ->whereNull('reviewed_at')
+                ->update(['reviewed_at' => now()]);
+        }
+
         // Обновляем кешированный рейтинг + лучший критерий
         $this->refreshAgencyStats($agency);
 

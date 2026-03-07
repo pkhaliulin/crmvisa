@@ -106,6 +106,7 @@ class VisaCase extends BaseModel
         'expected_result_date',
         'result_type',
         'result_notes',
+        'reviewed_at',
         'visa_issued_at',
         'visa_received_at',
         'visa_validity',
@@ -126,6 +127,7 @@ class VisaCase extends BaseModel
         'expected_result_date' => 'date',
         'visa_issued_at'       => 'date',
         'visa_received_at'     => 'date',
+        'reviewed_at'          => 'datetime',
         'can_reapply'          => 'boolean',
         'last_manager_update_at' => 'datetime',
     ];

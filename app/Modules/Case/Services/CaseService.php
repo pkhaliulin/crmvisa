@@ -19,6 +19,21 @@ use Illuminate\Validation\ValidationException;
 
 class CaseService extends BaseService
 {
+    /**
+     * Допустимые переходы между этапами канбана.
+     * Ключ — текущий этап, значение — массив разрешённых следующих этапов.
+     */
+    const ALLOWED_TRANSITIONS = [
+        'lead'          => ['qualification'],
+        'qualification' => ['lead', 'documents'],
+        'documents'     => ['qualification', 'doc_review'],
+        'doc_review'    => ['documents', 'translation', 'ready'],
+        'translation'   => ['doc_review', 'ready'],
+        'ready'         => ['translation', 'review'],
+        'review'        => ['ready', 'result'],
+        'result'        => [],
+    ];
+
     public function __construct(
         CaseRepository $repository,
         private SlaService $slaService,
@@ -129,6 +144,14 @@ class CaseService extends BaseService
     public function moveToStage(VisaCase $case, string $newStage, ?string $notes = null): VisaCase
     {
         $previousStage = $case->stage;
+
+        // Валидация: разрешён ли переход
+        $allowed = self::ALLOWED_TRANSITIONS[$previousStage] ?? [];
+        if (! in_array($newStage, $allowed)) {
+            throw ValidationException::withMessages([
+                'stage' => ["Переход из «{$previousStage}» в «{$newStage}» невозможен."],
+            ]);
+        }
 
         $result = DB::transaction(function () use ($case, $newStage, $notes) {
             // Закрываем текущий этап
@@ -245,7 +268,7 @@ class CaseService extends BaseService
             'lead'          => 'submitted',
             'qualification' => 'manager_assigned',
             'documents'     => 'document_collection',
-            'doc_review'    => 'document_collection',
+            'doc_review'    => 'document_review',
             'translation'   => 'translation',
             'ready'         => 'ready_for_submission',
             'review'        => 'under_review',

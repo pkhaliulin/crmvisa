@@ -417,6 +417,8 @@ class PublicProfileController extends Controller
                     'appointment_date'     => $case->appointment_date?->toDateString(),
                     'appointment_time'     => $case->appointment_time,
                     'appointment_location' => $case->appointment_location,
+                    'reviewed_at'          => $case->reviewed_at?->toDateTimeString(),
+                    'needs_review'         => in_array($case->public_status, ['completed', 'rejected']) && ! $case->reviewed_at,
                 ];
             });
 
@@ -529,6 +531,8 @@ class PublicProfileController extends Controller
             'appointment_date'     => $case->appointment_date?->toDateString(),
             'appointment_time'     => $case->appointment_time,
             'appointment_location' => $case->appointment_location,
+            'reviewed_at'          => $case->reviewed_at?->toDateTimeString(),
+            'needs_review'         => in_array($case->public_status, ['completed', 'rejected']) && ! $case->reviewed_at,
             'group_id'             => $case->group_id,
             'notes'                => $case->notes,
             'max_stay_days'        => \DB::table('country_visa_type_settings')

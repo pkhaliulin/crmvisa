@@ -376,24 +376,25 @@ const PUBLIC_STATUSES = [
     { key: 'submitted',              order: 2 },
     { key: 'manager_assigned',       order: 3 },
     { key: 'document_collection',    order: 4 },
-    { key: 'translation',            order: 5 },
-    { key: 'ready_for_submission',   order: 6 },
-    { key: 'under_review',           order: 7 },
-    { key: 'completed',              order: 8 },
-    { key: 'rejected',               order: 9 },
+    { key: 'document_review',        order: 5 },
+    { key: 'translation',            order: 6 },
+    { key: 'ready_for_submission',   order: 7 },
+    { key: 'under_review',           order: 8 },
+    { key: 'completed',              order: 9 },
+    { key: 'rejected',               order: 10 },
 ];
 
-// Показываем 9 шагов: 8 основных + финальный (одобрено ИЛИ отказ)
+// Показываем 10 шагов: 9 основных + финальный (одобрено ИЛИ отказ)
 function getVisibleStatuses(c) {
-    const base = PUBLIC_STATUSES.slice(0, 8); // draft..under_review
+    const base = PUBLIC_STATUSES.slice(0, 9); // draft..under_review
     if (c.public_status === 'rejected') {
-        return [...base, { key: 'rejected', order: 8 }];
+        return [...base, { key: 'rejected', order: 9 }];
     }
-    return [...base, { key: 'completed', order: 8 }];
+    return [...base, { key: 'completed', order: 9 }];
 }
 
 function currentStepIndex(c) {
-    if (c.public_status === 'completed' || c.public_status === 'rejected') return 8;
+    if (c.public_status === 'completed' || c.public_status === 'rejected') return 9;
     return c.public_status_order;
 }
 
@@ -414,6 +415,7 @@ function publicStatusBadge(status) {
         submitted:             'bg-blue-50 text-blue-600',
         manager_assigned:      'bg-indigo-50 text-indigo-700',
         document_collection:   'bg-amber-50 text-amber-700',
+        document_review:       'bg-yellow-50 text-yellow-700',
         translation:           'bg-cyan-50 text-cyan-700',
         ready_for_submission:  'bg-orange-50 text-orange-700',
         under_review:          'bg-purple-50 text-purple-700',
