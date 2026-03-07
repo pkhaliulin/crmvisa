@@ -37,15 +37,16 @@ class DocumentTemplateController extends Controller
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'slug'            => 'required|string|max:100|unique:document_templates,slug',
-            'name'            => 'required|string|max:255',
-            'category'        => ['required', Rule::in(['personal','financial','family','property','travel','employment','confirmation','other'])],
-            'type'            => ['required', Rule::in(['upload','checkbox'])],
-            'description'     => 'nullable|string',
-            'is_repeatable'   => 'boolean',
-            'metadata_schema' => 'nullable|array',
-            'sort_order'      => 'integer',
-            'is_active'       => 'boolean',
+            'slug'                   => 'required|string|max:100|unique:document_templates,slug',
+            'name'                   => 'required|string|max:255',
+            'category'               => ['required', Rule::in(['personal','financial','family','property','travel','employment','confirmation','other'])],
+            'type'                   => ['required', Rule::in(['upload','checkbox'])],
+            'description'            => 'nullable|string',
+            'default_responsibility' => ['sometimes', Rule::in(['client','agency'])],
+            'is_repeatable'          => 'boolean',
+            'metadata_schema'        => 'nullable|array',
+            'sort_order'             => 'integer',
+            'is_active'              => 'boolean',
         ]);
 
         $template = DocumentTemplate::create($data);
@@ -62,15 +63,16 @@ class DocumentTemplateController extends Controller
         $template = DocumentTemplate::findOrFail($id);
 
         $data = $request->validate([
-            'slug'            => ['sometimes', 'string', 'max:100', Rule::unique('document_templates', 'slug')->ignore($id)],
-            'name'            => 'sometimes|string|max:255',
-            'category'        => ['sometimes', Rule::in(['personal','financial','family','property','travel','employment','confirmation','other'])],
-            'type'            => ['sometimes', Rule::in(['upload','checkbox'])],
-            'description'     => 'nullable|string',
-            'is_repeatable'   => 'boolean',
-            'metadata_schema' => 'nullable|array',
-            'sort_order'      => 'integer',
-            'is_active'       => 'boolean',
+            'slug'                   => ['sometimes', 'string', 'max:100', Rule::unique('document_templates', 'slug')->ignore($id)],
+            'name'                   => 'sometimes|string|max:255',
+            'category'               => ['sometimes', Rule::in(['personal','financial','family','property','travel','employment','confirmation','other'])],
+            'type'                   => ['sometimes', Rule::in(['upload','checkbox'])],
+            'description'            => 'nullable|string',
+            'default_responsibility' => ['sometimes', Rule::in(['client','agency'])],
+            'is_repeatable'          => 'boolean',
+            'metadata_schema'        => 'nullable|array',
+            'sort_order'             => 'integer',
+            'is_active'              => 'boolean',
         ]);
 
         $template->update($data);

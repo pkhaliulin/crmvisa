@@ -257,7 +257,8 @@ class CaseService extends BaseService
 
     /**
      * Проверить автопереход после загрузки документа.
-     * Все обязательные документы загружены → documents → doc_review.
+     * Все обязательные документы КЛИЕНТА загружены → documents → doc_review.
+     * Документы агентства (responsibility=agency) не блокируют переход.
      */
     public function checkAutoTransitionAfterUpload(VisaCase $case): bool
     {
@@ -268,14 +269,18 @@ class CaseService extends BaseService
         $checklist = DB::table('case_checklist')
             ->where('case_id', $case->id)
             ->whereNull('deleted_at')
-            ->get(['is_required', 'status']);
+            ->get(['is_required', 'status', 'responsibility']);
 
-        $allRequiredUploaded = $checklist
+        // Проверяем только документы клиента (responsibility = client или null)
+        $clientRequired = $checklist
             ->where('is_required', true)
+            ->whereIn('responsibility', ['client', null]);
+
+        $allClientUploaded = $clientRequired
             ->every(fn ($item) => in_array($item->status, ['uploaded', 'approved', 'needs_translation']));
 
-        if ($allRequiredUploaded && $checklist->where('is_required', true)->count() > 0) {
-            $this->moveToStageSystem($case, 'doc_review', 'Все обязательные документы загружены');
+        if ($allClientUploaded && $clientRequired->count() > 0) {
+            $this->moveToStageSystem($case, 'doc_review', 'Все обязательные документы клиента загружены');
             return true;
         }
 

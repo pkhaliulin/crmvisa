@@ -51,6 +51,7 @@ class ChecklistService
                 'name'                   => $tpl->name,
                 'description'            => $req->notes ?? $tpl->description,
                 'is_required'            => $req->isRequired(),
+                'responsibility'         => $tpl->default_responsibility ?? 'client',
                 'requirement_level'      => $req->requirement_level,
                 'metadata'               => $req->effectiveMetadata() ? json_encode($req->effectiveMetadata()) : null,
                 'document_id'            => null,
