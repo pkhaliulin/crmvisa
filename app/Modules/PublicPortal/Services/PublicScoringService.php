@@ -10,15 +10,6 @@ use Illuminate\Support\Str;
 
 class PublicScoringService
 {
-    // Дефолтные веса если модель не найдена
-    private const DEFAULT_WEIGHTS = [
-        'finances'     => 0.25,
-        'visa_history' => 0.30,
-        'social_ties'  => 0.20,
-        'destination'  => 0.15,
-        'visa_type'    => 0.10,
-    ];
-
     private const DEFAULT_THRESHOLDS = ['high' => 80, 'medium' => 60, 'low' => 40];
 
     // -------------------------------------------------------------------------
@@ -32,26 +23,6 @@ class PublicScoringService
                 ->where('is_active', true)
                 ->first();
         });
-    }
-
-    private function weights(string $countryCode): array
-    {
-        $model = $this->activeModel();
-        if (! $model) {
-            return self::DEFAULT_WEIGHTS;
-        }
-
-        $w = json_decode($model->weights, true) ?? self::DEFAULT_WEIGHTS;
-
-        // Получаем страновые веса если переопределены
-        $country = $this->countryData($countryCode);
-        if ($country) {
-            if (($country->weight_finances ?? 0) > 0)     $w['finances']     = (float) $country->weight_finances;
-            if (($country->weight_visa_history ?? 0) > 0) $w['visa_history'] = (float) $country->weight_visa_history;
-            if (($country->weight_social_ties ?? 0) > 0)  $w['social_ties']  = (float) $country->weight_social_ties;
-        }
-
-        return $w;
     }
 
     private function thresholds(): array
@@ -102,7 +73,7 @@ class PublicScoringService
     }
 
     // -------------------------------------------------------------------------
-    // Этап 1 — Красные флаги (блокирующие множители)
+    // Красные флаги (блокирующие множители)
     // -------------------------------------------------------------------------
 
     public function applyRedFlags(PublicUser $user): float
@@ -114,7 +85,6 @@ class PublicScoringService
         foreach ($rules as $rule) {
             switch ($rule['condition']) {
                 case 'refusals_3_in_3y':
-                    // Больше 2 отказов за 3 года
                     $refusals = (int) ($user->refusals_count ?? 0);
                     $lastYear = (int) ($user->last_refusal_year ?? 0);
                     if ($refusals > 2 && $lastYear >= ($year - 3)) {
@@ -140,14 +110,13 @@ class PublicScoringService
     }
 
     // -------------------------------------------------------------------------
-    // Этап 2 — Блоки расчёта (0-100 баллов каждый)
+    // Блоки расчёта профиля (0-100 каждый, не зависят от страны)
     // -------------------------------------------------------------------------
 
     public function calcFinances(PublicUser $user): int
     {
         $score = 0;
 
-        // Тип занятости
         $score += match ($user->employment_type) {
             'employed'       => 40,
             'business_owner' => 50,
@@ -157,7 +126,6 @@ class PublicScoringService
             default          => 0,
         };
 
-        // Доход
         $income = $user->monthly_income_usd ?? 0;
         $score += match (true) {
             $income >= 3000 => 50,
@@ -172,26 +140,22 @@ class PublicScoringService
 
     public function calcVisaHistory(PublicUser $user): int
     {
-        $score = 50; // нейтральная база
+        $score = 50;
 
         $visasObtained = (int) ($user->visas_obtained_count ?? 0);
         $refusals      = (int) ($user->refusals_count ?? 0);
 
-        // Ранее полученные визы
         if ($visasObtained >= 5)     $score += 30;
         elseif ($visasObtained >= 2) $score += 20;
         elseif ($visasObtained >= 1) $score += 10;
 
-        // Наличие сильных виз
         if ($user->has_schengen_visa) $score += 15;
         if ($user->has_us_visa)       $score += 20;
 
-        // Отказы — СНИЖАЮТ скоринг
         if ($refusals >= 3)     $score -= 40;
         elseif ($refusals >= 2) $score -= 30;
         elseif ($refusals >= 1) $score -= 15;
 
-        // Нарушение режима (дополнительно к red flag)
         if ($user->had_overstay) $score -= 20;
 
         return max(0, min(100, $score));
@@ -201,28 +165,22 @@ class PublicScoringService
     {
         $score = 0;
 
-        // Семья
         if ($user->marital_status === 'married') $score += 20;
         if ($user->has_children) {
             $score += 15;
-            // Несколько детей — сильнее привязанность
             if (($user->children_count ?? 1) >= 2) $score += 5;
         }
 
-        // Имущество
         if ($user->has_property) $score += 25;
         if ($user->has_car)      $score += 10;
 
-        // Стаж работы
         $empYears = (int) ($user->employed_years ?? 0);
         if ($empYears >= 5)     $score += 20;
         elseif ($empYears >= 2) $score += 10;
         elseif ($empYears >= 1) $score += 5;
 
-        // Занятость как доп. привязка
         if (in_array($user->employment_type, ['employed', 'business_owner'])) $score += 5;
 
-        // Образование — подтверждает квалификацию и социальную стабильность
         $score += match ($user->education_level) {
             'phd'        => 15,
             'master'     => 12,
@@ -232,40 +190,19 @@ class PublicScoringService
             default      => 0,
         };
 
-        // Возраст — ключевой фактор для консульств
         if ($user->dob) {
             $age = now()->diffInYears($user->dob);
-            if ($age >= 30 && $age <= 55) $score += 15; // оптимальный: семья, стабильность
-            elseif ($age >= 25)           $score += 10; // молодой специалист
-            elseif ($age >= 18)           $score += 5;  // студент / начало карьеры
-            elseif ($age > 55)            $score += 8;  // предпенсионный/пенсионный
+            if ($age >= 30 && $age <= 55) $score += 15;
+            elseif ($age >= 25)           $score += 10;
+            elseif ($age >= 18)           $score += 5;
+            elseif ($age > 55)            $score += 8;
         }
 
         return min(100, $score);
     }
 
-    private function calcDestination(PublicUser $user, string $countryCode): int
-    {
-        $score = 50; // базовая нейтральная
-
-        $country = $this->countryData($countryCode);
-        if ($country) {
-            // Бонус/штраф на основе risk_level
-            $score += match ($country->risk_level ?? 'medium') {
-                'low'  =>  15,
-                'high' => -15,
-                default => 0,
-            };
-            // Страновой бонус
-            $score += (int) ($country->destination_score_bonus ?? 0);
-        }
-
-        return max(0, min(100, $score));
-    }
-
     private function calcVisaType(string $visaType): int
     {
-        // Более лёгкие типы получают бонус
         return match ($visaType) {
             'tourist'  => 80,
             'business' => 65,
@@ -277,42 +214,73 @@ class PublicScoringService
     }
 
     // -------------------------------------------------------------------------
-    // Публичный метод: рассчитать скор для страны
+    // Основная формула скоринга v2
+    //
+    // Ключевая идея: чем слабее профиль клиента, тем сильнее
+    // сложность страны (difficulty_score) влияет на итоговый балл.
+    //
+    // profile_base = finances*0.30 + visa_history*0.40 + social_ties*0.30
+    // sensitivity  = 0.10 + 0.35 * (1 - profile_base/100)
+    // country_bonus = (100 - difficulty) * sensitivity
+    // score = (profile_base + country_bonus + visa_adj) * red_flag_multiplier
+    //
+    // Сильный профиль (80): разброс ~8-12 баллов по странам
+    // Средний (50): ~13-15 баллов
+    // Слабый (30): ~20-30 баллов
     // -------------------------------------------------------------------------
 
     public function score(PublicUser $user, string $countryCode, string $visaType = 'tourist'): array
     {
-        $weights = $this->weights($countryCode);
+        // Шаг 1: Блоки профиля (одинаковы для всех стран)
+        $finances    = $this->calcFinances($user);
+        $visaHistory = $this->calcVisaHistory($user);
+        $socialTies  = $this->calcSocialTies($user);
 
-        $blocks = [
-            'finances'     => $this->calcFinances($user),
-            'visa_history' => $this->calcVisaHistory($user),
-            'social_ties'  => $this->calcSocialTies($user),
-            'destination'  => $this->calcDestination($user, $countryCode),
-            'visa_type'    => $this->calcVisaType($visaType),
-        ];
+        // Взвешенная база профиля
+        $profileBase = $finances * 0.30 + $visaHistory * 0.40 + $socialTies * 0.30;
 
-        // Этап 2 — взвешенная сумма
-        $rawScore = 0;
-        foreach ($blocks as $key => $value) {
-            $rawScore += $value * ($weights[$key] ?? 0);
-        }
+        // Шаг 2: Сложность страны
+        $country    = $this->countryData($countryCode);
+        $difficulty = $country ? ((int) ($country->difficulty_score ?? 50)) : 50;
 
-        // Этап 1 — красные флаги
+        // Шаг 3: Тип визы (небольшая корректировка)
+        $visaTypeScore = $this->calcVisaType($visaType);
+        $visaAdj       = ($visaTypeScore - 60) * 0.08;
+
+        // Шаг 4: Нелинейная комбинация
+        // sensitivity растёт при слабом профиле → страна влияет сильнее
+        $sensitivity  = 0.10 + 0.35 * (1 - $profileBase / 100);
+        $countryBonus = (100 - $difficulty) * $sensitivity;
+
+        $rawScore = $profileBase + $countryBonus + $visaAdj;
+
+        // Шаг 5: Красные флаги
         $multiplier = $this->applyRedFlags($user);
-        $total = (int) round($rawScore * $multiplier);
-        $total = max(5, min(100, $total));
+        $total      = (int) round($rawScore * $multiplier);
+        $total      = max(5, min(100, $total));
 
         $thresholds = $this->thresholds();
         $label      = $this->scoreLabel($total, $thresholds);
 
+        // Блоки для отображения (включая destination как инверсию difficulty)
+        $blocks = [
+            'finances'     => $finances,
+            'visa_history' => $visaHistory,
+            'social_ties'  => $socialTies,
+            'destination'  => max(0, min(100, 100 - $difficulty)),
+            'visa_type'    => $visaTypeScore,
+        ];
+
         $breakdown = array_merge($blocks, [
-            'raw_weighted' => round($rawScore, 1),
+            'profile_base'   => round($profileBase, 1),
+            'difficulty'     => $difficulty,
+            'country_bonus'  => round($countryBonus, 1),
+            'raw_weighted'   => round($rawScore, 1),
         ]);
 
         $redFlags = $this->getRedFlagDescriptions($user, $multiplier);
 
-        // Сохраняем в кеш
+        // Кеш
         PublicScoreCache::updateOrCreate(
             ['public_user_id' => $user->id, 'country_code' => $countryCode],
             [
@@ -323,7 +291,7 @@ class PublicScoringService
             ]
         );
 
-        // История пересчётов
+        // История
         DB::table('public_score_history')->insert([
             'id'                  => Str::uuid()->toString(),
             'public_user_id'      => $user->id,
@@ -435,7 +403,6 @@ class PublicScoringService
     {
         $recs = [];
 
-        // Финансы
         if ($blocks['finances'] < 50) {
             if (!$user->monthly_income_usd) {
                 $recs[] = ['type' => 'finances', 'priority' => 'high', 'text' => 'Укажите ежемесячный доход — это значительно повысит скоринг', 'docs' => ['Справка о доходах с места работы', 'Банковская выписка за 3-6 месяцев']];
@@ -449,7 +416,6 @@ class PublicScoringService
             $recs[] = ['type' => 'finances', 'priority' => 'low', 'text' => 'Финансовый профиль достаточный, но можно усилить дополнительными документами', 'docs' => ['Налоговая декларация', 'Справка о депозитах']];
         }
 
-        // Визовая история
         if ($blocks['visa_history'] < 50) {
             if (!$user->has_schengen_visa && !$user->has_us_visa) {
                 $recs[] = ['type' => 'visa_history', 'priority' => 'medium', 'text' => 'Наличие шенгенской или американской визы значительно повышает доверие', 'docs' => ['Копии предыдущих виз', 'Копии штампов в паспорте']];
@@ -459,7 +425,6 @@ class PublicScoringService
             }
         }
 
-        // Привязанность
         if ($blocks['social_ties'] < 50) {
             if (!$user->has_property) {
                 $recs[] = ['type' => 'social_ties', 'priority' => 'medium', 'text' => 'Укажите наличие недвижимости — это главный фактор привязанности к родине', 'docs' => ['Свидетельство о праве собственности на недвижимость']];
@@ -475,12 +440,10 @@ class PublicScoringService
             }
         }
 
-        // Профиль неполный
         if ($user->profileCompleteness() < 60) {
             $recs[] = ['type' => 'profile', 'priority' => 'high', 'text' => 'Заполните профиль полностью — это увеличит точность прогноза и улучшит скоринг', 'docs' => []];
         }
 
-        // Sort by priority: high > medium > low
         $priorityOrder = ['high' => 0, 'medium' => 1, 'low' => 2];
         usort($recs, fn ($a, $b) => ($priorityOrder[$a['priority']] ?? 9) - ($priorityOrder[$b['priority']] ?? 9));
 
