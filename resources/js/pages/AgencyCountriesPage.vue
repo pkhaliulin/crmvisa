@@ -5,19 +5,27 @@
         <h1 class="text-xl font-bold text-gray-900">Страны</h1>
         <p class="text-sm text-gray-500 mt-1">Визовая информация и рабочие направления</p>
       </div>
-      <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none">
-        <input type="checkbox" v-model="onlyOurs"
-          class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500" />
-        Только наши направления
-      </label>
+      <div class="flex items-center gap-3">
+        <span class="text-sm text-gray-400">{{ filtered.length }} из {{ countries.length }}</span>
+        <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none bg-white border border-gray-200 rounded-lg px-3 py-1.5">
+          <input type="checkbox" v-model="onlyOurs"
+            class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500" />
+          Только наши
+        </label>
+      </div>
     </div>
 
     <!-- Фильтры -->
     <div class="flex flex-wrap gap-2">
-      <input v-model="search" type="text" placeholder="Поиск по названию..."
-        class="flex-1 min-w-[200px] rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors" />
+      <div class="relative flex-1 min-w-[200px]">
+        <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="m21 21-4.35-4.35"/>
+        </svg>
+        <input v-model="search" type="text" placeholder="Поиск по названию или коду..."
+          class="w-full pl-8 pr-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400" />
+      </div>
       <select v-model="filterRegime"
-        class="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors bg-white">
+        class="rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-blue-400 bg-white">
         <option value="">Все режимы</option>
         <option value="visa_free">Безвизовый</option>
         <option value="visa_on_arrival">По прибытии</option>
@@ -25,66 +33,79 @@
         <option value="visa_required">Требуется виза</option>
       </select>
       <select v-model="filterContinent"
-        class="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors bg-white">
+        class="rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-blue-400 bg-white">
         <option value="">Все континенты</option>
         <option v-for="c in continents" :key="c" :value="c">{{ c }}</option>
       </select>
     </div>
 
     <!-- Загрузка -->
-    <div v-if="loading" class="text-center py-12 text-gray-400">Загрузка...</div>
-
-    <!-- Таблица -->
-    <div v-else-if="filtered.length" class="bg-white rounded-xl border border-gray-200 overflow-hidden">
-      <table class="w-full text-sm">
-        <thead>
-          <tr class="bg-gray-50 border-b border-gray-200">
-            <th class="text-left px-4 py-3 font-medium text-gray-500">Страна</th>
-            <th class="text-left px-4 py-3 font-medium text-gray-500">Визовый режим</th>
-            <th class="text-left px-4 py-3 font-medium text-gray-500 hidden sm:table-cell">Континент</th>
-            <th class="text-left px-4 py-3 font-medium text-gray-500 hidden md:table-cell">Стоимость визы</th>
-            <th class="text-center px-4 py-3 font-medium text-gray-500">Наше</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="c in filtered" :key="c.country_code"
-            @click="router.push({ name: 'countries.show', params: { code: c.country_code } })"
-            class="border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors">
-            <td class="px-4 py-3">
-              <div class="flex items-center gap-2">
-                <span class="text-lg">{{ codeToFlag(c.country_code) }}</span>
-                <span class="font-medium text-gray-900">{{ localName(c) }}</span>
-              </div>
-            </td>
-            <td class="px-4 py-3">
-              <span class="text-xs font-semibold px-2 py-0.5 rounded-full"
-                :class="regimeBadge(c.visa_regime)">
-                {{ regimeLabel(c.visa_regime) }}
-              </span>
-            </td>
-            <td class="px-4 py-3 text-gray-500 hidden sm:table-cell">{{ c.continent || '—' }}</td>
-            <td class="px-4 py-3 text-gray-500 hidden md:table-cell">
-              {{ c.visa_fee ? '$' + c.visa_fee : '—' }}
-            </td>
-            <td class="px-4 py-3 text-center">
-              <span v-if="workCodes.includes(c.country_code)" class="text-green-600">
-                <svg class="w-5 h-5 inline" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                </svg>
-              </span>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <div v-if="loading" class="flex items-center justify-center py-16">
+      <div class="animate-spin w-7 h-7 border-2 border-blue-500 border-t-transparent rounded-full"></div>
     </div>
 
-    <div v-else class="bg-white rounded-xl border border-gray-200 p-8 text-center">
-      <p class="text-sm text-gray-400">Страны не найдены</p>
-    </div>
+    <template v-else>
+      <!-- Карточки стран -->
+      <div v-if="filtered.length" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+        <div v-for="c in filtered" :key="c.country_code"
+          class="group bg-white rounded-xl border border-gray-200 p-4 hover:border-blue-300 hover:shadow-md transition-all cursor-pointer"
+          :class="workCodes.includes(c.country_code) ? 'border-l-4 border-l-green-400' : ''"
+          @click="router.push({ name: 'countries.show', params: { code: c.country_code } })">
 
-    <p class="text-xs text-gray-400">
-      Показано: {{ filtered.length }} из {{ countries.length }}
-    </p>
+          <!-- Header -->
+          <div class="flex items-center gap-3 mb-3">
+            <span class="text-3xl leading-none">{{ codeToFlag(c.country_code) }}</span>
+            <div class="flex-1 min-w-0">
+              <p class="font-semibold text-gray-900 group-hover:text-blue-700 transition-colors truncate">
+                {{ localName(c) }}
+              </p>
+              <p class="text-xs text-gray-400">{{ c.continent || '--' }}</p>
+            </div>
+            <span class="text-xs font-semibold px-2 py-0.5 rounded-full shrink-0"
+              :class="regimeBadge(c.visa_regime)">
+              {{ regimeLabel(c.visa_regime) }}
+            </span>
+          </div>
+
+          <!-- Info -->
+          <div class="flex items-center gap-4 text-xs text-gray-500 mb-3">
+            <span v-if="c.visa_fee">
+              <span class="font-semibold text-gray-700">${{ c.visa_fee }}</span> сбор
+            </span>
+            <span v-if="c.processing_days_avg">
+              ~{{ c.processing_days_avg }} дн. рассмотрение
+            </span>
+            <span v-if="c.risk_level" class="ml-auto">
+              <span class="font-semibold" :class="{
+                'text-green-600': c.risk_level === 'low',
+                'text-yellow-600': c.risk_level === 'medium',
+                'text-red-600': c.risk_level === 'high',
+              }">{{ { low: 'Низкий', medium: 'Средний', high: 'Высокий' }[c.risk_level] }}</span> риск
+            </span>
+          </div>
+
+          <!-- Toggle работаем/не работаем -->
+          <div class="flex items-center justify-between pt-3 border-t border-gray-100" @click.stop>
+            <span class="text-xs" :class="workCodes.includes(c.country_code) ? 'text-green-600 font-medium' : 'text-gray-400'">
+              {{ workCodes.includes(c.country_code) ? 'Работаем' : 'Не работаем' }}
+            </span>
+            <button
+              @click="toggleWork(c.country_code)"
+              :disabled="togglingCode === c.country_code"
+              class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 focus:outline-none"
+              :class="workCodes.includes(c.country_code) ? 'bg-green-500' : 'bg-gray-300'">
+              <span class="inline-block h-3.5 w-3.5 rounded-full bg-white shadow-sm transition-transform duration-200"
+                :class="workCodes.includes(c.country_code) ? 'translate-x-[18px]' : 'translate-x-[3px]'"></span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty -->
+      <div v-else class="bg-white rounded-xl border border-gray-200 p-8 text-center text-gray-400">
+        <p class="text-sm">Страны не найдены</p>
+      </div>
+    </template>
   </div>
 </template>
 
@@ -98,6 +119,7 @@ const router = useRouter();
 const loading = ref(true);
 const countries = ref([]);
 const workCodes = ref([]);
+const togglingCode = ref(null);
 
 const search = ref('');
 const filterRegime = ref('');
@@ -142,6 +164,21 @@ const filtered = computed(() => {
   }
   return list;
 });
+
+async function toggleWork(code) {
+  togglingCode.value = code;
+  try {
+    if (workCodes.value.includes(code)) {
+      await api.delete(`/agency/work-countries/${code}`);
+      workCodes.value = workCodes.value.filter(c => c !== code);
+    } else {
+      await api.post(`/agency/work-countries/${code}`);
+      workCodes.value.push(code);
+    }
+  } catch { /* ignore */ } finally {
+    togglingCode.value = null;
+  }
+}
 
 onMounted(async () => {
   try {
