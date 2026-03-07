@@ -78,13 +78,15 @@
 </style>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, inject } from 'vue';
 import { Teleport } from 'vue';
 import draggable from 'vuedraggable';
 import KanbanCard from './KanbanCard.vue';
 
 const props = defineProps({ column: Object });
 const emit  = defineEmits(['move', 'open', 'assign']);
+
+const allowedTransitions = inject('allowedTransitions', {});
 
 // ── Tooltip ──────────────────────────────────────────────────────────────────
 const tipBtn     = ref(null);
@@ -117,11 +119,12 @@ const tipStyle = computed(() => {
 
 // ── Drag & Drop ──────────────────────────────────────────────────────────────
 function onDragEnd(event) {
-  const { to, item } = event;
-  const newStage = to.closest('[data-stage]')?.dataset.stage;
-  const caseId   = item.querySelector('[data-id]')?.dataset.id;
-  if (newStage && caseId) {
-    emit('move', { caseId, stage: newStage });
+  const { from, to, item } = event;
+  const fromStage = from.closest('[data-stage]')?.dataset.stage;
+  const newStage  = to.closest('[data-stage]')?.dataset.stage;
+  const caseId    = item.querySelector('[data-id]')?.dataset.id;
+  if (newStage && caseId && newStage !== fromStage) {
+    emit('move', { caseId, stage: newStage, fromStage });
   }
 }
 </script>

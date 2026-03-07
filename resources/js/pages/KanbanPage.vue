@@ -66,13 +66,20 @@
     </div>
   </div>
 
+  <!-- Error toast -->
+  <Transition name="toast">
+    <div v-if="moveError" class="fixed top-4 right-4 z-50 bg-red-600 text-white text-sm px-4 py-2.5 rounded-lg shadow-lg max-w-sm">
+      {{ moveError }}
+    </div>
+  </Transition>
+
   <!-- Move stage modal -->
   <AppModal v-model="moveModal.show" title="Переместить заявку">
     <div class="space-y-4">
       <p class="text-sm text-gray-600">
         Переместить заявку в этап:
       </p>
-      <AppSelect v-model="moveModal.stage" :options="stageOptions" placeholder="Выберите этап" />
+      <AppSelect v-model="moveModal.stage" :options="filteredStageOptions" placeholder="Выберите этап" />
       <div v-if="moveModal.stage" class="text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-2">
         {{ STAGES.find(s => s.value === moveModal.stage)?.tooltip }}
       </div>
@@ -171,9 +178,22 @@ const STAGES = [
   },
 ];
 
+const ALLOWED_TRANSITIONS = {
+  lead:          ['qualification'],
+  qualification: ['lead', 'documents'],
+  documents:     ['qualification', 'doc_review'],
+  doc_review:    ['documents', 'translation', 'ready'],
+  translation:   ['doc_review', 'ready'],
+  ready:         ['translation', 'review'],
+  review:        ['ready', 'result'],
+  result:        [],
+};
+
 const casesStore = useCasesStore();
 const router     = useRouter();
-const stageOptions = STAGES.map(s => ({ value: s.value, label: `${s.icon} ${s.label}` }));
+const moveError  = ref('');
+
+provide('allowedTransitions', ALLOWED_TRANSITIONS);
 
 const searchQuery = ref('');
 const managers = ref([]);
@@ -228,7 +248,14 @@ const awaitingPaymentCount = computed(() => {
 });
 
 const moveModal = reactive({
-  show: false, caseId: null, stage: '', notes: '', loading: false,
+  show: false, caseId: null, fromStage: '', stage: '', notes: '', loading: false,
+});
+
+const filteredStageOptions = computed(() => {
+  const allowed = ALLOWED_TRANSITIONS[moveModal.fromStage] || [];
+  return STAGES
+    .filter(s => allowed.includes(s.value))
+    .map(s => ({ value: s.value, label: `${s.icon} ${s.label}` }));
 });
 
 onMounted(() => {
@@ -236,11 +263,33 @@ onMounted(() => {
   loadManagers();
 });
 
-function handleMove({ caseId, stage }) {
-  moveModal.caseId = caseId;
-  moveModal.stage  = stage;
-  moveModal.notes  = '';
-  moveModal.show   = true;
+function handleMove({ caseId, stage, fromStage }) {
+  // Определяем текущий stage карточки
+  const currentStage = fromStage || findCaseStage(caseId);
+  if (!currentStage) return;
+
+  // Если stage указан и он недопустим — показать ошибку и обновить канбан
+  const allowed = ALLOWED_TRANSITIONS[currentStage] || [];
+  if (stage && !allowed.includes(stage)) {
+    moveError.value = `Переход из «${STAGES.find(s => s.value === currentStage)?.label}» в «${STAGES.find(s => s.value === stage)?.label}» невозможен`;
+    setTimeout(() => { moveError.value = ''; }, 3000);
+    casesStore.fetchKanban(); // вернуть карточку
+    return;
+  }
+
+  moveModal.caseId    = caseId;
+  moveModal.fromStage = currentStage;
+  moveModal.stage     = stage || '';
+  moveModal.notes     = '';
+  moveModal.show      = true;
+}
+
+function findCaseStage(caseId) {
+  if (!casesStore.board) return null;
+  for (const col of casesStore.board) {
+    if (col.cases.some(c => c.id === caseId)) return col.key;
+  }
+  return null;
 }
 
 async function confirmMove() {
@@ -249,6 +298,13 @@ async function confirmMove() {
   try {
     await casesStore.moveStage(moveModal.caseId, moveModal.stage, moveModal.notes || null);
     moveModal.show = false;
+    moveError.value = '';
+  } catch (err) {
+    const msg = err.response?.data?.message || err.response?.data?.errors?.stage?.[0] || 'Не удалось переместить заявку';
+    moveError.value = msg;
+    setTimeout(() => { moveError.value = ''; }, 4000);
+    moveModal.show = false;
+    await casesStore.fetchKanban();
   } finally {
     moveModal.loading = false;
   }
