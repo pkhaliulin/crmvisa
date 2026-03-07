@@ -137,30 +137,28 @@
                   <span v-if="!pkg.is_active"
                     class="text-[10px] px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded-full shrink-0">Неактивен</span>
                 </div>
+                <!-- Теги услуг сразу после названия -->
+                <div class="flex items-center gap-1 mt-1 flex-wrap">
+                  <span v-for="item in (pkg.items || []).slice(0, 4)" :key="item.id"
+                    class="text-[9px] px-1.5 py-0.5 rounded-full whitespace-nowrap"
+                    :class="item.service?.is_required ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600'">
+                    {{ item.service?.name }}
+                  </span>
+                  <span v-if="(pkg.items || []).length > 4" class="text-[9px] text-gray-400">
+                    +{{ pkg.items.length - 4 }}
+                  </span>
+                </div>
                 <div class="flex items-center gap-3 text-xs text-gray-400 mt-0.5 flex-wrap">
                   <span v-if="pkg.visa_type">{{ visaTypeName(pkg.visa_type) }}</span>
                   <span v-if="pkg.processing_days">{{ pkg.processing_days }} дн.</span>
-                  <span v-if="pkg.items?.length" class="text-gray-300">{{ pkg.items.length }} услуг</span>
                 </div>
               </div>
             </div>
 
-            <!-- Цена -->
+            <!-- Стоимость в конце -->
             <div v-if="pkg.price" class="text-right shrink-0">
               <div class="font-bold text-gray-900 text-sm">{{ formatPrice(pkg.price) }}</div>
               <div class="text-[10px] text-gray-400">{{ pkg.currency || 'UZS' }}</div>
-            </div>
-
-            <!-- Теги услуг (компактно) -->
-            <div class="hidden sm:flex items-center gap-1 shrink-0 max-w-[200px] flex-wrap">
-              <span v-for="item in (pkg.items || []).slice(0, 3)" :key="item.id"
-                class="text-[9px] px-1.5 py-0.5 rounded-full whitespace-nowrap"
-                :class="item.service?.is_required ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600'">
-                {{ item.service?.name }}
-              </span>
-              <span v-if="(pkg.items || []).length > 3" class="text-[9px] text-gray-400">
-                +{{ pkg.items.length - 3 }}
-              </span>
             </div>
 
             <!-- Стрелка -->
