@@ -33,6 +33,7 @@
       item-key="id"
       class="flex-1 px-2 pb-2 space-y-2 min-h-20 overflow-y-auto"
       ghost-class="opacity-30"
+      :move="onMove"
       @end="onDragEnd"
     >
       <template #item="{ element }">
@@ -118,6 +119,15 @@ const tipStyle = computed(() => {
 });
 
 // ── Drag & Drop ──────────────────────────────────────────────────────────────
+// onMove вызывается ДО мутации DOM — return false отменяет перемещение
+function onMove(evt) {
+  const fromStage = evt.from.closest('[data-stage]')?.dataset.stage;
+  const toStage   = evt.to.closest('[data-stage]')?.dataset.stage;
+  if (!fromStage || !toStage || fromStage === toStage) return true;
+  const allowed = allowedTransitions[fromStage] || [];
+  return allowed.includes(toStage);
+}
+
 function onDragEnd(event) {
   const { from, to, item } = event;
   const fromStage = from.closest('[data-stage]')?.dataset.stage;
