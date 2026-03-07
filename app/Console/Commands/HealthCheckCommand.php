@@ -242,8 +242,8 @@ class HealthCheckCommand extends Command
                 'password' => 'Owner@2026!',
             ]);
 
-            if ($loginRes->successful() && $loginRes->json('data.token')) {
-                $token = $loginRes->json('data.token');
+            if ($loginRes->successful() && ($loginRes->json('data.access_token') || $loginRes->json('data.token'))) {
+                $token = $loginRes->json('data.access_token') ?? $loginRes->json('data.token');
                 $this->ok('Авторизация owner@silkroad.test');
             } else {
                 $this->err('Не удалось авторизоваться: ' . $loginRes->body());
