@@ -41,20 +41,14 @@
           </button>
           <div v-if="openCats[cat.key]" class="divide-y divide-gray-50">
             <div v-for="svc in cat.items" :key="svc.id"
-              class="px-4 py-2 flex items-center gap-3 text-sm hover:bg-blue-50/30 transition-colors pl-10">
-              <span class="text-gray-800 flex-1">{{ svc.name }}</span>
-              <span v-if="svc.is_required"
-                class="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-red-50 text-red-600">Обязательная</span>
-              <div v-if="svc.description" class="relative">
-                <svg class="w-4 h-4 text-gray-300 hover:text-blue-500 cursor-help transition-colors peer"
-                  fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/>
-                </svg>
-                <div class="absolute right-0 bottom-full mb-2 w-64 p-3 bg-gray-800 text-white text-xs rounded-lg shadow-lg
-                            opacity-0 invisible peer-hover:opacity-100 peer-hover:visible transition-all z-30 pointer-events-none">
-                  {{ svc.description }}
-                </div>
+              class="px-4 py-2.5 hover:bg-blue-50/30 transition-colors pl-10">
+              <div class="flex items-center gap-2">
+                <span class="text-sm font-medium text-gray-800">{{ svc.name }}</span>
+                <span v-if="svc.is_required"
+                  class="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-red-50 text-red-600 shrink-0">Обязательная</span>
               </div>
+              <p v-if="svc.agency_hint" class="text-xs text-gray-500 mt-0.5 leading-relaxed">{{ svc.agency_hint }}</p>
+              <p v-else-if="svc.description" class="text-xs text-gray-400 mt-0.5 leading-relaxed">{{ svc.description }}</p>
             </div>
           </div>
         </div>
@@ -391,7 +385,13 @@ const catDots = {
 };
 function categoryLabel(cat) { return categoryLabels[cat] || cat; }
 function catDot(cat) { return catDots[cat] || 'bg-gray-400'; }
-function toggleCat(key) { openCats[key] = !openCats[key]; }
+function toggleCat(key) {
+  const wasOpen = openCats[key];
+  // Закрываем все категории
+  for (const k of CATEGORY_ORDER) openCats[k] = false;
+  // Открываем только нажатую (если была закрыта)
+  if (!wasOpen) openCats[key] = true;
+}
 
 const groupedServices = computed(() => {
   const groups = {};
