@@ -7,6 +7,15 @@
     ]"
     @click="$emit('click', item.id)"
   >
+    <!-- Awaiting payment banner -->
+    <div v-if="item.public_status === 'awaiting_payment'"
+      class="flex items-center gap-1.5 -mx-3 -mt-3 mb-2 px-3 py-1.5 bg-amber-50 border-b border-amber-200 rounded-t-lg">
+      <svg class="w-3.5 h-3.5 text-amber-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+      <span class="text-[10px] font-semibold text-amber-700">Ожидает оплаты клиентом</span>
+    </div>
+
     <!-- Header: country + priority -->
     <div class="flex items-center justify-between mb-2">
       <div class="flex items-center gap-1.5">
@@ -137,6 +146,7 @@ const priorityLabel = computed(() => priorityMap[props.item.priority]?.label ?? 
 
 // Border: SLA overdue (red bg) > urgency overdue > critical > normal
 const cardBorder = computed(() => {
+  if (props.item.public_status === 'awaiting_payment') return 'border-amber-300 bg-amber-50/30';
   if (props.item.stage_sla_overdue) return 'border-red-400 bg-red-50/50';
   if (props.item.urgency === 'overdue')  return 'border-red-300';
   if (props.item.urgency === 'critical') return 'border-yellow-300';

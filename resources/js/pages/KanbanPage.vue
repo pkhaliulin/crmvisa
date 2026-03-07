@@ -15,6 +15,15 @@
           <span class="w-2.5 h-2.5 rounded-full bg-gray-300"></span>
           Всего: <strong>{{ casesStore.stats.total }}</strong>
         </span>
+        <span v-if="unassignedCount" class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 text-xs font-semibold">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+          </svg>
+          Без менеджера: {{ unassignedCount }}
+        </span>
+        <span v-if="awaitingPaymentCount" class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 text-xs font-semibold">
+          Ожидает оплаты: {{ awaitingPaymentCount }}
+        </span>
       </div>
       <!-- Поиск по номеру заявки / клиенту -->
       <div class="relative ml-4">
@@ -206,6 +215,16 @@ const boardWithMeta = computed(() => {
       sla_hours: col.sla_hours ?? meta.sla_hours ?? null,
     };
   });
+});
+
+const unassignedCount = computed(() => {
+  if (!casesStore.board) return 0;
+  return casesStore.board.reduce((sum, col) => sum + col.cases.filter(c => !c.assignee).length, 0);
+});
+
+const awaitingPaymentCount = computed(() => {
+  if (!casesStore.board) return 0;
+  return casesStore.board.reduce((sum, col) => sum + col.cases.filter(c => c.public_status === 'awaiting_payment').length, 0);
 });
 
 const moveModal = reactive({

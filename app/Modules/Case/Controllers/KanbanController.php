@@ -25,9 +25,9 @@ class KanbanController extends Controller
                 'stageHistory' => fn ($q) => $q->whereNull('exited_at'),
             ]);
 
-        // Агентство видит ТОЛЬКО оплаченные cases (awaiting_payment — клиентский статус, не видим в канбане)
+        // Исключаем черновики и отменённые — они точно не на канбане
         $query->where(function ($q) {
-            $q->where('public_status', '!=', 'awaiting_payment')
+            $q->whereNotIn('public_status', ['draft', 'cancelled'])
               ->orWhereNull('public_status');
         });
 
@@ -104,6 +104,7 @@ class KanbanController extends Controller
             'urgency'             => $isOverdue ? 'overdue' : ($isCritical ? 'critical' : 'normal'),
             'stage_sla_overdue'   => $stageSlaOverdue,
             'stage_sla_hours_left'=> $stageSlaHoursLeft,
+            'public_status'       => $case->public_status,
             'payment_status'      => $case->payment_status,
             'appointment_date'    => $case->appointment_date?->toDateString(),
             'appointment_time'    => $case->appointment_time,
