@@ -71,7 +71,7 @@ class HealthCheckCommand extends Command
             Cache::store('redis')->forget('health_check');
             $this->ok('Redis подключение');
         } catch (\Exception $e) {
-            $this->warn('Redis недоступен: ' . $e->getMessage());
+            $this->warnMsg('Redis недоступен: ' . $e->getMessage());
         }
     }
 
@@ -88,7 +88,7 @@ class HealthCheckCommand extends Command
         foreach ($rlsTables as $table) {
             $rls = DB::select("SELECT relrowsecurity FROM pg_class WHERE relname = ?", [$table]);
             if (empty($rls) || !$rls[0]->relrowsecurity) {
-                $this->warn("RLS отключён на таблице {$table}");
+                $this->warnMsg("RLS отключён на таблице {$table}");
                 continue;
             }
 
@@ -124,7 +124,7 @@ class HealthCheckCommand extends Command
             AND NOT EXISTS (SELECT 1 FROM agency_work_countries awc WHERE awc.agency_id = a.id AND awc.is_active = true)
         ");
         foreach ($agenciesWithoutCountries as $a) {
-            $this->warn("Агентство '{$a->name}' без рабочих стран — не видно на маркетплейсе");
+            $this->warnMsg("Агентство '{$a->name}' без рабочих стран — не видно на маркетплейсе");
 
             if ($this->option('fix')) {
                 // Заполнить из пакетов и кейсов
@@ -169,7 +169,7 @@ class HealthCheckCommand extends Command
             AND NOT EXISTS (SELECT 1 FROM agency_service_packages p WHERE p.agency_id = a.id AND p.is_active = true)
         ");
         foreach ($agenciesWithoutPackages as $a) {
-            $this->warn("Агентство '{$a->name}' без пакетов услуг — не видно на маркетплейсе");
+            $this->warnMsg("Агентство '{$a->name}' без пакетов услуг — не видно на маркетплейсе");
         }
 
         // Заявки без клиента
@@ -188,7 +188,7 @@ class HealthCheckCommand extends Command
             AND c.public_status NOT IN ('draft', 'cancelled')
         ");
         if (count($noAgencyCases) > 0) {
-            $this->warn(count($noAgencyCases) . " активных заявок без agency_id");
+            $this->warnMsg(count($noAgencyCases) . " активных заявок без agency_id");
         }
 
         // Пользователи без agency_id
@@ -219,7 +219,7 @@ class HealthCheckCommand extends Command
         // global_services
         $servicesCount = DB::table('global_services')->count();
         if ($servicesCount === 0) {
-            $this->warn("global_services пуста — каталог услуг пуст");
+            $this->warnMsg("global_services пуста — каталог услуг пуст");
         } else {
             $this->ok("global_services: {$servicesCount} услуг");
         }
@@ -282,7 +282,7 @@ class HealthCheckCommand extends Command
                     $body = $res->json('message') ?? substr($res->body(), 0, 200);
                     $this->line("  -> {$body}");
                 } elseif ($res->status() >= 400) {
-                    $this->warn("{$label} -> {$res->status()}");
+                    $this->warnMsg("{$label} -> {$res->status()}");
                 } else {
                     $this->ok("{$label} -> {$res->status()}");
                 }
@@ -315,7 +315,7 @@ class HealthCheckCommand extends Command
                     $data = $res->json('data');
                     $count = is_array($data) ? count($data) : (is_object($data) ? 1 : 0);
                     if ($count === 0 && $res->successful()) {
-                        $this->warn("{$label} -> 200 но пустые данные!");
+                        $this->warnMsg("{$label} -> 200 но пустые данные!");
                     } else {
                         $this->ok("{$label} -> {$res->status()} ({$count} записей)");
                     }
@@ -354,7 +354,7 @@ class HealthCheckCommand extends Command
         $this->line("  <fg=red>ERR</> {$msg}");
     }
 
-    private function warn(string $msg): void
+    private function warnMsg(string $msg): void
     {
         $this->warnings++;
         $this->line("  <fg=yellow>WARN</> {$msg}");
