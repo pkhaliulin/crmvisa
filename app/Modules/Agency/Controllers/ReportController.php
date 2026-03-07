@@ -65,15 +65,12 @@ class ReportController extends Controller
                 'cases as total_cases',
                 'cases as active_cases' => fn ($q) => $q->whereNotIn('stage', ['result']),
                 'cases as completed_cases' => fn ($q) => $q->where('stage', 'result'),
+                'cases as overdue_cases' => fn ($q) => $q->whereNotIn('stage', ['result'])
+                    ->whereNotNull('critical_date')
+                    ->where('critical_date', '<', now()),
             ])
             ->get()
             ->map(function (User $user) {
-                $overdue = VisaCase::where('assigned_to', $user->id)
-                    ->whereNotIn('stage', ['result'])
-                    ->whereNotNull('critical_date')
-                    ->where('critical_date', '<', now())
-                    ->count();
-
                 return [
                     'id'              => $user->id,
                     'name'            => $user->name,
@@ -81,7 +78,7 @@ class ReportController extends Controller
                     'total_cases'     => $user->total_cases,
                     'active_cases'    => $user->active_cases,
                     'completed_cases' => $user->completed_cases,
-                    'overdue_cases'   => $overdue,
+                    'overdue_cases'   => $user->overdue_cases,
                     'conversion'      => $user->total_cases > 0
                         ? round($user->completed_cases / $user->total_cases * 100, 1)
                         : 0,

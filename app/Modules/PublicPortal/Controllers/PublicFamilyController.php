@@ -113,22 +113,25 @@ class PublicFamilyController extends Controller
             ->with('familyMember')
             ->get();
 
-        $result = $caseMembers->map(function ($cm) use ($case) {
+        // Загрузить ВСЕ чеклисты одним запросом и сгруппировать по family_member_id
+        $memberIds = $caseMembers->pluck('family_member_id')->filter()->values();
+        $allChecklists = CaseChecklist::where('case_id', $case->id)
+            ->whereIn('family_member_id', $memberIds)
+            ->orderBy('sort_order')
+            ->get()
+            ->groupBy('family_member_id');
+
+        $result = $caseMembers->map(function ($cm) use ($allChecklists) {
             $member = $cm->familyMember;
 
-            // Документы этого члена семьи
-            $docs = CaseChecklist::where('case_id', $case->id)
-                ->where('family_member_id', $member->id)
-                ->orderBy('sort_order')
-                ->get()
-                ->map(fn ($item) => [
-                    'id'          => $item->id,
-                    'name'        => $item->name,
-                    'description' => $item->description,
-                    'is_required' => $item->is_required,
-                    'status'      => $item->status,
-                    'notes'       => $item->notes,
-                ]);
+            $docs = ($allChecklists[$member->id] ?? collect())->map(fn ($item) => [
+                'id'          => $item->id,
+                'name'        => $item->name,
+                'description' => $item->description,
+                'is_required' => $item->is_required,
+                'status'      => $item->status,
+                'notes'       => $item->notes,
+            ]);
 
             return [
                 ...$this->formatMember($member),

@@ -652,7 +652,7 @@ async function loadDashboard() {
   try {
     const { data } = await api.get('/owner/billing/dashboard');
     dash.value = data.data;
-  } catch (e) { console.error(e); }
+  } catch { /* silent */ }
   dashLoading.value = false;
 }
 
@@ -669,7 +669,7 @@ async function loadPlans() {
   try {
     const { data } = await api.get('/owner/billing/plans');
     plans.value = data.data;
-  } catch (e) { console.error(e); }
+  } catch { /* silent */ }
   plansLoading.value = false;
 }
 
@@ -754,7 +754,7 @@ async function loadSettings() {
     for (const s of data.data) {
       settingsMap[s.key] = s.type === 'boolean' ? !!s.value : s.value;
     }
-  } catch (e) { console.error(e); }
+  } catch { /* silent */ }
   settingsLoading.value = false;
 }
 
@@ -794,7 +794,7 @@ async function loadCoupons() {
   try {
     const { data } = await api.get('/owner/billing/coupons');
     coupons.value = data.data;
-  } catch (e) { console.error(e); }
+  } catch { /* silent */ }
   couponsLoading.value = false;
 }
 

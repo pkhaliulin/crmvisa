@@ -195,8 +195,8 @@ async function loadMemory() {
     if (files.value.length && !activeFile.value) {
       activeFile.value = files.value[0].filename;
     }
-  } catch (err) {
-    console.error('Memory load error:', err);
+  } catch {
+    /* silent */
   } finally {
     loading.value = false;
   }

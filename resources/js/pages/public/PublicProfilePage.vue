@@ -1394,7 +1394,7 @@ async function finishWizard() {
         publicAuth.user = data.data.user;
         localStorage.setItem('public_user', JSON.stringify(data.data.user));
     } catch (e) {
-        console.error('Wizard save error:', e.response?.data || e);
+        /* silent */
     } finally {
         saving.value = false;
     }
@@ -1580,8 +1580,8 @@ async function saveFamilyMember() {
         }
         showFamilyForm.value = false;
         await loadFamilyMembers();
-    } catch (e) {
-        console.error('Family save error:', e.response?.data || e);
+    } catch {
+        /* silent */
     } finally { familySaving.value = false; }
 }
 

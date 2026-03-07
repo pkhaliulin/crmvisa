@@ -28,7 +28,13 @@ class OwnerBillingController extends Controller
     public function plans(): JsonResponse
     {
         $plans = BillingPlan::orderBy('sort_order')->get();
-        $plans->each(fn ($p) => $p->subscribers_count = AgencySubscription::where('plan_slug', $p->slug)->active()->count());
+
+        $subscriberCounts = AgencySubscription::active()
+            ->selectRaw('plan_slug, COUNT(*) as cnt')
+            ->groupBy('plan_slug')
+            ->pluck('cnt', 'plan_slug');
+
+        $plans->each(fn ($p) => $p->subscribers_count = (int) ($subscriberCounts[$p->slug] ?? 0));
 
         return ApiResponse::success($plans);
     }

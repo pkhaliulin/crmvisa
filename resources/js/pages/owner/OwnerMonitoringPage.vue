@@ -375,8 +375,8 @@ async function loadAll() {
     activity.value = act.data.data;
     queueData.value = q.data.data;
     sentry.value = s.data.data;
-  } catch (err) {
-    console.error('Monitoring load error:', err);
+  } catch {
+    /* silent */
   } finally {
     loading.value = false;
   }

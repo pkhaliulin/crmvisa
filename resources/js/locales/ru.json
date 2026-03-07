@@ -628,6 +628,7 @@
     "destinationCountry": "Страна назначения",
     "visaTypeLabel": "Тип визы",
     "selectType": "Выберите тип",
+    "selectCountryFirst": "Сначала выберите страну",
     "tourist": "Туристическая",
     "business": "Бизнес",
     "studentVisa": "Студенческая",

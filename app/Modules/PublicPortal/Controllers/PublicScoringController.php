@@ -101,10 +101,40 @@ class PublicScoringController extends Controller
             ->get()
             ->keyBy('country_code');
 
-        return ApiResponse::success($served->map(fn ($row) => [
-            'country_code'   => $row->country_code,
-            'agencies_count' => (int) $row->agencies_count,
-        ])->values());
+        // Разрешённые типы виз из portal_visa_types
+        $allowedTypes = \DB::table('portal_visa_types')
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->pluck('slug')
+            ->toArray();
+
+        // Реальные типы виз из пакетов агентств по каждой стране
+        $packageTypes = \DB::table('agency_service_packages')
+            ->where('is_active', true)
+            ->whereNotNull('visa_type')
+            ->whereIn('agency_id', function ($q) {
+                $q->select('id')->from('agencies')
+                  ->where('is_active', true)
+                  ->whereNull('blocked_at');
+            })
+            ->selectRaw('country_code, array_agg(distinct visa_type) as types')
+            ->groupBy('country_code')
+            ->pluck('types', 'country_code')
+            ->map(fn ($v) => str_getcsv(trim($v, '{}')));
+
+        return ApiResponse::success($served->map(function ($row) use ($allowedTypes, $packageTypes) {
+            $countryTypes = $packageTypes[$row->country_code] ?? [];
+            // Пересечение: только разрешённые суперадмином + доступные у агентств
+            $visaTypes = $countryTypes
+                ? array_values(array_intersect($allowedTypes, $countryTypes))
+                : $allowedTypes;
+
+            return [
+                'country_code'   => $row->country_code,
+                'agencies_count' => (int) $row->agencies_count,
+                'visa_types'     => $visaTypes,
+            ];
+        })->values());
     }
 
     /**

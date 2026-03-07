@@ -42,27 +42,39 @@ class PublicReviewController extends Controller
 
         $reviews = $query->paginate(8);
 
-        // Статистика
-        $all       = AgencyReview::where('agency_id', $agencyId)->where('is_published', true);
-        $avgRating = $all->avg('rating');
-        $total     = $all->count();
+        // Статистика — один запрос для распределения + общих метрик
+        $distRows = AgencyReview::where('agency_id', $agencyId)
+            ->where('is_published', true)
+            ->selectRaw('rating, COUNT(*) as cnt')
+            ->groupBy('rating')
+            ->pluck('cnt', 'rating');
 
         $distribution = [];
+        $total = 0;
+        $ratingSum = 0;
         for ($i = 1; $i <= 5; $i++) {
-            $distribution[$i] = AgencyReview::where('agency_id', $agencyId)
-                ->where('is_published', true)
-                ->where('rating', $i)
-                ->count();
+            $count = (int) ($distRows[$i] ?? 0);
+            $distribution[$i] = $count;
+            $total += $count;
+            $ratingSum += $i * $count;
         }
+        $avgRating = $total > 0 ? round($ratingSum / $total, 1) : null;
 
-        // Средние по критериям
+        // Средние по критериям — один запрос
         $criteriaAvg = [];
-        foreach (self::CRITERIA as $c) {
-            $avg = AgencyReview::where('agency_id', $agencyId)
-                ->where('is_published', true)
-                ->whereNotNull($c)
-                ->avg($c);
-            if ($avg) $criteriaAvg[$c] = round((float) $avg, 1);
+        $criteriaRow = AgencyReview::where('agency_id', $agencyId)
+            ->where('is_published', true)
+            ->selectRaw(implode(', ', array_map(
+                fn ($c) => "AVG($c) as avg_$c",
+                self::CRITERIA
+            )))
+            ->first();
+
+        if ($criteriaRow) {
+            foreach (self::CRITERIA as $c) {
+                $avg = $criteriaRow->{"avg_$c"};
+                if ($avg) $criteriaAvg[$c] = round((float) $avg, 1);
+            }
         }
 
         return ApiResponse::success([

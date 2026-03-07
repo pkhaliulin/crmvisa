@@ -272,15 +272,25 @@ class GroupService
     {
         $group->load(['members.visaCase', 'agency:id,name,city,logo_url,is_verified,rating']);
 
-        $members = $group->members->map(function (CaseGroupMember $member) {
+        // Один запрос для статистики документов всех кейсов группы
+        $caseIds = $group->members->pluck('case_id')->filter()->values();
+        $docsStats = collect();
+        if ($caseIds->isNotEmpty()) {
+            $docsStats = CaseChecklist::whereIn('case_id', $caseIds)
+                ->selectRaw("case_id, COUNT(*) as total, SUM(CASE WHEN status IN ('uploaded', 'approved') THEN 1 ELSE 0 END) as uploaded")
+                ->groupBy('case_id')
+                ->get()
+                ->keyBy('case_id');
+        }
+
+        $members = $group->members->map(function (CaseGroupMember $member) use ($docsStats) {
             $case = $member->visaCase;
             $docsTotal = 0;
             $docsUploaded = 0;
 
-            if ($case) {
-                $docsTotal = CaseChecklist::where('case_id', $case->id)->count();
-                $docsUploaded = CaseChecklist::where('case_id', $case->id)
-                    ->whereIn('status', ['uploaded', 'approved'])->count();
+            if ($case && isset($docsStats[$case->id])) {
+                $docsTotal = (int) $docsStats[$case->id]->total;
+                $docsUploaded = (int) $docsStats[$case->id]->uploaded;
             }
 
             $maskedPhone = $member->phone

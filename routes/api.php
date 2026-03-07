@@ -394,15 +394,15 @@ Route::prefix('v1')->group(function () {
         Route::post('me/change-phone/send-otp', [PublicProfileController::class, 'changePhoneSendOtp']);
         Route::post('me/change-phone/verify',   [PublicProfileController::class, 'changePhoneVerify']);
         Route::get('me/cases',                                    [PublicProfileController::class, 'cases']);
-        Route::post('me/cases',                                   [PublicProfileController::class, 'createDraftCase']);
+        Route::post('me/cases',                                   [PublicProfileController::class, 'createDraftCase'])->middleware('throttle:10,1');
         Route::get('me/cases/{id}',                               [PublicProfileController::class, 'caseDetail']);
         Route::patch('me/cases/{id}',                             [PublicProfileController::class, 'updateCase']);
         Route::post('me/cases/{id}/cancel',                      [PublicProfileController::class, 'cancelCase']);
-        Route::post('me/cases/{caseId}/checklist/{itemId}/upload',[PublicProfileController::class, 'uploadChecklistItem']);
+        Route::post('me/cases/{caseId}/checklist/{itemId}/upload',[PublicProfileController::class, 'uploadChecklistItem'])->middleware('throttle:20,1');
 
         // Семья — профиль
         Route::get('me/family',                [PublicFamilyController::class, 'index']);
-        Route::post('me/family',               [PublicFamilyController::class, 'store']);
+        Route::post('me/family',               [PublicFamilyController::class, 'store'])->middleware('throttle:10,1');
         Route::patch('me/family/{id}',         [PublicFamilyController::class, 'update']);
         Route::delete('me/family/{id}',        [PublicFamilyController::class, 'destroy']);
 
@@ -413,9 +413,9 @@ Route::prefix('v1')->group(function () {
 
         Route::get('agencies',              [PublicAgencyController::class, 'index']);
         Route::get('agencies/{id}',         [PublicAgencyController::class, 'show']);
-        Route::post('leads',                [PublicAgencyController::class, 'submitLead']);
+        Route::post('leads',                [PublicAgencyController::class, 'submitLead'])->middleware('throttle:10,1');
         Route::get('agencies/{id}/reviews', [PublicReviewController::class, 'index']);
-        Route::post('agencies/{id}/reviews',[PublicReviewController::class, 'store']);
+        Route::post('agencies/{id}/reviews',[PublicReviewController::class, 'store'])->middleware('throttle:5,1');
         Route::get('me/can-review/{id}',    [PublicReviewController::class, 'canReview']);
 
         // Inline-выбор агентства для кейса + смена агентства
@@ -434,8 +434,8 @@ Route::prefix('v1')->group(function () {
         Route::post('me/groups/{id}/pay',           [PublicGroupController::class, 'payForGroup']);
 
         // Оплата клиента
-        Route::post('me/payments/initiate',        [ClientPaymentController::class, 'initiate']);
-        Route::post('me/payments/mark-paid',       [ClientPaymentController::class, 'markAsPaid']);
+        Route::post('me/payments/initiate',        [ClientPaymentController::class, 'initiate'])->middleware('throttle:5,1');
+        Route::post('me/payments/mark-paid',       [ClientPaymentController::class, 'markAsPaid'])->middleware('throttle:3,1');
         Route::get('me/cases/{id}/payment',        [ClientPaymentController::class, 'status']);
         Route::get('me/billing',                   [ClientPaymentController::class, 'history']);
 
