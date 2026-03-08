@@ -7,7 +7,7 @@
   >
     <!-- Logo -->
     <div class="flex items-center px-4 h-16 border-b border-gray-700/50">
-      <span class="font-bold text-base text-white truncate">VisaCRM</span>
+      <span class="text-xl font-extrabold tracking-tight truncate"><span class="text-white">Visa</span><span class="text-blue-500">CRM</span></span>
     </div>
 
     <!-- Navigation -->
