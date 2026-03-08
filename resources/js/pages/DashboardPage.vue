@@ -376,21 +376,35 @@
             </div>
           </div>
 
-          <!-- Текущие показатели -->
-          <div class="bg-white/60 rounded-lg p-3 border border-indigo-100">
-            <p class="text-[10px] font-medium text-indigo-700 uppercase tracking-wide mb-2">{{ t('crm.forecast.currentStats') }}</p>
-            <div class="grid grid-cols-3 gap-3 text-center">
-              <div>
-                <p class="text-lg font-bold text-gray-900">{{ stats?.clients_total ?? 0 }}</p>
-                <p class="text-[10px] text-gray-500">{{ t('crm.forecast.totalClients') }}</p>
-              </div>
+          <!-- Ресурсы менеджеров: реальные данные -->
+          <div class="bg-white/60 rounded-lg p-4 border border-indigo-100">
+            <p class="text-[10px] font-medium text-indigo-700 uppercase tracking-wide mb-3">{{ t('crm.forecast.managerCapacity') }}</p>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
               <div>
                 <p class="text-lg font-bold text-gray-900">{{ stats?.users_total ?? 0 }}</p>
-                <p class="text-[10px] text-gray-500">{{ t('crm.forecast.totalManagers') }}</p>
+                <p class="text-[10px] text-gray-500">{{ t('crm.forecast.currentManagers') }}</p>
               </div>
               <div>
-                <p class="text-lg font-bold text-gray-900">{{ metrics.completed ?? 0 }}</p>
-                <p class="text-[10px] text-gray-500">{{ t('crm.forecast.completedPeriod') }}</p>
+                <p class="text-lg font-bold" :class="realAvgHours > 0 ? 'text-gray-900' : 'text-gray-400'">{{ realAvgHours > 0 ? formatHours(realAvgHours) : '--' }}</p>
+                <p class="text-[10px] text-gray-500">{{ t('crm.forecast.realAvgTime') }}</p>
+              </div>
+              <div>
+                <p class="text-lg font-bold text-blue-600">{{ managerCapacity.withoutCrm }}</p>
+                <p class="text-[10px] text-gray-500">{{ t('crm.forecast.capacityWithout') }}</p>
+              </div>
+              <div>
+                <p class="text-lg font-bold text-green-600">{{ managerCapacity.withCrm }}</p>
+                <p class="text-[10px] text-gray-500">{{ t('crm.forecast.capacityWith') }}</p>
+              </div>
+            </div>
+            <div class="mt-3 grid grid-cols-2 gap-3">
+              <div class="bg-gray-50 rounded-lg p-2.5 text-center">
+                <p class="text-[10px] text-gray-500">{{ t('crm.forecast.totalCapacityWithout') }}</p>
+                <p class="text-sm font-bold text-gray-700">{{ teamCapacity.without }} {{ t('crm.forecast.clientsMonth') }}</p>
+              </div>
+              <div class="bg-green-50 rounded-lg p-2.5 text-center">
+                <p class="text-[10px] text-green-600">{{ t('crm.forecast.totalCapacityWith') }}</p>
+                <p class="text-sm font-bold text-green-700">{{ teamCapacity.with }} {{ t('crm.forecast.clientsMonth') }}</p>
               </div>
             </div>
           </div>
@@ -402,16 +416,23 @@
                 <tr>
                   <th class="text-left px-3 py-2 font-medium">{{ t('crm.forecast.yearCol') }}</th>
                   <th class="text-right px-3 py-2 font-medium">{{ t('crm.forecast.clientsCol') }}</th>
-                  <th class="text-right px-3 py-2 font-medium">{{ t('crm.forecast.managersCol') }}</th>
+                  <th class="text-right px-3 py-2 font-medium cursor-help" :title="t('crm.forecast.managersWithoutTooltip')">{{ t('crm.forecast.managersWithout') }} <span class="text-indigo-300">?</span></th>
+                  <th class="text-right px-3 py-2 font-medium cursor-help" :title="t('crm.forecast.managersWithTooltip')">{{ t('crm.forecast.managersWith') }} <span class="text-indigo-300">?</span></th>
+                  <th class="text-right px-3 py-2 font-medium cursor-help" :title="t('crm.forecast.savingsTooltip')">{{ t('crm.forecast.savings') }} <span class="text-indigo-300">?</span></th>
                   <th class="text-right px-3 py-2 font-medium">{{ t('crm.forecast.revenueCol') }}</th>
-                  <th class="px-3 py-2 w-32"></th>
+                  <th class="px-3 py-2 w-24"></th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-indigo-100">
                 <tr v-for="row in forecastRows" :key="row.year" class="hover:bg-white/40 transition-colors">
                   <td class="px-3 py-2.5 font-bold text-indigo-900">{{ row.year }}</td>
                   <td class="px-3 py-2.5 text-right font-semibold text-gray-800">{{ row.clients.toLocaleString() }}</td>
-                  <td class="px-3 py-2.5 text-right text-gray-700">{{ row.managersNeeded }}</td>
+                  <td class="px-3 py-2.5 text-right text-gray-500">{{ row.managersWithout }}</td>
+                  <td class="px-3 py-2.5 text-right font-semibold text-green-700">{{ row.managersWith }}</td>
+                  <td class="px-3 py-2.5 text-right text-green-600 font-semibold">
+                    <span v-if="row.saved > 0">-{{ row.saved }} {{ t('crm.forecast.people') }}</span>
+                    <span v-else class="text-gray-400">--</span>
+                  </td>
                   <td class="px-3 py-2.5 text-right font-bold text-green-700">${{ row.revenue.toLocaleString() }}</td>
                   <td class="px-3 py-2.5">
                     <div class="bg-indigo-100 rounded-full h-2 overflow-hidden">
@@ -424,15 +445,23 @@
           </div>
 
           <!-- Мотивационное сообщение -->
-          <div v-if="forecastRows.length" class="bg-white/60 rounded-lg p-3 border border-indigo-100 text-center">
-            <p class="text-sm font-semibold text-indigo-900">
-              {{ t('crm.forecast.motivation', {
-                year: forecastRows[forecastRows.length - 1].year,
-                revenue: forecastRows[forecastRows.length - 1].revenue.toLocaleString(),
-                clients: forecastRows[forecastRows.length - 1].clients.toLocaleString()
-              }) }}
-            </p>
-            <p class="text-xs text-indigo-600 mt-1">{{ t('crm.forecast.motivationSub') }}</p>
+          <div v-if="forecastRows.length" class="bg-white/60 rounded-lg p-4 border border-indigo-100">
+            <div class="text-center">
+              <p class="text-sm font-semibold text-indigo-900">
+                {{ t('crm.forecast.motivation', {
+                  year: forecastRows[forecastRows.length - 1].year,
+                  revenue: forecastRows[forecastRows.length - 1].revenue.toLocaleString(),
+                  clients: forecastRows[forecastRows.length - 1].clients.toLocaleString()
+                }) }}
+              </p>
+            </div>
+            <div v-if="totalSaved > 0" class="mt-3 bg-green-50 rounded-lg p-3 text-center border border-green-200">
+              <p class="text-xs font-semibold text-green-800">
+                {{ t('crm.forecast.automationSaving', { saved: totalSaved, salaryTotal: (totalSaved * 500).toLocaleString() }) }}
+              </p>
+              <p class="text-[10px] text-green-600 mt-1">{{ t('crm.forecast.automationSavingSub') }}</p>
+            </div>
+            <p class="text-xs text-indigo-600 mt-3 text-center">{{ t('crm.forecast.motivationSub') }}</p>
           </div>
         </div>
       </div>
@@ -664,22 +693,52 @@ const lineCompleted = computed(() => linePoints('completed'));
 const areaCreated = computed(() => areaPoints('created'));
 const areaCompleted = computed(() => areaPoints('completed'));
 
+// Ресурсы менеджеров
+const WORK_HOURS_MONTH = 160; // рабочих часов в месяце
+const CRM_EFFICIENCY = 0.4; // CRM сокращает время обработки на 40%
+
+const realAvgHours = computed(() => metrics.value?.avg_processing_hours ?? 0);
+
+// Сколько клиентов 1 менеджер обработает в месяц
+const managerCapacity = computed(() => {
+  const avgH = realAvgHours.value > 0 ? realAvgHours.value : 48; // default 48ч если нет данных
+  const without = Math.floor(WORK_HOURS_MONTH / avgH);
+  const withCrm = Math.floor(WORK_HOURS_MONTH / (avgH * (1 - CRM_EFFICIENCY)));
+  return { withoutCrm: Math.max(1, without), withCrm: Math.max(1, withCrm) };
+});
+
+// Общая пропускная способность команды
+const teamCapacity = computed(() => {
+  const m = forecast.value.managers;
+  return {
+    without: m * managerCapacity.value.withoutCrm,
+    with: m * managerCapacity.value.withCrm,
+  };
+});
+
 // Прогноз роста
 const forecastRows = computed(() => {
   const f = forecast.value;
+  const cap = managerCapacity.value;
   const rows = [];
   let clients = f.clientsPerMonth * 12;
-  const clientsPerManager = 80; // норма: 80 клиентов/год на менеджера
   for (let y = currentYear; y <= currentYear + 4; y++) {
-    const managersNeeded = Math.max(f.managers, Math.ceil(clients / clientsPerManager));
+    const perMonth = Math.round(clients / 12);
+    const managersWithout = Math.max(f.managers, Math.ceil(perMonth / Math.max(1, cap.withoutCrm)));
+    const managersWith = Math.max(f.managers, Math.ceil(perMonth / Math.max(1, cap.withCrm)));
+    const saved = managersWithout - managersWith;
     const revenue = Math.round(clients * f.avgCheck);
-    rows.push({ year: y, clients: Math.round(clients), managersNeeded, revenue });
+    rows.push({ year: y, clients: Math.round(clients), managersWithout, managersWith, saved, revenue });
     clients = clients * (1 + f.growthPct / 100);
   }
   return rows;
 });
 
 const maxForecastClients = computed(() => Math.max(1, ...forecastRows.value.map(r => r.clients)));
+const totalSaved = computed(() => {
+  const last = forecastRows.value[forecastRows.value.length - 1];
+  return last?.saved ?? 0;
+});
 
 async function fetchDashboard() {
   loading.value = true;
