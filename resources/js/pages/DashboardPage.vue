@@ -5,28 +5,42 @@
     </div>
 
     <template v-else>
-      <!-- Фильтр периода -->
-      <div class="flex flex-wrap items-center gap-2">
-        <div class="flex flex-wrap items-center gap-1 bg-gray-100 rounded-lg p-0.5">
-          <button v-for="p in relativePeriods" :key="p.value"
-            @click="changePeriod(p.value)"
-            :class="[
-              'px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap',
-              period === p.value ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
-            ]">
-            {{ p.label }}
-          </button>
+
+      <!-- ============================================ -->
+      <!-- A. ОБЗОР — фильтр, подсказки, метрики, рост  -->
+      <!-- ============================================ -->
+
+      <!-- Фильтр периода + PDF -->
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div class="flex flex-wrap items-center gap-2">
+          <div class="flex flex-wrap items-center gap-1 bg-gray-100 rounded-lg p-0.5">
+            <button v-for="p in relativePeriods" :key="p.value"
+              @click="changePeriod(p.value)"
+              :class="[
+                'px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap',
+                period === p.value ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+              ]">
+              {{ p.label }}
+            </button>
+          </div>
+          <div class="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
+            <button v-for="y in yearOptions" :key="y"
+              @click="changePeriod(String(y))"
+              :class="[
+                'px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors',
+                period === String(y) ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+              ]">
+              {{ y }}
+            </button>
+          </div>
         </div>
-        <div class="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
-          <button v-for="y in yearOptions" :key="y"
-            @click="changePeriod(String(y))"
-            :class="[
-              'px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors',
-              period === String(y) ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
-            ]">
-            {{ y }}
-          </button>
-        </div>
+        <button @click="exportPdf"
+          class="flex items-center gap-2 px-3 py-1.5 bg-gray-100 text-gray-600 text-xs font-medium rounded-lg hover:bg-gray-200 transition-colors print:hidden">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+          PDF
+        </button>
       </div>
 
       <!-- Подсказки -->
@@ -65,7 +79,7 @@
         </div>
       </div>
 
-      <!-- Ключевые метрики (кликабельные) -->
+      <!-- Ключевые метрики -->
       <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         <component :is="m.to ? 'router-link' : 'div'" v-for="m in metricCards" :key="m.key"
           :to="m.to || undefined"
@@ -83,7 +97,6 @@
             </span>
           </div>
           <p v-if="m.sub" class="text-[10px] text-gray-400 mt-0.5">{{ m.sub }}</p>
-          <!-- Тултип -->
           <div v-if="m.tooltip" class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-48 text-center z-10">
             {{ m.tooltip }}
             <div class="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
@@ -91,65 +104,56 @@
         </component>
       </div>
 
-      <!-- Графики row -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <!-- Динамика -->
-        <div class="bg-white rounded-xl border border-gray-200 p-5 lg:col-span-2">
-          <h3 class="font-semibold text-gray-800 text-sm mb-4">{{ t('crm.dashboard.chartTitle') }}</h3>
-          <div class="h-48 relative">
-            <svg v-if="chartData.length" class="w-full h-full" :viewBox="`0 0 ${chartW} ${chartH}`" preserveAspectRatio="none">
-              <line v-for="i in 4" :key="'g'+i" :x1="0" :y1="chartH * i / 4" :x2="chartW" :y2="chartH * i / 4" stroke="#f3f4f6" stroke-width="1"/>
-              <polygon :points="areaCreated" fill="rgba(59,130,246,0.1)"/>
-              <polyline :points="lineCreated" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linejoin="round"/>
-              <polygon :points="areaCompleted" fill="rgba(16,185,129,0.1)"/>
-              <polyline :points="lineCompleted" fill="none" stroke="#10b981" stroke-width="2" stroke-linejoin="round"/>
-            </svg>
-            <div v-else class="flex items-center justify-center h-full text-sm text-gray-400">{{ t('crm.dashboard.noData') }}</div>
-          </div>
-          <div class="flex items-center gap-4 mt-2 text-xs text-gray-500">
-            <span class="flex items-center gap-1"><span class="w-3 h-0.5 bg-blue-500 rounded"></span> {{ t('crm.dashboard.created') }}</span>
-            <span class="flex items-center gap-1"><span class="w-3 h-0.5 bg-green-500 rounded"></span> {{ t('crm.dashboard.completed') }}</span>
-          </div>
+      <!-- Сравнение с предыдущим периодом -->
+      <div v-if="hasGrowthData" class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div v-for="item in comparisonItems" :key="item.key" class="bg-white rounded-xl border border-gray-200 px-4 py-3 text-center">
+          <p class="text-[11px] font-medium text-gray-400 uppercase tracking-wide">{{ item.label }}</p>
+          <p class="text-xl font-bold mt-1" :class="item.growth > 0 ? 'text-green-600' : item.growth < 0 ? 'text-red-600' : 'text-gray-400'">
+            {{ item.growth > 0 ? '+' : '' }}{{ item.growth }}%
+          </p>
+          <p class="text-[10px] text-gray-400">{{ t('crm.dashboard.vsPrevPeriod') }}</p>
         </div>
+      </div>
 
-        <!-- Pie: Источники лидов -->
+      <!-- ============================================ -->
+      <!-- B. ВОРОНКА И ЭТАПЫ                           -->
+      <!-- ============================================ -->
+
+      <!-- Воронка + Этапы side-by-side -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <!-- Воронка продаж -->
         <div class="bg-white rounded-xl border border-gray-200 p-5">
-          <h3 class="font-semibold text-gray-800 text-sm mb-4">{{ t('crm.dashboard.leadSourcesTitle') }}</h3>
-          <div v-if="leadSources.length" class="flex flex-col items-center">
-            <svg width="140" height="140" viewBox="0 0 140 140">
-              <circle v-for="(s, i) in pieSlices" :key="i"
-                cx="70" cy="70" r="55" fill="none" :stroke="s.color" stroke-width="30"
-                :stroke-dasharray="`${s.dash} ${s.gap}`" :stroke-dashoffset="s.offset"
-                class="transition-all duration-500"
-              />
-            </svg>
-            <div class="mt-3 w-full space-y-1.5">
-              <div v-for="(s, i) in leadSources" :key="i" class="flex items-center gap-2 text-xs">
-                <span class="w-2.5 h-2.5 rounded-full shrink-0" :style="{background: sourceColors[i % sourceColors.length]}"></span>
-                <span class="flex-1 text-gray-600 truncate">{{ sourceLabels[s.source] || s.source }}</span>
-                <span class="text-gray-400 text-[10px]">{{ totalLeads > 0 ? Math.round(s.count / totalLeads * 100) : 0 }}%</span>
-                <span class="font-bold text-gray-800">{{ s.count }}</span>
+          <h3 class="font-semibold text-gray-800 text-sm mb-4">{{ t('crm.dashboard.funnelTitle') }}</h3>
+          <div v-if="funnelData.length" class="space-y-2">
+            <div v-for="(step, i) in funnelData" :key="step.key">
+              <div class="flex items-center gap-3">
+                <span class="text-xs text-gray-500 w-24 shrink-0 truncate">{{ step.label }}</span>
+                <div class="flex-1 relative">
+                  <div class="h-7 rounded-md transition-all duration-700 flex items-center px-2.5"
+                    :style="{ width: step.percent + '%', minWidth: '32px', background: stageColor(step.key) + '20', borderLeft: `3px solid ${stageColor(step.key)}` }">
+                    <span class="text-[11px] font-bold" :style="{ color: stageColor(step.key) }">{{ step.count }}</span>
+                  </div>
+                </div>
+                <span class="text-[10px] text-gray-400 w-10 text-right shrink-0">{{ step.percent }}%</span>
+                <span v-if="i > 0 && step.dropoff != null" class="text-[10px] w-12 text-right shrink-0"
+                  :class="step.dropoff > 50 ? 'text-red-500 font-semibold' : step.dropoff > 30 ? 'text-amber-500' : 'text-gray-400'">
+                  -{{ step.dropoff }}%
+                </span>
+                <span v-else class="w-12 shrink-0"></span>
               </div>
             </div>
           </div>
           <div v-else class="text-sm text-gray-400 text-center py-8">{{ t('crm.dashboard.noData') }}</div>
-          <router-link :to="{ name: 'leadgen' }"
-            class="mt-4 flex items-center justify-center gap-2 w-full py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs font-semibold rounded-lg transition-colors">
-            {{ t('crm.dashboard.leadgenBtn') }}
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
-          </router-link>
         </div>
-      </div>
 
-      <!-- Заявки по этапам + Топ стран -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div class="bg-white rounded-xl border border-gray-200 p-5 lg:col-span-2">
+        <!-- Заявки по этапам -->
+        <div class="bg-white rounded-xl border border-gray-200 p-5">
           <h3 class="font-semibold text-gray-800 text-sm mb-4">{{ t('crm.dashboard.stagesTitle') }}</h3>
           <div class="space-y-2.5">
             <router-link v-for="stage in stageRows" :key="stage.key"
               :to="{ name: 'cases', query: { stage: stage.key } }"
               class="flex items-center gap-3 group hover:bg-gray-50 rounded-lg px-1 -mx-1 py-0.5 transition-colors">
-              <span class="text-xs text-gray-500 w-32 shrink-0 group-hover:text-blue-600 transition-colors">{{ stage.label }}</span>
+              <span class="text-xs text-gray-500 w-28 shrink-0 group-hover:text-blue-600 transition-colors">{{ stage.label }}</span>
               <div class="flex-1 bg-gray-100 rounded-full h-3 overflow-hidden">
                 <div class="h-full rounded-full transition-all duration-700" :style="{ width: stage.percent + '%', background: stageColor(stage.key) }"/>
               </div>
@@ -157,45 +161,9 @@
             </router-link>
           </div>
         </div>
-
-        <!-- Популярные страны платформы -->
-        <div class="bg-white rounded-xl border border-gray-200 p-5">
-          <h3 class="font-semibold text-gray-800 text-sm mb-1">{{ t('crm.dashboard.popularCountriesTitle') }}</h3>
-          <p class="text-[10px] text-gray-400 mb-3">{{ t('crm.dashboard.popularCountriesSub') }}</p>
-
-          <!-- Топ 5 -->
-          <div v-if="topPopular.length" class="space-y-2">
-            <router-link v-for="(c, i) in topPopular" :key="c.country_code"
-              :to="{ name: 'countries.show', params: { code: c.country_code } }"
-              class="flex items-center gap-2 text-xs group hover:bg-gray-50 rounded-lg px-1 -mx-1 py-1 transition-colors">
-              <span class="font-bold text-gray-400 w-4">{{ i + 1 }}</span>
-              <span class="text-sm">{{ c.flag_emoji }}</span>
-              <span class="flex-1 text-gray-700 group-hover:text-blue-600 transition-colors truncate">{{ c.name }}</span>
-              <span v-if="c.agency_works" class="text-[10px] font-medium px-1.5 py-0.5 bg-green-50 text-green-600 rounded-full">{{ t('crm.dashboard.works') }}</span>
-              <span v-else class="text-[10px] font-medium px-1.5 py-0.5 bg-red-50 text-red-500 rounded-full">{{ t('crm.dashboard.notWorks') }}</span>
-            </router-link>
-          </div>
-
-          <!-- Высокий интерес (следующие 10) -->
-          <div v-if="trendingPopular.length" class="mt-4">
-            <p class="text-[10px] font-medium text-gray-400 uppercase tracking-wide mb-2">{{ t('crm.dashboard.highInterest') }}</p>
-            <div class="space-y-1.5">
-              <router-link v-for="c in trendingPopular" :key="c.country_code"
-                :to="{ name: 'countries.show', params: { code: c.country_code } }"
-                class="flex items-center gap-2 text-xs group hover:bg-gray-50 rounded-lg px-1 -mx-1 py-0.5 transition-colors">
-                <span class="text-sm">{{ c.flag_emoji }}</span>
-                <span class="flex-1 text-gray-600 group-hover:text-blue-600 transition-colors truncate">{{ c.name }}</span>
-                <span v-if="c.agency_works" class="text-[9px] font-medium px-1.5 py-0.5 bg-green-50 text-green-600 rounded-full">{{ t('crm.dashboard.works') }}</span>
-                <span v-else class="text-[9px] font-medium px-1.5 py-0.5 bg-red-50 text-red-500 rounded-full">{{ t('crm.dashboard.notWorks') }}</span>
-              </router-link>
-            </div>
-          </div>
-
-          <div v-if="!topPopular.length && !trendingPopular.length" class="text-sm text-gray-400 text-center py-8">{{ t('crm.dashboard.noData') }}</div>
-        </div>
       </div>
 
-      <!-- Скорость обработки по этапам (SLA) -->
+      <!-- SLA по этапам -->
       <div class="bg-white rounded-xl border border-gray-200 p-5">
         <div class="flex items-center gap-2 mb-4">
           <h3 class="font-semibold text-gray-800 text-sm">{{ t('crm.dashboard.stageAnalytics') }}</h3>
@@ -209,51 +177,15 @@
             </div>
           </span>
         </div>
-        <div>
+        <div class="overflow-x-auto">
           <table class="w-full text-sm">
             <thead class="bg-gray-50 border-b text-gray-500 text-[11px] uppercase tracking-wide">
               <tr>
                 <th class="text-left px-4 py-2.5 font-medium">{{ t('crm.dashboard.stageCol') }}</th>
-                <th class="text-right px-4 py-2.5 font-medium">
-                  <span class="group relative cursor-help inline-flex items-center gap-1">
-                    {{ t('crm.dashboard.slaNorm') }}
-                    <svg class="w-3.5 h-3.5 text-gray-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3m.08 4h.01"/></svg>
-                    <div class="absolute bottom-full right-0 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-52 text-left z-50 normal-case tracking-normal font-normal">
-                      {{ t('crm.dashboard.slaNormTooltip') }}
-                      <div class="absolute top-full right-4 w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
-                    </div>
-                  </span>
-                </th>
-                <th class="text-right px-4 py-2.5 font-medium">
-                  <span class="group relative cursor-help inline-flex items-center gap-1">
-                    {{ t('crm.dashboard.avgTime') }}
-                    <svg class="w-3.5 h-3.5 text-gray-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3m.08 4h.01"/></svg>
-                    <div class="absolute bottom-full right-0 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-52 text-left z-50 normal-case tracking-normal font-normal">
-                      {{ t('crm.dashboard.avgTimeTooltip') }}
-                      <div class="absolute top-full right-4 w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
-                    </div>
-                  </span>
-                </th>
-                <th class="text-right px-4 py-2.5 font-medium">
-                  <span class="group relative cursor-help inline-flex items-center gap-1">
-                    {{ t('crm.dashboard.deviation') }}
-                    <svg class="w-3.5 h-3.5 text-gray-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3m.08 4h.01"/></svg>
-                    <div class="absolute bottom-full right-0 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-52 text-left z-50 normal-case tracking-normal font-normal">
-                      {{ t('crm.dashboard.deviationTooltip') }}
-                      <div class="absolute top-full right-4 w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
-                    </div>
-                  </span>
-                </th>
-                <th class="text-right px-4 py-2.5 font-medium">
-                  <span class="group relative cursor-help inline-flex items-center gap-1">
-                    {{ t('crm.dashboard.slaCompliance') }}
-                    <svg class="w-3.5 h-3.5 text-gray-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3m.08 4h.01"/></svg>
-                    <div class="absolute bottom-full right-0 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-52 text-left z-50 normal-case tracking-normal font-normal">
-                      {{ t('crm.dashboard.slaComplianceTooltip') }}
-                      <div class="absolute top-full right-4 w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
-                    </div>
-                  </span>
-                </th>
+                <th class="text-right px-4 py-2.5 font-medium">{{ t('crm.dashboard.slaNorm') }}</th>
+                <th class="text-right px-4 py-2.5 font-medium">{{ t('crm.dashboard.avgTime') }}</th>
+                <th class="text-right px-4 py-2.5 font-medium">{{ t('crm.dashboard.deviation') }}</th>
+                <th class="text-right px-4 py-2.5 font-medium">{{ t('crm.dashboard.slaCompliance') }}</th>
                 <th class="px-4 py-2.5 w-28"></th>
               </tr>
             </thead>
@@ -282,64 +214,88 @@
         </div>
       </div>
 
-      <!-- Менеджеры -->
+      <!-- ============================================ -->
+      <!-- C. ТРЕНДЫ И ИСТОЧНИКИ                        -->
+      <!-- ============================================ -->
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <!-- Динамика -->
+        <div class="bg-white rounded-xl border border-gray-200 p-5 lg:col-span-2">
+          <h3 class="font-semibold text-gray-800 text-sm mb-4">{{ t('crm.dashboard.chartTitle') }}</h3>
+          <div class="h-48 relative">
+            <svg v-if="chartData.length" class="w-full h-full" :viewBox="`0 0 ${chartW} ${chartH}`" preserveAspectRatio="none">
+              <line v-for="i in 4" :key="'g'+i" :x1="0" :y1="chartH * i / 4" :x2="chartW" :y2="chartH * i / 4" stroke="#f3f4f6" stroke-width="1"/>
+              <polygon :points="areaCreated" fill="rgba(59,130,246,0.1)"/>
+              <polyline :points="lineCreated" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linejoin="round"/>
+              <polygon :points="areaCompleted" fill="rgba(16,185,129,0.1)"/>
+              <polyline :points="lineCompleted" fill="none" stroke="#10b981" stroke-width="2" stroke-linejoin="round"/>
+            </svg>
+            <div v-else class="flex items-center justify-center h-full text-sm text-gray-400">{{ t('crm.dashboard.noData') }}</div>
+          </div>
+          <div class="flex items-center gap-4 mt-2 text-xs text-gray-500">
+            <span class="flex items-center gap-1"><span class="w-3 h-0.5 bg-blue-500 rounded"></span> {{ t('crm.dashboard.created') }}</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-0.5 bg-green-500 rounded"></span> {{ t('crm.dashboard.completed') }}</span>
+          </div>
+        </div>
+
+        <!-- Источники лидов -->
+        <div class="bg-white rounded-xl border border-gray-200 p-5">
+          <h3 class="font-semibold text-gray-800 text-sm mb-4">{{ t('crm.dashboard.leadSourcesTitle') }}</h3>
+          <div v-if="leadSources.length" class="flex flex-col items-center">
+            <svg width="140" height="140" viewBox="0 0 140 140">
+              <circle v-for="(s, i) in pieSlices" :key="i"
+                cx="70" cy="70" r="55" fill="none" :stroke="s.color" stroke-width="30"
+                :stroke-dasharray="`${s.dash} ${s.gap}`" :stroke-dashoffset="s.offset"
+                class="transition-all duration-500"
+              />
+            </svg>
+            <div class="mt-3 w-full space-y-1.5">
+              <div v-for="(s, i) in leadSources" :key="i" class="flex items-center gap-2 text-xs">
+                <span class="w-2.5 h-2.5 rounded-full shrink-0" :style="{background: sourceColors[i % sourceColors.length]}"></span>
+                <span class="flex-1 text-gray-600 truncate">{{ sourceLabels[s.source] || s.source }}</span>
+                <span class="text-gray-400 text-[10px]">{{ totalLeads > 0 ? Math.round(s.count / totalLeads * 100) : 0 }}%</span>
+                <span class="font-bold text-gray-800">{{ s.count }}</span>
+              </div>
+            </div>
+          </div>
+          <div v-else class="text-sm text-gray-400 text-center py-8">{{ t('crm.dashboard.noData') }}</div>
+          <router-link :to="{ name: 'leadgen' }"
+            class="mt-4 flex items-center justify-center gap-2 w-full py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs font-semibold rounded-lg transition-colors">
+            {{ t('crm.dashboard.leadgenBtn') }}
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
+          </router-link>
+        </div>
+      </div>
+
+      <!-- ============================================ -->
+      <!-- D. КОМАНДА — менеджеры + рейтинг             -->
+      <!-- ============================================ -->
+
       <div v-if="stats?.managers?.length" class="bg-white rounded-xl border border-gray-200 p-5">
         <h3 class="font-semibold text-gray-800 text-sm mb-4">{{ t('crm.dashboard.managersLoad') }}</h3>
-        <div>
+
+        <!-- Рейтинг топ-3 (если больше 1 менеджера) -->
+        <div v-if="managerRanking.length > 1" class="grid grid-cols-3 gap-3 mb-5">
+          <div v-for="(rank, i) in managerRanking" :key="rank.id"
+            class="p-3 rounded-lg border text-center"
+            :class="i === 0 ? 'border-yellow-300 bg-yellow-50' : i === 1 ? 'border-gray-300 bg-gray-50' : 'border-orange-200 bg-orange-50'">
+            <div class="text-lg font-bold mb-0.5" :class="i === 0 ? 'text-yellow-600' : i === 1 ? 'text-gray-500' : 'text-orange-500'">{{ i + 1 }}</div>
+            <p class="font-semibold text-sm text-gray-800 truncate">{{ rank.name }}</p>
+            <p class="text-[10px] text-gray-500 mt-1">{{ rank.score }} {{ t('crm.dashboard.rankingPts') }} | {{ rank.conversion }}%</p>
+          </div>
+        </div>
+
+        <!-- Таблица менеджеров -->
+        <div class="overflow-x-auto">
           <table class="w-full text-sm">
             <thead class="bg-gray-50 border-b text-gray-500 text-[11px] uppercase tracking-wide">
               <tr>
                 <th class="text-left px-4 py-2.5 font-medium">{{ t('crm.dashboard.managerCol') }}</th>
-                <th class="text-right px-4 py-2.5 font-medium">
-                  <span class="group relative cursor-help inline-flex items-center gap-1">
-                    {{ t('crm.dashboard.activeCol') }}
-                    <svg class="w-3.5 h-3.5 text-gray-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3m.08 4h.01"/></svg>
-                    <div class="absolute bottom-full right-0 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-52 text-left z-50 normal-case tracking-normal font-normal">
-                      {{ t('crm.dashboard.activeColTooltip') }}
-                      <div class="absolute top-full right-4 w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
-                    </div>
-                  </span>
-                </th>
-                <th class="text-right px-4 py-2.5 font-medium">
-                  <span class="group relative cursor-help inline-flex items-center gap-1">
-                    {{ t('crm.dashboard.completedCol') }}
-                    <svg class="w-3.5 h-3.5 text-gray-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3m.08 4h.01"/></svg>
-                    <div class="absolute bottom-full right-0 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-52 text-left z-50 normal-case tracking-normal font-normal">
-                      {{ t('crm.dashboard.completedColTooltip') }}
-                      <div class="absolute top-full right-4 w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
-                    </div>
-                  </span>
-                </th>
-                <th class="text-right px-4 py-2.5 font-medium">
-                  <span class="group relative cursor-help inline-flex items-center gap-1">
-                    {{ t('crm.dashboard.overdueCol') }}
-                    <svg class="w-3.5 h-3.5 text-gray-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3m.08 4h.01"/></svg>
-                    <div class="absolute bottom-full right-0 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-52 text-left z-50 normal-case tracking-normal font-normal">
-                      {{ t('crm.dashboard.overdueColTooltip') }}
-                      <div class="absolute top-full right-4 w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
-                    </div>
-                  </span>
-                </th>
-                <th class="text-right px-4 py-2.5 font-medium">
-                  <span class="group relative cursor-help inline-flex items-center gap-1">
-                    {{ t('crm.dashboard.avgTimeCol') }}
-                    <svg class="w-3.5 h-3.5 text-gray-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3m.08 4h.01"/></svg>
-                    <div class="absolute bottom-full right-0 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-52 text-left z-50 normal-case tracking-normal font-normal">
-                      {{ t('crm.dashboard.avgTimeColTooltip') }}
-                      <div class="absolute top-full right-4 w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
-                    </div>
-                  </span>
-                </th>
-                <th class="text-right px-4 py-2.5 font-medium">
-                  <span class="group relative cursor-help inline-flex items-center gap-1">
-                    {{ t('crm.dashboard.conversionCol') }}
-                    <svg class="w-3.5 h-3.5 text-gray-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3m.08 4h.01"/></svg>
-                    <div class="absolute bottom-full right-0 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-52 text-left z-50 normal-case tracking-normal font-normal">
-                      {{ t('crm.dashboard.conversionColTooltip') }}
-                      <div class="absolute top-full right-4 w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
-                    </div>
-                  </span>
-                </th>
+                <th class="text-right px-4 py-2.5 font-medium">{{ t('crm.dashboard.activeCol') }}</th>
+                <th class="text-right px-4 py-2.5 font-medium">{{ t('crm.dashboard.completedCol') }}</th>
+                <th class="text-right px-4 py-2.5 font-medium">{{ t('crm.dashboard.overdueCol') }}</th>
+                <th class="text-right px-4 py-2.5 font-medium">{{ t('crm.dashboard.avgTimeCol') }}</th>
+                <th class="text-right px-4 py-2.5 font-medium">{{ t('crm.dashboard.conversionCol') }}</th>
                 <th class="px-4 py-2.5 w-28"></th>
               </tr>
             </thead>
@@ -365,7 +321,10 @@
         </div>
       </div>
 
-      <!-- Конверсии + Среднее время + Повторные клиенты -->
+      <!-- ============================================ -->
+      <!-- E. ЭФФЕКТИВНОСТЬ — конверсии + время          -->
+      <!-- ============================================ -->
+
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="bg-white rounded-xl border border-gray-200 p-5 group relative">
           <p class="text-[11px] font-medium text-gray-400 uppercase tracking-wide">{{ t('crm.dashboard.conversionLeadCase') }}</p>
@@ -374,10 +333,6 @@
           </div>
           <div class="mt-3 bg-gray-100 rounded-full h-2 overflow-hidden">
             <div class="h-full bg-blue-500 rounded-full transition-all" :style="{ width: metrics.conversion_lead_case + '%' }"/>
-          </div>
-          <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-56 text-center z-10">
-            {{ t('crm.dashboard.conversionLeadCaseTooltip') }}
-            <div class="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
           </div>
         </div>
         <div class="bg-white rounded-xl border border-gray-200 p-5 group relative">
@@ -388,10 +343,6 @@
           <div class="mt-3 bg-gray-100 rounded-full h-2 overflow-hidden">
             <div class="h-full bg-green-500 rounded-full transition-all" :style="{ width: metrics.conversion_case_visa + '%' }"/>
           </div>
-          <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-56 text-center z-10">
-            {{ t('crm.dashboard.conversionCaseVisaTooltip') }}
-            <div class="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
-          </div>
         </div>
         <div class="bg-white rounded-xl border border-gray-200 p-5 group relative">
           <p class="text-[11px] font-medium text-gray-400 uppercase tracking-wide">{{ t('crm.dashboard.avgProcessing') }}</p>
@@ -399,23 +350,136 @@
             <p class="text-3xl font-bold text-indigo-600">{{ formatHours(metrics.avg_processing_hours) }}</p>
           </div>
           <p class="text-[10px] text-gray-400 mt-1">{{ t('crm.dashboard.avgProcessingSub') }}</p>
-          <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-56 text-center z-10">
-            {{ t('crm.dashboard.avgProcessingTooltip') }}
-            <div class="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
-          </div>
         </div>
-        <router-link :to="{ name: 'clients' }" class="bg-white rounded-xl border border-gray-200 p-5 hover:border-blue-300 hover:shadow-md transition-all group relative">
+        <router-link :to="{ name: 'clients' }" class="bg-white rounded-xl border border-gray-200 p-5 hover:border-blue-300 hover:shadow-md transition-all">
           <p class="text-[11px] font-medium text-gray-400 uppercase tracking-wide">{{ t('crm.dashboard.repeatClients') }}</p>
           <div class="flex items-end gap-2 mt-2">
             <p class="text-3xl font-bold text-purple-600">{{ stats?.repeat_clients ?? 0 }}</p>
             <span v-if="stats?.clients_total" class="text-xs text-gray-400 mb-1">/ {{ stats.clients_total }}</span>
           </div>
           <p class="text-[10px] text-gray-400 mt-1">{{ t('crm.dashboard.repeatClientsSub') }}</p>
-          <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-56 text-center z-10">
-            {{ t('crm.dashboard.repeatClientsTooltip') }}
-            <div class="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
-          </div>
         </router-link>
+      </div>
+
+      <!-- ============================================ -->
+      <!-- F. ФИНАНСЫ                                    -->
+      <!-- ============================================ -->
+
+      <div class="bg-white rounded-xl border border-gray-200 p-5">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-semibold text-gray-800 text-sm">{{ t('crm.dashboard.financialTitle') }}</h3>
+          <button v-if="!financialLoaded" @click="loadFinancial"
+            class="text-xs font-medium px-3 py-1.5 rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-100 border transition-colors">
+            {{ t('crm.dashboard.financialLoad') }}
+          </button>
+        </div>
+        <div v-if="financialLoading" class="flex justify-center py-6">
+          <div class="animate-spin w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+        </div>
+        <div v-else-if="financialData" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div v-for="f in financialCards" :key="f.key" class="text-center p-3 rounded-lg bg-gray-50 border border-gray-100">
+            <p class="text-[10px] font-medium text-gray-400 uppercase tracking-wide">{{ f.label }}</p>
+            <p class="text-lg font-bold mt-1" :class="f.color">{{ f.value }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================ -->
+      <!-- G. РЫНОК — популярные страны                  -->
+      <!-- ============================================ -->
+
+      <div class="bg-white rounded-xl border border-gray-200 p-5">
+        <h3 class="font-semibold text-gray-800 text-sm mb-1">{{ t('crm.dashboard.popularCountriesTitle') }}</h3>
+        <p class="text-[10px] text-gray-400 mb-3">{{ t('crm.dashboard.popularCountriesSub') }}</p>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Топ 5 -->
+          <div>
+            <p class="text-[10px] font-medium text-gray-400 uppercase tracking-wide mb-2">{{ t('crm.dashboard.topCountries') }}</p>
+            <div v-if="topPopular.length" class="space-y-2">
+              <router-link v-for="(c, i) in topPopular" :key="c.country_code"
+                :to="{ name: 'countries.show', params: { code: c.country_code } }"
+                class="flex items-center gap-2 text-xs group hover:bg-gray-50 rounded-lg px-1 -mx-1 py-1 transition-colors">
+                <span class="font-bold text-gray-400 w-4">{{ i + 1 }}</span>
+                <span class="text-sm">{{ c.flag_emoji }}</span>
+                <span class="flex-1 text-gray-700 group-hover:text-blue-600 transition-colors truncate">{{ c.name }}</span>
+                <span v-if="c.agency_works" class="text-[10px] font-medium px-1.5 py-0.5 bg-green-50 text-green-600 rounded-full">{{ t('crm.dashboard.works') }}</span>
+                <span v-else class="text-[10px] font-medium px-1.5 py-0.5 bg-red-50 text-red-500 rounded-full">{{ t('crm.dashboard.notWorks') }}</span>
+              </router-link>
+            </div>
+          </div>
+
+          <!-- Высокий интерес -->
+          <div v-if="trendingPopular.length">
+            <p class="text-[10px] font-medium text-gray-400 uppercase tracking-wide mb-2">{{ t('crm.dashboard.highInterest') }}</p>
+            <div class="space-y-1.5">
+              <router-link v-for="c in trendingPopular" :key="c.country_code"
+                :to="{ name: 'countries.show', params: { code: c.country_code } }"
+                class="flex items-center gap-2 text-xs group hover:bg-gray-50 rounded-lg px-1 -mx-1 py-0.5 transition-colors">
+                <span class="text-sm">{{ c.flag_emoji }}</span>
+                <span class="flex-1 text-gray-600 group-hover:text-blue-600 transition-colors truncate">{{ c.name }}</span>
+                <span v-if="c.agency_works" class="text-[9px] font-medium px-1.5 py-0.5 bg-green-50 text-green-600 rounded-full">{{ t('crm.dashboard.works') }}</span>
+                <span v-else class="text-[9px] font-medium px-1.5 py-0.5 bg-red-50 text-red-500 rounded-full">{{ t('crm.dashboard.notWorks') }}</span>
+              </router-link>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="!topPopular.length && !trendingPopular.length" class="text-sm text-gray-400 text-center py-8">{{ t('crm.dashboard.noData') }}</div>
+      </div>
+
+      <!-- ============================================ -->
+      <!-- H. ПЛАНИРОВАНИЕ — цели + прогноз              -->
+      <!-- ============================================ -->
+
+      <!-- Цели и план -->
+      <div class="bg-white rounded-xl border border-gray-200 p-5">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-semibold text-gray-800 text-sm">{{ t('crm.dashboard.goalsTitle') }}</h3>
+          <button @click="showGoalForm = !showGoalForm"
+            class="text-xs font-medium px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors">
+            {{ showGoalForm ? t('crm.dashboard.goalsHide') : t('crm.dashboard.goalsSet') }}
+          </button>
+        </div>
+        <div v-if="showGoalForm" class="mb-4 p-4 bg-gray-50 rounded-lg border space-y-3">
+          <div class="grid grid-cols-3 gap-3">
+            <div>
+              <label class="text-[10px] font-medium text-gray-500 uppercase">{{ t('crm.dashboard.goalClients') }}</label>
+              <input v-model.number="goalForm.target_clients" type="number" min="0"
+                class="mt-1 w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-300 outline-none">
+            </div>
+            <div>
+              <label class="text-[10px] font-medium text-gray-500 uppercase">{{ t('crm.dashboard.goalCases') }}</label>
+              <input v-model.number="goalForm.target_cases" type="number" min="0"
+                class="mt-1 w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-300 outline-none">
+            </div>
+            <div>
+              <label class="text-[10px] font-medium text-gray-500 uppercase">{{ t('crm.dashboard.goalRevenue') }}</label>
+              <input v-model.number="goalForm.target_revenue" type="number" min="0"
+                class="mt-1 w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-300 outline-none">
+            </div>
+          </div>
+          <button @click="saveGoals" :disabled="savingGoal"
+            class="px-4 py-2 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50">
+            {{ savingGoal ? '...' : t('crm.dashboard.goalsSave') }}
+          </button>
+        </div>
+        <div v-if="goalsData" class="space-y-3">
+          <div v-for="g in goalProgressItems" :key="g.key">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-xs text-gray-600">{{ g.label }}</span>
+              <span class="text-xs font-semibold" :class="g.pct >= 100 ? 'text-green-600' : g.pct >= 50 ? 'text-blue-600' : 'text-gray-500'">
+                {{ g.current }} / {{ g.target }} ({{ g.pct }}%)
+              </span>
+            </div>
+            <div class="bg-gray-100 rounded-full h-2.5 overflow-hidden">
+              <div class="h-full rounded-full transition-all duration-700"
+                :class="g.pct >= 100 ? 'bg-green-500' : g.pct >= 50 ? 'bg-blue-500' : 'bg-gray-400'"
+                :style="{ width: Math.min(100, g.pct) + '%' }"/>
+            </div>
+          </div>
+          <p v-if="!goalProgressItems.length" class="text-xs text-gray-400 text-center py-4">{{ t('crm.dashboard.goalsEmpty') }}</p>
+        </div>
       </div>
 
       <!-- Калькулятор прогноза роста -->
@@ -433,7 +497,6 @@
         </div>
 
         <div v-if="showForecast" class="space-y-4">
-          <!-- Ввод данных -->
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div>
               <label class="text-[10px] font-medium text-indigo-700 uppercase tracking-wide">{{ t('crm.forecast.clientsPerMonth') }}</label>
@@ -457,7 +520,6 @@
             </div>
           </div>
 
-          <!-- Ресурсы менеджеров: реальные данные -->
           <div class="bg-white/60 rounded-lg p-4 border border-indigo-100">
             <p class="text-[10px] font-medium text-indigo-700 uppercase tracking-wide mb-3">{{ t('crm.forecast.managerCapacity') }}</p>
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
@@ -490,16 +552,15 @@
             </div>
           </div>
 
-          <!-- Прогноз по годам -->
           <div class="overflow-x-auto">
             <table class="w-full text-sm">
               <thead class="bg-white/60 border-b text-indigo-700 text-[10px] uppercase tracking-wide">
                 <tr>
                   <th class="text-left px-3 py-2 font-medium">{{ t('crm.forecast.yearCol') }}</th>
                   <th class="text-right px-3 py-2 font-medium">{{ t('crm.forecast.clientsCol') }}</th>
-                  <th class="text-right px-3 py-2 font-medium cursor-help" :title="t('crm.forecast.managersWithoutTooltip')">{{ t('crm.forecast.managersWithout') }} <span class="text-indigo-300">?</span></th>
-                  <th class="text-right px-3 py-2 font-medium cursor-help" :title="t('crm.forecast.managersWithTooltip')">{{ t('crm.forecast.managersWith') }} <span class="text-indigo-300">?</span></th>
-                  <th class="text-right px-3 py-2 font-medium cursor-help" :title="t('crm.forecast.savingsTooltip')">{{ t('crm.forecast.savings') }} <span class="text-indigo-300">?</span></th>
+                  <th class="text-right px-3 py-2 font-medium">{{ t('crm.forecast.managersWithout') }}</th>
+                  <th class="text-right px-3 py-2 font-medium">{{ t('crm.forecast.managersWith') }}</th>
+                  <th class="text-right px-3 py-2 font-medium">{{ t('crm.forecast.savings') }}</th>
                   <th class="text-right px-3 py-2 font-medium">{{ t('crm.forecast.revenueCol') }}</th>
                   <th class="px-3 py-2 w-24"></th>
                 </tr>
@@ -525,7 +586,6 @@
             </table>
           </div>
 
-          <!-- Мотивационное сообщение -->
           <div v-if="forecastRows.length" class="bg-white/60 rounded-lg p-4 border border-indigo-100">
             <div class="text-center">
               <p class="text-sm font-semibold text-indigo-900">
@@ -547,101 +607,10 @@
         </div>
       </div>
 
-      <!-- 1. Воронка продаж -->
-      <div class="bg-white rounded-xl border border-gray-200 p-5">
-        <h3 class="font-semibold text-gray-800 text-sm mb-4">{{ t('crm.dashboard.funnelTitle') }}</h3>
-        <div v-if="funnelData.length" class="space-y-2">
-          <div v-for="(step, i) in funnelData" :key="step.key" class="relative">
-            <div class="flex items-center gap-3">
-              <span class="text-xs text-gray-500 w-28 shrink-0 truncate">{{ step.label }}</span>
-              <div class="flex-1 relative">
-                <div class="h-8 rounded-lg transition-all duration-700 flex items-center px-3"
-                  :style="{ width: step.percent + '%', minWidth: '40px', background: stageColor(step.key) + '20', borderLeft: `3px solid ${stageColor(step.key)}` }">
-                  <span class="text-xs font-bold" :style="{ color: stageColor(step.key) }">{{ step.count }}</span>
-                </div>
-              </div>
-              <span class="text-[10px] text-gray-400 w-12 text-right shrink-0">{{ step.percent }}%</span>
-              <span v-if="i > 0 && step.dropoff !== null" class="text-[10px] w-14 text-right shrink-0"
-                :class="step.dropoff > 50 ? 'text-red-500 font-semibold' : step.dropoff > 30 ? 'text-amber-500' : 'text-gray-400'">
-                -{{ step.dropoff }}%
-              </span>
-              <span v-else class="w-14 shrink-0"></span>
-            </div>
-          </div>
-        </div>
-        <div v-else class="text-sm text-gray-400 text-center py-8">{{ t('crm.dashboard.noData') }}</div>
-      </div>
+      <!-- ============================================ -->
+      <!-- I. ЛЕНТА АКТИВНОСТИ                          -->
+      <!-- ============================================ -->
 
-      <!-- 2. Сравнение периодов -->
-      <div v-if="growth && (growth.new_leads || growth.completed || growth.visa_issued)" class="bg-white rounded-xl border border-gray-200 p-5">
-        <h3 class="font-semibold text-gray-800 text-sm mb-4">{{ t('crm.dashboard.comparisonTitle') }}</h3>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div v-for="item in comparisonItems" :key="item.key" class="text-center p-4 rounded-lg border"
-            :class="item.growth > 0 ? 'border-green-200 bg-green-50' : item.growth < 0 ? 'border-red-200 bg-red-50' : 'border-gray-200 bg-gray-50'">
-            <p class="text-[11px] font-medium text-gray-500 uppercase tracking-wide">{{ item.label }}</p>
-            <p class="text-2xl font-bold mt-1" :class="item.growth > 0 ? 'text-green-600' : item.growth < 0 ? 'text-red-600' : 'text-gray-600'">
-              {{ item.growth > 0 ? '+' : '' }}{{ item.growth }}%
-            </p>
-            <p class="text-[10px] text-gray-400 mt-1">{{ t('crm.dashboard.vsPrevPeriod') }}</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- 3. Цели и план -->
-      <div class="bg-white rounded-xl border border-gray-200 p-5">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="font-semibold text-gray-800 text-sm">{{ t('crm.dashboard.goalsTitle') }}</h3>
-          <button @click="showGoalForm = !showGoalForm"
-            class="text-xs font-medium px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors">
-            {{ showGoalForm ? t('crm.dashboard.goalsHide') : t('crm.dashboard.goalsSet') }}
-          </button>
-        </div>
-
-        <!-- Форма установки целей -->
-        <div v-if="showGoalForm" class="mb-4 p-4 bg-gray-50 rounded-lg border space-y-3">
-          <div class="grid grid-cols-3 gap-3">
-            <div>
-              <label class="text-[10px] font-medium text-gray-500 uppercase">{{ t('crm.dashboard.goalClients') }}</label>
-              <input v-model.number="goalForm.target_clients" type="number" min="0"
-                class="mt-1 w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-300 outline-none">
-            </div>
-            <div>
-              <label class="text-[10px] font-medium text-gray-500 uppercase">{{ t('crm.dashboard.goalCases') }}</label>
-              <input v-model.number="goalForm.target_cases" type="number" min="0"
-                class="mt-1 w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-300 outline-none">
-            </div>
-            <div>
-              <label class="text-[10px] font-medium text-gray-500 uppercase">{{ t('crm.dashboard.goalRevenue') }}</label>
-              <input v-model.number="goalForm.target_revenue" type="number" min="0"
-                class="mt-1 w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-300 outline-none">
-            </div>
-          </div>
-          <button @click="saveGoals" :disabled="savingGoal"
-            class="px-4 py-2 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50">
-            {{ savingGoal ? '...' : t('crm.dashboard.goalsSave') }}
-          </button>
-        </div>
-
-        <!-- Прогресс целей -->
-        <div v-if="goalsData" class="space-y-3">
-          <div v-for="g in goalProgressItems" :key="g.key">
-            <div class="flex items-center justify-between mb-1">
-              <span class="text-xs text-gray-600">{{ g.label }}</span>
-              <span class="text-xs font-semibold" :class="g.pct >= 100 ? 'text-green-600' : g.pct >= 50 ? 'text-blue-600' : 'text-gray-500'">
-                {{ g.current }} / {{ g.target }} ({{ g.pct }}%)
-              </span>
-            </div>
-            <div class="bg-gray-100 rounded-full h-2.5 overflow-hidden">
-              <div class="h-full rounded-full transition-all duration-700"
-                :class="g.pct >= 100 ? 'bg-green-500' : g.pct >= 50 ? 'bg-blue-500' : 'bg-gray-400'"
-                :style="{ width: Math.min(100, g.pct) + '%' }"/>
-            </div>
-          </div>
-          <p v-if="!goalProgressItems.length" class="text-xs text-gray-400 text-center py-4">{{ t('crm.dashboard.goalsEmpty') }}</p>
-        </div>
-      </div>
-
-      <!-- 4. Лента активности -->
       <div class="bg-white rounded-xl border border-gray-200 p-5">
         <div class="flex items-center justify-between mb-4">
           <h3 class="font-semibold text-gray-800 text-sm">{{ t('crm.dashboard.activityTitle') }}</h3>
@@ -668,55 +637,6 @@
           </div>
         </div>
         <p v-else-if="activityLoaded" class="text-xs text-gray-400 text-center py-6">{{ t('crm.dashboard.noData') }}</p>
-      </div>
-
-      <!-- 5. Рейтинг менеджеров -->
-      <div v-if="stats?.managers?.length > 1" class="bg-white rounded-xl border border-gray-200 p-5">
-        <h3 class="font-semibold text-gray-800 text-sm mb-4">{{ t('crm.dashboard.rankingTitle') }}</h3>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div v-for="(rank, i) in managerRanking" :key="rank.id"
-            class="p-3 rounded-lg border text-center"
-            :class="i === 0 ? 'border-yellow-300 bg-yellow-50' : i === 1 ? 'border-gray-300 bg-gray-50' : 'border-orange-200 bg-orange-50'">
-            <div class="text-2xl mb-1">{{ ['1', '2', '3'][i] }}</div>
-            <p class="font-semibold text-sm text-gray-800 truncate">{{ rank.name }}</p>
-            <p class="text-[10px] text-gray-500 mt-1">{{ rank.score }} {{ t('crm.dashboard.rankingPts') }}</p>
-            <div class="mt-2 space-y-0.5 text-[10px] text-gray-500">
-              <p>{{ t('crm.dashboard.rankingCompleted') }}: {{ rank.completed_cases }}</p>
-              <p>{{ t('crm.dashboard.rankingConversion') }}: {{ rank.conversion }}%</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 6. Финансовый блок -->
-      <div class="bg-white rounded-xl border border-gray-200 p-5">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="font-semibold text-gray-800 text-sm">{{ t('crm.dashboard.financialTitle') }}</h3>
-          <button v-if="!financialLoaded" @click="loadFinancial"
-            class="text-xs font-medium px-3 py-1.5 rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-100 border transition-colors">
-            {{ t('crm.dashboard.financialLoad') }}
-          </button>
-        </div>
-        <div v-if="financialLoading" class="flex justify-center py-6">
-          <div class="animate-spin w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full"></div>
-        </div>
-        <div v-else-if="financialData" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          <div v-for="f in financialCards" :key="f.key" class="text-center p-3 rounded-lg bg-gray-50 border border-gray-100">
-            <p class="text-[10px] font-medium text-gray-400 uppercase tracking-wide">{{ f.label }}</p>
-            <p class="text-lg font-bold mt-1" :class="f.color">{{ f.value }}</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- 7. Экспорт PDF -->
-      <div class="flex justify-end">
-        <button @click="exportPdf"
-          class="flex items-center gap-2 px-4 py-2.5 bg-gray-900 text-white text-xs font-medium rounded-lg hover:bg-gray-800 transition-colors">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-          </svg>
-          {{ t('crm.dashboard.exportPdf') }}
-        </button>
       </div>
 
     </template>
@@ -852,6 +772,10 @@ const metrics = computed(() => stats.value?.metrics ?? {
 });
 
 const growth = computed(() => stats.value?.growth ?? {});
+const hasGrowthData = computed(() => {
+  const g = growth.value;
+  return g.new_leads || g.completed || g.visa_issued;
+});
 
 const metricCards = computed(() => {
   const m = metrics.value;
@@ -964,20 +888,18 @@ const areaCreated = computed(() => areaPoints('created'));
 const areaCompleted = computed(() => areaPoints('completed'));
 
 // Ресурсы менеджеров
-const WORK_HOURS_MONTH = 160; // рабочих часов в месяце
-const CRM_EFFICIENCY = 0.4; // CRM сокращает время обработки на 40%
+const WORK_HOURS_MONTH = 160;
+const CRM_EFFICIENCY = 0.4;
 
 const realAvgHours = computed(() => metrics.value?.avg_processing_hours ?? 0);
 
-// Сколько клиентов 1 менеджер обработает в месяц
 const managerCapacity = computed(() => {
-  const avgH = realAvgHours.value > 0 ? realAvgHours.value : 48; // default 48ч если нет данных
+  const avgH = realAvgHours.value > 0 ? realAvgHours.value : 48;
   const without = Math.floor(WORK_HOURS_MONTH / avgH);
   const withCrm = Math.floor(WORK_HOURS_MONTH / (avgH * (1 - CRM_EFFICIENCY)));
   return { withoutCrm: Math.max(1, without), withCrm: Math.max(1, withCrm) };
 });
 
-// Общая пропускная способность команды
 const teamCapacity = computed(() => {
   const m = forecast.value.managers;
   return {
@@ -986,7 +908,6 @@ const teamCapacity = computed(() => {
   };
 });
 
-// Прогноз роста
 const forecastRows = computed(() => {
   const f = forecast.value;
   const cap = managerCapacity.value;
@@ -1010,7 +931,7 @@ const totalSaved = computed(() => {
   return last?.saved ?? 0;
 });
 
-// === 1. Воронка продаж ===
+// === Воронка продаж ===
 const funnelData = computed(() => {
   if (!stats.value?.cases?.by_stage) return [];
   const byStage = stats.value.cases.by_stage;
@@ -1018,17 +939,16 @@ const funnelData = computed(() => {
   const counts = order.map(s => ({ key: s.key, label: s.label, count: Number(byStage[s.key] ?? 0) }));
   const total = counts.reduce((s, v) => s + v.count, 0);
   if (total === 0) return [];
-  let prev = total;
   return counts.map((c, i) => {
     const cumulative = counts.slice(i).reduce((s, v) => s + v.count, 0);
+    const prevCumulative = i > 0 ? counts.slice(i - 1).reduce((s, v) => s + v.count, 0) : total;
     const percent = Math.round(cumulative / total * 100);
-    const dropoff = i > 0 ? Math.round((1 - cumulative / prev) * 100) : null;
-    if (i > 0) prev = counts.slice(i - 1).reduce((s, v) => s + v.count, 0);
+    const dropoff = i > 0 && prevCumulative > 0 ? Math.round((1 - cumulative / prevCumulative) * 100) : null;
     return { ...c, percent, dropoff };
   });
 });
 
-// === 2. Сравнение периодов ===
+// === Сравнение периодов ===
 const comparisonItems = computed(() => {
   const g = stats.value?.growth ?? {};
   return [
@@ -1038,12 +958,11 @@ const comparisonItems = computed(() => {
   ];
 });
 
-// === 3. Цели и план ===
+// === Цели и план ===
 const goalProgressItems = computed(() => {
   if (!goalsData.value) return [];
   const progress = goalsData.value.progress ?? {};
   const goals = goalsData.value.goals ?? [];
-  // Суммируем цели за год
   const yearTarget = goals.reduce((acc, g) => {
     acc.clients += g.target_clients || 0;
     acc.cases += g.target_cases || 0;
@@ -1072,7 +991,7 @@ async function saveGoals() {
   try {
     await dashboardApi.saveGoal({
       year: new Date().getFullYear(),
-      month: null, // годовая цель
+      month: null,
       ...goalForm.value,
     });
     await loadGoals();
@@ -1086,7 +1005,6 @@ async function loadGoals() {
   try {
     const { data } = await dashboardApi.goals({ year: new Date().getFullYear() });
     goalsData.value = data.data;
-    // Заполним форму из существующих целей
     const goals = data.data?.goals ?? [];
     if (goals.length) {
       const yearGoal = goals.find(g => !g.month) || goals[0];
@@ -1099,7 +1017,7 @@ async function loadGoals() {
   } catch { /* ignore */ }
 }
 
-// === 4. Лента активности ===
+// === Лента активности ===
 async function loadActivity() {
   activityLoading.value = true;
   try {
@@ -1122,7 +1040,7 @@ function formatDate(dt) {
   return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 }
 
-// === 5. Рейтинг менеджеров ===
+// === Рейтинг менеджеров ===
 const managerRanking = computed(() => {
   if (!stats.value?.managers?.length) return [];
   return [...stats.value.managers]
@@ -1134,7 +1052,7 @@ const managerRanking = computed(() => {
     .slice(0, 3);
 });
 
-// === 6. Финансовый блок ===
+// === Финансовый блок ===
 async function loadFinancial() {
   financialLoading.value = true;
   try {
@@ -1160,7 +1078,6 @@ const financialCards = computed(() => {
   ];
 });
 
-// === 7. PDF-экспорт ===
 function exportPdf() {
   window.print();
 }
