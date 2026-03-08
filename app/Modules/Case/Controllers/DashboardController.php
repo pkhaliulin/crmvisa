@@ -27,9 +27,9 @@ class DashboardController extends Controller
                 ->orWhereNull('public_status');
         });
 
-        // Scope по периоду
+        // Scope по периоду (cases.created_at для избежания ambiguous в JOIN)
         $inPeriod = fn ($q) => $dateFrom
-            ? $q->whereBetween('created_at', [$dateFrom, $dateTo])
+            ? $q->whereBetween('cases.created_at', [$dateFrom, $dateTo])
             : $q;
 
         // Заявки по этапам (всегда текущие, без периода)
