@@ -312,6 +312,12 @@ const routes = [
                 component: () => import('@/pages/AgencyCountryDetailPage.vue'),
                 meta: { roles: ['owner', 'manager', 'superadmin'] },
             },
+            {
+                path: 'leadgen',
+                name: 'leadgen',
+                component: () => import('@/pages/LeadGenPage.vue'),
+                meta: { roles: ['owner', 'superadmin'] },
+            },
         ],
     },
 

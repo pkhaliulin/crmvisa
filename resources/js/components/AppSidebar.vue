@@ -53,7 +53,8 @@ import SidebarLink from './SidebarLink.vue';
 import {
   HomeIcon, ViewColumnsIcon, ClipboardDocumentListIcon,
   UsersIcon, UserGroupIcon, ArrowRightOnRectangleIcon,
-  ChartBarIcon, BriefcaseIcon, ExclamationTriangleIcon, Cog6ToothIcon, CreditCardIcon, GlobeAltIcon
+  ChartBarIcon, BriefcaseIcon, ExclamationTriangleIcon, Cog6ToothIcon, CreditCardIcon, GlobeAltIcon,
+  MegaphoneIcon
 } from '@heroicons/vue/24/outline';
 
 defineProps({ collapsed: Boolean });
@@ -82,6 +83,7 @@ const navItems = computed(() => {
 
   if (isOwner.value) {
     items.push(
+      { to: { name: 'leadgen' },   icon: MegaphoneIcon,  label: t('crm.nav.leadgen') },
       { to: { name: 'reports' },   icon: ChartBarIcon,   label: t('crm.nav.reports') },
       { to: { name: 'services' },  icon: BriefcaseIcon,  label: t('crm.nav.services') },
       { to: { name: 'billing' },   icon: CreditCardIcon, label: t('crm.nav.billing') },

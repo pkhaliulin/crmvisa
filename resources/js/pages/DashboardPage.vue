@@ -127,11 +127,17 @@
               <div v-for="(s, i) in leadSources" :key="i" class="flex items-center gap-2 text-xs">
                 <span class="w-2.5 h-2.5 rounded-full shrink-0" :style="{background: sourceColors[i % sourceColors.length]}"></span>
                 <span class="flex-1 text-gray-600 truncate">{{ sourceLabels[s.source] || s.source }}</span>
+                <span class="text-gray-400 text-[10px]">{{ totalLeads > 0 ? Math.round(s.count / totalLeads * 100) : 0 }}%</span>
                 <span class="font-bold text-gray-800">{{ s.count }}</span>
               </div>
             </div>
           </div>
           <div v-else class="text-sm text-gray-400 text-center py-8">{{ t('crm.dashboard.noData') }}</div>
+          <router-link :to="{ name: 'leadgen' }"
+            class="mt-4 flex items-center justify-center gap-2 w-full py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs font-semibold rounded-lg transition-colors">
+            {{ t('crm.dashboard.leadgenBtn') }}
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
+          </router-link>
         </div>
       </div>
 
@@ -152,19 +158,40 @@
           </div>
         </div>
 
+        <!-- Популярные страны платформы -->
         <div class="bg-white rounded-xl border border-gray-200 p-5">
-          <h3 class="font-semibold text-gray-800 text-sm mb-4">{{ t('crm.dashboard.topCountries') }}</h3>
-          <div v-if="topCountries.length" class="space-y-2.5">
-            <div v-for="(c, i) in topCountries" :key="c.country_code" class="flex items-center gap-3">
-              <span class="text-sm font-bold text-gray-400 w-4">{{ i + 1 }}</span>
-              <span class="text-sm text-gray-700 flex-1">{{ c.country_code }}</span>
-              <div class="w-20 bg-gray-100 rounded-full h-2 overflow-hidden">
-                <div class="h-full bg-indigo-500 rounded-full" :style="{ width: (c.total / maxCountry * 100) + '%' }"/>
-              </div>
-              <span class="text-xs font-bold text-gray-700 w-6 text-right">{{ c.total }}</span>
+          <h3 class="font-semibold text-gray-800 text-sm mb-1">{{ t('crm.dashboard.popularCountriesTitle') }}</h3>
+          <p class="text-[10px] text-gray-400 mb-3">{{ t('crm.dashboard.popularCountriesSub') }}</p>
+
+          <!-- Топ 5 -->
+          <div v-if="topPopular.length" class="space-y-2">
+            <router-link v-for="(c, i) in topPopular" :key="c.country_code"
+              :to="{ name: 'countries.show', params: { code: c.country_code } }"
+              class="flex items-center gap-2 text-xs group hover:bg-gray-50 rounded-lg px-1 -mx-1 py-1 transition-colors">
+              <span class="font-bold text-gray-400 w-4">{{ i + 1 }}</span>
+              <span class="text-sm">{{ c.flag_emoji }}</span>
+              <span class="flex-1 text-gray-700 group-hover:text-blue-600 transition-colors truncate">{{ c.name }}</span>
+              <span v-if="c.agency_works" class="text-[10px] font-medium px-1.5 py-0.5 bg-green-50 text-green-600 rounded-full">{{ t('crm.dashboard.works') }}</span>
+              <span v-else class="text-[10px] font-medium px-1.5 py-0.5 bg-red-50 text-red-500 rounded-full">{{ t('crm.dashboard.notWorks') }}</span>
+            </router-link>
+          </div>
+
+          <!-- Высокий интерес (следующие 10) -->
+          <div v-if="trendingPopular.length" class="mt-4">
+            <p class="text-[10px] font-medium text-gray-400 uppercase tracking-wide mb-2">{{ t('crm.dashboard.highInterest') }}</p>
+            <div class="space-y-1.5">
+              <router-link v-for="c in trendingPopular" :key="c.country_code"
+                :to="{ name: 'countries.show', params: { code: c.country_code } }"
+                class="flex items-center gap-2 text-xs group hover:bg-gray-50 rounded-lg px-1 -mx-1 py-0.5 transition-colors">
+                <span class="text-sm">{{ c.flag_emoji }}</span>
+                <span class="flex-1 text-gray-600 group-hover:text-blue-600 transition-colors truncate">{{ c.name }}</span>
+                <span v-if="c.agency_works" class="w-2 h-2 rounded-full bg-green-400 shrink-0"></span>
+                <span v-else class="w-2 h-2 rounded-full bg-red-300 shrink-0"></span>
+              </router-link>
             </div>
           </div>
-          <div v-else class="text-sm text-gray-400 text-center py-8">{{ t('crm.dashboard.noData') }}</div>
+
+          <div v-if="!topPopular.length && !trendingPopular.length" class="text-sm text-gray-400 text-center py-8">{{ t('crm.dashboard.noData') }}</div>
         </div>
       </div>
 
@@ -486,8 +513,9 @@ const maxManagerLoad = computed(() =>
 );
 
 const leadSources = computed(() => stats.value?.lead_sources ?? []);
-const topCountries = computed(() => stats.value?.top_countries ?? []);
-const maxCountry = computed(() => Math.max(1, ...topCountries.value.map(c => c.total)));
+const totalLeads = computed(() => leadSources.value.reduce((s, v) => s + v.count, 0));
+const topPopular = computed(() => stats.value?.popular_countries?.top ?? []);
+const trendingPopular = computed(() => stats.value?.popular_countries?.trending ?? []);
 
 // Pie chart slices
 const pieSlices = computed(() => {

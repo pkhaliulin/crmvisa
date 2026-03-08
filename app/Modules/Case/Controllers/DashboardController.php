@@ -3,8 +3,10 @@
 namespace App\Modules\Case\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Agency\Models\AgencyWorkCountry;
 use App\Modules\Case\Models\VisaCase;
 use App\Modules\Client\Models\Client;
+use App\Modules\Owner\Models\PortalCountry;
 use App\Modules\User\Models\User;
 use App\Support\Helpers\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -245,12 +247,34 @@ class DashboardController extends Controller
         $unassignedPct = $totalActive > 0 ? round($unassigned / $totalActive * 100, 1) : 0;
         $overduePct = $totalActive > 0 ? round($overdue / $totalActive * 100, 1) : 0;
 
+        // === Популярные страны платформы ===
+
+        $workCodes = AgencyWorkCountry::where('agency_id', $agencyId)
+            ->where('is_active', true)
+            ->pluck('country_code')
+            ->toArray();
+
+        $popularCountries = PortalCountry::where('is_active', true)
+            ->orderByRaw('COALESCE(lead_count, 0) + COALESCE(view_count, 0) DESC')
+            ->limit(15)
+            ->select('country_code', 'name', 'flag_emoji', 'lead_count', 'view_count', 'case_count', 'visa_regime')
+            ->get()
+            ->map(function ($c) use ($workCodes) {
+                $c->agency_works = in_array($c->country_code, $workCodes);
+                $c->interest = ($c->lead_count ?? 0) + ($c->view_count ?? 0);
+                return $c;
+            });
+
+        $topPopular = $popularCountries->take(5)->values();
+        $trendingPopular = $popularCountries->slice(5)->values();
+
         // === Подсказки ===
 
         $hints = $this->generateHints(
             $agencyId, $overdue, $critical, $unassigned, $totalActive,
             $managerLoad, $stageAnalytics, $repeatClients, $totalClients,
-            $byLeadSource, $avgProcessingHours, $unassignedPct, $overduePct
+            $byLeadSource, $avgProcessingHours, $unassignedPct, $overduePct,
+            $topPopular, $trendingPopular, $workCodes
         );
 
         return ApiResponse::success([
@@ -286,6 +310,10 @@ class DashboardController extends Controller
             'repeat_clients'  => $repeatClients,
             'growth'          => $growth,
             'hints'           => $hints,
+            'popular_countries' => [
+                'top'      => $topPopular,
+                'trending' => $trendingPopular,
+            ],
         ]);
     }
 
@@ -352,7 +380,8 @@ class DashboardController extends Controller
     private function generateHints(
         string $agencyId, int $overdue, int $critical, int $unassigned, int $totalActive,
         $managerLoad, array $stageAnalytics, int $repeatClients, int $totalClients,
-        $byLeadSource, ?float $avgProcessingHours, float $unassignedPct, float $overduePct
+        $byLeadSource, ?float $avgProcessingHours, float $unassignedPct, float $overduePct,
+        $topPopular = null, $trendingPopular = null, array $workCodes = []
     ): array {
         $hints = [];
 
@@ -469,6 +498,87 @@ class DashboardController extends Controller
                     break;
                 }
             }
+        }
+
+        // Популярные страны, с которыми агентство не работает
+        if ($topPopular) {
+            $missedCountries = $topPopular->filter(fn ($c) => !$c->agency_works)->take(3);
+            if ($missedCountries->count() > 0) {
+                $names = $missedCountries->pluck('name')->implode(', ');
+                $hints[] = [
+                    'type'   => 'tip',
+                    'key'    => 'missedCountries',
+                    'params' => ['countries' => $names, 'n' => $missedCountries->count()],
+                    'action' => '/app/countries',
+                ];
+            }
+        }
+
+        // Слабое покрытие популярных направлений
+        if ($topPopular && $topPopular->count() >= 5) {
+            $covered = $topPopular->filter(fn ($c) => $c->agency_works)->count();
+            if ($covered < 2) {
+                $hints[] = [
+                    'type'   => 'warning',
+                    'key'    => 'lowCoverage',
+                    'params' => ['covered' => $covered, 'total' => $topPopular->count()],
+                    'action' => '/app/countries',
+                ];
+            }
+        }
+
+        // Один канал доминирует — риск
+        if ($totalLeads > 10) {
+            $topSource = $byLeadSource->first();
+            if ($topSource && $topSource->count / $totalLeads > 0.6) {
+                $hints[] = [
+                    'type'   => 'tip',
+                    'key'    => 'singleChannel',
+                    'params' => ['source' => $topSource->source, 'pct' => round($topSource->count / $totalLeads * 100)],
+                    'action' => '/app/leadgen',
+                ];
+            }
+        }
+
+        // Instagram высокий интерес, низкая конверсия
+        $igLeads = $byLeadSource->firstWhere('source', 'instagram');
+        if ($igLeads && $totalLeads > 10 && $igLeads->count / $totalLeads > 0.15) {
+            $igCases = VisaCase::where('agency_id', $agencyId)->where('lead_source', 'instagram')->where('stage', 'result')->count();
+            $igConversion = $igLeads->count > 0 ? round($igCases / $igLeads->count * 100) : 0;
+            if ($igConversion < 30) {
+                $hints[] = [
+                    'type'   => 'tip',
+                    'key'    => 'igLowConversion',
+                    'params' => ['pct' => $igConversion],
+                    'action' => '/app/leadgen',
+                ];
+            }
+        }
+
+        // Telegram качественные заявки
+        $tgLeads = $byLeadSource->firstWhere('source', 'telegram');
+        if ($tgLeads && $totalLeads > 5 && $tgLeads->count >= 3) {
+            $tgCases = VisaCase::where('agency_id', $agencyId)->where('lead_source', 'telegram')->where('stage', 'result')->where('result_type', 'approved')->count();
+            $tgConversion = $tgLeads->count > 0 ? round($tgCases / $tgLeads->count * 100) : 0;
+            if ($tgConversion > 50) {
+                $hints[] = [
+                    'type'   => 'success',
+                    'key'    => 'tgHighConversion',
+                    'params' => ['pct' => $tgConversion],
+                    'action' => '/app/leadgen',
+                ];
+            }
+        }
+
+        // Мало рекомендаций
+        $referralCount = $byLeadSource->firstWhere('source', 'referral')?->count ?? 0;
+        if ($totalLeads > 10 && $referralCount / $totalLeads < 0.05) {
+            $hints[] = [
+                'type'   => 'tip',
+                'key'    => 'lowReferrals',
+                'params' => [],
+                'action' => '/app/leadgen',
+            ];
         }
 
         // Все OK
