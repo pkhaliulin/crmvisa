@@ -134,9 +134,10 @@ class CaseController extends Controller
         return ApiResponse::created(new CaseResource($case));
     }
 
-    public function show(string $id): JsonResponse
+    public function show(Request $request, string $id): JsonResponse
     {
         $case = $this->service->findOrFail($id);
+        $this->authorize('view', $case);
 
         return ApiResponse::success(
             new CaseResource($case->load(['client', 'assignee', 'stageHistory']))
@@ -145,15 +146,19 @@ class CaseController extends Controller
 
     public function update(UpdateCaseRequest $request, string $id): JsonResponse
     {
-        $data = $request->validated();
+        $case = $this->service->findOrFail($id);
+        $this->authorize('update', $case);
 
-        $case = $this->service->updateCase($id, $data);
+        $case = $this->service->updateCase($id, $request->validated());
 
         return ApiResponse::success(new CaseResource($case));
     }
 
-    public function destroy(string $id): JsonResponse
+    public function destroy(Request $request, string $id): JsonResponse
     {
+        $case = $this->service->findOrFail($id);
+        $this->authorize('delete', $case);
+
         $this->service->delete($id);
 
         return ApiResponse::success(null, 'Case deleted.');
@@ -165,6 +170,8 @@ class CaseController extends Controller
 
         /** @var VisaCase */
         $case = $this->service->findOrFail($id);
+        $this->authorize('moveStage', $case);
+
         $case = $this->service->moveToStage($case, $data['stage'], $data['notes'] ?? null);
 
         return ApiResponse::success(new CaseResource($case));
@@ -183,6 +190,7 @@ class CaseController extends Controller
         $data = $request->validated();
 
         $case = $this->service->findOrFail($id);
+        $this->authorize('complete', $case);
 
         if ($case->stage !== 'review') {
             return ApiResponse::error('Завершить заявку можно только на этапе «Рассмотрение».', null, 422);
@@ -204,6 +212,7 @@ class CaseController extends Controller
         ]);
 
         $case = $this->service->findOrFail($id);
+        $this->authorize('moveStage', $case);
 
         if ($case->stage !== 'ready') {
             return ApiResponse::error('Подать в посольство можно только на этапе «Готов к подаче».', null, 422);
@@ -238,6 +247,7 @@ class CaseController extends Controller
         ]);
 
         $case = $this->service->findOrFail($id);
+        $this->authorize('update', $case);
         $case->update([
             'expected_result_date'   => $data['expected_result_date'],
             'last_manager_update_at' => now(),
@@ -256,6 +266,8 @@ class CaseController extends Controller
         ]);
 
         $case = $this->service->findOrFail($id);
+        $this->authorize('cancel', $case);
+
         $case = $this->service->cancelCase($case, $data['reason'] ?? null);
 
         return ApiResponse::success(new CaseResource($case));

@@ -37,9 +37,10 @@ class ClientController extends Controller
         return ApiResponse::created(new ClientResource($client));
     }
 
-    public function show(string $id): JsonResponse
+    public function show(Request $request, string $id): JsonResponse
     {
         $client = $this->service->findOrFail($id);
+        $this->authorize('view', $client);
 
         return ApiResponse::success(
             (new ClientResource($client->load(['cases' => fn ($q) => $q->with('assignee:id,name')->orderBy('created_at', 'desc')])))
@@ -49,15 +50,19 @@ class ClientController extends Controller
 
     public function update(UpdateClientRequest $request, string $id): JsonResponse
     {
-        $data = $request->validated();
+        $client = $this->service->findOrFail($id);
+        $this->authorize('update', $client);
 
-        $client = $this->service->update($id, $data);
+        $client = $this->service->update($id, $request->validated());
 
         return ApiResponse::success(new ClientResource($client));
     }
 
-    public function destroy(string $id): JsonResponse
+    public function destroy(Request $request, string $id): JsonResponse
     {
+        $client = $this->service->findOrFail($id);
+        $this->authorize('delete', $client);
+
         $this->service->delete($id);
 
         return ApiResponse::success(null, 'Client deleted.');

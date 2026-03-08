@@ -59,6 +59,8 @@ class DocumentController extends Controller
             ->where('agency_id', $request->user()->agency_id)
             ->firstOrFail();
 
+        $this->authorize('updateStatus', $document);
+
         $data = $request->validate([
             'status' => ['required', 'in:pending,approved,rejected'],
             'notes'  => ['nullable', 'string'],
@@ -73,6 +75,8 @@ class DocumentController extends Controller
             ->where('case_id', $caseId)
             ->where('agency_id', $request->user()->agency_id)
             ->firstOrFail();
+
+        $this->authorize('delete', $document);
 
         $this->service->delete($document);
 

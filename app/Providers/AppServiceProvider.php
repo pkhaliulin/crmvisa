@@ -2,8 +2,17 @@
 
 namespace App\Providers;
 
+use App\Modules\Case\Models\VisaCase;
+use App\Modules\Case\Policies\CasePolicy;
+use App\Modules\Client\Models\Client;
+use App\Modules\Client\Policies\ClientPolicy;
+use App\Modules\Document\Models\Document;
+use App\Modules\Document\Policies\DocumentPolicy;
+use App\Modules\User\Models\User;
+use App\Modules\User\Policies\UserPolicy;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
@@ -16,6 +25,10 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        Gate::policy(VisaCase::class, CasePolicy::class);
+        Gate::policy(Client::class, ClientPolicy::class);
+        Gate::policy(Document::class, DocumentPolicy::class);
+        Gate::policy(User::class, UserPolicy::class);
         // API rate limiter — 120 req/min для авторизованных, 60 для гостей
         RateLimiter::for('api', function (Request $request) {
             $user = $request->user();

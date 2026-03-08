@@ -131,13 +131,7 @@ class UserController extends Controller
             ->where('agency_id', $request->user()->agency_id)
             ->firstOrFail();
 
-        if ($user->id === $request->user()->id) {
-            return ApiResponse::error('Cannot delete yourself.', null, 422);
-        }
-
-        if ($user->role === 'owner') {
-            return ApiResponse::error('Cannot delete the agency owner.', null, 422);
-        }
+        $this->authorize('delete', $user);
 
         $user->update(['is_active' => false]);
         $user->delete();
