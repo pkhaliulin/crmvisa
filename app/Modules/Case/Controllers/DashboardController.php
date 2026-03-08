@@ -255,10 +255,7 @@ class DashboardController extends Controller
             ->toArray();
 
         $popularCountries = PortalCountry::where('is_active', true)
-            ->where(function ($q) {
-                $q->where('visa_regime', 'visa_required')
-                  ->orWhere('visa_regime', 'evisa');
-            })
+            ->whereIn('visa_regime', ['visa_required', 'evisa'])
             ->orderByRaw('COALESCE(lead_count, 0) + COALESCE(view_count, 0) DESC')
             ->limit(15)
             ->select('country_code', 'name', 'flag_emoji', 'lead_count', 'view_count', 'case_count', 'visa_regime')
