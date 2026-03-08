@@ -73,6 +73,12 @@ class CaseService extends BaseService
             $data['assigned_to'] = $user->id;
         }
 
+        // Если менеджер назначен — сразу в qualification (не задерживаемся в lead)
+        if (!empty($data['assigned_to']) && ($data['stage'] ?? 'lead') === 'lead') {
+            $data['stage'] = 'qualification';
+            $data['public_status'] = 'manager_assigned';
+        }
+
         // Автоматический расчёт critical_date
         if (empty($data['critical_date']) && isset($data['country_code'])) {
             // Приоритет 1: travel_date − per-visa-type данные (или fallback на portal_countries)
@@ -122,6 +128,10 @@ class CaseService extends BaseService
         /** @var VisaCase $case */
         $case = $this->repository->findOrFail($id);
 
+        // Авто-переход: назначение менеджера на этапе lead → автоматически в qualification
+        $shouldMoveToQualification = isset($data['assigned_to']) && $data['assigned_to']
+            && ! $case->assigned_to && $case->stage === 'lead';
+
         // Авто-маппинг: первое назначение менеджера -> public_status = 'manager_assigned'
         if (isset($data['assigned_to']) && $data['assigned_to'] && ! $case->assigned_to) {
             $data['public_status'] = 'manager_assigned';
@@ -138,7 +148,14 @@ class CaseService extends BaseService
             }
         }
 
-        return $this->repository->update($id, $data);
+        $case = $this->repository->update($id, $data);
+
+        // После сохранения assigned_to — перемещаем из lead в qualification
+        if ($shouldMoveToQualification) {
+            $case = $this->moveToStage($case, 'qualification', 'Автопереход: назначен менеджер');
+        }
+
+        return $case;
     }
 
     public function moveToStage(VisaCase $case, string $newStage, ?string $notes = null): VisaCase
