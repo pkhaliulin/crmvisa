@@ -18,3 +18,5 @@ Schedule::call(function () {
 Schedule::call(function () {
     app(\App\Modules\Payment\Services\BillingEngine::class)->processExpiredSubscriptions();
 })->dailyAt('01:00')->name('billing:process-expired');
+
+Schedule::job(new \App\Modules\Case\Jobs\SendSlaWarningsJob)->everyFifteenMinutes();
