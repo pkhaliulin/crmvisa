@@ -21,18 +21,25 @@ class DashboardController extends Controller
 
         [$dateFrom, $dateTo, $periodKey] = $this->resolvePeriod($request);
 
-        // Исключаем неоплаченные заявки из всей статистики агентства
+        // Исключаем неоплаченные заявки
         $excludeUnpaid = fn ($q) => $q->where(function ($sub) {
             $sub->whereNotIn('public_status', ['draft', 'awaiting_payment', 'cancelled'])
                 ->orWhereNull('public_status');
         });
 
-        // Scope по периоду (cases.created_at для избежания ambiguous в JOIN)
+        // Scope по периоду (cases.created_at для JOIN)
         $inPeriod = fn ($q) => $dateFrom
             ? $q->whereBetween('cases.created_at', [$dateFrom, $dateTo])
             : $q;
 
-        // Заявки по этапам (всегда текущие, без периода)
+        // SLA нормы из config
+        $slaNorms = [];
+        foreach (config('stages') as $key => $cfg) {
+            $slaNorms[$key] = $cfg['sla_hours'] ?? null;
+        }
+
+        // === Текущие показатели (без периода) ===
+
         $byStage = VisaCase::where('agency_id', $agencyId)
             ->whereNotIn('stage', ['result'])
             ->where($excludeUnpaid)
@@ -40,7 +47,6 @@ class DashboardController extends Controller
             ->groupBy('stage')
             ->pluck('count', 'stage');
 
-        // Горящие — дедлайн через <=5 дней
         $critical = VisaCase::where('agency_id', $agencyId)
             ->whereNotIn('stage', ['result'])
             ->where($excludeUnpaid)
@@ -49,7 +55,6 @@ class DashboardController extends Controller
             ->whereDate('critical_date', '<=', now()->addDays(5)->toDateString())
             ->count();
 
-        // Просроченные
         $overdue = VisaCase::where('agency_id', $agencyId)
             ->whereNotIn('stage', ['result'])
             ->where($excludeUnpaid)
@@ -57,7 +62,6 @@ class DashboardController extends Controller
             ->whereDate('critical_date', '<', $today)
             ->count();
 
-        // Без ответственного
         $unassigned = VisaCase::where('agency_id', $agencyId)
             ->whereNotIn('stage', ['result'])
             ->where($excludeUnpaid)
@@ -68,54 +72,8 @@ class DashboardController extends Controller
             ->whereNotIn('stage', ['result'])
             ->where($excludeUnpaid)->count();
 
-        // Нагрузка менеджеров (расширенная)
-        $managerLoad = VisaCase::where('cases.agency_id', $agencyId)
-            ->where($excludeUnpaid)
-            ->whereNotNull('assigned_to')
-            ->join('users', 'users.id', '=', 'cases.assigned_to')
-            ->select(
-                'users.id',
-                'users.name',
-                DB::raw("COUNT(CASE WHEN cases.stage != 'result' THEN 1 END) as active_cases"),
-                DB::raw("COUNT(CASE WHEN cases.stage = 'result' THEN 1 END) as completed_cases"),
-                DB::raw("COUNT(CASE WHEN cases.stage = 'result' AND cases.result_type = 'approved' THEN 1 END) as approved_cases"),
-                DB::raw("COUNT(CASE WHEN cases.critical_date IS NOT NULL AND cases.critical_date < CURRENT_DATE AND cases.stage != 'result' THEN 1 END) as overdue_cases"),
-            )
-            ->groupBy('users.id', 'users.name')
-            ->orderByDesc('active_cases')
-            ->get()
-            ->map(function ($m) {
-                $total = $m->active_cases + $m->completed_cases;
-                $m->conversion = $total > 0
-                    ? round($m->approved_cases / $total * 100, 1)
-                    : 0;
-                return $m;
-            });
+        // === Метрики по периоду ===
 
-        // --- Метрики по периоду ---
-
-        // По источникам лидов
-        $byLeadSource = VisaCase::where('cases.agency_id', $agencyId)
-            ->where($excludeUnpaid)
-            ->where($inPeriod)
-            ->leftJoin('clients', 'clients.id', '=', 'cases.client_id')
-            ->selectRaw("COALESCE(cases.lead_source, clients.source, 'direct') as source, COUNT(*) as count")
-            ->groupByRaw("COALESCE(cases.lead_source, clients.source, 'direct')")
-            ->orderByDesc('count')
-            ->get();
-
-        // Динамика за период (по дням)
-        $trendDays = $dateFrom ? Carbon::parse($dateFrom)->diffInDays(Carbon::parse($dateTo)) : 30;
-        $trendFrom = $dateFrom ?? now()->subDays(30)->toDateString();
-        $dailyTrend = VisaCase::where('agency_id', $agencyId)
-            ->where($excludeUnpaid)
-            ->where('created_at', '>=', $trendFrom)
-            ->selectRaw("DATE(created_at) as date, COUNT(*) as created, COUNT(CASE WHEN stage='result' THEN 1 END) as completed")
-            ->groupBy('date')
-            ->orderBy('date')
-            ->get();
-
-        // Ключевые метрики за период
         $newLeads = VisaCase::where('agency_id', $agencyId)
             ->where($excludeUnpaid)
             ->where($inPeriod)
@@ -138,7 +96,6 @@ class DashboardController extends Controller
 
         $totalAll = VisaCase::where('agency_id', $agencyId)->where($excludeUnpaid)->count();
 
-        // Конверсии
         $conversionLeadToCase = $totalAll > 0
             ? round(($totalAll - VisaCase::where('agency_id', $agencyId)->where($excludeUnpaid)->where('stage', 'lead')->count()) / $totalAll * 100, 1)
             : 0;
@@ -150,7 +107,57 @@ class DashboardController extends Controller
         $totalClients = Client::where('agency_id', $agencyId)->count();
         $totalUsers = User::where('agency_id', $agencyId)->where('is_active', true)->count();
 
-        // По странам (top-5)
+        // === Менеджеры (расширенная аналитика) ===
+
+        $managerLoad = VisaCase::where('cases.agency_id', $agencyId)
+            ->where($excludeUnpaid)
+            ->whereNotNull('assigned_to')
+            ->join('users', 'users.id', '=', 'cases.assigned_to')
+            ->select(
+                'users.id',
+                'users.name',
+                DB::raw("COUNT(CASE WHEN cases.stage != 'result' THEN 1 END) as active_cases"),
+                DB::raw("COUNT(CASE WHEN cases.stage = 'result' THEN 1 END) as completed_cases"),
+                DB::raw("COUNT(CASE WHEN cases.stage = 'result' AND cases.result_type = 'approved' THEN 1 END) as approved_cases"),
+                DB::raw("COUNT(CASE WHEN cases.critical_date IS NOT NULL AND cases.critical_date < CURRENT_DATE AND cases.stage != 'result' THEN 1 END) as overdue_cases"),
+                DB::raw("ROUND(AVG(CASE WHEN cases.stage = 'result' THEN EXTRACT(EPOCH FROM (cases.updated_at - cases.created_at)) / 3600 END), 1) as avg_hours"),
+            )
+            ->groupBy('users.id', 'users.name')
+            ->orderByDesc('active_cases')
+            ->get()
+            ->map(function ($m) {
+                $total = $m->active_cases + $m->completed_cases;
+                $m->conversion = $total > 0
+                    ? round($m->approved_cases / $total * 100, 1)
+                    : 0;
+                $m->avg_hours = (float) ($m->avg_hours ?? 0);
+                return $m;
+            });
+
+        // === Источники лидов ===
+
+        $byLeadSource = VisaCase::where('cases.agency_id', $agencyId)
+            ->where($excludeUnpaid)
+            ->where($inPeriod)
+            ->leftJoin('clients', 'clients.id', '=', 'cases.client_id')
+            ->selectRaw("COALESCE(cases.lead_source, clients.source, 'direct') as source, COUNT(*) as count")
+            ->groupByRaw("COALESCE(cases.lead_source, clients.source, 'direct')")
+            ->orderByDesc('count')
+            ->get();
+
+        // === Динамика за период ===
+
+        $trendFrom = $dateFrom ?? now()->subDays(30)->toDateString();
+        $dailyTrend = VisaCase::where('agency_id', $agencyId)
+            ->where($excludeUnpaid)
+            ->where('created_at', '>=', $trendFrom)
+            ->selectRaw("DATE(created_at) as date, COUNT(*) as created, COUNT(CASE WHEN stage='result' THEN 1 END) as completed")
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get();
+
+        // === Топ стран ===
+
         $topCountries = VisaCase::where('agency_id', $agencyId)
             ->where($excludeUnpaid)
             ->select('country_code', DB::raw('COUNT(*) as total'))
@@ -167,8 +174,9 @@ class DashboardController extends Controller
             ->groupBy('priority')
             ->pluck('count', 'priority');
 
-        // --- Аналитика по этапам (из case_stages) ---
-        $stageAnalytics = DB::table('case_stages')
+        // === Аналитика по этапам (из case_stages) ===
+
+        $stageAnalyticsRaw = DB::table('case_stages')
             ->join('cases', 'cases.id', '=', 'case_stages.case_id')
             ->where('cases.agency_id', $agencyId)
             ->whereNotNull('case_stages.exited_at')
@@ -181,15 +189,36 @@ class DashboardController extends Controller
             )
             ->groupBy('case_stages.stage')
             ->get()
-            ->map(function ($row) {
-                $row->sla_compliance = $row->total_transitions > 0
-                    ? round(($row->total_transitions - $row->overdue_count) / $row->total_transitions * 100, 1)
-                    : 100;
-                return $row;
-            })
             ->keyBy('stage');
 
-        // --- Среднее время обработки заявки (от lead до result) ---
+        // Формируем stage_analytics для ВСЕХ этапов, включая пустые
+        $stageAnalytics = [];
+        foreach (config('stages') as $key => $cfg) {
+            $raw = $stageAnalyticsRaw[$key] ?? null;
+            $slaHours = $cfg['sla_hours'] ?? null;
+            $avgHours = $raw ? (float) $raw->avg_hours : null;
+            $totalTransitions = $raw ? (int) $raw->total_transitions : 0;
+            $overdueCount = $raw ? (int) $raw->overdue_count : 0;
+            $slaCompliance = $totalTransitions > 0
+                ? round(($totalTransitions - $overdueCount) / $totalTransitions * 100, 1)
+                : 100;
+
+            $stageAnalytics[$key] = [
+                'stage'             => $key,
+                'total_transitions' => $totalTransitions,
+                'avg_hours'         => $avgHours,
+                'max_hours'         => $raw ? (float) $raw->max_hours : null,
+                'overdue_count'     => $overdueCount,
+                'sla_compliance'    => $slaCompliance,
+                'sla_norm_hours'    => $slaHours,
+                'deviation'         => ($avgHours !== null && $slaHours !== null && $slaHours > 0)
+                    ? round($avgHours - $slaHours, 1)
+                    : null,
+            ];
+        }
+
+        // === Среднее время обработки ===
+
         $avgProcessingHours = DB::table('cases')
             ->where('agency_id', $agencyId)
             ->where('stage', 'result')
@@ -197,10 +226,12 @@ class DashboardController extends Controller
             ->selectRaw("ROUND(AVG(EXTRACT(EPOCH FROM (updated_at - created_at)) / 3600), 1) as avg_hours")
             ->value('avg_hours');
 
-        // --- Рост: сравнение текущего и предыдущего периодов ---
+        // === Рост по периодам ===
+
         $growth = $this->calculateGrowth($agencyId, $dateFrom, $dateTo, $excludeUnpaid);
 
-        // --- Повторные клиенты ---
+        // === Повторные клиенты ===
+
         $repeatClients = DB::table('cases')
             ->where('agency_id', $agencyId)
             ->select('client_id')
@@ -209,8 +240,18 @@ class DashboardController extends Controller
             ->get()
             ->count();
 
-        // Подсказки (hints)
-        $hints = $this->generateHints($agencyId, $overdue, $critical, $unassigned, $totalActive, $managerLoad, $stageAnalytics, $repeatClients, $totalClients);
+        // === Процент без менеджера ===
+
+        $unassignedPct = $totalActive > 0 ? round($unassigned / $totalActive * 100, 1) : 0;
+        $overduePct = $totalActive > 0 ? round($overdue / $totalActive * 100, 1) : 0;
+
+        // === Подсказки ===
+
+        $hints = $this->generateHints(
+            $agencyId, $overdue, $critical, $unassigned, $totalActive,
+            $managerLoad, $stageAnalytics, $repeatClients, $totalClients,
+            $byLeadSource, $avgProcessingHours, $unassignedPct, $overduePct
+        );
 
         return ApiResponse::success([
             'period' => $periodKey,
@@ -231,12 +272,15 @@ class DashboardController extends Controller
                 'conversion_lead_case' => $conversionLeadToCase,
                 'conversion_case_visa' => $conversionCaseToVisa,
                 'avg_processing_hours' => (float) ($avgProcessingHours ?? 0),
+                'unassigned_pct'       => $unassignedPct,
+                'overdue_pct'          => $overduePct,
             ],
             'lead_sources'    => $byLeadSource,
             'daily_trend'     => $dailyTrend,
             'top_countries'   => $topCountries,
             'managers'        => $managerLoad,
             'stage_analytics' => $stageAnalytics,
+            'sla_norms'       => $slaNorms,
             'clients_total'   => $totalClients,
             'users_total'     => $totalUsers,
             'repeat_clients'  => $repeatClients,
@@ -245,9 +289,6 @@ class DashboardController extends Controller
         ]);
     }
 
-    /**
-     * Разбор параметра period -> [date_from, date_to, key]
-     */
     private function resolvePeriod(Request $request): array
     {
         $p = $request->input('period', '30d');
@@ -262,18 +303,14 @@ class DashboardController extends Controller
             return [now()->subDays($days)->toDateString(), now()->toDateString(), $p];
         }
 
-        // Год: 2025, 2026
+        // Год: 2023, 2024, 2025, 2026...
         if (preg_match('/^\d{4}$/', $p)) {
             return ["{$p}-01-01", "{$p}-12-31", $p];
         }
 
-        // По умолчанию — 30 дней
         return [now()->subDays(30)->toDateString(), now()->toDateString(), '30d'];
     }
 
-    /**
-     * Рост: сравнение текущего периода с предыдущим аналогичным
-     */
     private function calculateGrowth(string $agencyId, ?string $dateFrom, ?string $dateTo, \Closure $excludeUnpaid): array
     {
         if (!$dateFrom) {
@@ -284,78 +321,65 @@ class DashboardController extends Controller
         $prevFrom = Carbon::parse($dateFrom)->subDays($days + 1)->toDateString();
         $prevTo   = Carbon::parse($dateFrom)->subDay()->toDateString();
 
-        $prevLeads = VisaCase::where('agency_id', $agencyId)
-            ->where($excludeUnpaid)
-            ->whereBetween('created_at', [$prevFrom, $prevTo])
-            ->count();
+        $pct = function ($cur, $prev) {
+            return $prev > 0 ? round(($cur - $prev) / $prev * 100, 1) : ($cur > 0 ? 100 : 0);
+        };
 
-        $prevCompleted = VisaCase::where('agency_id', $agencyId)
-            ->where($excludeUnpaid)
-            ->where('stage', 'result')
-            ->whereBetween('created_at', [$prevFrom, $prevTo])
-            ->count();
+        $curLeads = VisaCase::where('agency_id', $agencyId)->where($excludeUnpaid)
+            ->whereBetween('created_at', [$dateFrom, $dateTo])->count();
+        $prevLeads = VisaCase::where('agency_id', $agencyId)->where($excludeUnpaid)
+            ->whereBetween('created_at', [$prevFrom, $prevTo])->count();
 
-        $prevVisa = VisaCase::where('agency_id', $agencyId)
-            ->where($excludeUnpaid)
-            ->where('stage', 'result')
-            ->where('result_type', 'approved')
-            ->whereBetween('created_at', [$prevFrom, $prevTo])
-            ->count();
+        $curCompleted = VisaCase::where('agency_id', $agencyId)->where($excludeUnpaid)
+            ->where('stage', 'result')->whereBetween('created_at', [$dateFrom, $dateTo])->count();
+        $prevCompleted = VisaCase::where('agency_id', $agencyId)->where($excludeUnpaid)
+            ->where('stage', 'result')->whereBetween('created_at', [$prevFrom, $prevTo])->count();
 
-        $curLeads = VisaCase::where('agency_id', $agencyId)
-            ->where($excludeUnpaid)
-            ->whereBetween('created_at', [$dateFrom, $dateTo])
-            ->count();
-
-        $curCompleted = VisaCase::where('agency_id', $agencyId)
-            ->where($excludeUnpaid)
-            ->where('stage', 'result')
-            ->whereBetween('created_at', [$dateFrom, $dateTo])
-            ->count();
-
-        $curVisa = VisaCase::where('agency_id', $agencyId)
-            ->where($excludeUnpaid)
-            ->where('stage', 'result')
-            ->where('result_type', 'approved')
-            ->whereBetween('created_at', [$dateFrom, $dateTo])
-            ->count();
-
-        $pct = fn ($cur, $prev) => $prev > 0 ? round(($cur - $prev) / $prev * 100, 1) : ($cur > 0 ? 100 : 0);
+        $curVisa = VisaCase::where('agency_id', $agencyId)->where($excludeUnpaid)
+            ->where('stage', 'result')->where('result_type', 'approved')
+            ->whereBetween('created_at', [$dateFrom, $dateTo])->count();
+        $prevVisa = VisaCase::where('agency_id', $agencyId)->where($excludeUnpaid)
+            ->where('stage', 'result')->where('result_type', 'approved')
+            ->whereBetween('created_at', [$prevFrom, $prevTo])->count();
 
         return [
-            'new_leads'  => $pct($curLeads, $prevLeads),
-            'completed'  => $pct($curCompleted, $prevCompleted),
+            'new_leads'   => $pct($curLeads, $prevLeads),
+            'completed'   => $pct($curCompleted, $prevCompleted),
             'visa_issued' => $pct($curVisa, $prevVisa),
         ];
     }
 
-    private function generateHints(string $agencyId, int $overdue, int $critical, int $unassigned, int $totalActive, $managerLoad, $stageAnalytics = null, int $repeatClients = 0, int $totalClients = 0): array
-    {
+    private function generateHints(
+        string $agencyId, int $overdue, int $critical, int $unassigned, int $totalActive,
+        $managerLoad, array $stageAnalytics, int $repeatClients, int $totalClients,
+        $byLeadSource, ?float $avgProcessingHours, float $unassignedPct, float $overduePct
+    ): array {
         $hints = [];
 
         if ($overdue > 0) {
             $hints[] = [
-                'type'    => 'warning',
-                'key'     => 'overdue',
-                'params'  => ['n' => $overdue],
-                'action'  => '/app/overdue',
+                'type'   => 'warning',
+                'key'    => 'overdue',
+                'params' => ['n' => $overdue],
+                'action' => '/app/cases?status=overdue',
             ];
         }
 
         if ($unassigned > 0) {
             $hints[] = [
-                'type'    => 'info',
-                'key'     => 'unassigned',
-                'params'  => ['n' => $unassigned],
-                'action'  => '/app/kanban',
+                'type'   => 'info',
+                'key'    => 'unassigned',
+                'params' => ['n' => $unassigned, 'pct' => $unassignedPct],
+                'action' => '/app/cases?assigned_to=unassigned',
             ];
         }
 
         if ($critical > 3) {
             $hints[] = [
-                'type'    => 'warning',
-                'key'     => 'critical',
-                'params'  => ['n' => $critical],
+                'type'   => 'warning',
+                'key'    => 'critical',
+                'params' => ['n' => $critical],
+                'action' => '/app/cases?status=critical',
             ];
         }
 
@@ -365,24 +389,51 @@ class DashboardController extends Controller
         if ($managerLoad->count() > 1 && $maxLoad > 0 && $maxLoad > $minLoad * 3) {
             $busiest = $managerLoad->firstWhere('active_cases', $maxLoad);
             $hints[] = [
-                'type'    => 'tip',
-                'key'     => 'imbalance',
-                'params'  => ['name' => $busiest->name, 'n' => $maxLoad],
+                'type'   => 'tip',
+                'key'    => 'imbalance',
+                'params' => ['name' => $busiest->name, 'n' => $maxLoad],
             ];
         }
 
         // Низкий SLA compliance
-        if ($stageAnalytics) {
-            foreach ($stageAnalytics as $stage => $data) {
-                if ($data->sla_compliance < 70 && $data->total_transitions >= 5) {
-                    $hints[] = [
-                        'type'   => 'warning',
-                        'key'    => 'lowSla',
-                        'params' => ['stage' => $stage, 'pct' => $data->sla_compliance],
-                    ];
-                    break; // Одна подсказка о SLA
-                }
+        foreach ($stageAnalytics as $stage => $data) {
+            if ($data['sla_compliance'] < 70 && $data['total_transitions'] >= 5) {
+                $hints[] = [
+                    'type'   => 'warning',
+                    'key'    => 'lowSla',
+                    'params' => ['stage' => $stage, 'pct' => $data['sla_compliance']],
+                ];
+                break;
             }
+        }
+
+        // Высокое среднее время
+        if ($avgProcessingHours && $avgProcessingHours > 240) { // > 10 дней
+            $hints[] = [
+                'type'   => 'tip',
+                'key'    => 'slowProcessing',
+                'params' => ['days' => round($avgProcessingHours / 24, 1)],
+            ];
+        }
+
+        // Низкая доля внешних каналов
+        $totalLeads = $byLeadSource->sum('count');
+        $directCount = $byLeadSource->firstWhere('source', 'direct')?->count ?? 0;
+        if ($totalLeads > 10 && $directCount / $totalLeads > 0.7) {
+            $hints[] = [
+                'type'   => 'tip',
+                'key'    => 'lowExternalLeads',
+                'params' => ['pct' => round($directCount / $totalLeads * 100)],
+            ];
+        }
+
+        // Мало повторных клиентов
+        if ($totalClients >= 10 && $repeatClients === 0) {
+            $hints[] = [
+                'type'   => 'tip',
+                'key'    => 'noRepeatClients',
+                'params' => [],
+            ];
         }
 
         // Повторные клиенты (позитив)
@@ -397,11 +448,35 @@ class DashboardController extends Controller
             }
         }
 
+        // Высокая просрочка
+        if ($overduePct > 20 && $overdue > 2) {
+            $hints[] = [
+                'type'   => 'warning',
+                'key'    => 'highOverdueRate',
+                'params' => ['pct' => $overduePct],
+            ];
+        }
+
+        // Этапы, где скапливаются заявки
+        if ($totalActive > 5) {
+            foreach ($stageAnalytics as $stage => $data) {
+                if ($data['avg_hours'] !== null && $data['sla_norm_hours'] !== null && $data['deviation'] !== null && $data['deviation'] > $data['sla_norm_hours'] * 0.5) {
+                    $hints[] = [
+                        'type'   => 'warning',
+                        'key'    => 'stageBottleneck',
+                        'params' => ['stage' => $stage, 'deviation' => round($data['deviation'], 1)],
+                    ];
+                    break;
+                }
+            }
+        }
+
+        // Все OK
         if ($totalActive === 0 && $overdue === 0) {
             $hints[] = [
-                'type'    => 'success',
-                'key'     => 'allClear',
-                'params'  => [],
+                'type'   => 'success',
+                'key'    => 'allClear',
+                'params' => [],
             ];
         }
 

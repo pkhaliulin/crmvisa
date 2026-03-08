@@ -245,14 +245,14 @@ const meta         = ref(null);
 const loading      = ref(false);
 const managers     = ref([]);
 const assigningId  = ref(null);
-const filters      = reactive({ q: '', stage: '', priority: '', assigned_to: '', country_code: '', date_from: '', date_to: '', page: 1 });
+const filters      = reactive({ q: '', stage: '', priority: '', assigned_to: '', country_code: '', date_from: '', date_to: '', status: '', page: 1 });
 
 const hasActiveFilters = computed(() =>
-  filters.q || filters.stage || filters.priority || filters.assigned_to || filters.country_code || filters.date_from || filters.date_to
+  filters.q || filters.stage || filters.priority || filters.assigned_to || filters.country_code || filters.date_from || filters.date_to || filters.status
 );
 
 function resetFilters() {
-  Object.assign(filters, { q: '', stage: '', priority: '', assigned_to: '', country_code: '', date_from: '', date_to: '', page: 1 });
+  Object.assign(filters, { q: '', stage: '', priority: '', assigned_to: '', country_code: '', date_from: '', date_to: '', status: '', page: 1 });
   fetchCases();
 }
 
@@ -391,6 +391,7 @@ async function fetchCases() {
     if (filters.country_code) params.country_code = filters.country_code;
     if (filters.date_from)    params.date_from    = filters.date_from;
     if (filters.date_to)      params.date_to      = filters.date_to;
+    if (filters.status)       params.status       = filters.status;
     params.page = filters.page;
     const { data } = await casesApi.list(params);
     cases.value = data.data ?? [];
@@ -413,6 +414,7 @@ onMounted(async () => {
   if (q.priority)    filters.priority    = q.priority;
   if (q.assigned_to) filters.assigned_to = q.assigned_to;
   if (q.country_code) filters.country_code = q.country_code;
+  if (q.status)      filters.status      = q.status;
   if (q.q)           filters.q           = q.q;
 
   const [, uRes] = await Promise.all([

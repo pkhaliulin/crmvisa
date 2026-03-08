@@ -6,18 +6,27 @@
 
     <template v-else>
       <!-- Фильтр периода -->
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-1.5 bg-gray-100 rounded-lg p-0.5">
-          <button v-for="p in periodOptions" :key="p.value"
+      <div class="flex flex-wrap items-center gap-2">
+        <div class="flex flex-wrap items-center gap-1 bg-gray-100 rounded-lg p-0.5">
+          <button v-for="p in relativePeriods" :key="p.value"
             @click="changePeriod(p.value)"
             :class="[
-              'px-3 py-1.5 text-xs font-medium rounded-md transition-colors',
+              'px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap',
               period === p.value ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
             ]">
             {{ p.label }}
           </button>
         </div>
-        <p class="text-xs text-gray-400">{{ periodDescription }}</p>
+        <div class="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
+          <button v-for="y in yearOptions" :key="y"
+            @click="changePeriod(String(y))"
+            :class="[
+              'px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors',
+              period === String(y) ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+            ]">
+            {{ y }}
+          </button>
+        </div>
       </div>
 
       <!-- Подсказки -->
@@ -58,10 +67,10 @@
 
       <!-- Ключевые метрики (кликабельные) -->
       <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        <component :is="m.to ? 'router-link' : 'div'" v-for="m in metricCards" :key="m.label"
+        <component :is="m.to ? 'router-link' : 'div'" v-for="m in metricCards" :key="m.key"
           :to="m.to || undefined"
           :class="[
-            'bg-white rounded-xl border border-gray-200 px-4 py-3 transition-all',
+            'bg-white rounded-xl border border-gray-200 px-4 py-3 transition-all group relative',
             m.to ? 'hover:border-blue-300 hover:shadow-md cursor-pointer' : ''
           ]">
           <p class="text-[11px] font-medium text-gray-400 uppercase tracking-wide">{{ m.label }}</p>
@@ -74,6 +83,11 @@
             </span>
           </div>
           <p v-if="m.sub" class="text-[10px] text-gray-400 mt-0.5">{{ m.sub }}</p>
+          <!-- Тултип -->
+          <div v-if="m.tooltip" class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-48 text-center z-10">
+            {{ m.tooltip }}
+            <div class="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
+          </div>
         </component>
       </div>
 
@@ -121,16 +135,15 @@
         </div>
       </div>
 
-      <!-- Второй ряд: Этапы + Страны -->
+      <!-- Заявки по этапам + Топ стран -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <!-- Заявки по этапам -->
         <div class="bg-white rounded-xl border border-gray-200 p-5 lg:col-span-2">
           <h3 class="font-semibold text-gray-800 text-sm mb-4">{{ t('crm.dashboard.stagesTitle') }}</h3>
           <div class="space-y-2.5">
             <router-link v-for="stage in stageRows" :key="stage.key"
               :to="{ name: 'cases', query: { stage: stage.key } }"
               class="flex items-center gap-3 group hover:bg-gray-50 rounded-lg px-1 -mx-1 py-0.5 transition-colors">
-              <span class="text-xs text-gray-500 w-28 shrink-0 group-hover:text-blue-600 transition-colors">{{ stage.label }}</span>
+              <span class="text-xs text-gray-500 w-32 shrink-0 group-hover:text-blue-600 transition-colors">{{ stage.label }}</span>
               <div class="flex-1 bg-gray-100 rounded-full h-3 overflow-hidden">
                 <div class="h-full rounded-full transition-all duration-700" :style="{ width: stage.percent + '%', background: stageColor(stage.key) }"/>
               </div>
@@ -139,7 +152,6 @@
           </div>
         </div>
 
-        <!-- Топ-5 стран -->
         <div class="bg-white rounded-xl border border-gray-200 p-5">
           <h3 class="font-semibold text-gray-800 text-sm mb-4">{{ t('crm.dashboard.topCountries') }}</h3>
           <div v-if="topCountries.length" class="space-y-2.5">
@@ -156,30 +168,69 @@
         </div>
       </div>
 
-      <!-- Аналитика по этапам (SLA) -->
-      <div v-if="stageAnalyticsRows.length" class="bg-white rounded-xl border border-gray-200 p-5">
-        <h3 class="font-semibold text-gray-800 text-sm mb-4">{{ t('crm.dashboard.stageAnalytics') }}</h3>
+      <!-- Скорость обработки по этапам (SLA) -->
+      <div class="bg-white rounded-xl border border-gray-200 p-5">
+        <div class="flex items-center gap-2 mb-4">
+          <h3 class="font-semibold text-gray-800 text-sm">{{ t('crm.dashboard.stageAnalytics') }}</h3>
+          <span class="group relative cursor-help">
+            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827m0 4h.01"/>
+            </svg>
+            <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-64 text-center z-10">
+              {{ t('crm.dashboard.stageAnalyticsTooltip') }}
+              <div class="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
+            </div>
+          </span>
+        </div>
         <div class="overflow-x-auto">
           <table class="w-full text-sm">
             <thead class="bg-gray-50 border-b text-gray-500 text-[11px] uppercase tracking-wide">
               <tr>
                 <th class="text-left px-4 py-2.5 font-medium">{{ t('crm.dashboard.stageCol') }}</th>
-                <th class="text-right px-4 py-2.5 font-medium">{{ t('crm.dashboard.avgTime') }}</th>
-                <th class="text-right px-4 py-2.5 font-medium">{{ t('crm.dashboard.maxTime') }}</th>
-                <th class="text-right px-4 py-2.5 font-medium">{{ t('crm.dashboard.slaCompliance') }}</th>
-                <th class="px-4 py-2.5 w-32"></th>
+                <th class="text-right px-4 py-2.5 font-medium group relative cursor-help">
+                  {{ t('crm.dashboard.slaNorm') }}
+                  <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-48 text-center z-10 normal-case tracking-normal">
+                    {{ t('crm.dashboard.slaNormTooltip') }}
+                    <div class="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
+                  </div>
+                </th>
+                <th class="text-right px-4 py-2.5 font-medium group relative cursor-help">
+                  {{ t('crm.dashboard.avgTime') }}
+                  <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-48 text-center z-10 normal-case tracking-normal">
+                    {{ t('crm.dashboard.avgTimeTooltip') }}
+                    <div class="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
+                  </div>
+                </th>
+                <th class="text-right px-4 py-2.5 font-medium group relative cursor-help">
+                  {{ t('crm.dashboard.deviation') }}
+                  <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-48 text-center z-10 normal-case tracking-normal">
+                    {{ t('crm.dashboard.deviationTooltip') }}
+                    <div class="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
+                  </div>
+                </th>
+                <th class="text-right px-4 py-2.5 font-medium group relative cursor-help">
+                  {{ t('crm.dashboard.slaCompliance') }}
+                  <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-48 text-center z-10 normal-case tracking-normal">
+                    {{ t('crm.dashboard.slaComplianceTooltip') }}
+                    <div class="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
+                  </div>
+                </th>
+                <th class="px-4 py-2.5 w-28"></th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
               <tr v-for="s in stageAnalyticsRows" :key="s.stage" class="hover:bg-gray-50 transition-colors">
                 <td class="px-4 py-2.5 font-medium text-gray-800">{{ stageLabel(s.stage) }}</td>
-                <td class="px-4 py-2.5 text-right text-gray-700">{{ formatHours(s.avg_hours) }}</td>
-                <td class="px-4 py-2.5 text-right text-gray-500">{{ formatHours(s.max_hours) }}</td>
-                <td class="px-4 py-2.5 text-right font-bold" :class="s.sla_compliance >= 80 ? 'text-green-600' : s.sla_compliance >= 60 ? 'text-amber-600' : 'text-red-600'">
-                  {{ s.sla_compliance }}%
+                <td class="px-4 py-2.5 text-right text-gray-500">{{ s.sla_norm_hours != null ? formatHours(s.sla_norm_hours) : '--' }}</td>
+                <td class="px-4 py-2.5 text-right text-gray-700">{{ s.avg_hours != null ? formatHours(s.avg_hours) : '--' }}</td>
+                <td class="px-4 py-2.5 text-right font-semibold" :class="deviationColor(s.deviation)">
+                  {{ s.deviation != null ? (s.deviation > 0 ? '+' : '') + formatHours(Math.abs(s.deviation)) : '--' }}
+                </td>
+                <td class="px-4 py-2.5 text-right font-bold" :class="slaColor(s.sla_compliance)">
+                  {{ s.total_transitions > 0 ? s.sla_compliance + '%' : '--' }}
                 </td>
                 <td class="px-4 py-2.5">
-                  <div class="bg-gray-100 rounded-full h-2 overflow-hidden">
+                  <div v-if="s.total_transitions > 0" class="bg-gray-100 rounded-full h-2 overflow-hidden">
                     <div class="h-full rounded-full transition-all"
                       :class="s.sla_compliance >= 80 ? 'bg-green-500' : s.sla_compliance >= 60 ? 'bg-amber-400' : 'bg-red-500'"
                       :style="{ width: s.sla_compliance + '%' }"
@@ -192,7 +243,7 @@
         </div>
       </div>
 
-      <!-- Менеджеры (расширенная таблица) -->
+      <!-- Менеджеры -->
       <div v-if="stats?.managers?.length" class="bg-white rounded-xl border border-gray-200 p-5">
         <h3 class="font-semibold text-gray-800 text-sm mb-4">{{ t('crm.dashboard.managersLoad') }}</h3>
         <div class="overflow-x-auto">
@@ -200,11 +251,42 @@
             <thead class="bg-gray-50 border-b text-gray-500 text-[11px] uppercase tracking-wide">
               <tr>
                 <th class="text-left px-4 py-2.5 font-medium">{{ t('crm.dashboard.managerCol') }}</th>
-                <th class="text-right px-4 py-2.5 font-medium">{{ t('crm.dashboard.activeCol') }}</th>
-                <th class="text-right px-4 py-2.5 font-medium">{{ t('crm.dashboard.completedCol') }}</th>
-                <th class="text-right px-4 py-2.5 font-medium">{{ t('crm.dashboard.overdueCol') }}</th>
-                <th class="text-right px-4 py-2.5 font-medium">{{ t('crm.dashboard.conversionCol') }}</th>
-                <th class="px-4 py-2.5 w-32"></th>
+                <th class="text-right px-4 py-2.5 font-medium group relative cursor-help">
+                  {{ t('crm.dashboard.activeCol') }}
+                  <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-48 text-center z-10 normal-case tracking-normal">
+                    {{ t('crm.dashboard.activeColTooltip') }}
+                    <div class="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
+                  </div>
+                </th>
+                <th class="text-right px-4 py-2.5 font-medium group relative cursor-help">
+                  {{ t('crm.dashboard.completedCol') }}
+                  <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-48 text-center z-10 normal-case tracking-normal">
+                    {{ t('crm.dashboard.completedColTooltip') }}
+                    <div class="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
+                  </div>
+                </th>
+                <th class="text-right px-4 py-2.5 font-medium group relative cursor-help">
+                  {{ t('crm.dashboard.overdueCol') }}
+                  <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-48 text-center z-10 normal-case tracking-normal">
+                    {{ t('crm.dashboard.overdueColTooltip') }}
+                    <div class="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
+                  </div>
+                </th>
+                <th class="text-right px-4 py-2.5 font-medium group relative cursor-help">
+                  {{ t('crm.dashboard.avgTimeCol') }}
+                  <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-48 text-center z-10 normal-case tracking-normal">
+                    {{ t('crm.dashboard.avgTimeColTooltip') }}
+                    <div class="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
+                  </div>
+                </th>
+                <th class="text-right px-4 py-2.5 font-medium group relative cursor-help">
+                  {{ t('crm.dashboard.conversionCol') }}
+                  <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-48 text-center z-10 normal-case tracking-normal">
+                    {{ t('crm.dashboard.conversionColTooltip') }}
+                    <div class="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
+                  </div>
+                </th>
+                <th class="px-4 py-2.5 w-28"></th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
@@ -213,6 +295,7 @@
                 <td class="px-4 py-2.5 text-right font-bold text-gray-900">{{ m.active_cases }}</td>
                 <td class="px-4 py-2.5 text-right text-green-600 font-semibold">{{ m.completed_cases }}</td>
                 <td class="px-4 py-2.5 text-right font-semibold" :class="m.overdue_cases > 0 ? 'text-red-600' : 'text-gray-400'">{{ m.overdue_cases }}</td>
+                <td class="px-4 py-2.5 text-right text-gray-700">{{ m.avg_hours > 0 ? formatHours(m.avg_hours) : '--' }}</td>
                 <td class="px-4 py-2.5 text-right font-semibold" :class="m.conversion >= 80 ? 'text-green-600' : m.conversion >= 50 ? 'text-amber-600' : 'text-gray-500'">{{ m.conversion }}%</td>
                 <td class="px-4 py-2.5">
                   <div class="bg-gray-100 rounded-full h-2 overflow-hidden">
@@ -230,7 +313,7 @@
 
       <!-- Конверсии + Среднее время + Повторные клиенты -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="bg-white rounded-xl border border-gray-200 p-5">
+        <div class="bg-white rounded-xl border border-gray-200 p-5 group relative">
           <p class="text-[11px] font-medium text-gray-400 uppercase tracking-wide">{{ t('crm.dashboard.conversionLeadCase') }}</p>
           <div class="flex items-end gap-2 mt-2">
             <p class="text-3xl font-bold text-blue-600">{{ metrics.conversion_lead_case }}%</p>
@@ -238,8 +321,12 @@
           <div class="mt-3 bg-gray-100 rounded-full h-2 overflow-hidden">
             <div class="h-full bg-blue-500 rounded-full transition-all" :style="{ width: metrics.conversion_lead_case + '%' }"/>
           </div>
+          <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-56 text-center z-10">
+            {{ t('crm.dashboard.conversionLeadCaseTooltip') }}
+            <div class="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
+          </div>
         </div>
-        <div class="bg-white rounded-xl border border-gray-200 p-5">
+        <div class="bg-white rounded-xl border border-gray-200 p-5 group relative">
           <p class="text-[11px] font-medium text-gray-400 uppercase tracking-wide">{{ t('crm.dashboard.conversionCaseVisa') }}</p>
           <div class="flex items-end gap-2 mt-2">
             <p class="text-3xl font-bold text-green-600">{{ metrics.conversion_case_visa }}%</p>
@@ -247,21 +334,33 @@
           <div class="mt-3 bg-gray-100 rounded-full h-2 overflow-hidden">
             <div class="h-full bg-green-500 rounded-full transition-all" :style="{ width: metrics.conversion_case_visa + '%' }"/>
           </div>
+          <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-56 text-center z-10">
+            {{ t('crm.dashboard.conversionCaseVisaTooltip') }}
+            <div class="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
+          </div>
         </div>
-        <div class="bg-white rounded-xl border border-gray-200 p-5">
+        <div class="bg-white rounded-xl border border-gray-200 p-5 group relative">
           <p class="text-[11px] font-medium text-gray-400 uppercase tracking-wide">{{ t('crm.dashboard.avgProcessing') }}</p>
           <div class="flex items-end gap-2 mt-2">
             <p class="text-3xl font-bold text-indigo-600">{{ formatHours(metrics.avg_processing_hours) }}</p>
           </div>
           <p class="text-[10px] text-gray-400 mt-1">{{ t('crm.dashboard.avgProcessingSub') }}</p>
+          <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-56 text-center z-10">
+            {{ t('crm.dashboard.avgProcessingTooltip') }}
+            <div class="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
+          </div>
         </div>
-        <router-link :to="{ name: 'clients' }" class="bg-white rounded-xl border border-gray-200 p-5 hover:border-blue-300 hover:shadow-md transition-all">
+        <router-link :to="{ name: 'clients' }" class="bg-white rounded-xl border border-gray-200 p-5 hover:border-blue-300 hover:shadow-md transition-all group relative">
           <p class="text-[11px] font-medium text-gray-400 uppercase tracking-wide">{{ t('crm.dashboard.repeatClients') }}</p>
           <div class="flex items-end gap-2 mt-2">
             <p class="text-3xl font-bold text-purple-600">{{ stats?.repeat_clients ?? 0 }}</p>
             <span v-if="stats?.clients_total" class="text-xs text-gray-400 mb-1">/ {{ stats.clients_total }}</span>
           </div>
           <p class="text-[10px] text-gray-400 mt-1">{{ t('crm.dashboard.repeatClientsSub') }}</p>
+          <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-56 text-center z-10">
+            {{ t('crm.dashboard.repeatClientsTooltip') }}
+            <div class="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
+          </div>
         </router-link>
       </div>
     </template>
@@ -280,17 +379,26 @@ const stats = ref(null);
 const hints = ref([]);
 const period = ref('30d');
 
-const periodOptions = computed(() => [
+const currentYear = new Date().getFullYear();
+const startYear = 2024;
+
+const relativePeriods = computed(() => [
+  { value: 'all',  label: t('crm.dashboard.periodAll') },
+  { value: '1d',   label: t('crm.dashboard.period1d') },
+  { value: '3d',   label: t('crm.dashboard.period3d') },
   { value: '7d',   label: t('crm.dashboard.period7d') },
   { value: '30d',  label: t('crm.dashboard.period30d') },
+  { value: '60d',  label: t('crm.dashboard.period60d') },
   { value: '90d',  label: t('crm.dashboard.period90d') },
   { value: '365d', label: t('crm.dashboard.period365d') },
-  { value: 'all',  label: t('crm.dashboard.periodAll') },
 ]);
 
-const periodDescription = computed(() => {
-  const labels = { '7d': t('crm.dashboard.periodDesc7d'), '30d': t('crm.dashboard.periodDesc30d'), '90d': t('crm.dashboard.periodDesc90d'), '365d': t('crm.dashboard.periodDesc365d'), 'all': t('crm.dashboard.periodDescAll') };
-  return labels[period.value] || '';
+const yearOptions = computed(() => {
+  const years = [];
+  for (let y = currentYear; y >= startYear; y--) {
+    years.push(y);
+  }
+  return years;
 });
 
 const STAGES = computed(() => [
@@ -317,17 +425,47 @@ function stageLabel(key) {
 }
 
 function formatHours(h) {
-  if (!h || h === 0) return '0';
-  if (h < 1) return `${Math.round(h * 60)}${t('crm.dashboard.minuteShort')}`;
-  if (h < 24) return `${Math.round(h)}${t('crm.dashboard.hourShort')}`;
-  return `${Math.round(h / 24)}${t('crm.dashboard.dayShort')}`;
+  if (h == null || h === 0) return '0';
+  h = Math.abs(h);
+  if (h < 1) return `${Math.round(h * 60)} ${t('crm.dashboard.minuteShort')}`;
+  if (h < 24) return `${Math.round(h)} ${t('crm.dashboard.hourShort')}`;
+  const days = Math.round(h / 24);
+  return `${days} ${t('crm.dashboard.dayShort')}`;
 }
 
-const sourceColors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#ef4444'];
+function deviationColor(d) {
+  if (d == null) return 'text-gray-400';
+  if (d <= 0) return 'text-green-600';
+  return 'text-red-600';
+}
+
+function slaColor(pct) {
+  if (pct >= 80) return 'text-green-600';
+  if (pct >= 60) return 'text-amber-600';
+  return 'text-red-600';
+}
+
+const sourceColors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#ef4444', '#f97316', '#84cc16', '#14b8a6'];
 const sourceLabels = computed(() => ({
-  direct: t('crm.sources.direct'), referral: t('crm.sources.referral'), marketplace: t('crm.sources.marketplace'),
-  instagram: 'Instagram', facebook: 'Facebook', telegram: t('crm.sources.telegram'),
-  website: t('crm.sources.website'), other: t('crm.sources.other'),
+  direct:       t('crm.sources.direct'),
+  referral:     t('crm.sources.referral'),
+  marketplace:  t('crm.sources.marketplace'),
+  repeat:       t('crm.sources.repeat'),
+  instagram:    'Instagram',
+  facebook:     'Facebook',
+  telegram:     'Telegram',
+  whatsapp:     'WhatsApp',
+  website:      t('crm.sources.website'),
+  google:       'Google / SEO',
+  google_ads:   'Google Ads',
+  youtube:      'YouTube',
+  tiktok:       'TikTok',
+  partner:      t('crm.sources.partner'),
+  offline:      t('crm.sources.offline'),
+  exhibition:   t('crm.sources.exhibition'),
+  email:        t('crm.sources.email'),
+  cold:         t('crm.sources.cold'),
+  other:        t('crm.sources.other'),
 }));
 
 const metrics = computed(() => stats.value?.metrics ?? {
@@ -342,12 +480,41 @@ const metricCards = computed(() => {
   const c = stats.value?.cases ?? {};
   const g = growth.value;
   return [
-    { label: t('crm.dashboard.active'), value: c.total_active ?? 0, color: 'text-gray-900', to: { name: 'cases' } },
-    { label: t('crm.dashboard.newLeads'), value: m.new_leads ?? 0, color: 'text-blue-600', growth: g.new_leads, to: { name: 'cases', query: { stage: 'lead' } } },
-    { label: t('crm.dashboard.completedPeriod'), value: m.completed ?? 0, color: 'text-green-600', growth: g.completed, to: { name: 'cases', query: { stage: 'result' } } },
-    { label: t('crm.dashboard.overdue'), value: c.overdue ?? 0, color: c.overdue > 0 ? 'text-red-600' : 'text-gray-900', to: { name: 'overdue' } },
-    { label: t('crm.dashboard.critical'), value: c.critical ?? 0, color: c.critical > 0 ? 'text-amber-600' : 'text-gray-900' },
-    { label: t('crm.dashboard.unassigned'), value: c.unassigned ?? 0, color: c.unassigned > 0 ? 'text-purple-600' : 'text-gray-900', to: { name: 'cases', query: { assigned_to: 'unassigned' } } },
+    {
+      key: 'active', label: t('crm.dashboard.active'), value: c.total_active ?? 0,
+      color: 'text-gray-900', to: { name: 'cases', query: { status: 'active' } },
+      tooltip: t('crm.dashboard.activeTooltip'),
+    },
+    {
+      key: 'new', label: t('crm.dashboard.newLeads'), value: m.new_leads ?? 0,
+      color: 'text-blue-600', growth: g.new_leads,
+      to: { name: 'cases', query: { stage: 'lead' } },
+      tooltip: t('crm.dashboard.newLeadsTooltip'),
+    },
+    {
+      key: 'completed', label: t('crm.dashboard.completedPeriod'), value: m.completed ?? 0,
+      color: 'text-green-600', growth: g.completed,
+      to: { name: 'cases', query: { stage: 'result' } },
+      tooltip: t('crm.dashboard.completedTooltip'),
+    },
+    {
+      key: 'overdue', label: t('crm.dashboard.overdue'), value: c.overdue ?? 0,
+      color: c.overdue > 0 ? 'text-red-600' : 'text-gray-900',
+      to: { name: 'cases', query: { status: 'overdue' } },
+      tooltip: t('crm.dashboard.overdueTooltip'),
+    },
+    {
+      key: 'critical', label: t('crm.dashboard.critical'), value: c.critical ?? 0,
+      color: c.critical > 0 ? 'text-amber-600' : 'text-gray-900',
+      to: { name: 'cases', query: { status: 'critical' } },
+      tooltip: t('crm.dashboard.criticalTooltip'),
+    },
+    {
+      key: 'unassigned', label: t('crm.dashboard.unassigned'), value: c.unassigned ?? 0,
+      color: c.unassigned > 0 ? 'text-purple-600' : 'text-gray-900',
+      to: { name: 'cases', query: { assigned_to: 'unassigned' } },
+      tooltip: t('crm.dashboard.unassignedTooltip'),
+    },
   ];
 });
 
@@ -365,9 +532,7 @@ const stageRows = computed(() => {
 const stageAnalyticsRows = computed(() => {
   if (!stats.value?.stage_analytics) return [];
   const sa = stats.value.stage_analytics;
-  return STAGES.value
-    .filter(s => sa[s.key])
-    .map(s => ({ stage: s.key, ...sa[s.key] }));
+  return STAGES.value.map(s => sa[s.key] ?? { stage: s.key, total_transitions: 0, avg_hours: null, max_hours: null, sla_norm_hours: null, sla_compliance: 100, deviation: null, overdue_count: 0 });
 });
 
 const maxManagerLoad = computed(() =>

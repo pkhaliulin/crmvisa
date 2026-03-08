@@ -26,6 +26,7 @@ class CaseController extends Controller
             'q'            => ['nullable', 'string', 'max:100'],
             'date_from'    => ['nullable', 'date'],
             'date_to'      => ['nullable', 'date'],
+            'status'       => ['nullable', 'string', 'in:overdue,critical,active'],
         ]);
 
         $query = VisaCase::where('cases.agency_id', $agencyId)
@@ -86,6 +87,23 @@ class CaseController extends Controller
         }
         if (!empty($filters['date_to'])) {
             $query->whereDate('cases.created_at', '<=', $filters['date_to']);
+        }
+
+        // Фильтр по статусу: overdue / critical / active
+        if (!empty($filters['status'])) {
+            $today = now()->toDateString();
+            if ($filters['status'] === 'overdue') {
+                $query->whereNotIn('cases.stage', ['result'])
+                    ->whereNotNull('critical_date')
+                    ->whereDate('critical_date', '<', $today);
+            } elseif ($filters['status'] === 'critical') {
+                $query->whereNotIn('cases.stage', ['result'])
+                    ->whereNotNull('critical_date')
+                    ->whereDate('critical_date', '>=', $today)
+                    ->whereDate('critical_date', '<=', now()->addDays(5)->toDateString());
+            } elseif ($filters['status'] === 'active') {
+                $query->whereNotIn('cases.stage', ['result']);
+            }
         }
 
         // Сортировка: сначала просроченные, потом горящие, остальные по дате
