@@ -221,7 +221,7 @@ const passportClass = computed(() => {
 });
 
 function formatDate(d) {
-  return new Date(d).toLocaleDateString('ru-RU');
+  return new Date(d).toLocaleDateString('uz-UZ');
 }
 function scoreColor(s) {
   if (s >= 80) return 'text-green-600';

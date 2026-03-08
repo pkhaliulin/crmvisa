@@ -139,7 +139,7 @@ const sourceLabel = (s) => SOURCE_LABELS.value[s] ?? s ?? '--';
 const sourceColor = (s) => SOURCE_COLORS[s] ?? 'gray';
 
 function formatDate(d) {
-  return new Date(d).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  return new Date(d).toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
 function passportDaysLeft(d) {

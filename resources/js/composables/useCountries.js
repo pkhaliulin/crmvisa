@@ -1,5 +1,6 @@
 import { ref } from 'vue';
 import { countriesApi } from '@/api/countries';
+import { currentLocale } from '@/i18n';
 
 // Синглтон — загружается один раз для всего приложения
 const countries = ref([]);
@@ -18,7 +19,11 @@ export function useCountries() {
     }
 
     function countryName(code) {
-        return countries.value.find(c => c.country_code === code)?.name ?? code;
+        const c = countries.value.find(c => c.country_code === code);
+        if (!c) return code;
+        const locale = currentLocale();
+        if (locale === 'uz' && c.name_uz) return c.name_uz;
+        return c.name ?? code;
     }
 
     function countryFlag(code) {
@@ -26,7 +31,11 @@ export function useCountries() {
     }
 
     function visaTypeName(slug) {
-        return visaTypes.value.find(t => t.slug === slug)?.name_ru ?? slug;
+        const vt = visaTypes.value.find(t => t.slug === slug);
+        if (!vt) return slug;
+        const locale = currentLocale();
+        if (locale === 'uz' && vt.name_uz) return vt.name_uz;
+        return vt.name_ru ?? slug;
     }
 
     return { countries, visaTypes, countryName, countryFlag, visaTypeName };

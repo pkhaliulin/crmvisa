@@ -377,7 +377,7 @@ const suggestedDeadline = computed(() => {
   if (!form.travel_date || !form.country_code || !selectedCountryDays.value) return null;
   const d = new Date(form.travel_date);
   d.setDate(d.getDate() - selectedCountryDays.value);
-  return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+  return d.toLocaleDateString('uz-UZ', { day: 'numeric', month: 'long', year: 'numeric' });
 });
 
 // Загрузка per-visa-type данных при выборе страны

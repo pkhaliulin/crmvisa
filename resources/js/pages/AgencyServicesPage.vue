@@ -43,7 +43,7 @@
             <div v-for="svc in cat.items" :key="svc.id"
               class="px-4 py-2.5 hover:bg-blue-50/30 transition-colors pl-10">
               <div class="flex items-center gap-2">
-                <span class="text-sm font-medium text-gray-800">{{ svc.name }}</span>
+                <span class="text-sm font-medium text-gray-800">{{ svcName(svc) }}</span>
                 <span v-if="svc.is_required"
                   class="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-red-50 text-red-600 shrink-0">{{ t('crm.services.required') }}</span>
               </div>
@@ -142,7 +142,7 @@
                   <span v-for="item in (pkg.items || []).slice(0, 4)" :key="item.id"
                     class="text-[9px] px-1.5 py-0.5 rounded-full whitespace-nowrap"
                     :class="item.service?.is_required ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600'">
-                    {{ item.service?.name }}
+                    {{ svcName(item.service) }}
                   </span>
                   <span v-if="(pkg.items || []).length > 4" class="text-[9px] text-gray-400">
                     +{{ pkg.items.length - 4 }}
@@ -295,7 +295,7 @@
                     class="w-4 h-4 text-red-500 rounded border-gray-300 mt-0.5" />
                   <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-2">
-                      <span class="text-sm font-medium text-gray-900">{{ svc.name }}</span>
+                      <span class="text-sm font-medium text-gray-900">{{ svcName(svc) }}</span>
                       <span class="text-[9px] px-1.5 py-0.5 rounded-full bg-red-100 text-red-600 font-semibold shrink-0">{{ t('crm.services.required') }}</span>
                     </div>
                     <p v-if="svc.agency_hint" class="text-xs text-gray-500 mt-0.5 leading-relaxed">{{ svc.agency_hint }}</p>
@@ -314,7 +314,7 @@
                     class="w-4 h-4 text-blue-600 rounded border-gray-300 mt-0.5" />
                   <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-2">
-                      <span class="text-sm text-gray-800">{{ svc.name }}</span>
+                      <span class="text-sm text-gray-800">{{ svcName(svc) }}</span>
                       <span class="text-xs text-gray-400 shrink-0">{{ categoryLabel(svc.category) }}</span>
                     </div>
                     <p v-if="svc.agency_hint" class="text-xs text-gray-500 mt-0.5 leading-relaxed">{{ svc.agency_hint }}</p>
@@ -357,8 +357,15 @@ import { useI18n } from 'vue-i18n';
 import api from '@/api/index';
 import { countriesApi } from '@/api/countries';
 import { codeToFlag } from '@/utils/countries';
+import { currentLocale } from '@/i18n';
 
 const { t } = useI18n();
+
+function svcName(service) {
+  if (!service) return '';
+  if (currentLocale() === 'uz' && service.name_uz) return service.name_uz;
+  return service.name;
+}
 const router = useRouter();
 
 const loadingPackages = ref(true);

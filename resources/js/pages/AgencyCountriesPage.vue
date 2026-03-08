@@ -189,7 +189,7 @@ onMounted(async () => {
       api.get('/agency/work-countries').catch(() => null),
     ]);
     countries.value = (countriesRes.data.data ?? []).sort((a, b) =>
-      (localName(a)).localeCompare(localName(b), 'ru')
+      (localName(a)).localeCompare(localName(b), 'uz')
     );
     workCodes.value = (workRes?.data?.data ?? []).map(c => c.country_code);
   } catch { /* ignore */ } finally {

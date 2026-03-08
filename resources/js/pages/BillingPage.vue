@@ -651,13 +651,13 @@ function txStatusClass(s) {
 
 function fmtMoney(val) {
   if (!val && val !== 0) return '0 ' + t('crm.billing.sum');
-  return Number(val).toLocaleString('ru-RU') + ' ' + t('crm.billing.sum');
+  return Number(val).toLocaleString('uz-UZ') + ' ' + t('crm.billing.sum');
 }
 
 function formatDate(dateStr) {
   if (!dateStr) return '--';
   try {
-    return new Date(dateStr).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    return new Date(dateStr).toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric' });
   } catch { return dateStr; }
 }
 
@@ -702,7 +702,7 @@ async function confirmChangePlan() {
     showConfirmModal.value = false;
 
     if (data.type === 'downgrade_scheduled') {
-      const dateStr = data.change_at ? new Date(data.change_at).toLocaleDateString('ru-RU') : '';
+      const dateStr = data.change_at ? new Date(data.change_at).toLocaleDateString('uz-UZ') : '';
       showToast(t('crm.billing.downgradePlanned', { plan: data.plan_name, date: dateStr }));
     } else {
       const creditMsg = data.credit > 0 ? ` (${t('crm.billing.credit', { amount: fmtMoney(data.credit) })})` : '';

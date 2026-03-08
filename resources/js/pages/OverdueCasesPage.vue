@@ -82,7 +82,7 @@ function stageLabel(s) { return stageLabels.value[s] || s; }
 
 function formatDate(d) {
   if (!d) return '—';
-  return new Date(d).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' });
+  return new Date(d).toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
 onMounted(async () => {

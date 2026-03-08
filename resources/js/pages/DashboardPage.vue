@@ -28,8 +28,8 @@
             </svg>
           </div>
           <div class="flex-1 min-w-0">
-            <p class="font-semibold text-xs uppercase tracking-wide opacity-70">{{ hint.title }}</p>
-            <p class="mt-0.5">{{ hint.message }}</p>
+            <p class="font-semibold text-xs uppercase tracking-wide opacity-70">{{ t(`crm.dashboard.hints.${hint.key}_title`, hint.params || {}) }}</p>
+            <p class="mt-0.5">{{ t(`crm.dashboard.hints.${hint.key}_msg`, hint.params || {}) }}</p>
           </div>
           <router-link v-if="hint.action" :to="hint.action"
             class="shrink-0 text-xs font-medium underline opacity-70 hover:opacity-100 mt-1">
@@ -55,7 +55,7 @@
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <!-- Динамика за 30 дней -->
         <div class="bg-white rounded-xl border border-gray-200 p-5 lg:col-span-2">
-          <h3 class="font-semibold text-gray-800 text-sm mb-4">{{ t('crm.dashboard.casesTrend30d') }}</h3>
+          <h3 class="font-semibold text-gray-800 text-sm mb-4">{{ t('crm.dashboard.chartTitle') }}</h3>
           <div class="h-48 relative">
             <svg v-if="chartData.length" class="w-full h-full" :viewBox="`0 0 ${chartW} ${chartH}`" preserveAspectRatio="none">
               <!-- Сетка -->
@@ -77,7 +77,7 @@
 
         <!-- Pie: Источники лидов -->
         <div class="bg-white rounded-xl border border-gray-200 p-5">
-          <h3 class="font-semibold text-gray-800 text-sm mb-4">{{ t('crm.dashboard.leadSources') }}</h3>
+          <h3 class="font-semibold text-gray-800 text-sm mb-4">{{ t('crm.dashboard.leadSourcesTitle') }}</h3>
           <div v-if="leadSources.length" class="flex flex-col items-center">
             <svg width="140" height="140" viewBox="0 0 140 140">
               <circle v-for="(s, i) in pieSlices" :key="i"
@@ -106,7 +106,7 @@
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <!-- Заявки по этапам -->
         <div class="bg-white rounded-xl border border-gray-200 p-5 lg:col-span-2">
-          <h3 class="font-semibold text-gray-800 text-sm mb-4">{{ t('crm.dashboard.casesByStage') }}</h3>
+          <h3 class="font-semibold text-gray-800 text-sm mb-4">{{ t('crm.dashboard.stagesTitle') }}</h3>
           <div class="space-y-2.5">
             <div v-for="stage in stageRows" :key="stage.key" class="flex items-center gap-3">
               <span class="text-xs text-gray-500 w-28 shrink-0">{{ stage.label }}</span>
@@ -142,8 +142,8 @@
           <table class="w-full text-sm">
             <thead class="bg-gray-50 border-b text-gray-500 text-[11px] uppercase tracking-wide">
               <tr>
-                <th class="text-left px-4 py-2.5 font-medium">{{ t('crm.dashboard.manager') }}</th>
-                <th class="text-right px-4 py-2.5 font-medium">{{ t('crm.dashboard.active') }}</th>
+                <th class="text-left px-4 py-2.5 font-medium">{{ t('crm.dashboard.managerCol') }}</th>
+                <th class="text-right px-4 py-2.5 font-medium">{{ t('crm.dashboard.activeCol') }}</th>
                 <th class="px-4 py-2.5 w-40"></th>
               </tr>
             </thead>

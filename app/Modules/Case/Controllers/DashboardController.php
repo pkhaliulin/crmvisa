@@ -181,8 +181,8 @@ class DashboardController extends Controller
         if ($overdue > 0) {
             $hints[] = [
                 'type'    => 'warning',
-                'title'   => 'Просроченные заявки',
-                'message' => "У вас {$overdue} просроченных заявок. Каждый день просрочки снижает шансы клиента на визу и репутацию агентства. Проверьте раздел \"Просрочки\".",
+                'key'     => 'overdue',
+                'params'  => ['n' => $overdue],
                 'action'  => '/app/overdue',
             ];
         }
@@ -190,8 +190,8 @@ class DashboardController extends Controller
         if ($unassigned > 0) {
             $hints[] = [
                 'type'    => 'info',
-                'title'   => 'Заявки без менеджера',
-                'message' => "{$unassigned} заявок ожидают назначения менеджера. Быстрое назначение = быстрый старт обработки. Откройте Канбан и назначьте ответственных.",
+                'key'     => 'unassigned',
+                'params'  => ['n' => $unassigned],
                 'action'  => '/app/kanban',
             ];
         }
@@ -199,8 +199,8 @@ class DashboardController extends Controller
         if ($critical > 3) {
             $hints[] = [
                 'type'    => 'warning',
-                'title'   => 'Много горящих заявок',
-                'message' => "{$critical} заявок с дедлайном в ближайшие 5 дней. Рекомендуем распределить нагрузку между менеджерами равномерно.",
+                'key'     => 'critical',
+                'params'  => ['n' => $critical],
             ];
         }
 
@@ -211,16 +211,16 @@ class DashboardController extends Controller
             $busiest = $managerLoad->firstWhere('active_cases', $maxLoad);
             $hints[] = [
                 'type'    => 'tip',
-                'title'   => 'Неравномерная нагрузка',
-                'message' => "{$busiest->name} ведёт {$maxLoad} заявок — это значительно больше, чем у коллег. Рассмотрите перераспределение для повышения скорости обработки.",
+                'key'     => 'imbalance',
+                'params'  => ['name' => $busiest->name, 'n' => $maxLoad],
             ];
         }
 
         if ($totalActive === 0 && $overdue === 0) {
             $hints[] = [
                 'type'    => 'success',
-                'title'   => 'Всё под контролем',
-                'message' => 'Нет активных заявок и просрочек. Отличное время для привлечения новых клиентов через маркетплейс или рекламу в соцсетях.',
+                'key'     => 'allClear',
+                'params'  => [],
             ];
         }
 

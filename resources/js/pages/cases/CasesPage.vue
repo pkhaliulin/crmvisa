@@ -350,7 +350,7 @@ function docsIconColor(c) { return c.docs_uploaded === c.docs_total ? 'text-gree
 function docsTextColor(c) { return c.docs_uploaded === c.docs_total ? 'text-green-600' : 'text-gray-600'; }
 
 function formatDate(d) {
-  return new Date(d).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  return new Date(d).toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
 // ── Назначение менеджера ──────────────────────────────────────────────────────
