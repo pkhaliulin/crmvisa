@@ -135,6 +135,30 @@ return [
             'replace_placeholders' => true,
         ],
 
+        'billing' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/billing.log'),
+            'level' => 'info',
+            'days' => 90,
+            'replace_placeholders' => true,
+        ],
+
+        'auth' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/auth.log'),
+            'level' => 'info',
+            'days' => 30,
+            'replace_placeholders' => true,
+        ],
+
+        'slow_queries' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/slow-queries.log'),
+            'level' => 'warning',
+            'days' => 14,
+            'replace_placeholders' => true,
+        ],
+
     ],
 
 ];

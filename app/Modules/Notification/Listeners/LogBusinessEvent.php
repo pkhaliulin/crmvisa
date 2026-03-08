@@ -23,12 +23,14 @@ class LogBusinessEvent
 
     public function handlePaymentReceived(PaymentReceived $event): void
     {
-        Log::channel('single')->info('Domain Event: PaymentReceived', [
+        $data = [
             'transaction_id' => $event->transaction->id,
             'agency_id'      => $event->agencyId,
             'amount'         => $event->transaction->amount,
             'currency'       => $event->transaction->currency,
-        ]);
+        ];
+        Log::channel('single')->info('Domain Event: PaymentReceived', $data);
+        Log::channel('billing')->info('Payment received', $data);
     }
 
     public function handleScoringCalculated(ScoringCalculated $event): void
@@ -54,21 +56,25 @@ class LogBusinessEvent
 
     public function handleSubscriptionChanged(SubscriptionChanged $event): void
     {
-        Log::channel('single')->info('Domain Event: SubscriptionChanged', [
+        $data = [
             'subscription_id' => $event->subscription->id,
             'agency_id'       => $event->subscription->agency_id,
             'change_type'     => $event->changeType,
             'old_plan'        => $event->oldPlanSlug,
             'new_plan'        => $event->newPlanSlug,
-        ]);
+        ];
+        Log::channel('single')->info('Domain Event: SubscriptionChanged', $data);
+        Log::channel('billing')->info('Subscription changed', $data);
     }
 
     public function handleSubscriptionExpired(SubscriptionExpired $event): void
     {
-        Log::channel('single')->info('Domain Event: SubscriptionExpired', [
+        $data = [
             'subscription_id' => $event->subscription->id,
             'agency_id'       => $event->agencyId,
-        ]);
+        ];
+        Log::channel('single')->info('Domain Event: SubscriptionExpired', $data);
+        Log::channel('billing')->warning('Subscription expired', $data);
     }
 
     public function handleClientCreatedViaPortal(ClientCreatedViaPortal $event): void

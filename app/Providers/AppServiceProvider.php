@@ -11,8 +11,11 @@ use App\Modules\Document\Policies\DocumentPolicy;
 use App\Modules\User\Models\User;
 use App\Modules\User\Policies\UserPolicy;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
@@ -47,5 +50,18 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('heavy', function (Request $request) {
             return Limit::perMinute(5)->by($request->user()?->id ?? $request->ip());
         });
+
+        // Логирование медленных SQL запросов (>500ms)
+        if (app()->environment('production')) {
+            DB::listen(function (QueryExecuted $query) {
+                if ($query->time > 500) {
+                    Log::channel('slow_queries')->warning('Slow query', [
+                        'sql' => $query->sql,
+                        'time_ms' => round($query->time, 2),
+                        'connection' => $query->connectionName,
+                    ]);
+                }
+            });
+        }
     }
 }

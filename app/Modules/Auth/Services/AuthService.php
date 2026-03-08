@@ -90,12 +90,14 @@ class AuthService
             $user = User::where('email', $dto->email)->first();
 
             if (! $user) {
+                \Log::channel('auth')->warning('Login failed: user not found', ['email' => $dto->email]);
                 throw ValidationException::withMessages([
                     'email' => __('auth.user_not_found'),
                 ]);
             }
 
             if (! $user->is_active) {
+                \Log::channel('auth')->warning('Login failed: account deactivated', ['email' => $dto->email, 'user_id' => $user->id]);
                 throw ValidationException::withMessages([
                     'email' => __('auth.account_deactivated'),
                 ]);
@@ -107,10 +109,13 @@ class AuthService
             ]);
 
             if (! $token) {
+                \Log::channel('auth')->warning('Login failed: wrong password', ['email' => $dto->email, 'user_id' => $user->id]);
                 throw ValidationException::withMessages([
                     'password' => __('auth.wrong_password'),
                 ]);
             }
+
+            \Log::channel('auth')->info('Login success', ['email' => $user->email, 'user_id' => $user->id, 'role' => $user->role]);
 
             \App\Support\Helpers\AuditLog::log('auth.crm_login', [
                 'user_id' => $user->id,
