@@ -1758,7 +1758,7 @@
       "managersCol": "Menejerlar kerak",
       "revenueCol": "Daromad",
       "motivation": "{year} yilga qadar joriy rejada — ${revenue} daromad va {clients} mijoz",
-      "motivationSub": "Yuqoridagi ma'lumotlaringizni kiriting va o'sish strategiyasini tuzing. VisaBor har bir bosqichda yordam beradi."
+      "motivationSub": "Yuqoridagi ma'lumotlaringizni kiriting va o'sish strategiyasini tuzing. VisaCRM har bir bosqichda yordam beradi."
     },
     "leadgen": {
       "title": "Lid generatsiya",
