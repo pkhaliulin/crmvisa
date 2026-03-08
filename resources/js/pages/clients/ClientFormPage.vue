@@ -10,15 +10,15 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
           </svg>
         </button>
-        <h2 class="text-lg font-bold text-gray-900">{{ isEdit ? 'Редактировать клиента' : 'Новый клиент' }}</h2>
+        <h2 class="text-lg font-bold text-gray-900">{{ isEdit ? t('crm.clientForm.editTitle') : t('crm.clientForm.newTitle') }}</h2>
       </div>
 
       <form @submit.prevent="handleSubmit" class="space-y-4">
 
         <AppInput
           v-model="form.name"
-          label="ФИО (латиницей, как в паспорте)"
-          placeholder="Islom Karimov"
+          :label="t('crm.clientForm.name')"
+          :placeholder="t('crm.clientForm.namePlaceholder')"
           required
           :error="errors.name"
           :maxlength="120"
@@ -29,7 +29,7 @@
         <div>
           <AppPhoneInput
             v-model="form.phone"
-            label="Телефон"
+            :label="t('crm.clientForm.phone')"
             :required="true"
             :error="errors.phone"
             @blur="validatePhone"
@@ -38,44 +38,44 @@
             <svg class="w-3.5 h-3.5 text-blue-400 shrink-0" fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.52 8.28l-1.92 9.12c-.12.6-.48.84-.96.6l-2.64-1.92-1.32 1.2c-.12.12-.36.24-.72.24l.24-2.76 4.8-4.44c.24-.24 0-.36-.36-.12L7.44 14.4l-2.64-.84c-.6-.12-.6-.6.12-.84l10.32-3.96c.48-.12.96.12.24.52z"/>
             </svg>
-            Укажите номер телефона, на котором есть Telegram — уведомления о заявках будут приходить туда
+            {{ t('crm.clientForm.phoneTelegram') }}
           </p>
         </div>
 
         <AppInput
           v-model="form.email"
-          label="Email"
+          :label="t('crm.clientForm.email')"
           type="email"
-          placeholder="client@mail.com"
+          :placeholder="t('crm.clientForm.emailPlaceholder')"
           :error="errors.email"
           @blur="validateEmail"
         />
 
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Гражданство</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('crm.clientForm.nationality') }}</label>
             <select v-model="form.nationality"
               :class="[
                 'w-full border rounded-lg px-3 py-2 text-sm outline-none transition-colors',
                 errors.nationality ? 'border-red-300 focus:border-red-500' : 'border-gray-300 focus:border-blue-500',
               ]">
-              <option value="">— не указано —</option>
-              <option value="UZB">Узбекистан</option>
-              <option value="KAZ">Казахстан</option>
-              <option value="KGZ">Кыргызстан</option>
-              <option value="TJK">Таджикистан</option>
-              <option value="TKM">Туркменистан</option>
-              <option value="RUS">Россия</option>
-              <option value="UKR">Украина</option>
-              <option value="AZE">Азербайджан</option>
-              <option value="GEO">Грузия</option>
-              <option value="ARM">Армения</option>
+              <option value="">{{ t('crm.clientForm.nationalityDefault') }}</option>
+              <option value="UZB">{{ t('crm.nationalities.UZB') }}</option>
+              <option value="KAZ">{{ t('crm.nationalities.KAZ') }}</option>
+              <option value="KGZ">{{ t('crm.nationalities.KGZ') }}</option>
+              <option value="TJK">{{ t('crm.nationalities.TJK') }}</option>
+              <option value="TKM">{{ t('crm.nationalities.TKM') }}</option>
+              <option value="RUS">{{ t('crm.nationalities.RUS') }}</option>
+              <option value="UKR">{{ t('crm.nationalities.UKR') }}</option>
+              <option value="AZE">{{ t('crm.nationalities.AZE') }}</option>
+              <option value="GEO">{{ t('crm.nationalities.GEO') }}</option>
+              <option value="ARM">{{ t('crm.nationalities.ARM') }}</option>
             </select>
             <p v-if="errors.nationality" class="text-xs text-red-600 mt-1">{{ errors.nationality }}</p>
           </div>
           <AppInput
             v-model="form.date_of_birth"
-            label="Дата рождения"
+            :label="t('crm.clientForm.dob')"
             type="date"
           />
         </div>
@@ -83,24 +83,24 @@
         <div class="grid grid-cols-2 gap-4">
           <AppInput
             v-model="form.passport_number"
-            label="Номер паспорта"
-            placeholder="AA1234567"
+            :label="t('crm.clientForm.passport')"
+            :placeholder="t('crm.clientForm.passportPlaceholder')"
             :maxlength="20"
             @blur="form.passport_number = (form.passport_number || '').toUpperCase()"
           />
           <AppInput
             v-model="form.passport_expires_at"
-            label="Срок действия"
+            :label="t('crm.clientForm.passportExpiry')"
             type="date"
           />
         </div>
 
-        <AppSelect v-model="form.source" label="Источник" :options="sourceOptions" />
+        <AppSelect v-model="form.source" :label="t('crm.clientForm.source')" :options="sourceOptions" />
 
         <AppTextarea
           v-model="form.notes"
-          label="Заметки"
-          placeholder="Любая дополнительная информация о клиенте..."
+          :label="t('crm.clientForm.notesLabel')"
+          :placeholder="t('crm.clientForm.notesPlaceholder')"
           :maxlength="500"
           :rows="3"
         />
@@ -109,10 +109,10 @@
 
         <div class="flex gap-3 pt-2">
           <AppButton type="submit" :loading="loading">
-            {{ isEdit ? 'Сохранить' : 'Создать клиента' }}
+            {{ isEdit ? t('crm.clientForm.save') : t('crm.clientForm.create') }}
           </AppButton>
           <RouterLink :to="{ name: 'clients' }">
-            <AppButton type="button" variant="outline">Отмена</AppButton>
+            <AppButton type="button" variant="outline">{{ t('crm.clientForm.cancel') }}</AppButton>
           </RouterLink>
         </div>
       </form>
@@ -123,6 +123,7 @@
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue';
 import { useRouter, useRoute, RouterLink } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { clientsApi } from '@/api/clients';
 import { useReferences } from '@/composables/useReferences';
 import AppInput from '@/components/AppInput.vue';
@@ -132,6 +133,7 @@ import AppSelect from '@/components/AppSelect.vue';
 import AppButton from '@/components/AppButton.vue';
 import { titleCase } from '@/utils/format';
 
+const { t } = useI18n();
 const router = useRouter();
 const route  = useRoute();
 const isEdit = computed(() => !!route.params.id);
@@ -160,14 +162,14 @@ function isValidPhone(phone) {
 }
 function validateEmail() {
   if (form.email && !isValidEmail(form.email)) {
-    errors.value.email = 'Введите корректный email';
+    errors.value.email = t('crm.clientForm.invalidEmail');
   } else {
     delete errors.value.email;
   }
 }
 function validatePhone() {
   if (form.phone && !isValidPhone(form.phone)) {
-    errors.value.phone = 'Введите корректный номер телефона';
+    errors.value.phone = t('crm.clientForm.invalidPhone');
   } else {
     delete errors.value.phone;
   }
@@ -185,11 +187,11 @@ async function handleSubmit() {
   errorMsg.value = '';
 
   if (!form.phone) {
-    errors.value.phone = 'Телефон обязателен';
+    errors.value.phone = t('crm.clientForm.phoneRequired');
     return;
   }
   if (form.email && !isValidEmail(form.email)) {
-    errors.value.email = 'Введите корректный email';
+    errors.value.email = t('crm.clientForm.invalidEmail');
     return;
   }
 
@@ -209,7 +211,7 @@ async function handleSubmit() {
         Object.entries(d.errors).map(([k, v]) => [k, Array.isArray(v) ? v[0] : v])
       );
     } else {
-      errorMsg.value = d?.message || 'Ошибка сохранения';
+      errorMsg.value = d?.message || t('crm.clientForm.saveError');
     }
   } finally {
     loading.value = false;

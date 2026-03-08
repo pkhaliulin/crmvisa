@@ -22,27 +22,27 @@
           </p>
         </div>
         <RouterLink :to="{ name: 'clients.create', query: { edit: client.id } }">
-          <AppButton variant="outline" size="sm">Редактировать</AppButton>
+          <AppButton variant="outline" size="sm">{{ t('crm.clientDetail.edit') }}</AppButton>
         </RouterLink>
       </div>
 
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-4 border-t">
         <div>
-          <p class="text-xs text-gray-400 uppercase">Гражданство</p>
+          <p class="text-xs text-gray-400 uppercase">{{ t('crm.clientDetail.nationality') }}</p>
           <p class="text-sm font-medium mt-1">{{ client.nationality ?? '—' }}</p>
         </div>
         <div>
-          <p class="text-xs text-gray-400 uppercase">Паспорт</p>
+          <p class="text-xs text-gray-400 uppercase">{{ t('crm.clientDetail.passport') }}</p>
           <p class="text-sm font-medium mt-1">{{ client.passport_number ?? '—' }}</p>
         </div>
         <div>
-          <p class="text-xs text-gray-400 uppercase">Действует до</p>
+          <p class="text-xs text-gray-400 uppercase">{{ t('crm.clientDetail.validUntil') }}</p>
           <p :class="['text-sm font-medium mt-1', passportClass]">
             {{ client.passport_expires_at ? formatDate(client.passport_expires_at) : '—' }}
           </p>
         </div>
         <div>
-          <p class="text-xs text-gray-400 uppercase">Источник</p>
+          <p class="text-xs text-gray-400 uppercase">{{ t('crm.clientDetail.source') }}</p>
           <AppBadge :color="sourceColor" class="mt-1">{{ sourceLabel }}</AppBadge>
         </div>
       </div>
@@ -51,9 +51,9 @@
     <!-- Cases -->
     <div class="bg-white rounded-xl border border-gray-200 p-6">
       <div class="flex items-center justify-between mb-4">
-        <h3 class="font-semibold text-gray-800">Заявки ({{ client.cases?.length ?? 0 }})</h3>
+        <h3 class="font-semibold text-gray-800">{{ t('crm.clientDetail.casesCount', { n: client.cases?.length ?? 0 }) }}</h3>
         <RouterLink :to="{ name: 'cases.create', query: { client_id: client.id, client_label: `${client.name} — ${client.phone}` } }">
-          <AppButton size="sm">+ Новая заявка</AppButton>
+          <AppButton size="sm">{{ t('crm.clientDetail.newCase') }}</AppButton>
         </RouterLink>
       </div>
 
@@ -92,26 +92,26 @@
               <span v-if="c.critical_date" class="text-xs font-semibold" :class="deadlineText(c)">
                 {{ formatDate(c.critical_date) }}
               </span>
-              <span v-else class="text-xs text-gray-400">Без дедлайна</span>
+              <span v-else class="text-xs text-gray-400">{{ t('crm.clientDetail.noDeadline') }}</span>
             </div>
             <div class="flex items-center gap-1.5">
               <svg class="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
               </svg>
-              <span class="text-xs text-gray-500">{{ c.assignee?.name ?? 'Без менеджера' }}</span>
+              <span class="text-xs text-gray-500">{{ c.assignee?.name ?? t('crm.clientDetail.noManager') }}</span>
             </div>
           </div>
         </div>
       </div>
-      <p v-else class="text-sm text-gray-400">Заявок нет</p>
+      <p v-else class="text-sm text-gray-400">{{ t('crm.clientDetail.noCases') }}</p>
     </div>
 
     <!-- Scoring -->
     <div class="bg-white rounded-xl border border-gray-200 p-6">
       <div class="flex items-center justify-between mb-4">
-        <h3 class="font-semibold text-gray-800">Скоринг</h3>
+        <h3 class="font-semibold text-gray-800">{{ t('crm.clientDetail.scoring') }}</h3>
         <AppButton variant="outline" size="sm" :loading="recalcLoading" @click="recalculate">
-          Пересчитать
+          {{ t('crm.clientDetail.recalculate') }}
         </AppButton>
       </div>
 
@@ -130,7 +130,7 @@
           <p class="text-xs text-gray-500 mt-1">{{ s.level_label }}</p>
         </div>
       </div>
-      <p v-else class="text-sm text-gray-400">Скоринг не рассчитан. Нажмите «Пересчитать».</p>
+      <p v-else class="text-sm text-gray-400">{{ t('crm.clientDetail.scoringEmpty') }}</p>
     </div>
   </div>
 </template>
@@ -138,6 +138,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, RouterLink } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { clientsApi } from '@/api/clients';
 import { useCountries } from '@/composables/useCountries';
 import { useReferences } from '@/composables/useReferences';
@@ -145,6 +146,7 @@ import AppBadge from '@/components/AppBadge.vue';
 import AppButton from '@/components/AppButton.vue';
 import { formatPhone } from '@/utils/format';
 
+const { t } = useI18n();
 const { countryName, countryFlag, visaTypeName } = useCountries();
 const { label: refLabel } = useReferences();
 
@@ -155,12 +157,23 @@ const scores = ref([]);
 const loading = ref(true);
 const recalcLoading = ref(false);
 
-const STAGE_LABELS = {
-  lead: 'Лид', qualification: 'Квалификация', documents: 'Документы',
-  translation: 'Перевод', appointment: 'Запись', review: 'Рассмотрение', result: 'Результат',
-};
+const STAGE_LABELS = computed(() => ({
+  lead: t('crm.stages.lead'),
+  qualification: t('crm.stages.qualification'),
+  documents: t('crm.stages.documents'),
+  doc_review: t('crm.stages.doc_review'),
+  translation: t('crm.stages.translation'),
+  appointment: t('crm.stages.appointment'),
+  review: t('crm.stages.review'),
+  result: t('crm.stages.result'),
+}));
 
-const PRIORITY_LABELS = { low: 'Низкий', normal: 'Обычный', high: 'Высокий', urgent: 'Срочный' };
+const PRIORITY_LABELS = computed(() => ({
+  low: t('crm.priority.low'),
+  normal: t('crm.priority.normal'),
+  high: t('crm.priority.high'),
+  urgent: t('crm.priority.urgent'),
+}));
 
 const STAGE_DOTS = {
   lead: 'bg-gray-400', qualification: 'bg-blue-500', documents: 'bg-purple-500',

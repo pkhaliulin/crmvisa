@@ -10,7 +10,7 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
           </svg>
         </button>
-        <h2 class="text-lg font-bold text-gray-900">Новая заявка</h2>
+        <h2 class="text-lg font-bold text-gray-900">{{ t('crm.caseForm.title') }}</h2>
       </div>
 
       <form @submit.prevent="handleSubmit" class="space-y-4">
@@ -18,14 +18,14 @@
         <!-- Клиент -->
         <div class="relative">
           <label class="text-sm font-medium text-gray-700 block mb-1">
-            Клиент <span class="text-red-500">*</span>
+            {{ t('crm.caseForm.client') }} <span class="text-red-500">*</span>
           </label>
           <div class="relative">
             <input
               v-model="clientSearch"
               @input="onClientInput"
               @focus="onClientFocus"
-              placeholder="Начните вводить имя или телефон..."
+              :placeholder="t('crm.caseForm.clientSearch')"
               :class="[
                 'w-full border rounded-lg px-3 py-2 text-sm outline-none pr-8 transition-colors',
                 form.client_id
@@ -56,8 +56,8 @@
           <!-- Нет результатов -->
           <div v-if="showNoClientResults"
             class="absolute z-20 w-full mt-1 border border-gray-200 rounded-lg bg-white shadow-lg px-3 py-2.5 text-sm text-gray-400">
-            Клиент не найден.
-            <RouterLink :to="{ name: 'clients.create' }" class="text-blue-600 hover:underline">Создать нового</RouterLink>
+            {{ t('crm.caseForm.clientNotFound') }}
+            <RouterLink :to="{ name: 'clients.create' }" class="text-blue-600 hover:underline">{{ t('crm.caseForm.createNew') }}</RouterLink>
           </div>
           <p v-if="errors.client_id" class="text-xs text-red-600 mt-1">{{ errors.client_id }}</p>
         </div>
@@ -68,7 +68,7 @@
           <!-- Страна с автодроп-дауном -->
           <div class="relative">
             <label class="text-sm font-medium text-gray-700 block mb-1">
-              Страна <span class="text-red-500">*</span>
+              {{ t('crm.caseForm.country') }} <span class="text-red-500">*</span>
             </label>
             <div class="relative">
               <input
@@ -76,7 +76,7 @@
                 @input="onCountryInput"
                 @focus="onCountryFocus"
                 @blur="onCountryBlur"
-                placeholder="Испания, DE..."
+                :placeholder="t('crm.caseForm.countrySearch')"
                 :class="[
                   'w-full border rounded-lg px-3 py-2 text-sm outline-none pr-7 transition-colors',
                   form.country_code
@@ -106,7 +106,7 @@
           <!-- Тип визы -->
           <div class="flex flex-col gap-1">
             <label class="text-sm font-medium text-gray-700">
-              Тип визы <span class="text-red-500">*</span>
+              {{ t('crm.caseForm.visaType') }} <span class="text-red-500">*</span>
             </label>
             <select v-model="form.visa_type"
               :disabled="!form.country_code"
@@ -115,7 +115,7 @@
                 errors.visa_type ? 'border-red-400' : 'border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500',
                 !form.country_code ? 'bg-gray-50 text-gray-400' : '',
               ]">
-              <option value="">{{ form.country_code ? '— выберите —' : '— сначала страну —' }}</option>
+              <option value="">{{ form.country_code ? t('crm.caseForm.selectVisa') : t('crm.caseForm.selectCountryFirst') }}</option>
               <option v-for="slug in selectedCountryVisaTypes" :key="slug" :value="slug">
                 {{ visaTypeName(slug) }}
               </option>
@@ -124,11 +124,11 @@
           </div>
         </div>
 
-        <AppSelect v-model="form.priority" label="Приоритет" :options="priorityOptions" />
+        <AppSelect v-model="form.priority" :label="t('crm.casesPage.priorityFilter')" :options="priorityOptions" />
 
         <!-- Менеджер -->
         <div>
-          <label class="text-sm font-medium text-gray-700 block mb-1">Менеджер</label>
+          <label class="text-sm font-medium text-gray-700 block mb-1">{{ t('crm.caseForm.manager') }}</label>
           <template v-if="assignmentMode === 'manual'">
             <select v-model="form.assigned_to"
               class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
@@ -140,19 +140,19 @@
               <svg class="w-4 h-4 text-blue-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
               </svg>
-              <span class="text-sm text-blue-700">Назначится автоматически {{ autoModeLabels[assignmentMode] }}</span>
+              <span class="text-sm text-blue-700">{{ t('crm.caseForm.autoAssign', { mode: autoModeLabels[assignmentMode] }) }}</span>
             </div>
             <div class="mt-2">
               <select v-model="form.assigned_to"
                 class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none text-gray-600 focus:border-blue-500">
-                <option value="">Оставить авто-назначение</option>
-                <option v-for="u in managers" :key="u.id" :value="u.id">{{ u.name }} (вручную)</option>
+                <option value="">{{ t('crm.caseForm.keepAuto') }}</option>
+                <option v-for="u in managers" :key="u.id" :value="u.id">{{ u.name }} {{ t('crm.caseForm.manualSuffix') }}</option>
               </select>
             </div>
           </template>
         </div>
         <div>
-          <AppInput v-model="form.travel_date" label="Дата поездки" type="date" :error="errors.travel_date" />
+          <AppInput v-model="form.travel_date" :label="t('crm.caseForm.travelDate')" type="date" :error="errors.travel_date" />
           <!-- Timeline preview (per-visa-type) -->
           <div v-if="currentVisaSetting && form.travel_date" class="mt-2 p-3 bg-blue-50 rounded-lg">
             <div class="flex gap-1 h-5 rounded overflow-hidden text-[9px] font-medium text-white mb-1.5">
@@ -170,33 +170,33 @@
               </div>
             </div>
             <div class="flex gap-1 text-[9px] text-gray-500">
-              <div :style="{ flex: currentVisaSetting.preparation_days }">Подготовка</div>
-              <div :style="{ flex: currentVisaSetting.appointment_wait_days }">Запись</div>
-              <div :style="{ flex: currentVisaSetting.processing_days_avg }">Обработка</div>
-              <div :style="{ flex: currentVisaSetting.buffer_days }">Буфер</div>
+              <div :style="{ flex: currentVisaSetting.preparation_days }">{{ t('crm.caseForm.preparation') }}</div>
+              <div :style="{ flex: currentVisaSetting.appointment_wait_days }">{{ t('crm.caseForm.appointmentWait') }}</div>
+              <div :style="{ flex: currentVisaSetting.processing_days_avg }">{{ t('crm.caseForm.processing') }}</div>
+              <div :style="{ flex: currentVisaSetting.buffer_days }">{{ t('crm.caseForm.buffer') }}</div>
             </div>
           </div>
           <p v-if="suggestedDeadline" class="mt-1 text-xs text-blue-600 flex items-center gap-1">
             <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
-            Рекомендуемый дедлайн: <strong>{{ suggestedDeadline }}</strong>
-            ({{ selectedCountryDays }} дн. до поездки)
+            {{ t('crm.caseForm.recommendedDeadline') }} <strong>{{ suggestedDeadline }}</strong>
+            {{ t('crm.caseForm.daysBeforeTrip', { n: selectedCountryDays }) }}
           </p>
           <!-- Late submission warning -->
           <p v-if="lateSubmissionWarning" class="mt-1 text-xs text-red-600 flex items-center gap-1 bg-red-50 px-2 py-1.5 rounded-lg">
             <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
             </svg>
-            Внимание: до вылета осталось меньше {{ minDaysBeforeDeparture }} дней. Возможно, не хватит времени на оформление.
+            {{ t('crm.caseForm.tooLateWarning', { n: minDaysBeforeDeparture }) }}
           </p>
         </div>
-        <AppInput v-model="form.critical_date" label="Дедлайн (необязательно, рассчитается автоматически)" type="date" />
+        <AppInput v-model="form.critical_date" :label="t('crm.caseForm.deadlineOptional')" type="date" />
 
         <AppTextarea
           v-model="form.notes"
-          label="Заметки"
-          placeholder="Дополнительная информация о заявке, особые пожелания клиента..."
+          :label="t('crm.caseForm.notes')"
+          :placeholder="t('crm.caseForm.notesPlaceholder')"
           :maxlength="1000"
           :rows="3"
         />
@@ -204,9 +204,9 @@
         <p v-if="errorMsg" class="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{{ errorMsg }}</p>
 
         <div class="flex gap-3 pt-2">
-          <AppButton type="submit" :loading="loading">Создать заявку</AppButton>
+          <AppButton type="submit" :loading="loading">{{ t('crm.caseForm.submit') }}</AppButton>
           <RouterLink :to="{ name: 'cases' }">
-            <AppButton type="button" variant="outline">Отмена</AppButton>
+            <AppButton type="button" variant="outline">{{ t('crm.caseForm.cancel') }}</AppButton>
           </RouterLink>
         </div>
       </form>
@@ -217,6 +217,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue';
 import { useRouter, useRoute, RouterLink } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { casesApi } from '@/api/cases';
 import { clientsApi } from '@/api/clients';
 import { countriesApi } from '@/api/countries';
@@ -227,6 +228,8 @@ import AppTextarea from '@/components/AppTextarea.vue';
 import AppSelect from '@/components/AppSelect.vue';
 import AppButton from '@/components/AppButton.vue';
 import { formatPhone, titleCase } from '@/utils/format';
+
+const { t } = useI18n();
 
 const allVisaTypes = ref([]);
 function visaTypeName(slug) {
@@ -243,14 +246,14 @@ const form   = reactive({
 const managers          = ref([]);
 const assignmentMode    = ref('manual'); // manual | round_robin | by_workload | by_country
 const managerOptions    = computed(() => [
-  { value: '', label: '— не назначен —' },
+  { value: '', label: t('crm.caseForm.notAssigned') },
   ...managers.value.map(u => ({ value: u.id, label: u.name })),
 ]);
-const autoModeLabels = {
-  round_robin: 'по очереди (round-robin)',
-  by_workload: 'по загруженности',
-  by_country:  'по стране назначения',
-};
+const autoModeLabels = computed(() => ({
+  round_robin: t('crm.caseForm.autoModes.round_robin'),
+  by_workload: t('crm.caseForm.autoModes.least_busy'),
+  by_country:  t('crm.caseForm.autoModes.by_country'),
+}));
 const errors   = ref({});
 const errorMsg = ref('');
 const loading  = ref(false);
@@ -429,27 +432,27 @@ function clearCountry() {
 }
 
 // ── Форма ────────────────────────────────────────────────────────────────────
-const priorityOptions = [
-  { value: 'low',    label: 'Низкий' },
-  { value: 'normal', label: 'Обычный' },
-  { value: 'high',   label: 'Высокий' },
-  { value: 'urgent', label: 'Срочный' },
-];
+const priorityOptions = computed(() => [
+  { value: 'low',    label: t('crm.priority.low') },
+  { value: 'normal', label: t('crm.priority.normal') },
+  { value: 'high',   label: t('crm.priority.high') },
+  { value: 'urgent', label: t('crm.priority.urgent') },
+]);
 
 async function handleSubmit() {
   errors.value   = {};
   errorMsg.value = '';
 
   if (!form.client_id) {
-    errors.value.client_id = 'Выберите клиента из списка';
+    errors.value.client_id = t('crm.caseForm.selectClient');
     return;
   }
   if (!form.country_code) {
-    errors.value.country_code = 'Выберите страну из списка';
+    errors.value.country_code = t('crm.caseForm.selectCountry');
     return;
   }
   if (!form.visa_type) {
-    errors.value.visa_type = 'Выберите тип визы';
+    errors.value.visa_type = t('crm.caseForm.selectVisaType');
     return;
   }
 
@@ -471,7 +474,7 @@ async function handleSubmit() {
         Object.entries(d.errors).map(([k, v]) => [k, Array.isArray(v) ? v[0] : v])
       );
     } else {
-      errorMsg.value = d?.message || 'Ошибка создания заявки';
+      errorMsg.value = d?.message || t('crm.caseForm.createError');
     }
   } finally {
     loading.value = false;

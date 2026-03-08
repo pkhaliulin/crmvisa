@@ -17,8 +17,16 @@
         class="flex items-center gap-1.5 bg-red-50 text-red-600 px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors"
       >
         <ExclamationTriangleIcon class="w-4 h-4" />
-        {{ overdueCount }} просроченных
+        {{ t('crm.header.overdueCount', { n: overdueCount }) }}
       </RouterLink>
+
+      <!-- Language switcher -->
+      <div class="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
+        <button v-for="loc in ['ru', 'uz']" :key="loc" @click="switchLocale(loc)"
+          :class="['px-2 py-1 text-xs font-medium rounded-md transition-colors', currentLoc === loc ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700']">
+          {{ loc.toUpperCase() }}
+        </button>
+      </div>
     </div>
   </header>
 </template>
@@ -26,25 +34,34 @@
 <script setup>
 import { computed } from 'vue';
 import { RouterLink, useRoute } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { Bars3Icon, ExclamationTriangleIcon } from '@heroicons/vue/24/outline';
 import { useCasesStore } from '@/stores/cases';
+import { setLocale, currentLocale } from '@/i18n';
 
 defineEmits(['toggle-sidebar']);
 
+const { t } = useI18n();
 const route       = useRoute();
 const casesStore  = useCasesStore();
 const overdueCount = computed(() => casesStore.stats.overdue ?? 0);
 
-const titles = {
-  dashboard:      'Дашборд',
-  kanban:         'Канбан-доска',
-  cases:          'Заявки',
-  'cases.create': 'Новая заявка',
-  'cases.show':   'Заявка',
-  clients:        'Клиенты',
-  'clients.create': 'Новый клиент',
-  'clients.show': 'Клиент',
-  users:          'Сотрудники',
-};
-const pageTitle = computed(() => titles[route.name] ?? 'VisaBor CRM');
+const currentLoc = computed(() => currentLocale());
+
+function switchLocale(loc) {
+  setLocale(loc);
+}
+
+const titles = computed(() => ({
+  dashboard:      t('crm.nav.dashboard'),
+  kanban:         t('crm.nav.kanbanBoard'),
+  cases:          t('crm.nav.cases'),
+  'cases.create': t('crm.nav.newCase'),
+  'cases.show':   t('crm.nav.case'),
+  clients:        t('crm.nav.clients'),
+  'clients.create': t('crm.nav.newClient'),
+  'clients.show': t('crm.nav.client'),
+  users:          t('crm.nav.users'),
+}));
+const pageTitle = computed(() => titles.value[route.name] ?? 'VisaBor CRM');
 </script>

@@ -2,15 +2,15 @@
   <div class="space-y-6">
     <div class="flex items-center justify-between">
       <div>
-        <h1 class="text-xl font-bold text-gray-900">Страны</h1>
-        <p class="text-sm text-gray-500 mt-1">Визовая информация и рабочие направления</p>
+        <h1 class="text-xl font-bold text-gray-900">{{ t('crm.agencyCountries.title') }}</h1>
+        <p class="text-sm text-gray-500 mt-1">{{ t('crm.agencyCountries.subtitle') }}</p>
       </div>
       <div class="flex items-center gap-3">
-        <span class="text-sm text-gray-400">{{ filtered.length }} из {{ countries.length }}</span>
+        <span class="text-sm text-gray-400">{{ t('crm.agencyCountries.countOf', { n: filtered.length, total: countries.length }) }}</span>
         <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none bg-white border border-gray-200 rounded-lg px-3 py-1.5">
           <input type="checkbox" v-model="onlyOurs"
             class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500" />
-          Только наши
+          {{ t('crm.agencyCountries.onlyOurs') }}
         </label>
       </div>
     </div>
@@ -21,20 +21,20 @@
         <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="m21 21-4.35-4.35"/>
         </svg>
-        <input v-model="search" type="text" placeholder="Поиск по названию или коду..."
+        <input v-model="search" type="text" :placeholder="t('crm.agencyCountries.searchPlaceholder')"
           class="w-full pl-8 pr-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400" />
       </div>
       <select v-model="filterRegime"
         class="rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-blue-400 bg-white">
-        <option value="">Все режимы</option>
-        <option value="visa_free">Безвизовый</option>
-        <option value="visa_on_arrival">По прибытии</option>
-        <option value="evisa">eVisa</option>
-        <option value="visa_required">Требуется виза</option>
+        <option value="">{{ t('crm.agencyCountries.allRegimes') }}</option>
+        <option value="visa_free">{{ t('crm.agencyCountries.visaFree') }}</option>
+        <option value="visa_on_arrival">{{ t('crm.agencyCountries.visaOnArrival') }}</option>
+        <option value="evisa">{{ t('crm.agencyCountries.evisa') }}</option>
+        <option value="visa_required">{{ t('crm.agencyCountries.visaRequired') }}</option>
       </select>
       <select v-model="filterContinent"
         class="rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-blue-400 bg-white">
-        <option value="">Все континенты</option>
+        <option value="">{{ t('crm.agencyCountries.allContinents') }}</option>
         <option v-for="c in continents" :key="c" :value="c">{{ c }}</option>
       </select>
     </div>
@@ -70,24 +70,24 @@
           <!-- Info -->
           <div class="flex items-center gap-4 text-xs text-gray-500 mb-3">
             <span v-if="c.visa_fee">
-              <span class="font-semibold text-gray-700">${{ c.visa_fee }}</span> сбор
+              <span class="font-semibold text-gray-700">${{ c.visa_fee }}</span> {{ t('crm.agencyCountries.fee') }}
             </span>
             <span v-if="c.processing_days_avg">
-              ~{{ c.processing_days_avg }} дн. рассмотрение
+              {{ t('crm.agencyCountries.processingDays', { n: c.processing_days_avg }) }}
             </span>
             <span v-if="c.risk_level" class="ml-auto">
               <span class="font-semibold" :class="{
                 'text-green-600': c.risk_level === 'low',
                 'text-yellow-600': c.risk_level === 'medium',
                 'text-red-600': c.risk_level === 'high',
-              }">{{ { low: 'Низкий', medium: 'Средний', high: 'Высокий' }[c.risk_level] }}</span> риск
+              }">{{ { low: t('crm.agencyCountries.riskLow'), medium: t('crm.agencyCountries.riskMedium'), high: t('crm.agencyCountries.riskHigh') }[c.risk_level] }}</span> {{ t('crm.agencyCountries.risk') }}
             </span>
           </div>
 
           <!-- Toggle работаем/не работаем -->
           <div class="flex items-center justify-between pt-3 border-t border-gray-100" @click.stop>
             <span class="text-xs" :class="workCodes.includes(c.country_code) ? 'text-green-600 font-medium' : 'text-gray-400'">
-              {{ workCodes.includes(c.country_code) ? 'Работаем' : 'Не работаем' }}
+              {{ workCodes.includes(c.country_code) ? t('crm.agencyCountries.weWork') : t('crm.agencyCountries.weDontWork') }}
             </span>
             <button
               @click="toggleWork(c.country_code)"
@@ -103,7 +103,7 @@
 
       <!-- Empty -->
       <div v-else class="bg-white rounded-xl border border-gray-200 p-8 text-center text-gray-400">
-        <p class="text-sm">Страны не найдены</p>
+        <p class="text-sm">{{ t('crm.agencyCountries.empty') }}</p>
       </div>
     </template>
   </div>
@@ -112,9 +112,11 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import api from '@/api/index';
 import { codeToFlag, countryName } from '@/utils/countries';
 
+const { t } = useI18n();
 const router = useRouter();
 const loading = ref(true);
 const countries = ref([]);
@@ -143,10 +145,10 @@ function regimeBadge(regime) {
 
 function regimeLabel(regime) {
   return {
-    visa_free:       'Безвизовый',
-    visa_on_arrival: 'По прибытии',
-    evisa:           'eVisa',
-    visa_required:   'Требуется виза',
+    visa_free:       t('crm.agencyCountries.visaFree'),
+    visa_on_arrival: t('crm.agencyCountries.visaOnArrival'),
+    evisa:           t('crm.agencyCountries.evisa'),
+    visa_required:   t('crm.agencyCountries.visaRequired'),
   }[regime] || regime;
 }
 

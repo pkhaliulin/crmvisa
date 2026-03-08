@@ -6,7 +6,7 @@
 
   <div v-else-if="loadError" class="flex flex-col items-center justify-center py-32 text-gray-500">
     <p class="text-sm mb-3">{{ loadError }}</p>
-    <button @click="load" class="text-sm text-blue-600 hover:underline">Повторить</button>
+    <button @click="load" class="text-sm text-blue-600 hover:underline">{{ t('crm.caseDetail.retry') }}</button>
   </div>
 
   <div v-else-if="caseData">
@@ -28,8 +28,8 @@
         </div>
       </div>
       <div class="flex items-center gap-2">
-        <button @click="showMoveModal = true" class="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 font-medium transition-colors">Сменить этап</button>
-        <button @click="confirmDelete" class="text-xs px-3 py-1.5 rounded-lg border border-red-200 text-red-400 hover:bg-red-50 font-medium transition-colors">Удалить</button>
+        <button @click="showMoveModal = true" class="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 font-medium transition-colors">{{ t('crm.caseDetail.changeStage') }}</button>
+        <button @click="confirmDelete" class="text-xs px-3 py-1.5 rounded-lg border border-red-200 text-red-400 hover:bg-red-50 font-medium transition-colors">{{ t('crm.caseDetail.deleteCase') }}</button>
       </div>
     </div>
 
@@ -58,7 +58,7 @@
         <a v-if="caseData.client?.phone" :href="`tel:${caseData.client.phone}`" class="text-xs text-gray-400 hover:text-blue-600">{{ formatPhone(caseData.client.phone) }}</a>
       </div>
       <div v-if="caseData.client?.phone" class="flex gap-2 shrink-0 ml-3">
-        <a :href="'tel:' + caseData.client.phone" class="text-xs px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 font-medium">Звонок</a>
+        <a :href="'tel:' + caseData.client.phone" class="text-xs px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 font-medium">{{ t('crm.caseDetail.call') }}</a>
         <a :href="'https://wa.me/' + cleanPhone(caseData.client.phone)" target="_blank" class="text-xs px-3 py-1.5 rounded-lg bg-green-50 text-green-600 font-medium">WA</a>
       </div>
     </div>
@@ -76,23 +76,23 @@
           <div v-if="!caseData.assignee && isOwner" class="mb-4">
             <div class="flex items-center gap-2 mb-2">
               <div class="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></div>
-              <span class="text-[10px] font-bold uppercase tracking-widest text-orange-500">Требуется действие руководителя</span>
+              <span class="text-[10px] font-bold uppercase tracking-widest text-orange-500">{{ t('crm.caseDetail.ownerActionRequired') }}</span>
             </div>
-            <h2 class="text-base font-bold text-gray-900 mb-3">Назначьте менеджера на заявку</h2>
-            <p class="text-sm text-gray-500 mb-4">Пока менеджер не назначен, работа по заявке не может начаться. Выберите ответственного менеджера из списка.</p>
+            <h2 class="text-base font-bold text-gray-900 mb-3">{{ t('crm.caseDetail.assignManagerTitle') }}</h2>
+            <p class="text-sm text-gray-500 mb-4">{{ t('crm.caseDetail.assignManagerDesc') }}</p>
 
             <div class="flex items-end gap-3">
               <div class="flex-1 max-w-xs">
-                <label class="text-xs text-gray-500 font-medium mb-1 block">Менеджер</label>
+                <label class="text-xs text-gray-500 font-medium mb-1 block">{{ t('crm.caseDetail.managerLabel') }}</label>
                 <select v-model="assignForm.manager_id"
                   class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
-                  <option value="">Выберите менеджера...</option>
+                  <option value="">{{ t('crm.caseDetail.selectManager') }}</option>
                   <option v-for="m in managers" :key="m.id" :value="m.id">{{ m.name }}</option>
                 </select>
               </div>
               <button @click="doAssign" :disabled="!assignForm.manager_id || assignForm.loading"
                 class="px-5 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white text-sm font-semibold shadow-md shadow-blue-200 hover:shadow-lg active:scale-[0.98] transition-all duration-200 disabled:opacity-50">
-                {{ assignForm.loading ? 'Назначение...' : 'Назначить' }}
+                {{ assignForm.loading ? t('crm.caseDetail.assigning') : t('crm.caseDetail.assign') }}
               </button>
             </div>
 
@@ -103,12 +103,12 @@
                 <span :class="['text-xs', slaInfo.sub]">{{ slaInfo.subText }}</span>
               </div>
               <div v-if="caseData.critical_date" class="flex items-center gap-2">
-                <span class="text-xs text-gray-400">Дедлайн:</span>
+                <span class="text-xs text-gray-400">{{ t('crm.caseDetail.deadlineLabel') }}</span>
                 <span :class="['text-xs font-bold', deadlineClass]">{{ fmtShort(caseData.critical_date) }}</span>
               </div>
               <div v-if="caseData.days_left != null" class="flex items-center gap-2">
                 <span :class="['text-xs font-bold', caseData.days_left < 0 ? 'text-red-600' : caseData.days_left <= 7 ? 'text-yellow-600' : 'text-green-600']">
-                  {{ caseData.days_left < 0 ? 'Просрочено на ' + Math.abs(caseData.days_left) + ' дн.' : caseData.days_left + ' дн. осталось' }}
+                  {{ caseData.days_left < 0 ? t('crm.caseDetail.overdueDays', { n: Math.abs(caseData.days_left) }) : t('crm.caseDetail.daysRemaining', { n: caseData.days_left }) }}
                 </span>
               </div>
             </div>
@@ -163,13 +163,13 @@
             <!-- lead -->
             <button v-if="caseData.stage === 'lead'" @click="quickMove('qualification')"
               class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white text-sm font-semibold shadow-md shadow-blue-200 hover:shadow-lg hover:shadow-blue-300 active:scale-[0.98] transition-all duration-200">
-              Клиент на связи -- перейти к квалификации
+              {{ t('crm.caseDetail.ctaLeadToQualification') }}
             </button>
 
             <!-- qualification -->
             <button v-if="caseData.stage === 'qualification'" @click="quickMove('documents')"
               class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white text-sm font-semibold shadow-md shadow-blue-200 hover:shadow-lg hover:shadow-blue-300 active:scale-[0.98] transition-all duration-200">
-              Чек-лист готов -- начать сбор документов
+              {{ t('crm.caseDetail.ctaQualificationToDocs') }}
             </button>
 
             <!-- documents -->
@@ -184,25 +184,25 @@
               </div>
               <button v-if="docProgress >= 100" @click="quickMove('doc_review')"
                 class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-green-600 to-green-500 text-white text-sm font-semibold shadow-md shadow-green-200 hover:shadow-lg hover:shadow-green-300 active:scale-[0.98] transition-all duration-200">
-                Все загружено -- начать проверку
+                {{ t('crm.caseDetail.ctaDocsToReview') }}
               </button>
-              <p v-else class="text-xs text-gray-400">Ожидание загрузки документов от клиента</p>
+              <p v-else class="text-xs text-gray-400">{{ t('crm.caseDetail.waitingUpload') }}</p>
             </div>
 
             <!-- doc_review -->
             <div v-if="caseData.stage === 'doc_review'">
               <div class="flex items-center gap-4 text-xs text-gray-500 mb-2">
-                <span>Проверено: <strong class="text-gray-800">{{ reviewedCount }}</strong> / {{ totalDocsCount }}</span>
-                <span v-if="needsTranslationCount > 0" class="text-purple-600 font-medium">На перевод: {{ needsTranslationCount }}</span>
+                <span>{{ t('crm.caseDetail.reviewedLabel') }} <strong class="text-gray-800">{{ reviewedCount }}</strong> / {{ totalDocsCount }}</span>
+                <span v-if="needsTranslationCount > 0" class="text-purple-600 font-medium">{{ t('crm.caseDetail.forTranslation', { n: needsTranslationCount }) }}</span>
               </div>
               <div class="flex gap-2">
                 <button v-if="needsTranslationCount > 0 && allReviewed" @click="quickMove('translation')"
                   class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-purple-500 text-white text-sm font-semibold shadow-md shadow-purple-200 hover:shadow-lg active:scale-[0.98] transition-all duration-200">
-                  Переводы нужны -- далее
+                  {{ t('crm.caseDetail.translationNeeded') }}
                 </button>
                 <button v-if="needsTranslationCount === 0 && allReviewed" @click="quickMove('ready')"
                   class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-green-600 to-green-500 text-white text-sm font-semibold shadow-md shadow-green-200 hover:shadow-lg active:scale-[0.98] transition-all duration-200">
-                  Все OK -- к подаче
+                  {{ t('crm.caseDetail.allOkToSubmission') }}
                 </button>
               </div>
             </div>
@@ -210,51 +210,51 @@
             <!-- translation -->
             <div v-if="caseData.stage === 'translation'">
               <div class="flex items-center gap-3 text-xs text-gray-500 mb-2">
-                <span>Переведено: <strong class="text-gray-800">{{ translatedCount }}</strong> / {{ needsTranslationCount }}</span>
+                <span>{{ t('crm.caseDetail.translatedLabel') }} <strong class="text-gray-800">{{ translatedCount }}</strong> / {{ needsTranslationCount }}</span>
               </div>
               <button v-if="allTranslated" @click="quickMove('ready')"
                 class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-green-600 to-green-500 text-white text-sm font-semibold shadow-md shadow-green-200 hover:shadow-lg active:scale-[0.98] transition-all duration-200">
-                Все переводы готовы -- к подаче
+                {{ t('crm.caseDetail.allTranslationsReady') }}
               </button>
             </div>
 
             <!-- ready -->
             <div v-if="caseData.stage === 'ready'">
               <div class="grid grid-cols-2 gap-3 mb-3">
-                <AppInput v-model="embassyForm.submitted_at" type="date" label="Дата подачи" />
-                <AppInput v-model="embassyForm.expected_result_date" type="date" label="Ожидаемый результат" />
+                <AppInput v-model="embassyForm.submitted_at" type="date" :label="t('crm.caseDetail.submissionDateLabel')" />
+                <AppInput v-model="embassyForm.expected_result_date" type="date" :label="t('crm.caseDetail.expectedResultLabel')" />
               </div>
-              <AppButton :loading="embassyForm.loading" size="sm" @click="doSubmitToEmbassy">Отметить подачу</AppButton>
+              <AppButton :loading="embassyForm.loading" size="sm" @click="doSubmitToEmbassy">{{ t('crm.caseDetail.markSubmission') }}</AppButton>
             </div>
 
             <!-- review -->
             <div v-if="caseData.stage === 'review'">
               <div class="flex items-center gap-4 text-xs text-gray-500 mb-3 flex-wrap">
-                <span v-if="caseData.submitted_at">Подано: <strong>{{ fmtShort(caseData.submitted_at) }}</strong></span>
-                <span v-if="caseData.expected_result_date">Ожидание: <strong>{{ fmtShort(caseData.expected_result_date) }}</strong></span>
+                <span v-if="caseData.submitted_at">{{ t('crm.caseDetail.submittedAt') }} <strong>{{ fmtShort(caseData.submitted_at) }}</strong></span>
+                <span v-if="caseData.expected_result_date">{{ t('crm.caseDetail.expectedAt') }} <strong>{{ fmtShort(caseData.expected_result_date) }}</strong></span>
                 <span v-if="daysUntilResult !== null" :class="daysUntilResult < 0 ? 'text-red-600 font-bold' : ''">
-                  {{ daysUntilResult < 0 ? `Просрочено ${Math.abs(daysUntilResult)} дн.` : `${daysUntilResult} дн. до результата` }}
+                  {{ daysUntilResult < 0 ? t('crm.caseDetail.overdueDaysResult', { n: Math.abs(daysUntilResult) }) : t('crm.caseDetail.daysUntilResult', { n: daysUntilResult }) }}
                 </span>
               </div>
               <div class="flex gap-2">
-                <AppButton size="sm" @click="showResultModal = true">Записать результат</AppButton>
-                <AppButton variant="outline" size="sm" @click="showExpectedDateModal = true">Изменить дату</AppButton>
+                <AppButton size="sm" @click="showResultModal = true">{{ t('crm.caseDetail.recordResult') }}</AppButton>
+                <AppButton variant="outline" size="sm" @click="showExpectedDateModal = true">{{ t('crm.caseDetail.changeDateBtn') }}</AppButton>
               </div>
             </div>
 
             <!-- result -->
             <div v-if="caseData.stage === 'result'" :class="['rounded-lg p-4', caseData.result_type === 'approved' ? 'bg-green-50' : 'bg-red-50']">
               <p :class="['font-bold text-sm mb-1', caseData.result_type === 'approved' ? 'text-green-800' : 'text-red-800']">
-                {{ caseData.result_type === 'approved' ? 'Виза одобрена' : 'Виза отклонена' }}
+                {{ caseData.result_type === 'approved' ? t('crm.caseDetail.visaApproved') : t('crm.caseDetail.visaRejected') }}
               </p>
               <div :class="['text-xs space-y-0.5', caseData.result_type === 'approved' ? 'text-green-700' : 'text-red-700']">
                 <p v-if="caseData.result_notes">{{ caseData.result_notes }}</p>
-                <p v-if="caseData.visa_issued_at">Выдана: {{ fmtShort(caseData.visa_issued_at) }}</p>
-                <p v-if="caseData.visa_received_at">Получена: {{ fmtShort(caseData.visa_received_at) }}</p>
-                <p v-if="caseData.visa_validity">Срок: {{ caseData.visa_validity }}</p>
-                <p v-if="caseData.rejection_reason">Причина: {{ caseData.rejection_reason }}</p>
-                <p v-if="caseData.can_reapply !== null && caseData.can_reapply !== undefined">Повторная подача: {{ caseData.can_reapply ? 'Да' : 'Нет' }}</p>
-                <p v-if="caseData.reapply_recommendation">Рекомендация: {{ caseData.reapply_recommendation }}</p>
+                <p v-if="caseData.visa_issued_at">{{ t('crm.caseDetail.issuedAt', { date: fmtShort(caseData.visa_issued_at) }) }}</p>
+                <p v-if="caseData.visa_received_at">{{ t('crm.caseDetail.receivedAt', { date: fmtShort(caseData.visa_received_at) }) }}</p>
+                <p v-if="caseData.visa_validity">{{ t('crm.caseDetail.validityPeriod', { value: caseData.visa_validity }) }}</p>
+                <p v-if="caseData.rejection_reason">{{ t('crm.caseDetail.rejectionReason', { value: caseData.rejection_reason }) }}</p>
+                <p v-if="caseData.can_reapply !== null && caseData.can_reapply !== undefined">{{ t('crm.caseDetail.reapplyLabel', { value: caseData.can_reapply ? t('common.yes') : t('common.no') }) }}</p>
+                <p v-if="caseData.reapply_recommendation">{{ t('crm.caseDetail.recommendationLabel', { value: caseData.reapply_recommendation }) }}</p>
               </div>
             </div>
           </div>
@@ -264,19 +264,19 @@
         <div class="bg-white rounded-xl border border-gray-100 overflow-hidden">
           <div class="flex items-center justify-between px-5 py-3 border-b border-gray-50">
             <div class="flex items-center gap-3">
-              <h3 class="font-semibold text-gray-800 text-sm">Документы</h3>
+              <h3 class="font-semibold text-gray-800 text-sm">{{ t('crm.caseDetail.documentsTitle') }}</h3>
               <span v-if="checklist.progress" class="text-xs text-gray-400 tabular-nums">
-                {{ checklist.progress.uploaded }}/{{ checklist.progress.total }} загружено
+                {{ t('crm.caseDetail.uploadedOf', { uploaded: checklist.progress.uploaded, total: checklist.progress.total }) }}
               </span>
             </div>
             <div class="flex items-center gap-2">
               <button v-if="uploadedCount > 0" @click="downloadZip" :disabled="zipLoading"
                 class="text-xs text-gray-500 hover:text-gray-700 px-2.5 py-1 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50">
-                {{ zipLoading ? 'ZIP...' : 'Скачать ZIP' }}
+                {{ zipLoading ? 'ZIP...' : t('crm.caseDetail.downloadZip') }}
               </button>
               <button @click="showAddSlot = true"
                 class="text-xs text-blue-600 hover:text-blue-700 px-2.5 py-1 rounded-lg hover:bg-blue-50 font-medium transition-colors">
-                + Документ
+                {{ t('crm.caseDetail.addDocument') }}
               </button>
             </div>
           </div>
@@ -292,7 +292,7 @@
 
           <!-- Action-needed -->
           <div v-if="actionDocs.length" class="px-5 pt-4">
-            <p class="text-[10px] uppercase tracking-widest font-bold text-orange-500 mb-2">Требуют внимания ({{ actionDocs.length }})</p>
+            <p class="text-[10px] uppercase tracking-widest font-bold text-orange-500 mb-2">{{ t('crm.caseDetail.actionNeeded', { n: actionDocs.length }) }}</p>
             <div class="space-y-2">
               <DocItem v-for="item in actionDocs" :key="item.id" :item="item"
                 @upload="uploadToSlot" @toggle="toggleCheck" @review="reviewSlot"
@@ -304,7 +304,7 @@
 
           <!-- Done docs -->
           <div v-if="otherDocs.length" class="px-5 pt-4">
-            <p v-if="actionDocs.length" class="text-[10px] uppercase tracking-widest font-bold text-gray-300 mb-2">Готовые ({{ otherDocs.length }})</p>
+            <p v-if="actionDocs.length" class="text-[10px] uppercase tracking-widest font-bold text-gray-300 mb-2">{{ t('crm.caseDetail.doneItems', { n: otherDocs.length }) }}</p>
             <div class="space-y-2">
               <DocItem v-for="item in otherDocs" :key="item.id" :item="item"
                 @upload="uploadToSlot" @toggle="toggleCheck" @review="reviewSlot"
@@ -314,7 +314,7 @@
             </div>
           </div>
 
-          <p v-if="!checklist.items?.length" class="text-sm text-gray-400 py-8 text-center">Чек-лист пуст</p>
+          <p v-if="!checklist.items?.length" class="text-sm text-gray-400 py-8 text-center">{{ t('crm.caseDetail.checklistEmpty') }}</p>
           <div class="h-4"></div>
         </div>
 
@@ -323,8 +323,8 @@
           <button @click="timelineOpen = !timelineOpen"
             class="flex items-center justify-between w-full px-5 py-3 text-left hover:bg-gray-50/50 transition-colors rounded-xl">
             <div class="flex items-center gap-2">
-              <h3 class="font-semibold text-gray-800 text-sm">История</h3>
-              <span class="text-xs text-gray-300">{{ caseData.stage_history?.length ?? 0 }} записей</span>
+              <h3 class="font-semibold text-gray-800 text-sm">{{ t('crm.caseDetail.historyTitle') }}</h3>
+              <span class="text-xs text-gray-300">{{ t('crm.caseDetail.historyEntries', { n: caseData.stage_history?.length ?? 0 }) }}</span>
             </div>
             <svg :class="['w-4 h-4 text-gray-400 transition-transform duration-200', timelineOpen ? 'rotate-180' : '']"
               fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -336,7 +336,7 @@
               <div class="w-1.5 h-1.5 rounded-full bg-blue-400 mt-2 shrink-0"></div>
               <div>
                 <p class="text-sm font-medium text-gray-700">{{ STAGE_LABELS[h.stage] ?? h.stage }}</p>
-                <p class="text-xs text-gray-400">{{ fmtFull(h.entered_at) }} · {{ h.user?.name ?? 'Система' }}</p>
+                <p class="text-xs text-gray-400">{{ fmtFull(h.entered_at) }} · {{ h.user?.name ?? t('crm.caseDetail.systemUser') }}</p>
                 <p v-if="h.notes" class="text-xs text-gray-500 mt-0.5">{{ h.notes }}</p>
               </div>
             </div>
@@ -349,63 +349,63 @@
 
         <!-- Client -->
         <div class="bg-white rounded-xl border border-gray-100 p-4">
-          <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Клиент</p>
+          <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">{{ t('crm.caseDetail.clientSidebarTitle') }}</p>
           <p class="text-sm font-bold text-gray-900">{{ caseData.client?.name ?? '---' }}</p>
           <a v-if="caseData.client?.phone" :href="`tel:${caseData.client.phone}`" class="text-xs text-gray-500 hover:text-blue-600 mt-0.5 block">{{ formatPhone(caseData.client.phone) }}</a>
           <p v-if="caseData.client?.email" class="text-xs text-gray-500">{{ caseData.client.email }}</p>
           <div v-if="caseData.client?.phone" class="mt-3 flex gap-2">
             <a :href="'tel:' + caseData.client.phone"
-              class="text-xs px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 font-medium transition-colors">Позвонить</a>
+              class="text-xs px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 font-medium transition-colors">{{ t('crm.caseDetail.callBtn') }}</a>
             <a :href="'https://wa.me/' + cleanPhone(caseData.client.phone)" target="_blank"
-              class="text-xs px-3 py-1.5 rounded-lg bg-green-50 text-green-600 hover:bg-green-100 font-medium transition-colors">WhatsApp</a>
+              class="text-xs px-3 py-1.5 rounded-lg bg-green-50 text-green-600 hover:bg-green-100 font-medium transition-colors">{{ t('crm.caseDetail.whatsappBtn') }}</a>
           </div>
         </div>
 
         <!-- Case meta -->
         <div class="bg-white rounded-xl border border-gray-100 p-4">
-          <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Информация</p>
+          <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">{{ t('crm.caseDetail.infoTitle') }}</p>
           <div class="space-y-2.5">
             <div class="flex items-center justify-between">
-              <span class="text-xs text-gray-400">Этап</span>
+              <span class="text-xs text-gray-400">{{ t('crm.caseDetail.stageField') }}</span>
               <AppBadge :color="stageColor">{{ stageLabel }}</AppBadge>
             </div>
             <div class="flex items-center justify-between">
-              <span class="text-xs text-gray-400">Приоритет</span>
+              <span class="text-xs text-gray-400">{{ t('crm.caseDetail.priorityField') }}</span>
               <AppBadge :color="priorityColor">{{ priorityLabel }}</AppBadge>
             </div>
             <div class="flex items-center justify-between">
-              <span class="text-xs text-gray-400">Дедлайн</span>
+              <span class="text-xs text-gray-400">{{ t('crm.caseDetail.deadlineField') }}</span>
               <span :class="['text-xs font-semibold', deadlineClass]">{{ caseData.critical_date ? fmtShort(caseData.critical_date) : '---' }}</span>
             </div>
             <div v-if="caseData.days_left != null" class="flex items-center justify-between">
-              <span class="text-xs text-gray-400">Дней осталось</span>
+              <span class="text-xs text-gray-400">{{ t('crm.caseDetail.daysLeftField') }}</span>
               <span :class="['text-xs font-bold', caseData.days_left < 0 ? 'text-red-600' : caseData.days_left <= 7 ? 'text-yellow-600' : 'text-gray-700']">{{ caseData.days_left }}</span>
             </div>
             <div class="flex items-center justify-between">
-              <span class="text-xs text-gray-400">Менеджер</span>
+              <span class="text-xs text-gray-400">{{ t('crm.caseDetail.managerField') }}</span>
               <div class="flex items-center gap-1.5">
                 <span class="text-xs text-gray-700 font-medium">{{ caseData.assignee?.name ?? '---' }}</span>
                 <button v-if="isOwner" @click="showAssignModal = true"
                   class="text-[10px] text-blue-500 hover:text-blue-700 font-medium">
-                  {{ caseData.assignee ? 'изм.' : 'назначить' }}
+                  {{ caseData.assignee ? t('crm.caseDetail.editShort') : t('crm.caseDetail.assignShort') }}
                 </button>
               </div>
             </div>
             <div v-if="caseData.appointment_date" class="flex items-center justify-between">
-              <span class="text-xs text-gray-400">Прием</span>
+              <span class="text-xs text-gray-400">{{ t('crm.caseDetail.appointmentField') }}</span>
               <span class="text-xs text-green-600 font-medium">{{ caseData.appointment_date }}{{ caseData.appointment_time ? ' ' + caseData.appointment_time : '' }}</span>
             </div>
             <div v-else-if="['qualification','documents','doc_review','translation','ready'].includes(caseData.stage)"
               class="flex items-center gap-1.5 p-2 rounded-lg bg-amber-50 border border-amber-200">
               <svg class="w-3.5 h-3.5 text-amber-500 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.168 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 6a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 6zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/></svg>
-              <span class="text-[10px] text-amber-700 font-medium">Укажите дату записи в посольство</span>
+              <span class="text-[10px] text-amber-700 font-medium">{{ t('crm.caseDetail.appointmentWarning') }}</span>
             </div>
             <div v-if="caseData.submitted_at" class="flex items-center justify-between">
-              <span class="text-xs text-gray-400">Подано</span>
+              <span class="text-xs text-gray-400">{{ t('crm.caseDetail.submittedField') }}</span>
               <span class="text-xs text-gray-700">{{ fmtShort(caseData.submitted_at) }}</span>
             </div>
             <div v-if="caseData.expected_result_date" class="flex items-center justify-between">
-              <span class="text-xs text-gray-400">Ожидание</span>
+              <span class="text-xs text-gray-400">{{ t('crm.caseDetail.expectedField') }}</span>
               <span class="text-xs text-gray-700">{{ fmtShort(caseData.expected_result_date) }}</span>
             </div>
           </div>
@@ -413,20 +413,20 @@
 
         <!-- Payment -->
         <div v-if="caseData.payment_status" class="bg-white rounded-xl border border-gray-100 p-4">
-          <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Оплата</p>
+          <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">{{ t('crm.caseDetail.paymentTitle') }}</p>
           <span :class="['text-xs font-semibold px-2.5 py-1 rounded-full', paymentBadgeClass]">{{ paymentLabel }}</span>
           <p v-if="caseData.total_amount" class="text-lg font-black text-gray-900 mt-2">
-            {{ Number(caseData.total_amount).toLocaleString() }} <span class="text-xs font-normal text-gray-400">сум</span>
+            {{ Number(caseData.total_amount).toLocaleString() }} <span class="text-xs font-normal text-gray-400">{{ t('crm.caseDetail.sumLabel') }}</span>
           </p>
         </div>
 
         <!-- Quick actions -->
         <div class="bg-white rounded-xl border border-gray-100 p-4">
-          <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Действия</p>
+          <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">{{ t('crm.caseDetail.actionsTitle') }}</p>
           <div class="space-y-1">
-            <button @click="showMoveModal = true" class="w-full text-left text-xs px-3 py-2 rounded-lg hover:bg-gray-50 text-gray-600 transition-colors">Сменить этап</button>
-            <button @click="showAddSlot = true" class="w-full text-left text-xs px-3 py-2 rounded-lg hover:bg-gray-50 text-gray-600 transition-colors">Добавить документ</button>
-            <button v-if="uploadedCount > 0" @click="downloadZip" class="w-full text-left text-xs px-3 py-2 rounded-lg hover:bg-gray-50 text-gray-600 transition-colors">Скачать все (ZIP)</button>
+            <button @click="showMoveModal = true" class="w-full text-left text-xs px-3 py-2 rounded-lg hover:bg-gray-50 text-gray-600 transition-colors">{{ t('crm.caseDetail.actionChangeStage') }}</button>
+            <button @click="showAddSlot = true" class="w-full text-left text-xs px-3 py-2 rounded-lg hover:bg-gray-50 text-gray-600 transition-colors">{{ t('crm.caseDetail.actionAddDocument') }}</button>
+            <button v-if="uploadedCount > 0" @click="downloadZip" class="w-full text-left text-xs px-3 py-2 rounded-lg hover:bg-gray-50 text-gray-600 transition-colors">{{ t('crm.caseDetail.actionDownloadAll') }}</button>
           </div>
         </div>
       </div>
@@ -434,108 +434,108 @@
   </div>
 
   <!-- ===== MODALS ===== -->
-  <AppModal v-model="showMoveModal" title="Сменить этап">
+  <AppModal v-model="showMoveModal" :title="t('crm.caseDetail.moveStageModalTitle')">
     <div class="space-y-4">
-      <AppSelect v-model="moveForm.stage" :options="stageOptions" label="Новый этап" />
-      <AppInput v-model="moveForm.notes" label="Комментарий" placeholder="Необязательно..." />
+      <AppSelect v-model="moveForm.stage" :options="stageOptions" :label="t('crm.caseDetail.newStageLabel')" />
+      <AppInput v-model="moveForm.notes" :label="t('crm.caseDetail.commentLabel')" :placeholder="t('crm.caseDetail.commentPlaceholder')" />
       <div class="flex gap-2 justify-end">
-        <AppButton variant="outline" @click="showMoveModal = false">Отмена</AppButton>
-        <AppButton :loading="moveForm.loading" @click="doMoveStage">Переместить</AppButton>
+        <AppButton variant="outline" @click="showMoveModal = false">{{ t('common.cancel') }}</AppButton>
+        <AppButton :loading="moveForm.loading" @click="doMoveStage">{{ t('crm.caseDetail.moveBtn') }}</AppButton>
       </div>
     </div>
   </AppModal>
 
-  <AppModal v-model="showAddSlot" title="Добавить документ">
+  <AppModal v-model="showAddSlot" :title="t('crm.caseDetail.addDocumentModalTitle')">
     <div class="space-y-4">
-      <AppInput v-model="newSlot.name" label="Название" placeholder="Справка из налоговой" />
-      <AppInput v-model="newSlot.description" label="Пояснение" placeholder="Что именно нужно..." />
+      <AppInput v-model="newSlot.name" :label="t('crm.caseDetail.docNameLabel')" :placeholder="t('crm.caseDetail.docNamePlaceholder')" />
+      <AppInput v-model="newSlot.description" :label="t('crm.caseDetail.docDescLabel')" :placeholder="t('crm.caseDetail.docDescPlaceholder')" />
       <div class="flex items-center gap-2">
         <input type="checkbox" v-model="newSlot.is_required" id="slotReq" class="rounded" />
-        <label for="slotReq" class="text-sm text-gray-700">Обязательный</label>
+        <label for="slotReq" class="text-sm text-gray-700">{{ t('crm.caseDetail.requiredCheckbox') }}</label>
       </div>
       <div class="flex gap-2 justify-end">
-        <AppButton variant="outline" @click="showAddSlot = false">Отмена</AppButton>
-        <AppButton :loading="newSlot.loading" @click="addSlot">Добавить</AppButton>
+        <AppButton variant="outline" @click="showAddSlot = false">{{ t('common.cancel') }}</AppButton>
+        <AppButton :loading="newSlot.loading" @click="addSlot">{{ t('common.add') }}</AppButton>
       </div>
     </div>
   </AppModal>
 
-  <AppModal v-model="showRejectModal" title="Причина отклонения">
+  <AppModal v-model="showRejectModal" :title="t('crm.caseDetail.rejectModalTitle')">
     <div class="space-y-4">
-      <AppInput v-model="rejectNote" label="Комментарий" placeholder="Что не так..." />
+      <AppInput v-model="rejectNote" :label="t('crm.caseDetail.rejectCommentLabel')" :placeholder="t('crm.caseDetail.rejectCommentPlaceholder')" />
       <div class="flex gap-2 justify-end">
-        <AppButton variant="outline" @click="showRejectModal = false">Отмена</AppButton>
-        <AppButton variant="danger" @click="submitReject">Отклонить</AppButton>
+        <AppButton variant="outline" @click="showRejectModal = false">{{ t('common.cancel') }}</AppButton>
+        <AppButton variant="danger" @click="submitReject">{{ t('crm.caseDetail.rejectBtn') }}</AppButton>
       </div>
     </div>
   </AppModal>
 
-  <AppModal v-model="showTranslationModal" title="Отправить на перевод">
+  <AppModal v-model="showTranslationModal" :title="t('crm.caseDetail.translationModalTitle')">
     <div class="space-y-4">
-      <p class="text-sm text-gray-600">Документ: <strong>{{ translationItem?.name }}</strong></p>
-      <AppInput v-model="translationForm.pages" type="number" label="Страниц" placeholder="1" />
-      <AppInput v-model="translationForm.notes" label="Комментарий" placeholder="Что перевести..." />
+      <p class="text-sm text-gray-600">{{ t('crm.caseDetail.translationDocLabel', { name: translationItem?.name }) }}</p>
+      <AppInput v-model="translationForm.pages" type="number" :label="t('crm.caseDetail.translationPagesLabel')" :placeholder="t('crm.caseDetail.translationPagesPlaceholder')" />
+      <AppInput v-model="translationForm.notes" :label="t('crm.caseDetail.translationCommentLabel')" :placeholder="t('crm.caseDetail.translationCommentPlaceholder')" />
       <div class="flex gap-2 justify-end">
-        <AppButton variant="outline" @click="showTranslationModal = false">Отмена</AppButton>
-        <AppButton @click="submitTranslation">На перевод</AppButton>
+        <AppButton variant="outline" @click="showTranslationModal = false">{{ t('common.cancel') }}</AppButton>
+        <AppButton @click="submitTranslation">{{ t('crm.caseDetail.sendToTranslation') }}</AppButton>
       </div>
     </div>
   </AppModal>
 
-  <AppModal v-model="showResultModal" title="Записать результат">
+  <AppModal v-model="showResultModal" :title="t('crm.caseDetail.resultModalTitle')">
     <div class="space-y-4">
       <div class="flex gap-3">
         <button @click="resultForm.result_type = 'approved'"
-          :class="['flex-1 py-3 rounded-xl border-2 text-center font-medium text-sm transition-colors', resultForm.result_type === 'approved' ? 'border-green-500 bg-green-50 text-green-700' : 'border-gray-200 text-gray-400 hover:border-gray-300']">Одобрена</button>
+          :class="['flex-1 py-3 rounded-xl border-2 text-center font-medium text-sm transition-colors', resultForm.result_type === 'approved' ? 'border-green-500 bg-green-50 text-green-700' : 'border-gray-200 text-gray-400 hover:border-gray-300']">{{ t('crm.caseDetail.resultApproved') }}</button>
         <button @click="resultForm.result_type = 'rejected'"
-          :class="['flex-1 py-3 rounded-xl border-2 text-center font-medium text-sm transition-colors', resultForm.result_type === 'rejected' ? 'border-red-500 bg-red-50 text-red-700' : 'border-gray-200 text-gray-400 hover:border-gray-300']">Отказ</button>
+          :class="['flex-1 py-3 rounded-xl border-2 text-center font-medium text-sm transition-colors', resultForm.result_type === 'rejected' ? 'border-red-500 bg-red-50 text-red-700' : 'border-gray-200 text-gray-400 hover:border-gray-300']">{{ t('crm.caseDetail.resultRejected') }}</button>
       </div>
       <template v-if="resultForm.result_type === 'approved'">
-        <AppInput v-model="resultForm.visa_issued_at" type="date" label="Дата выдачи" />
-        <AppInput v-model="resultForm.visa_received_at" type="date" label="Дата получения" />
-        <AppInput v-model="resultForm.visa_validity" label="Срок действия" placeholder="90 дней / 1 год..." />
+        <AppInput v-model="resultForm.visa_issued_at" type="date" :label="t('crm.caseDetail.visaIssuedDate')" />
+        <AppInput v-model="resultForm.visa_received_at" type="date" :label="t('crm.caseDetail.visaReceivedDate')" />
+        <AppInput v-model="resultForm.visa_validity" :label="t('crm.caseDetail.visaValidityLabel')" :placeholder="t('crm.caseDetail.visaValidityPlaceholder')" />
       </template>
       <template v-if="resultForm.result_type === 'rejected'">
-        <AppInput v-model="resultForm.rejection_reason" label="Причина отказа" />
+        <AppInput v-model="resultForm.rejection_reason" :label="t('crm.caseDetail.rejectionReasonLabel')" />
         <div class="flex items-center gap-2">
           <input type="checkbox" v-model="resultForm.can_reapply" id="canReapply" class="rounded" />
-          <label for="canReapply" class="text-sm text-gray-700">Повторная подача возможна</label>
+          <label for="canReapply" class="text-sm text-gray-700">{{ t('crm.caseDetail.canReapplyCheckbox') }}</label>
         </div>
-        <AppInput v-if="resultForm.can_reapply" v-model="resultForm.reapply_recommendation" label="Рекомендация" />
+        <AppInput v-if="resultForm.can_reapply" v-model="resultForm.reapply_recommendation" :label="t('crm.caseDetail.reapplyRecommendation')" />
       </template>
-      <AppInput v-model="resultForm.result_notes" label="Примечание" />
+      <AppInput v-model="resultForm.result_notes" :label="t('crm.caseDetail.resultNotesLabel')" />
       <div class="flex gap-2 justify-end">
-        <AppButton variant="outline" @click="showResultModal = false">Отмена</AppButton>
-        <AppButton :loading="resultForm.loading" @click="doComplete" :disabled="!resultForm.result_type">Сохранить</AppButton>
+        <AppButton variant="outline" @click="showResultModal = false">{{ t('common.cancel') }}</AppButton>
+        <AppButton :loading="resultForm.loading" @click="doComplete" :disabled="!resultForm.result_type">{{ t('common.save') }}</AppButton>
       </div>
     </div>
   </AppModal>
 
-  <AppModal v-model="showExpectedDateModal" title="Изменить дату">
+  <AppModal v-model="showExpectedDateModal" :title="t('crm.caseDetail.expectedDateModalTitle')">
     <div class="space-y-4">
-      <AppInput v-model="expectedDateForm.expected_result_date" type="date" label="Новая дата" />
-      <AppInput v-model="expectedDateForm.notes" label="Причина" />
+      <AppInput v-model="expectedDateForm.expected_result_date" type="date" :label="t('crm.caseDetail.newDateLabel')" />
+      <AppInput v-model="expectedDateForm.notes" :label="t('crm.caseDetail.reasonLabel')" />
       <div class="flex gap-2 justify-end">
-        <AppButton variant="outline" @click="showExpectedDateModal = false">Отмена</AppButton>
-        <AppButton :loading="expectedDateForm.loading" @click="doUpdateExpectedDate">Сохранить</AppButton>
+        <AppButton variant="outline" @click="showExpectedDateModal = false">{{ t('common.cancel') }}</AppButton>
+        <AppButton :loading="expectedDateForm.loading" @click="doUpdateExpectedDate">{{ t('common.save') }}</AppButton>
       </div>
     </div>
   </AppModal>
 
   <!-- Assign manager modal -->
-  <AppModal v-model="showAssignModal" title="Назначить менеджера">
+  <AppModal v-model="showAssignModal" :title="t('crm.caseDetail.assignModalTitle')">
     <div class="space-y-4">
       <div>
-        <label class="text-sm text-gray-600 font-medium mb-1 block">Менеджер</label>
+        <label class="text-sm text-gray-600 font-medium mb-1 block">{{ t('crm.caseDetail.managerLabel') }}</label>
         <select v-model="assignForm.manager_id"
           class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
-          <option value="">Выберите менеджера...</option>
+          <option value="">{{ t('crm.caseDetail.selectManager') }}</option>
           <option v-for="m in managers" :key="m.id" :value="m.id">{{ m.name }} ({{ m.email }})</option>
         </select>
       </div>
       <div class="flex gap-2 justify-end">
-        <AppButton variant="outline" @click="showAssignModal = false">Отмена</AppButton>
-        <AppButton :loading="assignForm.loading" :disabled="!assignForm.manager_id" @click="doAssign">Назначить</AppButton>
+        <AppButton variant="outline" @click="showAssignModal = false">{{ t('common.cancel') }}</AppButton>
+        <AppButton :loading="assignForm.loading" :disabled="!assignForm.manager_id" @click="doAssign">{{ t('crm.caseDetail.assign') }}</AppButton>
       </div>
     </div>
   </AppModal>
@@ -546,7 +546,7 @@
       <div class="flex items-center justify-between px-5 py-4 border-b shrink-0">
         <p class="font-medium text-gray-800 truncate max-w-[70%]">{{ preview.original_name }}</p>
         <div class="flex items-center gap-4">
-          <a :href="preview.url" download class="text-sm text-blue-600 hover:underline">Скачать</a>
+          <a :href="preview.url" download class="text-sm text-blue-600 hover:underline">{{ t('crm.caseDetail.previewDownload') }}</a>
           <button @click="preview = null" class="text-gray-400 hover:text-gray-700 text-xl leading-none">x</button>
         </div>
       </div>
@@ -554,8 +554,8 @@
         <img v-if="isImage(preview.mime_type)" :src="preview.url" class="max-w-full mx-auto rounded-lg shadow" />
         <iframe v-else-if="isPdf(preview.mime_type)" :src="preview.url" class="w-full rounded-lg border" style="height:70vh"></iframe>
         <div v-else class="flex flex-col items-center justify-center py-16 text-gray-400">
-          <p class="text-sm">Предпросмотр недоступен</p>
-          <a :href="preview.url" download class="mt-4 text-blue-600 text-sm hover:underline">Скачать файл</a>
+          <p class="text-sm">{{ t('crm.caseDetail.previewUnavailable') }}</p>
+          <a :href="preview.url" download class="mt-4 text-blue-600 text-sm hover:underline">{{ t('crm.caseDetail.previewDownloadFile') }}</a>
         </div>
       </div>
     </div>
@@ -565,6 +565,7 @@
 <script setup>
 import { ref, computed, onMounted, reactive } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { casesApi } from '@/api/cases';
 import { useCountries } from '@/composables/useCountries';
 import AppBadge  from '@/components/AppBadge.vue';
@@ -576,6 +577,8 @@ import DocItem   from '@/components/DocItem.vue';
 import { useAuthStore } from '@/stores/auth';
 import { usersApi } from '@/api/users';
 import { formatPhone } from '@/utils/format';
+
+const { t } = useI18n();
 
 const { countryName, countryFlag, visaTypeName } = useCountries();
 const auth = useAuthStore();
@@ -616,17 +619,19 @@ const resultForm = reactive({
 const expectedDateForm = reactive({ expected_result_date: '', notes: '', loading: false });
 
 // Constants
-const STAGES = [
-  { key: 'lead', label: 'Лид' },
-  { key: 'qualification', label: 'Квалификация' },
-  { key: 'documents', label: 'Документы' },
-  { key: 'doc_review', label: 'Проверка' },
-  { key: 'translation', label: 'Перевод' },
-  { key: 'ready', label: 'Подача' },
-  { key: 'review', label: 'Рассмотрение' },
-  { key: 'result', label: 'Результат' },
-];
-const STAGE_LABELS = Object.fromEntries(STAGES.map(s => [s.key, s.label]));
+const STAGE_KEYS = ['lead', 'qualification', 'documents', 'doc_review', 'translation', 'ready', 'review', 'result'];
+const STAGE_I18N = {
+  lead: 'crm.caseDetail.stagesLead',
+  qualification: 'crm.caseDetail.stagesQualification',
+  documents: 'crm.caseDetail.stagesDocuments',
+  doc_review: 'crm.caseDetail.stagesDocReview',
+  translation: 'crm.caseDetail.stagesTranslation',
+  ready: 'crm.caseDetail.stagesReady',
+  review: 'crm.caseDetail.stagesReview',
+  result: 'crm.caseDetail.stagesResult',
+};
+const STAGES = computed(() => STAGE_KEYS.map(key => ({ key, label: t(STAGE_I18N[key]) })));
+const STAGE_LABELS = computed(() => Object.fromEntries(STAGES.value.map(s => [s.key, s.label])));
 const STAGE_COLORS = {
   lead: 'gray', qualification: 'blue', documents: 'purple',
   doc_review: 'orange', translation: 'yellow', ready: 'blue', review: 'blue', result: 'green',
@@ -644,26 +649,39 @@ const ALLOWED_TRANSITIONS = {
 const stageOptions = computed(() => {
   const current = caseData.value?.stage;
   const allowed = ALLOWED_TRANSITIONS[current] || [];
-  return STAGES.filter(s => allowed.includes(s.key)).map(s => ({ value: s.key, label: s.label }));
+  return STAGES.value.filter(s => allowed.includes(s.key)).map(s => ({ value: s.key, label: s.label }));
 });
 
-const STAGE_CONFIG = {
-  lead: { manager_goal: 'Связаться с клиентом в течение 1 часа', manager_tasks: ['Позвонить или написать клиенту', 'Уточнить цель поездки и сроки', 'Выяснить состав группы', 'Подтвердить контактные данные'], manager_result: 'Клиент на связи, потребность понятна' },
-  qualification: { manager_goal: 'Оценить заявку, подготовить план, определить дату записи', manager_tasks: ['Проверить срок действия паспорта (мин. 6 мес.)', 'Определить тип визы и категорию', 'Сформировать чек-лист документов', 'Определить примерную дату записи в посольство', 'Забронировать слот на подачу', 'Согласовать план работы с клиентом'], manager_result: 'Чек-лист готов, дата записи определена, план согласован' },
-  documents: { manager_goal: 'Собрать все документы за 72 часа', manager_tasks: ['Отправить клиенту чек-лист с пояснениями', 'Контролировать загрузку', 'Проверять качество сканов', 'Запрашивать недостающие документы'], manager_result: 'Все документы загружены и готовы к проверке' },
-  doc_review: { manager_goal: 'Проверить документы за 24 часа', manager_tasks: ['Проверить соответствие требованиям посольства', 'Проверить актуальность справок', 'Определить документы для перевода', 'Отклонить некачественные сканы'], manager_result: 'Документы проверены, список на перевод готов' },
-  translation: { manager_goal: 'Получить переводы за 48 часов', manager_tasks: ['Отправить документы переводчику', 'Контролировать сроки', 'Проверить качество перевода', 'Заверить нотариально'], manager_result: 'Все переводы готовы, пакет полный' },
-  ready: { manager_goal: 'Подтвердить запись и проинструктировать клиента за 24ч', manager_tasks: ['Проверить полноту финального пакета', 'Подтвердить дату и время записи с клиентом', 'Проинструктировать клиента (что взять, как одеться)', 'Отправить памятку о визите'], manager_result: 'Пакет готов, запись подтверждена, клиент проинструктирован' },
-  review: { manager_goal: 'Отслеживать статус и информировать клиента', manager_tasks: ['Мониторить статус на сайте посольства', 'Информировать клиента', 'Подготовить доп. документы при запросе', 'Отвечать на вопросы о сроках'], manager_result: 'Решение получено от посольства' },
-  result: { manager_goal: 'Завершить заявку за 4 часа', manager_tasks: ['Сообщить клиенту результат', 'Одобрено: организовать выдачу паспорта', 'Отказ: разъяснить причины', 'Отказ: подготовить план повторной подачи'], manager_result: 'Заявка закрыта или план повторной подачи готов' },
+const STAGE_TASK_KEYS = {
+  lead: ['taskLead1', 'taskLead2', 'taskLead3', 'taskLead4'],
+  qualification: ['taskQual1', 'taskQual2', 'taskQual3', 'taskQual4', 'taskQual5', 'taskQual6'],
+  documents: ['taskDocs1', 'taskDocs2', 'taskDocs3', 'taskDocs4'],
+  doc_review: ['taskDocRev1', 'taskDocRev2', 'taskDocRev3', 'taskDocRev4'],
+  translation: ['taskTrans1', 'taskTrans2', 'taskTrans3', 'taskTrans4'],
+  ready: ['taskReady1', 'taskReady2', 'taskReady3', 'taskReady4'],
+  review: ['taskReview1', 'taskReview2', 'taskReview3', 'taskReview4'],
+  result: ['taskResult1', 'taskResult2', 'taskResult3', 'taskResult4'],
 };
+const STAGE_GOAL_KEYS = { lead: 'goalLead', qualification: 'goalQualification', documents: 'goalDocuments', doc_review: 'goalDocReview', translation: 'goalTranslation', ready: 'goalReady', review: 'goalReview', result: 'goalResult' };
+const STAGE_RESULT_KEYS = { lead: 'resultLead', qualification: 'resultQualification', documents: 'resultDocuments', doc_review: 'resultDocReview', translation: 'resultTranslation', ready: 'resultReady', review: 'resultReview', result: 'resultResult' };
+const STAGE_CONFIG = computed(() => {
+  const cfg = {};
+  for (const key of STAGE_KEYS) {
+    cfg[key] = {
+      manager_goal: t(`crm.caseDetail.${STAGE_GOAL_KEYS[key]}`),
+      manager_tasks: (STAGE_TASK_KEYS[key] || []).map(k => t(`crm.caseDetail.${k}`)),
+      manager_result: t(`crm.caseDetail.${STAGE_RESULT_KEYS[key]}`),
+    };
+  }
+  return cfg;
+});
 
 // Computed
 const flagEmoji = computed(() => countryFlag(caseData.value?.country_code ?? ''));
-const stageLabel = computed(() => STAGE_LABELS[caseData.value?.stage] ?? '');
+const stageLabel = computed(() => STAGE_LABELS.value[caseData.value?.stage] ?? '');
 const stageColor = computed(() => STAGE_COLORS[caseData.value?.stage] ?? 'gray');
-const stageIdx = computed(() => STAGES.findIndex(s => s.key === caseData.value?.stage));
-const currentStageConfig = computed(() => STAGE_CONFIG[caseData.value?.stage]);
+const stageIdx = computed(() => STAGES.value.findIndex(s => s.key === caseData.value?.stage));
+const currentStageConfig = computed(() => STAGE_CONFIG.value[caseData.value?.stage]);
 
 function canMoveTo(stageKey) {
   const current = caseData.value?.stage;
@@ -671,9 +689,12 @@ function canMoveTo(stageKey) {
   return (ALLOWED_TRANSITIONS[current] || []).includes(stageKey);
 }
 
-const priorityMap = { low: 'Низкий', normal: 'Обычный', high: 'Высокий', urgent: 'Срочный' };
 const priorityColorMap = { low: 'gray', normal: 'blue', high: 'orange', urgent: 'red' };
-const priorityLabel = computed(() => priorityMap[caseData.value?.priority] ?? '');
+const priorityLabel = computed(() => {
+  const p = caseData.value?.priority;
+  if (!p) return '';
+  return t(`crm.priority.${p}`);
+});
 const priorityColor = computed(() => priorityColorMap[caseData.value?.priority] ?? 'gray');
 const deadlineClass = computed(() => {
   const u = caseData.value?.urgency;
@@ -706,9 +727,9 @@ const otherDocs = computed(() => {
 const slaInfo = computed(() => {
   const h = caseData.value?.stage_sla_hours_left;
   if (h == null) return null;
-  if (caseData.value?.stage_sla_overdue || h < 0) return { display: Math.abs(h) + 'ч', subText: 'просрочено', bg: 'bg-red-50', label: 'text-red-400', value: 'text-red-600', sub: 'text-red-400' };
-  if (h <= 2) return { display: h + 'ч', subText: 'осталось', bg: 'bg-orange-50', label: 'text-orange-400', value: 'text-orange-600', sub: 'text-orange-400' };
-  return { display: h + 'ч', subText: 'осталось', bg: 'bg-blue-50', label: 'text-blue-400', value: 'text-blue-600', sub: 'text-blue-400' };
+  if (caseData.value?.stage_sla_overdue || h < 0) return { display: Math.abs(h) + 'ч', subText: t('crm.caseDetail.slaOverdue'), bg: 'bg-red-50', label: 'text-red-400', value: 'text-red-600', sub: 'text-red-400' };
+  if (h <= 2) return { display: h + 'ч', subText: t('crm.caseDetail.slaRemaining'), bg: 'bg-orange-50', label: 'text-orange-400', value: 'text-orange-600', sub: 'text-orange-400' };
+  return { display: h + 'ч', subText: t('crm.caseDetail.slaRemaining'), bg: 'bg-blue-50', label: 'text-blue-400', value: 'text-blue-600', sub: 'text-blue-400' };
 });
 
 const daysUntilResult = computed(() => {
@@ -743,9 +764,9 @@ const paymentBadgeClass = computed(() => {
 });
 const paymentLabel = computed(() => {
   const s = caseData.value?.payment_status;
-  if (s === 'paid') return 'Оплачено';
-  if (s === 'pending') return 'Ожидает оплаты';
-  return 'Не оплачено';
+  if (s === 'paid') return t('crm.caseDetail.paymentPaid');
+  if (s === 'pending') return t('crm.caseDetail.paymentPending');
+  return t('crm.caseDetail.paymentUnpaid');
 });
 
 function stepClass(idx) {
@@ -771,7 +792,7 @@ async function load() {
     caseData.value = c.data.data;
     checklist.value = cl.data.data;
   } catch (e) {
-    loadError.value = e.response?.data?.message || 'Ошибка загрузки';
+    loadError.value = e.response?.data?.message || t('crm.caseDetail.loadError');
   } finally { loading.value = false; }
 }
 async function reloadChecklist() { checklist.value = (await casesApi.getChecklist(id)).data.data; }
@@ -853,7 +874,7 @@ async function addSlot() {
   finally { newSlot.loading = false; }
 }
 
-async function deleteSlot(item) { if (!confirm('Удалить?')) return; await casesApi.deleteChecklistItem(id, item.id); await reloadChecklist(); }
+async function deleteSlot(item) { if (!confirm(t('crm.caseDetail.confirmDeleteSlot'))) return; await casesApi.deleteChecklistItem(id, item.id); await reloadChecklist(); }
 
 async function downloadZip() {
   zipLoading.value = true;
@@ -870,7 +891,7 @@ async function doMoveStage() {
   finally { moveForm.loading = false; }
 }
 
-async function confirmDelete() { if (!confirm('Удалить заявку?')) return; await casesApi.remove(id); router.push({ name: 'cases' }); }
+async function confirmDelete() { if (!confirm(t('crm.caseDetail.confirmDeleteCase'))) return; await casesApi.remove(id); router.push({ name: 'cases' }); }
 
 async function loadManagers() {
   if (!auth.isOwner) return;

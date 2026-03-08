@@ -6,10 +6,10 @@
       <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
       </svg>
-      Все страны
+      {{ t('crm.countryDetail.allCountries') }}
     </button>
 
-    <div v-if="loading" class="text-center py-12 text-gray-400">Загрузка...</div>
+    <div v-if="loading" class="text-center py-12 text-gray-400">{{ t('crm.countryDetail.loading') }}</div>
 
     <template v-else-if="country">
       <!-- Заголовок -->
@@ -40,33 +40,33 @@
             <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
             </svg>
-            {{ toggling ? '...' : isWorking ? 'Работаем' : 'Добавить направление' }}
+            {{ toggling ? '...' : isWorking ? t('crm.agencyCountries.weWork') : t('common.add') }}
           </button>
         </div>
 
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
           <div v-if="country.visa_free_days" class="p-3 bg-gray-50 rounded-lg">
-            <div class="text-xs text-gray-400">Безвизовые дни</div>
-            <div class="text-sm font-semibold text-gray-900">{{ country.visa_free_days }} дней</div>
+            <div class="text-xs text-gray-400">{{ t('crm.countryDetail.visaFreeDays') }}</div>
+            <div class="text-sm font-semibold text-gray-900">{{ country.visa_free_days }} {{ t('crm.countryDetail.days') }}</div>
           </div>
           <div v-if="country.visa_fee" class="p-3 bg-gray-50 rounded-lg">
-            <div class="text-xs text-gray-400">Стоимость визы</div>
+            <div class="text-xs text-gray-400">{{ t('crm.countryDetail.visaFee') }}</div>
             <div class="text-sm font-semibold text-gray-900">${{ country.visa_fee }}</div>
           </div>
           <div v-if="country.evisa_fee" class="p-3 bg-gray-50 rounded-lg">
-            <div class="text-xs text-gray-400">eVisa</div>
+            <div class="text-xs text-gray-400">{{ t('crm.countryDetail.evisa') }}</div>
             <div class="text-sm font-semibold text-gray-900">${{ country.evisa_fee }}</div>
           </div>
           <div v-if="country.avg_flight_usd" class="p-3 bg-gray-50 rounded-lg">
-            <div class="text-xs text-gray-400">Средний перелёт</div>
+            <div class="text-xs text-gray-400">{{ t('crm.countryDetail.avgFlight') }}</div>
             <div class="text-sm font-semibold text-gray-900">${{ country.avg_flight_usd }}</div>
           </div>
           <div v-if="country.avg_hotel_usd" class="p-3 bg-gray-50 rounded-lg">
-            <div class="text-xs text-gray-400">Средний отель / ночь</div>
+            <div class="text-xs text-gray-400">{{ t('crm.countryDetail.avgHotel') }}</div>
             <div class="text-sm font-semibold text-gray-900">${{ country.avg_hotel_usd }}</div>
           </div>
           <div v-if="country.continent" class="p-3 bg-gray-50 rounded-lg">
-            <div class="text-xs text-gray-400">Континент</div>
+            <div class="text-xs text-gray-400">{{ t('crm.countryDetail.continent') }}</div>
             <div class="text-sm font-semibold text-gray-900">{{ country.continent }}</div>
           </div>
         </div>
@@ -77,13 +77,13 @@
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
           </svg>
-          eVisa — подать онлайн
+          {{ t('crm.countryDetail.evisaApply') }}
         </a>
       </div>
 
       <!-- Требования -->
       <div v-if="country.requirements?.length" class="bg-white rounded-xl border border-gray-200 p-6">
-        <h2 class="font-semibold text-gray-700 text-sm uppercase tracking-wide mb-3">Требуемые документы</h2>
+        <h2 class="font-semibold text-gray-700 text-sm uppercase tracking-wide mb-3">{{ t('crm.countryDetail.requiredDocs') }}</h2>
         <div class="space-y-2">
           <div v-for="r in country.requirements" :key="r" class="flex items-center gap-2 text-sm text-gray-600">
             <svg class="w-4 h-4 text-green-600 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -96,7 +96,7 @@
     </template>
 
     <div v-else class="bg-white rounded-xl border border-gray-200 p-8 text-center">
-      <p class="font-semibold text-gray-900">Страна не найдена</p>
+      <p class="font-semibold text-gray-900">{{ t('crm.countryDetail.notFound') }}</p>
     </div>
   </div>
 </template>
@@ -104,9 +104,11 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import api from '@/api/index';
 import { codeToFlag, countryName } from '@/utils/countries';
 
+const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const loading = ref(true);
@@ -127,10 +129,10 @@ const regimeBadge = computed(() => ({
 }[country.value?.visa_regime] || 'bg-gray-100 text-gray-500'));
 
 const regimeLabel = computed(() => ({
-  visa_free:       'Безвизовый',
-  visa_on_arrival: 'По прибытии',
-  evisa:           'eVisa',
-  visa_required:   'Требуется виза',
+  visa_free:       t('crm.agencyCountries.visaFree'),
+  visa_on_arrival: t('crm.agencyCountries.visaOnArrival'),
+  evisa:           t('crm.agencyCountries.evisa'),
+  visa_required:   t('crm.agencyCountries.visaRequired'),
 }[country.value?.visa_regime] || country.value?.visa_regime));
 
 async function toggleWork() {

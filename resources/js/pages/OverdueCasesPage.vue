@@ -1,23 +1,23 @@
 <template>
   <div class="space-y-6">
     <div>
-      <h1 class="text-xl font-bold text-gray-900">Просроченные заявки</h1>
-      <p class="text-sm text-gray-500 mt-1">Заявки с истёкшим дедлайном</p>
+      <h1 class="text-xl font-bold text-gray-900">{{ t('crm.overdue.title') }}</h1>
+      <p class="text-sm text-gray-500 mt-1">{{ t('crm.overdue.subtitle') }}</p>
     </div>
 
-    <div v-if="loading" class="text-center py-12 text-gray-400">Загрузка...</div>
+    <div v-if="loading" class="text-center py-12 text-gray-400">{{ t('crm.overdue.loading') }}</div>
 
     <div v-else-if="cases.length === 0"
       class="text-center py-16 bg-white rounded-xl border border-gray-200">
       <p class="text-2xl mb-2">✓</p>
-      <p class="text-gray-600 font-medium">Просроченных заявок нет</p>
-      <p class="text-sm text-gray-400 mt-1">Все заявки в срок</p>
+      <p class="text-gray-600 font-medium">{{ t('crm.overdue.empty') }}</p>
+      <p class="text-sm text-gray-400 mt-1">{{ t('crm.overdue.allOnTime') }}</p>
     </div>
 
     <div v-else class="bg-white rounded-xl border border-gray-200 overflow-hidden">
       <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
         <span class="text-sm font-medium text-gray-700">
-          {{ cases.length }} {{ cases.length === 1 ? 'заявка' : cases.length < 5 ? 'заявки' : 'заявок' }}
+          {{ t('crm.overdue.count', { n: cases.length }, cases.length) }}
         </span>
       </div>
 
@@ -32,7 +32,7 @@
                   c.severity === 'critical'
                     ? 'bg-red-100 text-red-700'
                     : 'bg-yellow-100 text-yellow-700']">
-                  {{ c.severity === 'critical' ? 'Критично' : 'Предупреждение' }}
+                  {{ c.severity === 'critical' ? t('crm.overdue.critical') : t('crm.overdue.warning') }}
                 </span>
                 <span class="text-sm font-medium text-gray-900">
                   {{ c.client?.name }}
@@ -41,9 +41,9 @@
               </div>
 
               <div class="flex items-center gap-4 mt-1.5 text-xs text-gray-500">
-                <span>Этап: <span class="font-medium text-gray-700">{{ stageLabel(c.stage) }}</span></span>
-                <span v-if="c.assignee">Менеджер: <span class="font-medium text-gray-700">{{ c.assignee.name }}</span></span>
-                <span>Дедлайн: <span class="font-medium text-gray-700">{{ formatDate(c.critical_date) }}</span></span>
+                <span>{{ t('crm.overdue.stageLabel') }} <span class="font-medium text-gray-700">{{ stageLabel(c.stage) }}</span></span>
+                <span v-if="c.assignee">{{ t('crm.overdue.managerLabel') }} <span class="font-medium text-gray-700">{{ c.assignee.name }}</span></span>
+                <span>{{ t('crm.overdue.deadlineLabel') }} <span class="font-medium text-gray-700">{{ formatDate(c.critical_date) }}</span></span>
               </div>
             </div>
 
@@ -52,7 +52,7 @@
                 c.severity === 'critical' ? 'text-red-600' : 'text-yellow-600']">
                 +{{ c.days_overdue }}
               </div>
-              <div class="text-xs text-gray-400">дней</div>
+              <div class="text-xs text-gray-400">{{ t('crm.overdue.days') }}</div>
             </div>
           </div>
         </div>
@@ -62,21 +62,23 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import api from '@/api/index';
 import { useCountries } from '@/composables/useCountries';
 
+const { t } = useI18n();
 const { countryName, countryFlag, visaTypeName } = useCountries();
 
 const loading = ref(true);
 const cases = ref([]);
 
-const stageLabels = {
-  lead: 'Лид', qualification: 'Квалификация', documents: 'Документы',
-  translation: 'Перевод', appointment: 'Запись', review: 'На рассмотрении', result: 'Результат',
-};
+const stageLabels = computed(() => ({
+  lead: t('crm.stages.lead'), qualification: t('crm.stages.qualification'), documents: t('crm.stages.documents'),
+  translation: t('crm.stages.translation'), appointment: t('crm.stages.appointment'), review: t('crm.stages.review'), result: t('crm.stages.result'),
+}));
 
-function stageLabel(s) { return stageLabels[s] || s; }
+function stageLabel(s) { return stageLabels.value[s] || s; }
 
 function formatDate(d) {
   if (!d) return '—';

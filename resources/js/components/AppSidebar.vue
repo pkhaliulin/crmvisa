@@ -25,7 +25,7 @@
       <div class="pt-3 mt-3 border-t border-gray-700/50">
         <SidebarLink v-if="isOwner"
           :to="{ name: 'users' }" :icon="UserGroupIcon"
-          label="Сотрудники" :collapsed="collapsed"
+          :label="t('crm.nav.users')" :collapsed="collapsed"
         />
       </div>
     </nav>
@@ -52,6 +52,7 @@
 <script setup>
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { useAuthStore } from '@/stores/auth';
 import SidebarLink from './SidebarLink.vue';
 import {
@@ -63,6 +64,7 @@ import {
 defineProps({ collapsed: Boolean });
 defineEmits(['toggle']);
 
+const { t }  = useI18n();
 const auth   = useAuthStore();
 const router = useRouter();
 const user   = computed(() => auth.user);
@@ -71,24 +73,24 @@ const userInitial = computed(() => user.value?.name?.[0]?.toUpperCase() ?? 'U');
 
 const navItems = computed(() => {
   const items = [
-    { to: { name: 'dashboard' }, icon: HomeIcon,                   label: 'Дашборд', exact: true },
-    { to: { name: 'kanban' },    icon: ViewColumnsIcon,             label: 'Канбан' },
-    { to: { name: 'cases' },     icon: ClipboardDocumentListIcon,   label: 'Заявки' },
-    { to: { name: 'clients' },   icon: UsersIcon,                   label: 'Клиенты' },
-    { to: { name: 'overdue' },   icon: ExclamationTriangleIcon,     label: 'Просрочки' },
+    { to: { name: 'dashboard' }, icon: HomeIcon,                   label: t('crm.nav.dashboard'), exact: true },
+    { to: { name: 'kanban' },    icon: ViewColumnsIcon,             label: t('crm.nav.kanban') },
+    { to: { name: 'cases' },     icon: ClipboardDocumentListIcon,   label: t('crm.nav.cases') },
+    { to: { name: 'clients' },   icon: UsersIcon,                   label: t('crm.nav.clients') },
+    { to: { name: 'overdue' },   icon: ExclamationTriangleIcon,     label: t('crm.nav.overdue') },
   ];
 
   // Страны — для owner и manager
   items.push(
-    { to: { name: 'countries' }, icon: GlobeAltIcon, label: 'Страны' },
+    { to: { name: 'countries' }, icon: GlobeAltIcon, label: t('crm.nav.countries') },
   );
 
   if (isOwner.value) {
     items.push(
-      { to: { name: 'reports' },   icon: ChartBarIcon,   label: 'Отчёты' },
-      { to: { name: 'services' },  icon: BriefcaseIcon,  label: 'Услуги' },
-      { to: { name: 'billing' },   icon: CreditCardIcon, label: 'Тариф' },
-      { to: { name: 'settings' },  icon: Cog6ToothIcon,  label: 'Настройки' },
+      { to: { name: 'reports' },   icon: ChartBarIcon,   label: t('crm.nav.reports') },
+      { to: { name: 'services' },  icon: BriefcaseIcon,  label: t('crm.nav.services') },
+      { to: { name: 'billing' },   icon: CreditCardIcon, label: t('crm.nav.billing') },
+      { to: { name: 'settings' },  icon: Cog6ToothIcon,  label: t('crm.nav.settings') },
     );
   }
 

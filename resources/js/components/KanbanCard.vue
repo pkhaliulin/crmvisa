@@ -13,7 +13,7 @@
       <svg class="w-3.5 h-3.5 text-amber-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
       </svg>
-      <span class="text-[10px] font-semibold text-amber-700">Ожидает оплаты клиентом</span>
+      <span class="text-[10px] font-semibold text-amber-700">{{ t('crm.card.awaitingPayment') }}</span>
     </div>
 
     <!-- Header: country + priority -->
@@ -49,7 +49,7 @@
 
     <!-- Deadline (critical_date) -->
     <div v-else-if="item.critical_date" :class="['flex items-center gap-1 mt-2 text-xs font-medium', urgencyText]"
-      :title="item.deadline_info ? `Рассмотрение: ${item.deadline_info.processing_days} дн, ожидание приема: ${item.deadline_info.appointment_wait_days} дн, запас: ${item.deadline_info.buffer_days} дн` : ''">
+      :title="deadlineTooltip">
       <span>{{ urgencyIcon }}</span>
       <span>{{ deadlineLabel }}</span>
     </div>
@@ -69,7 +69,7 @@
     </div>
     <div v-else-if="['ready','review'].includes(item.stage)" class="flex items-center gap-1 mt-2 text-xs font-medium text-red-500">
       <span>🔴</span>
-      <span>Дата приема не назначена</span>
+      <span>{{ t('crm.card.appointmentNotSet') }}</span>
     </div>
 
     <!-- Assignee / Assign button -->
@@ -81,7 +81,7 @@
           autofocus
           @change="onSelectManager($event.target.value)"
           @blur="showAssignDropdown = false">
-          <option value="">-- выберите --</option>
+          <option value="">{{ t('crm.card.selectManager') }}</option>
           <option v-for="m in managers" :key="m.id" :value="m.id"
             :selected="item.assigned_to === m.id">{{ m.name }}</option>
         </select>
@@ -108,7 +108,7 @@
           <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
           </svg>
-          Назначить
+          {{ t('crm.card.assign') }}
         </button>
       </template>
     </div>
@@ -117,8 +117,11 @@
 
 <script setup>
 import { ref, computed, inject } from 'vue';
+import { useI18n } from 'vue-i18n';
 import AppBadge from './AppBadge.vue';
 import { formatPhone } from '@/utils/format';
+
+const { t } = useI18n();
 
 const props = defineProps({ item: Object });
 const emit = defineEmits(['click', 'move', 'assign']);
@@ -139,14 +142,13 @@ const COUNTRY_FLAGS = {
 };
 
 const flagEmoji     = computed(() => COUNTRY_FLAGS[props.item.country_code] ?? '🌍');
-const priorityMap   = {
-  low:    { color: 'gray',   label: 'Низкий' },
-  normal: { color: 'blue',   label: 'Обычный' },
-  high:   { color: 'orange', label: 'Высокий' },
-  urgent: { color: 'red',    label: 'Срочный' },
-};
-const priorityColor = computed(() => priorityMap[props.item.priority]?.color ?? 'gray');
-const priorityLabel = computed(() => priorityMap[props.item.priority]?.label ?? '');
+
+const PRIORITY_COLORS = { low: 'gray', normal: 'blue', high: 'orange', urgent: 'red' };
+const priorityColor = computed(() => PRIORITY_COLORS[props.item.priority] ?? 'gray');
+const priorityLabel = computed(() => {
+  const key = props.item.priority;
+  return key ? t(`crm.priority.${key}`) : '';
+});
 
 // Border: SLA overdue (red bg) > urgency overdue > critical > normal
 const cardBorder = computed(() => {
@@ -170,9 +172,15 @@ const urgencyIcon = computed(() => {
 const deadlineLabel = computed(() => {
   const d = props.item.days_left;
   if (d === null || d === undefined) return '';
-  if (d < 0)  return `Просрочено на ${Math.abs(d)} дн.`;
-  if (d === 0) return 'Сегодня дедлайн!';
-  return `${d} дн. до дедлайна`;
+  if (d < 0)  return t('crm.card.overdueBy', { n: Math.abs(d) });
+  if (d === 0) return t('crm.card.deadlineToday');
+  return t('crm.card.daysLeft', { n: d });
+});
+
+const deadlineTooltip = computed(() => {
+  if (!props.item.deadline_info) return '';
+  const info = props.item.deadline_info;
+  return `${info.processing_days}d / ${info.appointment_wait_days}d / ${info.buffer_days}d`;
 });
 
 // SLA stage timer
@@ -189,9 +197,9 @@ const slaIcon = computed(() => {
 const slaLabel = computed(() => {
   const h = props.item.stage_sla_hours_left;
   if (h === null || h === undefined) return '';
-  if (h < 0) return `Просрочено на ${Math.abs(h)} ч`;
-  if (h === 0) return 'SLA истекает сейчас!';
-  return `SLA: ${h} ч осталось`;
+  if (h < 0) return t('crm.card.slaOverdueBy', { n: Math.abs(h) });
+  if (h === 0) return t('crm.card.slaExpiresNow');
+  return t('crm.card.slaLeft', { n: h });
 });
 
 // Payment badge
@@ -203,8 +211,8 @@ const paymentBadgeClass = computed(() => {
 });
 const paymentLabel = computed(() => {
   const s = props.item.payment_status;
-  if (s === 'paid') return 'Оплачено';
-  if (s === 'pending') return 'Ожидает оплаты';
-  return 'Не оплачено';
+  if (s === 'paid') return t('crm.card.paid');
+  if (s === 'pending') return t('crm.card.pendingPayment');
+  return t('crm.card.unpaid');
 });
 </script>

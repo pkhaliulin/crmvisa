@@ -10,7 +10,7 @@
         <div class="flex items-center gap-2 flex-wrap">
           <p class="text-sm font-medium text-gray-800">{{ item.name }}</p>
           <span v-if="!item.is_required" class="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
-            опц.
+            {{ t('crm.doc.optional') }}
           </span>
           <AppBadge :color="statusColor">{{ statusLabel }}</AppBadge>
         </div>
@@ -24,9 +24,9 @@
             class="text-xs text-blue-600 hover:text-blue-800 font-medium truncate max-w-[200px]">
             {{ item.document.original_name }}
           </button>
-          <a v-if="isSafeUrl(item.document.url)" :href="item.document.url" download class="text-[10px] text-gray-400 hover:text-gray-600">Скачать</a>
+          <a v-if="isSafeUrl(item.document.url)" :href="item.document.url" download class="text-[10px] text-gray-400 hover:text-gray-600">{{ t('crm.doc.download') }}</a>
           <label class="text-[10px] text-gray-400 hover:text-gray-600 cursor-pointer">
-            Заменить
+            {{ t('crm.doc.replace') }}
             <input type="file" class="hidden" @change="$emit('upload', item, $event)" />
           </label>
         </div>
@@ -47,28 +47,28 @@
         <div v-if="item.review_status === 'needs_translation'"
           class="mt-2 p-2.5 bg-purple-50/60 rounded-lg border border-purple-100">
           <div class="flex items-center gap-2 text-xs text-purple-700">
-            <span>Перевод: {{ item.translation_pages ?? '?' }} стр.</span>
-            <span v-if="item.translation_price"> / {{ item.translation_price.toLocaleString() }} сум</span>
+            <span>{{ t('crm.doc.translationPages', { n: item.translation_pages ?? '?' }) }}</span>
+            <span v-if="item.translation_price"> {{ t('crm.doc.translationPrice', { price: item.translation_price.toLocaleString() }) }}</span>
           </div>
 
           <!-- Upload translation -->
           <label v-if="item.status === 'needs_translation'"
             class="mt-2 inline-block cursor-pointer text-xs px-3 py-1.5 rounded-lg border border-purple-200 text-purple-700 bg-purple-100 hover:bg-purple-200 font-medium transition-colors">
-            Загрузить перевод
+            {{ t('crm.doc.uploadTranslation') }}
             <input type="file" class="hidden" @change="$emit('upload-translation', item, $event)" />
           </label>
 
           <!-- Approve translation -->
           <div v-if="item.status === 'translated'" class="mt-2 flex items-center gap-2">
-            <span class="text-xs text-purple-600">Перевод загружен</span>
+            <span class="text-xs text-purple-600">{{ t('crm.doc.translationUploaded') }}</span>
             <button @click="$emit('approve-translation', item)"
               class="text-xs px-3 py-1.5 rounded-lg bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 font-medium transition-colors">
-              Одобрить
+              {{ t('crm.doc.approve') }}
             </button>
           </div>
 
           <p v-if="item.status === 'translation_approved'" class="mt-1 text-xs text-green-600 font-medium">
-            Перевод одобрен
+            {{ t('crm.doc.translationApproved') }}
           </p>
         </div>
       </div>
@@ -79,13 +79,13 @@
         <button v-if="item.type === 'checkbox'" @click="$emit('toggle', item)"
           :class="['text-xs px-2.5 py-1 rounded-lg border font-medium transition-colors',
             item.is_checked ? 'border-green-300 text-green-700 bg-green-50 hover:bg-green-100' : 'border-gray-200 text-gray-600 hover:bg-gray-50']">
-          {{ item.is_checked ? 'Готово' : 'Отметить' }}
+          {{ item.is_checked ? t('crm.doc.done') : t('crm.doc.mark') }}
         </button>
 
         <!-- Upload (empty slot) -->
         <label v-if="!item.document && item.type !== 'checkbox' && !['approved','needs_translation','translated','translation_approved'].includes(item.status)"
           class="cursor-pointer text-xs px-2.5 py-1 rounded-lg border border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100 font-medium transition-colors">
-          Загрузить
+          {{ t('crm.doc.upload') }}
           <input type="file" class="hidden" @change="$emit('upload', item, $event)" />
         </label>
 
@@ -93,15 +93,15 @@
         <template v-if="item.document && item.status === 'uploaded'">
           <button @click="$emit('review', item, 'approved')"
             class="text-xs px-2 py-1 rounded-lg bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 transition-colors">
-            OK
+            {{ t('crm.doc.ok') }}
           </button>
           <button @click="$emit('translation', item)"
             class="text-xs px-2 py-1 rounded-lg bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100 transition-colors">
-            Перевод
+            {{ t('crm.doc.translation') }}
           </button>
           <button @click="$emit('reject', item)"
             class="text-xs px-2 py-1 rounded-lg bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 transition-colors">
-            Нет
+            {{ t('crm.doc.no') }}
           </button>
         </template>
 
@@ -123,25 +123,27 @@
 
 <script setup>
 import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import AppBadge from './AppBadge.vue';
 
+const { t } = useI18n();
 const props = defineProps({ item: Object });
 defineEmits(['upload', 'toggle', 'review', 'reject', 'translation', 'upload-translation', 'approve-translation', 'preview', 'delete', 'repeat']);
 
-const STATUS_MAP = {
-  approved:             { color: 'green',  label: 'Принято',     border: 'border-green-100 bg-green-50/30',   bar: 'bg-green-400' },
-  translation_approved: { color: 'green',  label: 'Перевод OK',  border: 'border-green-100 bg-green-50/30',   bar: 'bg-green-400' },
-  rejected:             { color: 'red',    label: 'Отклонено',   border: 'border-red-100 bg-red-50/20',       bar: 'bg-red-400' },
-  needs_translation:    { color: 'purple', label: 'На перевод',  border: 'border-purple-100 bg-purple-50/20', bar: 'bg-purple-400' },
-  translated:           { color: 'purple', label: 'Переведено',  border: 'border-purple-100 bg-purple-50/20', bar: 'bg-purple-400' },
-  uploaded:             { color: 'blue',   label: 'На проверке', border: 'border-blue-100 bg-blue-50/20',     bar: 'bg-blue-400' },
-};
+const STATUS_MAP = computed(() => ({
+  approved:             { color: 'green',  label: t('crm.doc.statusAccepted'),       border: 'border-green-100 bg-green-50/30',   bar: 'bg-green-400' },
+  translation_approved: { color: 'green',  label: t('crm.doc.statusTranslationOk'),  border: 'border-green-100 bg-green-50/30',   bar: 'bg-green-400' },
+  rejected:             { color: 'red',    label: t('crm.doc.statusRejected'),        border: 'border-red-100 bg-red-50/20',       bar: 'bg-red-400' },
+  needs_translation:    { color: 'purple', label: t('crm.doc.statusForTranslation'),  border: 'border-purple-100 bg-purple-50/20', bar: 'bg-purple-400' },
+  translated:           { color: 'purple', label: t('crm.doc.statusTranslated'),      border: 'border-purple-100 bg-purple-50/20', bar: 'bg-purple-400' },
+  uploaded:             { color: 'blue',   label: t('crm.doc.statusReview'),           border: 'border-blue-100 bg-blue-50/20',     bar: 'bg-blue-400' },
+}));
 
 const statusEntry = computed(() => {
   const s = props.item.status;
-  if (STATUS_MAP[s]) return STATUS_MAP[s];
-  if (props.item.is_checked) return { color: 'blue', label: 'На проверке', border: 'border-gray-100', bar: 'bg-blue-400' };
-  return { color: 'gray', label: props.item.is_required ? 'Ожидает' : 'Не загружен', border: 'border-gray-100', bar: 'bg-gray-200' };
+  if (STATUS_MAP.value[s]) return STATUS_MAP.value[s];
+  if (props.item.is_checked) return { color: 'blue', label: t('crm.doc.statusReview'), border: 'border-gray-100', bar: 'bg-blue-400' };
+  return { color: 'gray', label: props.item.is_required ? t('common.required', 'Ожидает') : t('crm.doc.statusNotUploaded'), border: 'border-gray-100', bar: 'bg-gray-200' };
 });
 
 const statusColor = computed(() => statusEntry.value.color);

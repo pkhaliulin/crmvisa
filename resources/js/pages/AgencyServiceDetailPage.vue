@@ -11,8 +11,8 @@
       <div class="flex-1 min-w-0">
         <div class="flex items-center gap-2">
           <span v-if="pkg.country_code" class="text-2xl">{{ codeToFlag(pkg.country_code) }}</span>
-          <h1 class="text-xl font-bold text-gray-900 truncate">{{ pkg.name || 'Пакет услуг' }}</h1>
-          <span v-if="!pkg.is_active" class="text-xs px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full">Неактивен</span>
+          <h1 class="text-xl font-bold text-gray-900 truncate">{{ pkg.name || t('crm.serviceDetail.title') }}</h1>
+          <span v-if="!pkg.is_active" class="text-xs px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full">{{ t('crm.serviceDetail.inactive') }}</span>
         </div>
         <p v-if="pkg.name_uz" class="text-sm text-gray-400 mt-0.5">{{ pkg.name_uz }}</p>
       </div>
@@ -20,11 +20,11 @@
         <button @click="editing = !editing"
           class="px-3 py-2 text-sm font-medium rounded-lg border transition-colors"
           :class="editing ? 'border-amber-300 bg-amber-50 text-amber-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50'">
-          {{ editing ? 'Отменить' : 'Редактировать' }}
+          {{ editing ? t('common.cancel') : t('crm.serviceDetail.edit') }}
         </button>
         <button @click="confirmDelete"
           class="px-3 py-2 text-sm font-medium rounded-lg border border-red-200 text-red-500 hover:bg-red-50 transition-colors">
-          Удалить
+          {{ t('crm.serviceDetail.delete') }}
         </button>
       </div>
     </div>
@@ -41,21 +41,21 @@
         <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
           <div class="grid grid-cols-2 sm:grid-cols-4 divide-x divide-gray-100">
             <div class="px-4 py-4 text-center">
-              <div class="text-xs text-gray-400 mb-1">Стоимость</div>
+              <div class="text-xs text-gray-400 mb-1">{{ t('crm.serviceDetail.cost') }}</div>
               <div class="font-bold text-lg text-gray-900">{{ formatPrice(pkg.price) }}</div>
               <div class="text-xs text-gray-400">{{ pkg.currency || 'UZS' }}</div>
             </div>
             <div class="px-4 py-4 text-center">
-              <div class="text-xs text-gray-400 mb-1">Срок</div>
+              <div class="text-xs text-gray-400 mb-1">{{ t('crm.serviceDetail.term') }}</div>
               <div class="font-bold text-lg text-gray-900">{{ pkg.processing_days }}</div>
-              <div class="text-xs text-gray-400">дней</div>
+              <div class="text-xs text-gray-400">{{ t('crm.serviceDetail.termDays') }}</div>
             </div>
             <div class="px-4 py-4 text-center">
-              <div class="text-xs text-gray-400 mb-1">Страна</div>
+              <div class="text-xs text-gray-400 mb-1">{{ t('crm.serviceDetail.country') }}</div>
               <div class="font-bold text-sm text-gray-900">{{ countryName(pkg.country_code) }}</div>
             </div>
             <div class="px-4 py-4 text-center">
-              <div class="text-xs text-gray-400 mb-1">Тип визы</div>
+              <div class="text-xs text-gray-400 mb-1">{{ t('crm.serviceDetail.visaType') }}</div>
               <div class="font-bold text-sm text-gray-900">{{ visaTypeName(pkg.visa_type) }}</div>
             </div>
           </div>
@@ -63,31 +63,31 @@
 
         <!-- Описание -->
         <div class="bg-white rounded-xl border border-gray-200 p-5 space-y-3">
-          <h3 class="text-sm font-semibold text-gray-600">Описание</h3>
+          <h3 class="text-sm font-semibold text-gray-600">{{ t('crm.serviceDetail.description') }}</h3>
           <div v-if="pkg.description" class="text-sm text-gray-700 leading-relaxed">
-            <span class="text-xs text-gray-400 mr-1">RU:</span>{{ pkg.description }}
+            <span class="text-xs text-gray-400 mr-1">{{ t('crm.serviceDetail.ruLabel') }}</span>{{ pkg.description }}
           </div>
           <div v-if="pkg.description_uz" class="text-sm text-gray-700 leading-relaxed">
-            <span class="text-xs text-gray-400 mr-1">UZ:</span>{{ pkg.description_uz }}
+            <span class="text-xs text-gray-400 mr-1">{{ t('crm.serviceDetail.uzLabel') }}</span>{{ pkg.description_uz }}
           </div>
         </div>
 
         <!-- Включённые услуги -->
         <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
           <div class="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
-            <h3 class="text-sm font-semibold text-gray-600">Включённые услуги</h3>
+            <h3 class="text-sm font-semibold text-gray-600">{{ t('crm.serviceDetail.includedServices') }}</h3>
             <span class="text-xs text-gray-400">{{ viewServices.length }}</span>
           </div>
 
           <!-- Обязательные услуги -->
           <div v-if="viewRequiredServices.length">
             <div class="bg-red-50/50 px-5 py-1.5 border-b border-red-100/50">
-              <span class="text-[10px] font-bold text-red-600 uppercase tracking-wide">Обязательные услуги</span>
+              <span class="text-[10px] font-bold text-red-600 uppercase tracking-wide">{{ t('crm.serviceDetail.requiredServices') }}</span>
             </div>
             <div v-for="svc in viewRequiredServices" :key="svc.id" class="px-5 py-3 bg-red-50/20 border-b border-red-100/30">
               <div class="flex items-center gap-2">
                 <span class="text-sm font-medium text-gray-800">{{ svc.name }}</span>
-                <span class="text-[9px] px-1.5 py-0.5 rounded-full bg-red-100 text-red-600 font-semibold">Обязательная</span>
+                <span class="text-[9px] px-1.5 py-0.5 rounded-full bg-red-100 text-red-600 font-semibold">{{ t('crm.serviceDetail.requiredBadge') }}</span>
                 <span class="text-xs text-gray-400 ml-auto">{{ categoryLabel(svc.category) }}</span>
               </div>
               <p v-if="svc.agency_hint" class="text-xs text-gray-500 mt-1 leading-relaxed">{{ svc.agency_hint }}</p>
@@ -98,7 +98,7 @@
           <!-- Дополнительные услуги из пакета -->
           <div v-if="viewOptionalItems.length">
             <div class="bg-gray-50 px-5 py-1.5 border-b border-gray-100">
-              <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Дополнительные услуги</span>
+              <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wide">{{ t('crm.serviceDetail.optionalServices') }}</span>
             </div>
             <div v-for="item in viewOptionalItems" :key="item.id" class="px-5 py-3 border-b border-gray-50">
               <div class="flex items-center gap-2">
@@ -110,14 +110,14 @@
             </div>
           </div>
 
-          <div v-if="!viewServices.length" class="px-5 py-6 text-center text-sm text-gray-400">Нет услуг</div>
+          <div v-if="!viewServices.length" class="px-5 py-6 text-center text-sm text-gray-400">{{ t('crm.serviceDetail.noServices') }}</div>
         </div>
 
         <!-- Статус -->
         <div class="flex items-center gap-3">
-          <span class="text-sm text-gray-500">Статус:</span>
+          <span class="text-sm text-gray-500">{{ t('crm.serviceDetail.statusLabel') }}</span>
           <span class="text-sm font-medium" :class="pkg.is_active ? 'text-green-600' : 'text-gray-400'">
-            {{ pkg.is_active ? 'Активен' : 'Неактивен' }}
+            {{ pkg.is_active ? t('crm.serviceDetail.statusActive') : t('crm.serviceDetail.statusInactive') }}
           </span>
         </div>
       </template>
@@ -134,18 +134,18 @@
 
           <!-- Автоназвание -->
           <div v-if="autoName" class="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3">
-            <div class="text-xs text-blue-500 font-medium mb-1">Название пакета</div>
+            <div class="text-xs text-blue-500 font-medium mb-1">{{ t('crm.services.packageName') }}</div>
             <div class="font-semibold text-gray-900 text-sm">{{ autoName }}</div>
             <div class="text-xs text-gray-500 mt-0.5">{{ autoNameUz }}</div>
           </div>
 
           <div class="grid grid-cols-2 gap-3">
             <div class="relative">
-              <label class="block text-sm font-medium text-gray-700 mb-1">Страна</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('crm.serviceDetail.country') }}</label>
               <div class="relative">
                 <input v-model="countrySearch" @input="onCountryInput" @focus="countryDropdown = true"
                   @blur="() => setTimeout(() => countryDropdown = false, 200)"
-                  placeholder="Начните вводить..."
+                  :placeholder="t('crm.services.countrySearch')"
                   :class="['w-full border rounded-lg px-3 py-2 text-sm outline-none pr-6',
                     form.country_code ? 'border-green-500 bg-green-50 text-green-800 font-medium' : 'border-gray-200 focus:border-blue-400']" />
                 <button v-if="form.country_code" type="button" @click="clearCountry"
@@ -163,20 +163,20 @@
               </div>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Тип визы</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('crm.serviceDetail.visaType') }}</label>
               <select v-model="form.visa_type" :disabled="!form.country_code"
                 class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400 disabled:bg-gray-50 disabled:text-gray-400">
-                <option value="">{{ form.country_code ? '-- выберите --' : '-- сначала страну --' }}</option>
+                <option value="">{{ form.country_code ? t('crm.services.selectDefault') : t('crm.services.selectCountryFirst') }}</option>
                 <option v-for="slug in selectedCountryVisaTypes" :key="slug" :value="slug">{{ visaTypeName(slug) }}</option>
               </select>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Цена (UZS)</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('crm.services.priceLabel') }}</label>
               <input v-model.number="form.price" type="number" min="0" placeholder="2000000"
                 class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Срок (дней)</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('crm.services.daysLabel') }}</label>
               <input v-model.number="form.processing_days" type="number" min="1" placeholder="14"
                 class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400" />
             </div>
@@ -184,31 +184,31 @@
 
           <div>
             <div class="flex items-center justify-between mb-1">
-              <label class="block text-sm font-medium text-gray-700">Описание (RU)</label>
+              <label class="block text-sm font-medium text-gray-700">{{ t('crm.services.descRu') }}</label>
               <span class="text-xs" :class="(form.description?.length || 0) > 450 ? 'text-red-500' : 'text-gray-400'">
                 {{ form.description?.length || 0 }}/500
               </span>
             </div>
-            <textarea v-model="form.description" rows="2" maxlength="500" placeholder="Полное сопровождение..."
+            <textarea v-model="form.description" rows="2" maxlength="500" :placeholder="t('crm.services.descRuPlaceholder')"
               class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"></textarea>
           </div>
           <div>
             <div class="flex items-center justify-between mb-1">
-              <label class="block text-sm font-medium text-gray-700">Tavsif (UZ)</label>
+              <label class="block text-sm font-medium text-gray-700">{{ t('crm.services.descUz') }}</label>
               <span class="text-xs" :class="(form.description_uz?.length || 0) > 450 ? 'text-red-500' : 'text-gray-400'">
                 {{ form.description_uz?.length || 0 }}/500
               </span>
             </div>
-            <textarea v-model="form.description_uz" rows="2" maxlength="500" placeholder="Viza rasmiylashtirish..."
+            <textarea v-model="form.description_uz" rows="2" maxlength="500" :placeholder="t('crm.services.descUzPlaceholder')"
               class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"></textarea>
           </div>
 
           <!-- Услуги -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Включённые услуги</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('crm.serviceDetail.includedServices') }}</label>
             <div class="space-y-0.5 border border-gray-200 rounded-lg overflow-hidden">
               <div v-if="requiredServices.length" class="bg-red-50/50 px-3 py-1.5">
-                <span class="text-[10px] font-bold text-red-600 uppercase tracking-wide">Обязательные</span>
+                <span class="text-[10px] font-bold text-red-600 uppercase tracking-wide">{{ t('crm.serviceDetail.requiredServices') }}</span>
               </div>
               <div v-for="svc in requiredServices" :key="svc.id"
                 class="px-3 py-2 bg-red-50/30 border-b border-red-100/50">
@@ -217,14 +217,14 @@
                   <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-2">
                       <span class="text-sm font-medium text-gray-900">{{ svc.name }}</span>
-                      <span class="text-[9px] px-1.5 py-0.5 rounded-full bg-red-100 text-red-600 font-semibold">Обязательная</span>
+                      <span class="text-[9px] px-1.5 py-0.5 rounded-full bg-red-100 text-red-600 font-semibold">{{ t('crm.serviceDetail.requiredBadge') }}</span>
                     </div>
                     <p v-if="svc.agency_hint" class="text-xs text-gray-500 mt-0.5">{{ svc.agency_hint }}</p>
                   </div>
                 </label>
               </div>
               <div v-if="optionalServices.length" class="bg-gray-50 px-3 py-1.5 border-t border-gray-100">
-                <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Дополнительные</span>
+                <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wide">{{ t('crm.serviceDetail.optionalServices') }}</span>
               </div>
               <div v-for="svc in optionalServices" :key="svc.id"
                 class="px-3 py-2 border-b border-gray-50 hover:bg-blue-50/30 transition-colors">
@@ -246,15 +246,15 @@
           <div class="flex items-center gap-2">
             <input type="checkbox" v-model="form.is_active" id="pkg-active"
               class="w-4 h-4 text-blue-600 rounded border-gray-300" />
-            <label for="pkg-active" class="text-sm text-gray-700">Активный пакет</label>
+            <label for="pkg-active" class="text-sm text-gray-700">{{ t('crm.serviceDetail.activePackage') }}</label>
           </div>
 
           <div class="flex justify-end gap-3 pt-2">
             <button @click="editing = false"
-              class="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50">Отмена</button>
+              class="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50">{{ t('common.cancel') }}</button>
             <button @click="save" :disabled="saving || !canSave"
               class="px-4 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50">
-              {{ saving ? 'Сохранение...' : 'Сохранить' }}
+              {{ saving ? t('crm.services.saving') : t('crm.services.save') }}
             </button>
           </div>
         </div>
@@ -266,10 +266,12 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import api from '@/api/index';
 import { countriesApi } from '@/api/countries';
 import { codeToFlag } from '@/utils/countries';
 
+const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 
@@ -284,12 +286,15 @@ const allVisaTypes = ref([]);
 const formErrors = ref([]);
 
 const CATEGORY_ORDER = ['consultation', 'documents', 'translation', 'visa_center', 'financial', 'other'];
-const categoryLabels = {
-  consultation: 'Консультация', documents: 'Документы',
-  translation: 'Перевод', visa_center: 'Визовый центр',
-  financial: 'Финансы', other: 'Прочее',
-};
-function categoryLabel(cat) { return categoryLabels[cat] || cat; }
+const categoryLabels = computed(() => ({
+  consultation: t('crm.services.categories.consultation'),
+  documents: t('crm.services.categories.documents'),
+  translation: t('crm.services.categories.translation'),
+  visa_center: t('crm.services.categories.visa_center'),
+  financial: t('crm.services.categories.finance'),
+  other: t('crm.services.categories.other'),
+}));
+function categoryLabel(cat) { return categoryLabels.value[cat] || cat; }
 
 const VISA_TYPE_RU = {
   tourist: 'Туристическая виза', business: 'Бизнес-виза', student: 'Студенческая виза',
@@ -411,12 +416,12 @@ function fillForm() {
 
 async function save() {
   const errors = [];
-  if (!form.value.country_code) errors.push('Выберите страну');
-  if (!form.value.visa_type) errors.push('Выберите тип визы');
-  if (!form.value.price || form.value.price <= 0) errors.push('Укажите стоимость');
-  if (!form.value.processing_days || form.value.processing_days < 1) errors.push('Укажите срок');
-  if (!form.value.description?.trim()) errors.push('Заполните описание (RU)');
-  if (!form.value.description_uz?.trim()) errors.push('Заполните описание (UZ)');
+  if (!form.value.country_code) errors.push(t('crm.caseForm.selectCountry'));
+  if (!form.value.visa_type) errors.push(t('crm.caseForm.selectVisaType'));
+  if (!form.value.price || form.value.price <= 0) errors.push(t('crm.services.priceRequired'));
+  if (!form.value.processing_days || form.value.processing_days < 1) errors.push(t('crm.services.daysRequired'));
+  if (!form.value.description?.trim()) errors.push(t('crm.services.descRuRequired'));
+  if (!form.value.description_uz?.trim()) errors.push(t('crm.services.descUzRequired'));
 
   // Проверка дубликата
   const dup = allPackages.value.find(p =>
@@ -424,7 +429,7 @@ async function save() {
     p.visa_type === form.value.visa_type &&
     p.id !== pkg.value.id
   );
-  if (dup) errors.push(`Пакет для ${countryName(dup.country_code)} — ${visaTypeName(dup.visa_type)} уже существует`);
+  if (dup) errors.push(t('crm.services.duplicateError', { name: dup.name }));
 
   if (errors.length) { formErrors.value = errors; return; }
 
@@ -440,7 +445,7 @@ async function save() {
     pkg.value = res.data.data;
     editing.value = false;
   } catch (e) {
-    const msg = e?.response?.data?.message || e?.response?.data?.error || 'Ошибка сохранения';
+    const msg = e?.response?.data?.message || e?.response?.data?.error || t('crm.services.saveError');
     formErrors.value = [msg];
     const errs = e?.response?.data?.errors;
     if (errs) {
@@ -452,7 +457,7 @@ async function save() {
 }
 
 async function confirmDelete() {
-  if (!confirm('Удалить этот пакет?')) return;
+  if (!confirm(t('common.confirmDeleteMessage'))) return;
   await api.delete(`/agency/packages/${pkg.value.id}`);
   router.push({ name: 'services' });
 }

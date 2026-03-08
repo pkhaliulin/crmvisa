@@ -19,7 +19,7 @@
       </div>
 
       <span v-if="column.sla_hours" class="text-[10px] text-gray-400 font-medium shrink-0">
-        SLA: {{ column.sla_hours }}ч
+        {{ t('crm.kanbanPage.slaLabel', { n: column.sla_hours }) }}
       </span>
       <span class="bg-gray-200 text-gray-600 text-xs rounded-full px-2 py-0.5 font-medium shrink-0">
         {{ column.count }}
@@ -81,8 +81,11 @@
 <script setup>
 import { ref, computed, inject } from 'vue';
 import { Teleport } from 'vue';
+import { useI18n } from 'vue-i18n';
 import draggable from 'vuedraggable';
 import KanbanCard from './KanbanCard.vue';
+
+const { t } = useI18n();
 
 const props = defineProps({ column: Object });
 const emit  = defineEmits(['move', 'open', 'assign']);

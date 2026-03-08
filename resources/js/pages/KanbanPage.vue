@@ -5,24 +5,24 @@
       <div class="flex gap-4 text-sm">
         <span class="flex items-center gap-1.5">
           <span class="w-2.5 h-2.5 rounded-full bg-red-500"></span>
-          Просрочено: <strong>{{ casesStore.stats.overdue }}</strong>
+          {{ t('crm.kanbanPage.overdueLabel') }} <strong>{{ casesStore.stats.overdue }}</strong>
         </span>
         <span class="flex items-center gap-1.5">
           <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
-          Горящих: <strong>{{ casesStore.stats.critical }}</strong>
+          {{ t('crm.kanbanPage.criticalLabel') }} <strong>{{ casesStore.stats.critical }}</strong>
         </span>
         <span class="flex items-center gap-1.5">
           <span class="w-2.5 h-2.5 rounded-full bg-gray-300"></span>
-          Всего: <strong>{{ casesStore.stats.total }}</strong>
+          {{ t('crm.kanbanPage.totalLabel') }} <strong>{{ casesStore.stats.total }}</strong>
         </span>
         <span v-if="unassignedCount" class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 text-xs font-semibold">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
           </svg>
-          Без менеджера: {{ unassignedCount }}
+          {{ t('crm.kanbanPage.unassignedLabel') }} {{ unassignedCount }}
         </span>
         <span v-if="awaitingPaymentCount" class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 text-xs font-semibold">
-          Ожидает оплаты: {{ awaitingPaymentCount }}
+          {{ t('crm.kanbanPage.awaitingPaymentLabel') }} {{ awaitingPaymentCount }}
         </span>
       </div>
       <!-- Поиск по номеру заявки / клиенту -->
@@ -32,7 +32,7 @@
         </svg>
         <input v-model="searchQuery" type="text"
           class="pl-8 pr-8 py-1.5 w-56 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
-          placeholder="VB-XXXXXX / имя клиента..." />
+          :placeholder="t('crm.kanbanPage.searchPlaceholder')" />
         <button v-if="searchQuery" @click="searchQuery = ''"
           class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -42,7 +42,7 @@
       </div>
       <div class="ml-auto">
         <RouterLink :to="{ name: 'cases.create' }">
-          <AppButton size="sm">+ Новая заявка</AppButton>
+          <AppButton size="sm">{{ t('crm.kanbanPage.newCase') }}</AppButton>
         </RouterLink>
       </div>
     </div>
@@ -74,19 +74,19 @@
   </Transition>
 
   <!-- Move stage modal -->
-  <AppModal v-model="moveModal.show" title="Переместить заявку">
+  <AppModal v-model="moveModal.show" :title="t('crm.kanbanPage.moveTitle')">
     <div class="space-y-4">
       <p class="text-sm text-gray-600">
-        Переместить заявку в этап:
+        {{ t('crm.kanbanPage.moveDesc') }}
       </p>
-      <AppSelect v-model="moveModal.stage" :options="filteredStageOptions" placeholder="Выберите этап" />
+      <AppSelect v-model="moveModal.stage" :options="filteredStageOptions" :placeholder="t('crm.kanbanPage.selectStage')" />
       <div v-if="moveModal.stage" class="text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-2">
         {{ STAGES.find(s => s.value === moveModal.stage)?.tooltip }}
       </div>
-      <AppInput v-model="moveModal.notes" label="Комментарий (необязательно)" placeholder="Причина перехода..." />
+      <AppInput v-model="moveModal.notes" :label="t('crm.kanbanPage.commentOptional')" :placeholder="t('crm.kanbanPage.commentPlaceholder')" />
       <div class="flex gap-2 justify-end">
-        <AppButton variant="outline" @click="moveModal.show = false">Отмена</AppButton>
-        <AppButton :loading="moveModal.loading" @click="confirmMove">Переместить</AppButton>
+        <AppButton variant="outline" @click="moveModal.show = false">{{ t('crm.kanbanPage.cancel') }}</AppButton>
+        <AppButton :loading="moveModal.loading" @click="confirmMove">{{ t('crm.kanbanPage.moveBtn') }}</AppButton>
       </div>
     </div>
   </AppModal>
@@ -95,6 +95,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted, provide } from 'vue';
 import { useRouter, RouterLink } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { useCasesStore } from '@/stores/cases';
 import KanbanColumn from '@/components/KanbanColumn.vue';
 import AppButton from '@/components/AppButton.vue';
@@ -103,80 +104,21 @@ import AppSelect from '@/components/AppSelect.vue';
 import AppInput from '@/components/AppInput.vue';
 import api from '@/api/index';
 
-const STAGES = [
-  {
-    value: 'lead',
-    label: 'Лид',
-    icon: '📥',
-    sla_hours: 1,
-    tooltip: 'Связаться с клиентом в течение 1 часа. Уточнить цель поездки, сроки, состав группы.',
-    goal: 'Связаться с клиентом в течение 1 часа',
-    result: 'Клиент на связи, потребность понятна',
-  },
-  {
-    value: 'qualification',
-    label: 'Квалификация',
-    icon: '🔍',
-    sla_hours: 3,
-    tooltip: 'Проверить паспорт, определить тип визы, сформировать чек-лист, определить дату записи в посольство.',
-    goal: 'Оценить заявку, подготовить план, определить дату записи',
-    result: 'Чек-лист готов, дата записи определена, план согласован',
-  },
-  {
-    value: 'documents',
-    label: 'Сбор документов',
-    icon: '📋',
-    sla_hours: 72,
-    tooltip: 'Контролировать загрузку документов. Проверять качество сканов, запрашивать недостающие.',
-    goal: 'Собрать все документы за 72 часа',
-    result: 'Все документы загружены и готовы к проверке',
-  },
-  {
-    value: 'doc_review',
-    label: 'Проверка док.',
-    icon: '🔎',
-    sla_hours: 24,
-    tooltip: 'Проверить каждый документ. Определить какие нужно перевести. Отклонить некачественные.',
-    goal: 'Проверить документы и определить потребность в переводе за 24ч',
-    result: 'Документы проверены, список на перевод готов',
-  },
-  {
-    value: 'translation',
-    label: 'Перевод',
-    icon: '📝',
-    sla_hours: 48,
-    tooltip: 'Отправить документы на перевод. Контролировать сроки переводчика. Проверить качество.',
-    goal: 'Получить качественные переводы за 48 часов',
-    result: 'Переводы готовы и заверены',
-  },
-  {
-    value: 'ready',
-    label: 'Готов к подаче',
-    icon: '📦',
-    sla_hours: 24,
-    tooltip: 'Проверить пакет, подтвердить дату записи, проинструктировать клиента.',
-    goal: 'Подтвердить запись и проинструктировать клиента за 24ч',
-    result: 'Пакет готов, запись подтверждена, клиент проинструктирован',
-  },
-  {
-    value: 'review',
-    label: 'Рассмотрение',
-    icon: '⏳',
-    sla_hours: null,
-    tooltip: 'Ожидание решения посольства. Отслеживать статус, информировать клиента.',
-    goal: 'Отслеживать статус и информировать клиента',
-    result: 'Решение получено от посольства',
-  },
-  {
-    value: 'result',
-    label: 'Результат',
-    icon: '✅',
-    sla_hours: 4,
-    tooltip: 'Одобрено: выдать паспорт, закрыть. Отказ: анализ ошибок, план повторной подачи.',
-    goal: 'Завершить заявку или подготовить план при отказе',
-    result: 'Заявка закрыта или план повторной подачи согласован',
-  },
-];
+const { t } = useI18n();
+
+const STAGE_KEYS = ['lead', 'qualification', 'documents', 'doc_review', 'translation', 'ready', 'review', 'result'];
+const STAGE_ICONS = { lead: '📥', qualification: '🔍', documents: '📋', doc_review: '🔎', translation: '📝', ready: '📦', review: '⏳', result: '✅' };
+const STAGE_SLA   = { lead: 1, qualification: 3, documents: 72, doc_review: 24, translation: 48, ready: 24, review: null, result: 4 };
+
+const STAGES = computed(() => STAGE_KEYS.map(key => ({
+  value: key,
+  label: t(`crm.stages.${key}`),
+  icon: STAGE_ICONS[key],
+  sla_hours: STAGE_SLA[key],
+  tooltip: t(`crm.kanbanStageInfo.${key}_desc`),
+  goal: t(`crm.kanbanStageInfo.${key}_goal`),
+  result: t(`crm.kanbanStageInfo.${key}_done`),
+})));
 
 const ALLOWED_TRANSITIONS = {
   lead:          ['qualification'],
@@ -218,7 +160,7 @@ const boardWithMeta = computed(() => {
   if (!casesStore.board) return [];
   const q = searchQuery.value.trim().toLowerCase();
   return casesStore.board.map(col => {
-    const meta = STAGES.find(s => s.value === col.key) ?? {};
+    const meta = STAGES.value.find(s => s.value === col.key) ?? {};
     const filtered = q
       ? col.cases.filter(c =>
           (c.case_number && c.case_number.toLowerCase().includes(q)) ||
@@ -230,6 +172,7 @@ const boardWithMeta = computed(() => {
       ...col,
       cases: filtered,
       count: filtered.length,
+      label: meta.label ?? col.label ?? col.key,
       icon: meta.icon ?? '📌',
       tooltip: col.tooltip || meta.tooltip || '',
       sla_hours: col.sla_hours ?? meta.sla_hours ?? null,
@@ -253,7 +196,7 @@ const moveModal = reactive({
 
 const filteredStageOptions = computed(() => {
   const allowed = ALLOWED_TRANSITIONS[moveModal.fromStage] || [];
-  return STAGES
+  return STAGES.value
     .filter(s => allowed.includes(s.value))
     .map(s => ({ value: s.value, label: `${s.icon} ${s.label}` }));
 });
@@ -271,7 +214,9 @@ function handleMove({ caseId, stage, fromStage }) {
   // Если stage указан и он недопустим — показать ошибку и обновить канбан
   const allowed = ALLOWED_TRANSITIONS[currentStage] || [];
   if (stage && !allowed.includes(stage)) {
-    moveError.value = `Переход из «${STAGES.find(s => s.value === currentStage)?.label}» в «${STAGES.find(s => s.value === stage)?.label}» невозможен`;
+    const fromLabel = STAGES.value.find(s => s.value === currentStage)?.label ?? currentStage;
+    const toLabel = STAGES.value.find(s => s.value === stage)?.label ?? stage;
+    moveError.value = t('crm.kanbanPage.transitionError', { from: fromLabel, to: toLabel });
     setTimeout(() => { moveError.value = ''; }, 3000);
     casesStore.fetchKanban(); // вернуть карточку
     return;
@@ -300,7 +245,7 @@ async function confirmMove() {
     moveModal.show = false;
     moveError.value = '';
   } catch (err) {
-    const msg = err.response?.data?.message || err.response?.data?.errors?.stage?.[0] || 'Не удалось переместить заявку';
+    const msg = err.response?.data?.message || err.response?.data?.errors?.stage?.[0] || t('crm.kanbanPage.moveError');
     moveError.value = msg;
     setTimeout(() => { moveError.value = ''; }, 4000);
     moveModal.show = false;

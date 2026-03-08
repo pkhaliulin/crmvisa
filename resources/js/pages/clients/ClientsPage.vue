@@ -8,7 +8,7 @@
         </svg>
         <input v-model="search" type="text"
           class="pl-8 pr-8 py-2 w-64 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
-          placeholder="Имя, телефон, email..."
+          :placeholder="t('crm.clients.searchPlaceholder')"
           @input="debouncedFetch" />
         <button v-if="search" @click="search = ''; fetchClients()"
           class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
@@ -19,12 +19,12 @@
       </div>
 
       <span class="text-sm text-gray-400">
-        {{ clients.length }} {{ declension(clients.length, ['клиент', 'клиента', 'клиентов']) }}
+        {{ t('crm.clients.count', clients.length) }}
       </span>
 
       <div class="ml-auto">
         <RouterLink :to="{ name: 'clients.create' }">
-          <AppButton>+ Новый клиент</AppButton>
+          <AppButton>{{ t('crm.clients.newClient') }}</AppButton>
         </RouterLink>
       </div>
     </div>
@@ -84,10 +84,10 @@
               <span v-if="c.passport_expires_at" class="text-xs font-medium" :class="passportClass(c.passport_expires_at)">
                 {{ formatDate(c.passport_expires_at) }}
                 <span v-if="passportDaysLeft(c.passport_expires_at) <= 90" class="text-[10px]">
-                  ({{ passportDaysLeft(c.passport_expires_at) < 0 ? 'истёк' : passportDaysLeft(c.passport_expires_at) + ' дн.' }})
+                  ({{ passportDaysLeft(c.passport_expires_at) < 0 ? t('crm.clients.passportExpired') : t('crm.clients.passportDaysLeft', { n: passportDaysLeft(c.passport_expires_at) }) }})
                 </span>
               </span>
-              <span v-else class="text-gray-300 text-xs">паспорт не указан</span>
+              <span v-else class="text-gray-300 text-xs">{{ t('crm.clients.passportNotSet') }}</span>
             </div>
           </div>
         </div>
@@ -98,32 +98,32 @@
         <svg class="w-12 h-12 mx-auto mb-3 text-gray-200" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"/>
         </svg>
-        <p class="text-sm">Клиентов не найдено</p>
+        <p class="text-sm">{{ t('crm.clients.empty') }}</p>
       </div>
     </template>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { RouterLink, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { clientsApi } from '@/api/clients';
 import { formatPhone } from '@/utils/format';
 import AppButton from '@/components/AppButton.vue';
 import AppBadge from '@/components/AppBadge.vue';
 
+const { t } = useI18n();
 const router  = useRouter();
 const clients = ref([]);
 const search  = ref('');
 const loading = ref(false);
 
-const NATIONALITIES = {
-  UZB: 'Узбекистан', KAZ: 'Казахстан', KGZ: 'Кыргызстан', TJK: 'Таджикистан',
-  TKM: 'Туркменистан', RUS: 'Россия', UKR: 'Украина', GEO: 'Грузия',
-  AZE: 'Азербайджан', ARM: 'Армения', MDA: 'Молдова', BLR: 'Беларусь',
-  GBR: 'Великобритания', DEU: 'Германия', FRA: 'Франция', ITA: 'Италия',
-  USA: 'США', CAN: 'Канада', CHN: 'Китай', JPN: 'Япония',
-};
+const NATIONALITIES = computed(() => ({
+  UZB: t('crm.nationalities.UZB'), KAZ: t('crm.nationalities.KAZ'), KGZ: t('crm.nationalities.KGZ'), TJK: t('crm.nationalities.TJK'),
+  TKM: t('crm.nationalities.TKM'), RUS: t('crm.nationalities.RUS'), UKR: t('crm.nationalities.UKR'), GEO: t('crm.nationalities.GEO'),
+  AZE: t('crm.nationalities.AZE'), ARM: t('crm.nationalities.ARM'),
+}));
 const NATIONALITY_FLAGS = {
   UZB: '', KAZ: '', KGZ: '', TJK: '', TKM: '',
   RUS: '', UKR: '', GEO: '', AZE: '', ARM: '',
@@ -131,21 +131,12 @@ const NATIONALITY_FLAGS = {
   ITA: '', USA: '', CAN: '', CHN: '', JPN: '',
 };
 
-const SOURCE_LABELS = {
-  direct: 'Прямой', referral: 'Реферал', marketplace: 'Маркетплейс', other: 'Другой',
-};
+const SOURCE_LABELS = computed(() => ({
+  direct: t('crm.sources.direct'), referral: t('crm.sources.referral'), marketplace: t('crm.sources.marketplace'), other: t('crm.sources.other'),
+}));
 const SOURCE_COLORS = { direct: 'blue', referral: 'purple', marketplace: 'green', other: 'gray' };
-const sourceLabel = (s) => SOURCE_LABELS[s] ?? s ?? '--';
+const sourceLabel = (s) => SOURCE_LABELS.value[s] ?? s ?? '--';
 const sourceColor = (s) => SOURCE_COLORS[s] ?? 'gray';
-
-function declension(n, forms) {
-  const abs = Math.abs(n) % 100;
-  const n1 = abs % 10;
-  if (abs > 10 && abs < 20) return forms[2];
-  if (n1 > 1 && n1 < 5) return forms[1];
-  if (n1 === 1) return forms[0];
-  return forms[2];
-}
 
 function formatDate(d) {
   return new Date(d).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });

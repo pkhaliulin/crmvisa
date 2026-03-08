@@ -33,7 +33,7 @@
           </div>
           <router-link v-if="hint.action" :to="hint.action"
             class="shrink-0 text-xs font-medium underline opacity-70 hover:opacity-100 mt-1">
-            Перейти
+            {{ t('crm.dashboard.goTo') }}
           </router-link>
           <button @click="hints.splice(i, 1)" class="shrink-0 opacity-40 hover:opacity-80 mt-1">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -55,7 +55,7 @@
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <!-- Динамика за 30 дней -->
         <div class="bg-white rounded-xl border border-gray-200 p-5 lg:col-span-2">
-          <h3 class="font-semibold text-gray-800 text-sm mb-4">Динамика заявок (30 дней)</h3>
+          <h3 class="font-semibold text-gray-800 text-sm mb-4">{{ t('crm.dashboard.casesTrend30d') }}</h3>
           <div class="h-48 relative">
             <svg v-if="chartData.length" class="w-full h-full" :viewBox="`0 0 ${chartW} ${chartH}`" preserveAspectRatio="none">
               <!-- Сетка -->
@@ -67,17 +67,17 @@
               <polygon :points="areaCompleted" fill="rgba(16,185,129,0.1)"/>
               <polyline :points="lineCompleted" fill="none" stroke="#10b981" stroke-width="2" stroke-linejoin="round"/>
             </svg>
-            <div v-else class="flex items-center justify-center h-full text-sm text-gray-400">Нет данных</div>
+            <div v-else class="flex items-center justify-center h-full text-sm text-gray-400">{{ t('crm.dashboard.noData') }}</div>
           </div>
           <div class="flex items-center gap-4 mt-2 text-xs text-gray-500">
-            <span class="flex items-center gap-1"><span class="w-3 h-0.5 bg-blue-500 rounded"></span> Создано</span>
-            <span class="flex items-center gap-1"><span class="w-3 h-0.5 bg-green-500 rounded"></span> Завершено</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-0.5 bg-blue-500 rounded"></span> {{ t('crm.dashboard.created') }}</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-0.5 bg-green-500 rounded"></span> {{ t('crm.dashboard.completed') }}</span>
           </div>
         </div>
 
         <!-- Pie: Источники лидов -->
         <div class="bg-white rounded-xl border border-gray-200 p-5">
-          <h3 class="font-semibold text-gray-800 text-sm mb-4">Источники лидов</h3>
+          <h3 class="font-semibold text-gray-800 text-sm mb-4">{{ t('crm.dashboard.leadSources') }}</h3>
           <div v-if="leadSources.length" class="flex flex-col items-center">
             <svg width="140" height="140" viewBox="0 0 140 140">
               <circle v-for="(s, i) in pieSlices" :key="i"
@@ -98,7 +98,7 @@
               </div>
             </div>
           </div>
-          <div v-else class="text-sm text-gray-400 text-center py-8">Нет данных</div>
+          <div v-else class="text-sm text-gray-400 text-center py-8">{{ t('crm.dashboard.noData') }}</div>
         </div>
       </div>
 
@@ -106,7 +106,7 @@
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <!-- Заявки по этапам -->
         <div class="bg-white rounded-xl border border-gray-200 p-5 lg:col-span-2">
-          <h3 class="font-semibold text-gray-800 text-sm mb-4">Заявки по этапам</h3>
+          <h3 class="font-semibold text-gray-800 text-sm mb-4">{{ t('crm.dashboard.casesByStage') }}</h3>
           <div class="space-y-2.5">
             <div v-for="stage in stageRows" :key="stage.key" class="flex items-center gap-3">
               <span class="text-xs text-gray-500 w-28 shrink-0">{{ stage.label }}</span>
@@ -120,7 +120,7 @@
 
         <!-- Топ-5 стран -->
         <div class="bg-white rounded-xl border border-gray-200 p-5">
-          <h3 class="font-semibold text-gray-800 text-sm mb-4">Топ стран</h3>
+          <h3 class="font-semibold text-gray-800 text-sm mb-4">{{ t('crm.dashboard.topCountries') }}</h3>
           <div v-if="topCountries.length" class="space-y-2.5">
             <div v-for="(c, i) in topCountries" :key="c.country_code" class="flex items-center gap-3">
               <span class="text-sm font-bold text-gray-400 w-4">{{ i + 1 }}</span>
@@ -131,19 +131,19 @@
               <span class="text-xs font-bold text-gray-700 w-6 text-right">{{ c.total }}</span>
             </div>
           </div>
-          <div v-else class="text-sm text-gray-400 text-center py-8">Нет данных</div>
+          <div v-else class="text-sm text-gray-400 text-center py-8">{{ t('crm.dashboard.noData') }}</div>
         </div>
       </div>
 
       <!-- Менеджеры -->
       <div v-if="stats?.managers?.length" class="bg-white rounded-xl border border-gray-200 p-5">
-        <h3 class="font-semibold text-gray-800 text-sm mb-4">Нагрузка менеджеров</h3>
+        <h3 class="font-semibold text-gray-800 text-sm mb-4">{{ t('crm.dashboard.managersLoad') }}</h3>
         <div class="overflow-x-auto">
           <table class="w-full text-sm">
             <thead class="bg-gray-50 border-b text-gray-500 text-[11px] uppercase tracking-wide">
               <tr>
-                <th class="text-left px-4 py-2.5 font-medium">Менеджер</th>
-                <th class="text-right px-4 py-2.5 font-medium">Активных</th>
+                <th class="text-left px-4 py-2.5 font-medium">{{ t('crm.dashboard.manager') }}</th>
+                <th class="text-right px-4 py-2.5 font-medium">{{ t('crm.dashboard.active') }}</th>
                 <th class="px-4 py-2.5 w-40"></th>
               </tr>
             </thead>
@@ -168,7 +168,7 @@
       <!-- Конверсии -->
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div class="bg-white rounded-xl border border-gray-200 p-5">
-          <p class="text-[11px] font-medium text-gray-400 uppercase tracking-wide">Конверсия лид → заявка</p>
+          <p class="text-[11px] font-medium text-gray-400 uppercase tracking-wide">{{ t('crm.dashboard.conversionLeadCase') }}</p>
           <div class="flex items-end gap-2 mt-2">
             <p class="text-3xl font-bold text-blue-600">{{ metrics.conversion_lead_case }}%</p>
           </div>
@@ -177,7 +177,7 @@
           </div>
         </div>
         <div class="bg-white rounded-xl border border-gray-200 p-5">
-          <p class="text-[11px] font-medium text-gray-400 uppercase tracking-wide">Конверсия заявка → виза</p>
+          <p class="text-[11px] font-medium text-gray-400 uppercase tracking-wide">{{ t('crm.dashboard.conversionCaseVisa') }}</p>
           <div class="flex items-end gap-2 mt-2">
             <p class="text-3xl font-bold text-green-600">{{ metrics.conversion_case_visa }}%</p>
           </div>
@@ -192,21 +192,24 @@
 
 <script setup>
 import { ref, computed, onMounted, reactive } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { dashboardApi } from '@/api/dashboard';
+
+const { t } = useI18n();
 
 const loading = ref(true);
 const stats = ref(null);
 const hints = ref([]);
 
-const STAGES = [
-  { key: 'lead',          label: 'Лид' },
-  { key: 'qualification', label: 'Квалификация' },
-  { key: 'documents',     label: 'Документы' },
-  { key: 'translation',   label: 'Перевод' },
-  { key: 'appointment',   label: 'Запись' },
-  { key: 'review',        label: 'Рассмотрение' },
-  { key: 'result',        label: 'Результат' },
-];
+const STAGES = computed(() => [
+  { key: 'lead',          label: t('crm.stages.lead') },
+  { key: 'qualification', label: t('crm.stages.qualification') },
+  { key: 'documents',     label: t('crm.stages.documents') },
+  { key: 'translation',   label: t('crm.stages.translation') },
+  { key: 'appointment',   label: t('crm.stages.appointment') },
+  { key: 'review',        label: t('crm.stages.review') },
+  { key: 'result',        label: t('crm.stages.result') },
+]);
 
 const STAGE_COLORS = {
   lead: '#3b82f6', qualification: '#8b5cf6', documents: '#f59e0b',
@@ -216,11 +219,11 @@ const STAGE_COLORS = {
 function stageColor(key) { return STAGE_COLORS[key] || '#6b7280'; }
 
 const sourceColors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#ef4444'];
-const sourceLabels = {
-  direct: 'Прямые обращения', referral: 'По рекомендации', marketplace: 'VisaBor маркетплейс',
-  instagram: 'Instagram', facebook: 'Facebook', telegram: 'Telegram-бот',
-  website: 'Сайт агентства', other: 'Другие',
-};
+const sourceLabels = computed(() => ({
+  direct: t('crm.sources.direct'), referral: t('crm.sources.referral'), marketplace: t('crm.sources.marketplace'),
+  instagram: 'Instagram', facebook: 'Facebook', telegram: t('crm.sources.telegram'),
+  website: t('crm.sources.website'), other: t('crm.sources.other'),
+}));
 
 const metrics = computed(() => stats.value?.metrics ?? {
   new_leads_30d: 0, completed_30d: 0, visa_issued_30d: 0, completed_total: 0,
@@ -231,12 +234,12 @@ const metricCards = computed(() => {
   const m = metrics.value;
   const c = stats.value?.cases ?? {};
   return [
-    { label: 'Активных', value: c.total_active ?? 0, color: 'text-gray-900' },
-    { label: 'Новых (30д)', value: m.new_leads_30d ?? 0, color: 'text-blue-600' },
-    { label: 'Завершено (30д)', value: m.completed_30d ?? 0, color: 'text-green-600' },
-    { label: 'Просрочено', value: c.overdue ?? 0, color: c.overdue > 0 ? 'text-red-600' : 'text-gray-900' },
-    { label: 'Горящих', value: c.critical ?? 0, color: c.critical > 0 ? 'text-amber-600' : 'text-gray-900' },
-    { label: 'Без менеджера', value: c.unassigned ?? 0, color: c.unassigned > 0 ? 'text-purple-600' : 'text-gray-900' },
+    { label: t('crm.dashboard.active'), value: c.total_active ?? 0, color: 'text-gray-900' },
+    { label: t('crm.dashboard.newLeads30d'), value: m.new_leads_30d ?? 0, color: 'text-blue-600' },
+    { label: t('crm.dashboard.completed30d'), value: m.completed_30d ?? 0, color: 'text-green-600' },
+    { label: t('crm.dashboard.overdue'), value: c.overdue ?? 0, color: c.overdue > 0 ? 'text-red-600' : 'text-gray-900' },
+    { label: t('crm.dashboard.critical'), value: c.critical ?? 0, color: c.critical > 0 ? 'text-amber-600' : 'text-gray-900' },
+    { label: t('crm.dashboard.unassigned'), value: c.unassigned ?? 0, color: c.unassigned > 0 ? 'text-purple-600' : 'text-gray-900' },
   ];
 });
 
@@ -244,7 +247,7 @@ const stageRows = computed(() => {
   if (!stats.value?.cases?.by_stage) return [];
   const byStage = stats.value.cases.by_stage;
   const maxCount = Math.max(1, ...Object.values(byStage).map(Number));
-  return STAGES.map(s => ({
+  return STAGES.value.map(s => ({
     ...s,
     count: Number(byStage[s.key] ?? 0),
     percent: Math.round((Number(byStage[s.key] ?? 0) / maxCount) * 100),

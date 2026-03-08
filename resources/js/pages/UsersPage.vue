@@ -2,10 +2,10 @@
   <div class="space-y-4">
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <h2 class="text-lg font-semibold text-gray-800">Сотрудники</h2>
-        <span class="text-sm text-gray-400">{{ users.length }} чел.</span>
+        <h2 class="text-lg font-semibold text-gray-800">{{ t('crm.users.title') }}</h2>
+        <span class="text-sm text-gray-400">{{ t('crm.users.count', { n: users.length }) }}</span>
       </div>
-      <AppButton @click="openCreate">+ Добавить сотрудника</AppButton>
+      <AppButton @click="openCreate">{{ t('crm.users.addUser') }}</AppButton>
     </div>
 
     <!-- Cards grid -->
@@ -54,7 +54,7 @@
         <!-- Status toggle -->
         <div class="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between" @click.stop>
           <span class="text-xs" :class="u.is_active ? 'text-green-600' : 'text-gray-400'">
-            {{ u.is_active ? 'Активен' : 'Отключён' }}
+            {{ u.is_active ? t('crm.users.active') : t('crm.users.disabled') }}
           </span>
           <button v-if="u.role !== 'owner'"
             @click="toggleActive(u)"
@@ -74,17 +74,17 @@
       <svg class="w-12 h-12 mx-auto text-gray-200 mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"/>
       </svg>
-      <p class="text-sm">Сотрудников нет</p>
-      <p class="text-xs mt-1 text-gray-300">Добавьте первого менеджера</p>
+      <p class="text-sm">{{ t('crm.users.empty') }}</p>
+      <p class="text-xs mt-1 text-gray-300">{{ t('crm.users.emptyHint') }}</p>
     </div>
   </div>
 
   <!-- Модал создания -->
-  <AppModal v-model="showCreate" title="Добавить сотрудника">
+  <AppModal v-model="showCreate" :title="t('crm.users.addTitle')">
     <form @submit.prevent="createUser" class="space-y-4">
       <!-- Фото -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1.5">Фото сотрудника <span class="text-red-500">*</span></label>
+        <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ t('crm.users.photo') }} <span class="text-red-500">*</span></label>
         <div class="flex items-start gap-3">
           <label class="cursor-pointer shrink-0">
             <input type="file" accept=".jpg,.jpeg,.png,.webp" class="hidden" @change="onAvatarSelect"/>
@@ -101,7 +101,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z"/>
                 <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z"/>
               </svg>
-              <span class="text-[10px] mt-0.5">Загрузить</span>
+              <span class="text-[10px] mt-0.5">{{ t('crm.users.uploadPhoto') }}</span>
             </div>
           </label>
           <div class="relative flex-1">
@@ -114,26 +114,26 @@
                 </div>
                 <span class="text-[9px] font-semibold text-blue-500">VisaBor</span>
               </div>
-              <p class="text-[11px] text-[#0A1F44] leading-relaxed">Фото повышает доверие клиентов на 40%. Рекомендуем деловое фото в белой рубашке -- так команда выглядит профессионально.</p>
+              <p class="text-[11px] text-[#0A1F44] leading-relaxed">{{ t('crm.users.photoTip', 'Фото повышает доверие клиентов на 40%. Рекомендуем деловое фото в белой рубашке -- так команда выглядит профессионально.') }}</p>
             </div>
           </div>
         </div>
-        <p class="text-[10px] text-gray-400 mt-1">JPG, PNG или WebP. Макс. 2 МБ. Рекомендуемый размер: 400x400 px.</p>
+        <p class="text-[10px] text-gray-400 mt-1">{{ t('crm.users.photoHint') }}</p>
         <p v-if="errors.avatar" class="text-xs text-red-500 mt-1">{{ errors.avatar }}</p>
       </div>
 
       <div class="grid grid-cols-2 gap-3">
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Имя (латиница) <span class="text-red-500">*</span></label>
-          <input v-model="form.first_name" type="text" placeholder="Anvar"
+          <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('crm.users.firstName') }} <span class="text-red-500">*</span></label>
+          <input v-model="form.first_name" type="text" :placeholder="t('crm.users.firstNamePlaceholder')"
             class="w-full border rounded-xl px-3 py-2.5 text-sm outline-none transition-colors"
             :class="errors.first_name ? 'border-red-300' : 'border-gray-200 focus:border-[#1BA97F]'"
             @input="validateLatin('first_name')"/>
           <p v-if="errors.first_name" class="text-xs text-red-500 mt-1">{{ errors.first_name }}</p>
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Фамилия (латиница) <span class="text-red-500">*</span></label>
-          <input v-model="form.last_name" type="text" placeholder="Ismoilov"
+          <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('crm.users.lastName') }} <span class="text-red-500">*</span></label>
+          <input v-model="form.last_name" type="text" :placeholder="t('crm.users.lastNamePlaceholder')"
             class="w-full border rounded-xl px-3 py-2.5 text-sm outline-none transition-colors"
             :class="errors.last_name ? 'border-red-300' : 'border-gray-200 focus:border-[#1BA97F]'"
             @input="validateLatin('last_name')"/>
@@ -142,8 +142,8 @@
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Email <span class="text-red-500">*</span></label>
-        <input v-model="form.email" type="email" placeholder="manager@agency.com"
+        <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('crm.users.email') }} <span class="text-red-500">*</span></label>
+        <input v-model="form.email" type="email" :placeholder="t('crm.users.emailPlaceholder')"
           class="w-full border rounded-xl px-3 py-2.5 text-sm outline-none transition-colors"
           :class="errors.email ? 'border-red-300' : emailValid === true ? 'border-[#1BA97F]' : 'border-gray-200 focus:border-[#1BA97F]'"
           @blur="validateEmail" @input="onEmailInput"/>
@@ -152,30 +152,30 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
           </svg>
           <p v-if="errors.email" class="text-xs text-red-500">{{ errors.email }}</p>
-          <p v-else-if="emailValid === true" class="text-xs text-[#1BA97F]">Email корректный</p>
-          <p v-else class="text-xs text-gray-400">Пароль будет отправлен на эту почту</p>
+          <p v-else-if="emailValid === true" class="text-xs text-[#1BA97F]">{{ t('crm.users.emailValid') }}</p>
+          <p v-else class="text-xs text-gray-400">{{ t('crm.users.passwordSentToEmail') }}</p>
         </div>
       </div>
 
-      <AppPhoneInput v-model="form.phone" label="Телефон" :error="errors.phone"/>
+      <AppPhoneInput v-model="form.phone" :label="t('crm.userDetail.phone')" :error="errors.phone"/>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Telegram</label>
+        <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('crm.users.telegram') }}</label>
         <div class="flex items-center gap-2">
           <span class="text-sm text-gray-400">@</span>
           <input v-model="form.telegram_username" type="text" placeholder="username"
             class="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] transition-colors"/>
         </div>
         <p v-if="errors.telegram_username" class="text-xs text-red-500 mt-1">{{ errors.telegram_username }}</p>
-        <p v-else class="text-xs text-gray-400 mt-1">Если не указан, клиенты смогут написать по номеру телефона</p>
+        <p v-else class="text-xs text-gray-400 mt-1">{{ t('crm.users.telegramHint') }}</p>
       </div>
 
-      <AppSelect v-model="form.role" label="Роль" :options="roleOptions" />
+      <AppSelect v-model="form.role" :label="t('crm.users.role')" :options="roleOptions" />
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Пароль <span class="text-red-500">*</span></label>
+        <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('crm.users.password') }} <span class="text-red-500">*</span></label>
         <div class="relative">
-          <input v-model="form.password" :type="showPassword ? 'text' : 'password'" placeholder="Минимум 8 символов"
+          <input v-model="form.password" :type="showPassword ? 'text' : 'password'" :placeholder="t('crm.users.passwordHint')"
             class="w-full border rounded-xl px-3 py-2.5 text-sm outline-none transition-colors pr-10"
             :class="errors.password ? 'border-red-300' : 'border-gray-200 focus:border-[#1BA97F]'"/>
           <button type="button" @click="showPassword = !showPassword"
@@ -190,22 +190,23 @@
           </button>
         </div>
         <p v-if="errors.password" class="text-xs text-red-500 mt-1">{{ errors.password }}</p>
-        <p v-else class="text-xs text-gray-400 mt-1">Будет отправлен на email вместе со ссылкой для входа</p>
+        <p v-else class="text-xs text-gray-400 mt-1">{{ t('crm.users.passwordSentHint') }}</p>
       </div>
 
       <p v-if="errorMsg" class="text-sm text-red-600 bg-red-50 p-2 rounded-lg">{{ errorMsg }}</p>
 
       <div class="flex gap-2 justify-end">
-        <AppButton variant="outline" type="button" @click="showCreate = false">Отмена</AppButton>
-        <AppButton type="submit" :loading="createLoading">Создать</AppButton>
+        <AppButton variant="outline" type="button" @click="showCreate = false">{{ t('common.cancel') }}</AppButton>
+        <AppButton type="submit" :loading="createLoading">{{ t('crm.users.create') }}</AppButton>
       </div>
     </form>
   </AppModal>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { usersApi } from '@/api/users';
 import AppButton from '@/components/AppButton.vue';
 import AppBadge from '@/components/AppBadge.vue';
@@ -213,6 +214,8 @@ import AppModal from '@/components/AppModal.vue';
 import AppPhoneInput from '@/components/AppPhoneInput.vue';
 import AppSelect from '@/components/AppSelect.vue';
 import { formatPhone } from '@/utils/format';
+
+const { t } = useI18n();
 
 const router = useRouter();
 const users         = ref([]);
@@ -231,14 +234,19 @@ const form = reactive({
   telegram_username: '', role: 'manager', password: '',
 });
 
-const roleOptions = [
-  { value: 'manager', label: 'Менеджер' },
-  { value: 'partner', label: 'Партнёр (нотариус/переводчик)' },
-];
+const roleOptions = computed(() => [
+  { value: 'manager', label: t('crm.users.roleManager') },
+  { value: 'partner', label: t('crm.users.rolePartner') },
+]);
 
-const roleLabels = { owner: 'Владелец', manager: 'Менеджер', partner: 'Партнёр', superadmin: 'Суперадмин' };
+const roleLabels = computed(() => ({
+  owner: t('crm.roles.owner'),
+  manager: t('crm.roles.manager'),
+  partner: t('crm.roles.partner'),
+  superadmin: t('crm.roles.superadmin'),
+}));
 const roleColors = { owner: 'purple', manager: 'blue', partner: 'gray', superadmin: 'red' };
-const roleLabel  = (r) => roleLabels[r] ?? r;
+const roleLabel  = (r) => roleLabels.value[r] ?? r;
 const roleColor  = (r) => roleColors[r] ?? 'gray';
 
 const latinRegex = /^[A-Za-z\s\-']*$/;
@@ -246,7 +254,7 @@ const latinRegex = /^[A-Za-z\s\-']*$/;
 function validateLatin(field) {
   const val = form[field];
   if (val && !latinRegex.test(val)) {
-    errors.value[field] = 'Только латинские буквы';
+    errors.value[field] = t('crm.users.latinOnly');
     form[field] = val.replace(/[^A-Za-z\s\-']/g, '');
   } else {
     delete errors.value[field];
@@ -259,7 +267,7 @@ function isValidEmail(email) {
 
 function validateEmail() {
   if (form.email && !isValidEmail(form.email)) {
-    errors.value.email = 'Введите корректный email (например: name@domain.com)';
+    errors.value.email = t('crm.users.invalidEmail');
     emailValid.value = false;
   } else if (form.email) {
     delete errors.value.email;
@@ -280,11 +288,11 @@ function onAvatarSelect(e) {
   const file = e.target.files?.[0];
   if (!file) return;
   if (file.size > 2 * 1024 * 1024) {
-    errors.value.avatar = 'Максимум 2 МБ';
+    errors.value.avatar = t('crm.userDetail.maxSize');
     return;
   }
   if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-    errors.value.avatar = 'Только JPG, PNG или WebP';
+    errors.value.avatar = t('crm.users.photoFormat');
     return;
   }
   delete errors.value.avatar;
@@ -327,13 +335,13 @@ async function createUser() {
   errors.value = {};
   errorMsg.value = '';
 
-  if (!form.first_name.trim()) errors.value.first_name = 'Обязательное поле';
-  if (!form.last_name.trim()) errors.value.last_name = 'Обязательное поле';
-  if (!latinRegex.test(form.first_name)) errors.value.first_name = 'Только латинские буквы';
-  if (!latinRegex.test(form.last_name)) errors.value.last_name = 'Только латинские буквы';
-  if (!isValidEmail(form.email)) errors.value.email = 'Введите корректный email';
-  if (form.password.length < 8) errors.value.password = 'Минимум 8 символов';
-  if (!avatarFile.value) errors.value.avatar = 'Загрузите фото сотрудника';
+  if (!form.first_name.trim()) errors.value.first_name = t('crm.users.requiredField');
+  if (!form.last_name.trim()) errors.value.last_name = t('crm.users.requiredField');
+  if (!latinRegex.test(form.first_name)) errors.value.first_name = t('crm.users.latinOnly');
+  if (!latinRegex.test(form.last_name)) errors.value.last_name = t('crm.users.latinOnly');
+  if (!isValidEmail(form.email)) errors.value.email = t('crm.users.invalidEmail');
+  if (form.password.length < 8) errors.value.password = t('crm.users.minPassword');
+  if (!avatarFile.value) errors.value.avatar = t('crm.users.uploadPhotoReq');
 
   if (Object.keys(errors.value).length) return;
 
@@ -359,7 +367,7 @@ async function createUser() {
         Object.entries(d.errors).map(([k, v]) => [k, Array.isArray(v) ? v[0] : v])
       );
     } else {
-      errorMsg.value = d?.message || 'Ошибка создания';
+      errorMsg.value = d?.message || t('crm.users.createError');
     }
   } finally {
     createLoading.value = false;
