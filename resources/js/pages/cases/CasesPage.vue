@@ -223,7 +223,7 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue';
-import { RouterLink, useRouter } from 'vue-router';
+import { RouterLink, useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { casesApi } from '@/api/cases';
 import { usersApi } from '@/api/users';
@@ -406,6 +406,15 @@ function changePage(p) {
 }
 
 onMounted(async () => {
+  // Читаем query params из URL (для кликабельных счётчиков дашборда)
+  const route = useRoute();
+  const q = route.query;
+  if (q.stage)       filters.stage       = q.stage;
+  if (q.priority)    filters.priority    = q.priority;
+  if (q.assigned_to) filters.assigned_to = q.assigned_to;
+  if (q.country_code) filters.country_code = q.country_code;
+  if (q.q)           filters.q           = q.q;
+
   const [, uRes] = await Promise.all([
     fetchCases(),
     usersApi.list(),
