@@ -462,7 +462,7 @@
             <p class="text-[10px] font-medium text-indigo-700 uppercase tracking-wide mb-3">{{ t('crm.forecast.managerCapacity') }}</p>
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
               <div>
-                <p class="text-lg font-bold text-gray-900">{{ stats?.users_total ?? 0 }}</p>
+                <p class="text-lg font-bold text-gray-900">{{ stats?.managers_count ?? 0 }}</p>
                 <p class="text-[10px] text-gray-500">{{ t('crm.forecast.currentManagers') }}</p>
               </div>
               <div>
@@ -827,6 +827,10 @@ async function fetchDashboard() {
     const { data } = await dashboardApi.index({ period: period.value });
     stats.value = data.data;
     hints.value = data.data?.hints ?? [];
+    // Автозаполнение кол-ва менеджеров из реальных данных (только при первой загрузке)
+    if (data.data?.managers_count && forecast.value.managers === 3) {
+      forecast.value.managers = data.data.managers_count;
+    }
   } finally {
     loading.value = false;
   }

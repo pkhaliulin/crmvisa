@@ -108,20 +108,26 @@ class DashboardController extends Controller
         // Клиенты и сотрудники
         $totalClients = Client::where('agency_id', $agencyId)->count();
         $totalUsers = User::where('agency_id', $agencyId)->where('is_active', true)->count();
+        $managersCount = User::where('agency_id', $agencyId)->where('is_active', true)->where('role', 'manager')->count();
 
         // === Менеджеры (расширенная аналитика) ===
 
-        $managerLoad = VisaCase::where('cases.agency_id', $agencyId)
-            ->where($excludeUnpaid)
-            ->whereNotNull('assigned_to')
-            ->join('users', 'users.id', '=', 'cases.assigned_to')
+        // Все активные менеджеры агентства (LEFT JOIN — даже без заявок)
+        $excludeUnpaidSql = "cases.public_status NOT IN ('draft','awaiting_payment','cancelled') OR cases.public_status IS NULL";
+        $managerLoad = User::where('users.agency_id', $agencyId)
+            ->where('users.is_active', true)
+            ->where('users.role', 'manager')
+            ->leftJoin('cases', function ($join) use ($excludeUnpaidSql) {
+                $join->on('cases.assigned_to', '=', 'users.id')
+                     ->whereRaw("({$excludeUnpaidSql})");
+            })
             ->select(
                 'users.id',
                 'users.name',
-                DB::raw("COUNT(CASE WHEN cases.stage != 'result' THEN 1 END) as active_cases"),
-                DB::raw("COUNT(CASE WHEN cases.stage = 'result' THEN 1 END) as completed_cases"),
-                DB::raw("COUNT(CASE WHEN cases.stage = 'result' AND cases.result_type = 'approved' THEN 1 END) as approved_cases"),
-                DB::raw("COUNT(CASE WHEN cases.critical_date IS NOT NULL AND cases.critical_date < CURRENT_DATE AND cases.stage != 'result' THEN 1 END) as overdue_cases"),
+                DB::raw("COUNT(CASE WHEN cases.id IS NOT NULL AND cases.stage != 'result' THEN 1 END) as active_cases"),
+                DB::raw("COUNT(CASE WHEN cases.id IS NOT NULL AND cases.stage = 'result' THEN 1 END) as completed_cases"),
+                DB::raw("COUNT(CASE WHEN cases.id IS NOT NULL AND cases.stage = 'result' AND cases.result_type = 'approved' THEN 1 END) as approved_cases"),
+                DB::raw("COUNT(CASE WHEN cases.id IS NOT NULL AND cases.critical_date IS NOT NULL AND cases.critical_date < CURRENT_DATE AND cases.stage != 'result' THEN 1 END) as overdue_cases"),
                 DB::raw("ROUND(AVG(CASE WHEN cases.stage = 'result' THEN EXTRACT(EPOCH FROM (cases.updated_at - cases.created_at)) / 3600 END), 1) as avg_hours"),
             )
             ->groupBy('users.id', 'users.name')
@@ -308,6 +314,7 @@ class DashboardController extends Controller
             'sla_norms'       => $slaNorms,
             'clients_total'   => $totalClients,
             'users_total'     => $totalUsers,
+            'managers_count'  => $managersCount,
             'repeat_clients'  => $repeatClients,
             'growth'          => $growth,
             'hints'           => $hints,
