@@ -108,15 +108,14 @@ class DashboardController extends Controller
         // Клиенты и сотрудники
         $totalClients = Client::where('agency_id', $agencyId)->count();
         $totalUsers = User::where('agency_id', $agencyId)->where('is_active', true)->count();
-        $managersCount = User::where('agency_id', $agencyId)->where('is_active', true)->where('role', 'manager')->count();
 
         // === Менеджеры (расширенная аналитика) ===
+        // manager — всегда показываем (LEFT JOIN), owner — только если ведёт заявки
 
-        // Все активные менеджеры агентства (LEFT JOIN — даже без заявок)
         $excludeUnpaidSql = "cases.public_status NOT IN ('draft','awaiting_payment','cancelled') OR cases.public_status IS NULL";
         $managerLoad = User::where('users.agency_id', $agencyId)
             ->where('users.is_active', true)
-            ->where('users.role', 'manager')
+            ->whereIn('users.role', ['manager', 'owner'])
             ->leftJoin('cases', function ($join) use ($excludeUnpaidSql) {
                 $join->on('cases.assigned_to', '=', 'users.id')
                      ->whereRaw("({$excludeUnpaidSql})");
@@ -124,15 +123,24 @@ class DashboardController extends Controller
             ->select(
                 'users.id',
                 'users.name',
+                'users.role',
                 DB::raw("COUNT(CASE WHEN cases.id IS NOT NULL AND cases.stage != 'result' THEN 1 END) as active_cases"),
                 DB::raw("COUNT(CASE WHEN cases.id IS NOT NULL AND cases.stage = 'result' THEN 1 END) as completed_cases"),
                 DB::raw("COUNT(CASE WHEN cases.id IS NOT NULL AND cases.stage = 'result' AND cases.result_type = 'approved' THEN 1 END) as approved_cases"),
                 DB::raw("COUNT(CASE WHEN cases.id IS NOT NULL AND cases.critical_date IS NOT NULL AND cases.critical_date < CURRENT_DATE AND cases.stage != 'result' THEN 1 END) as overdue_cases"),
                 DB::raw("ROUND(AVG(CASE WHEN cases.stage = 'result' THEN EXTRACT(EPOCH FROM (cases.updated_at - cases.created_at)) / 3600 END), 1) as avg_hours"),
             )
-            ->groupBy('users.id', 'users.name')
+            ->groupBy('users.id', 'users.name', 'users.role')
             ->orderByDesc('active_cases')
             ->get()
+            ->filter(function ($m) {
+                // Owner показываем только если у него есть заявки
+                if ($m->role === 'owner') {
+                    return ($m->active_cases + $m->completed_cases) > 0;
+                }
+                return true;
+            })
+            ->values()
             ->map(function ($m) {
                 $total = $m->active_cases + $m->completed_cases;
                 $m->conversion = $total > 0
@@ -141,6 +149,9 @@ class DashboardController extends Controller
                 $m->avg_hours = (float) ($m->avg_hours ?? 0);
                 return $m;
             });
+
+        // managers_count = кол-во людей, реально работающих с заявками (для прогноза)
+        $managersCount = $managerLoad->count();
 
         // === Источники лидов ===
 
