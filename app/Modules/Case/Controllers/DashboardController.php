@@ -7,6 +7,7 @@ use App\Modules\Agency\Models\AgencyWorkCountry;
 use App\Modules\Case\Models\VisaCase;
 use App\Modules\Client\Models\Client;
 use App\Modules\Owner\Models\PortalCountry;
+use App\Modules\Agency\Models\AgencyGoal;
 use App\Modules\User\Models\User;
 use App\Support\Helpers\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -652,6 +653,193 @@ class DashboardController extends Controller
             'manager'      => ['id' => $manager->id, 'name' => $manager->name],
             'active_cases' => $cases,
             'total'        => $cases->count(),
+        ]);
+    }
+
+    public function goals(Request $request): JsonResponse
+    {
+        $agencyId = $request->user()->agency_id;
+        $year = (int) $request->input('year', now()->year);
+
+        $goals = AgencyGoal::where('agency_id', $agencyId)
+            ->where('year', $year)
+            ->orderBy('month')
+            ->get();
+
+        // Текущий прогресс за год
+        $yearStart = "{$year}-01-01";
+        $yearEnd   = "{$year}-12-31";
+
+        $actualClients = Client::where('agency_id', $agencyId)
+            ->whereBetween('created_at', [$yearStart, $yearEnd])
+            ->count();
+
+        $actualCases = VisaCase::where('agency_id', $agencyId)
+            ->whereBetween('created_at', [$yearStart, $yearEnd])
+            ->count();
+
+        $actualRevenue = (float) DB::table('client_payments')
+            ->where('agency_id', $agencyId)
+            ->where('status', 'succeeded')
+            ->whereBetween('created_at', [$yearStart, $yearEnd])
+            ->sum('amount');
+
+        return ApiResponse::success([
+            'year'     => $year,
+            'goals'    => $goals,
+            'progress' => [
+                'clients' => $actualClients,
+                'cases'   => $actualCases,
+                'revenue' => $actualRevenue,
+            ],
+        ]);
+    }
+
+    public function saveGoal(Request $request): JsonResponse
+    {
+        $request->validate([
+            'year'           => 'required|integer|min:2024|max:2030',
+            'month'          => 'nullable|integer|min:1|max:12',
+            'target_clients' => 'nullable|integer|min:0',
+            'target_revenue' => 'nullable|integer|min:0',
+            'target_cases'   => 'nullable|integer|min:0',
+        ]);
+
+        $agencyId = $request->user()->agency_id;
+
+        $goal = AgencyGoal::updateOrCreate(
+            [
+                'agency_id' => $agencyId,
+                'year'      => $request->input('year'),
+                'month'     => $request->input('month'),
+            ],
+            [
+                'target_clients' => $request->input('target_clients'),
+                'target_revenue' => $request->input('target_revenue'),
+                'target_cases'   => $request->input('target_cases'),
+                'created_by'     => $request->user()->id,
+            ]
+        );
+
+        return ApiResponse::success($goal);
+    }
+
+    public function activityFeed(Request $request): JsonResponse
+    {
+        $agencyId = $request->user()->agency_id;
+
+        // Пробуем activity_log (spatie/activitylog)
+        $hasActivity = DB::table('activity_log')
+            ->whereIn('subject_type', [
+                'App\\Modules\\Case\\Models\\VisaCase',
+                'App\\Modules\\Client\\Models\\Client',
+            ])
+            ->exists();
+
+        if ($hasActivity) {
+            $events = DB::table('activity_log')
+                ->leftJoin('cases', function ($join) {
+                    $join->on('activity_log.subject_id', '=', 'cases.id')
+                         ->where('activity_log.subject_type', 'App\\Modules\\Case\\Models\\VisaCase');
+                })
+                ->leftJoin('clients', function ($join) {
+                    $join->on('activity_log.subject_id', '=', 'clients.id')
+                         ->where('activity_log.subject_type', 'App\\Modules\\Client\\Models\\Client');
+                })
+                ->leftJoin('users as causer', 'activity_log.causer_id', '=', 'causer.id')
+                ->where(function ($q) use ($agencyId) {
+                    $q->where('cases.agency_id', $agencyId)
+                      ->orWhere('clients.agency_id', $agencyId);
+                })
+                ->select(
+                    DB::raw("'activity' as type"),
+                    'activity_log.description',
+                    'causer.name as user_name',
+                    'activity_log.created_at',
+                    'cases.id as case_id',
+                    'cases.case_number',
+                )
+                ->orderByDesc('activity_log.created_at')
+                ->limit(20)
+                ->get();
+
+            return ApiResponse::success($events);
+        }
+
+        // Фолбэк: case_stages
+        $events = DB::table('case_stages')
+            ->join('cases', 'cases.id', '=', 'case_stages.case_id')
+            ->leftJoin('users', 'users.id', '=', 'case_stages.entered_by')
+            ->where('cases.agency_id', $agencyId)
+            ->select(
+                DB::raw("'stage_change' as type"),
+                DB::raw("CONCAT('Stage: ', case_stages.stage) as description"),
+                'users.name as user_name',
+                'case_stages.entered_at as created_at',
+                'cases.id as case_id',
+                'cases.case_number',
+            )
+            ->orderByDesc('case_stages.entered_at')
+            ->limit(20)
+            ->get();
+
+        return ApiResponse::success($events);
+    }
+
+    public function financialSummary(Request $request): JsonResponse
+    {
+        $agencyId = $request->user()->agency_id;
+
+        [$dateFrom, $dateTo, $periodKey] = $this->resolvePeriod($request);
+
+        $totalRevenue = (float) DB::table('client_payments')
+            ->where('agency_id', $agencyId)
+            ->where('status', 'succeeded')
+            ->sum('amount');
+
+        $periodRevenueQuery = DB::table('client_payments')
+            ->where('agency_id', $agencyId)
+            ->where('status', 'succeeded');
+
+        if ($dateFrom) {
+            $periodRevenueQuery->whereBetween('created_at', [$dateFrom, $dateTo]);
+        }
+
+        $periodRevenue = (float) $periodRevenueQuery->sum('amount');
+
+        $avgCheck = (float) DB::table('client_payments')
+            ->where('agency_id', $agencyId)
+            ->where('status', 'succeeded')
+            ->avg('amount');
+
+        $pendingPayments = (float) DB::table('client_payments')
+            ->where('agency_id', $agencyId)
+            ->where('status', 'pending')
+            ->sum('amount');
+
+        $paymentCountQuery = DB::table('client_payments')
+            ->where('agency_id', $agencyId)
+            ->where('status', 'succeeded');
+
+        if ($dateFrom) {
+            $paymentCountQuery->whereBetween('created_at', [$dateFrom, $dateTo]);
+        }
+
+        $paymentCount = $paymentCountQuery->count();
+
+        $avgPackagePrice = (float) DB::table('agency_service_packages')
+            ->where('agency_id', $agencyId)
+            ->where('is_active', true)
+            ->avg('price');
+
+        return ApiResponse::success([
+            'period'            => $periodKey,
+            'total_revenue'     => round($totalRevenue, 2),
+            'period_revenue'    => round($periodRevenue, 2),
+            'avg_check'         => round($avgCheck, 2),
+            'pending_payments'  => round($pendingPayments, 2),
+            'payment_count'     => $paymentCount,
+            'avg_package_price' => round($avgPackagePrice, 2),
         ]);
     }
 }

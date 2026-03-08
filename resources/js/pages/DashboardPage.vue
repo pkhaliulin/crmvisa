@@ -546,6 +546,179 @@
           </div>
         </div>
       </div>
+
+      <!-- 1. Воронка продаж -->
+      <div class="bg-white rounded-xl border border-gray-200 p-5">
+        <h3 class="font-semibold text-gray-800 text-sm mb-4">{{ t('crm.dashboard.funnelTitle') }}</h3>
+        <div v-if="funnelData.length" class="space-y-2">
+          <div v-for="(step, i) in funnelData" :key="step.key" class="relative">
+            <div class="flex items-center gap-3">
+              <span class="text-xs text-gray-500 w-28 shrink-0 truncate">{{ step.label }}</span>
+              <div class="flex-1 relative">
+                <div class="h-8 rounded-lg transition-all duration-700 flex items-center px-3"
+                  :style="{ width: step.percent + '%', minWidth: '40px', background: stageColor(step.key) + '20', borderLeft: `3px solid ${stageColor(step.key)}` }">
+                  <span class="text-xs font-bold" :style="{ color: stageColor(step.key) }">{{ step.count }}</span>
+                </div>
+              </div>
+              <span class="text-[10px] text-gray-400 w-12 text-right shrink-0">{{ step.percent }}%</span>
+              <span v-if="i > 0 && step.dropoff !== null" class="text-[10px] w-14 text-right shrink-0"
+                :class="step.dropoff > 50 ? 'text-red-500 font-semibold' : step.dropoff > 30 ? 'text-amber-500' : 'text-gray-400'">
+                -{{ step.dropoff }}%
+              </span>
+              <span v-else class="w-14 shrink-0"></span>
+            </div>
+          </div>
+        </div>
+        <div v-else class="text-sm text-gray-400 text-center py-8">{{ t('crm.dashboard.noData') }}</div>
+      </div>
+
+      <!-- 2. Сравнение периодов -->
+      <div v-if="growth && (growth.new_leads || growth.completed || growth.visa_issued)" class="bg-white rounded-xl border border-gray-200 p-5">
+        <h3 class="font-semibold text-gray-800 text-sm mb-4">{{ t('crm.dashboard.comparisonTitle') }}</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div v-for="item in comparisonItems" :key="item.key" class="text-center p-4 rounded-lg border"
+            :class="item.growth > 0 ? 'border-green-200 bg-green-50' : item.growth < 0 ? 'border-red-200 bg-red-50' : 'border-gray-200 bg-gray-50'">
+            <p class="text-[11px] font-medium text-gray-500 uppercase tracking-wide">{{ item.label }}</p>
+            <p class="text-2xl font-bold mt-1" :class="item.growth > 0 ? 'text-green-600' : item.growth < 0 ? 'text-red-600' : 'text-gray-600'">
+              {{ item.growth > 0 ? '+' : '' }}{{ item.growth }}%
+            </p>
+            <p class="text-[10px] text-gray-400 mt-1">{{ t('crm.dashboard.vsPrevPeriod') }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Цели и план -->
+      <div class="bg-white rounded-xl border border-gray-200 p-5">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-semibold text-gray-800 text-sm">{{ t('crm.dashboard.goalsTitle') }}</h3>
+          <button @click="showGoalForm = !showGoalForm"
+            class="text-xs font-medium px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors">
+            {{ showGoalForm ? t('crm.dashboard.goalsHide') : t('crm.dashboard.goalsSet') }}
+          </button>
+        </div>
+
+        <!-- Форма установки целей -->
+        <div v-if="showGoalForm" class="mb-4 p-4 bg-gray-50 rounded-lg border space-y-3">
+          <div class="grid grid-cols-3 gap-3">
+            <div>
+              <label class="text-[10px] font-medium text-gray-500 uppercase">{{ t('crm.dashboard.goalClients') }}</label>
+              <input v-model.number="goalForm.target_clients" type="number" min="0"
+                class="mt-1 w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-300 outline-none">
+            </div>
+            <div>
+              <label class="text-[10px] font-medium text-gray-500 uppercase">{{ t('crm.dashboard.goalCases') }}</label>
+              <input v-model.number="goalForm.target_cases" type="number" min="0"
+                class="mt-1 w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-300 outline-none">
+            </div>
+            <div>
+              <label class="text-[10px] font-medium text-gray-500 uppercase">{{ t('crm.dashboard.goalRevenue') }}</label>
+              <input v-model.number="goalForm.target_revenue" type="number" min="0"
+                class="mt-1 w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-300 outline-none">
+            </div>
+          </div>
+          <button @click="saveGoals" :disabled="savingGoal"
+            class="px-4 py-2 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50">
+            {{ savingGoal ? '...' : t('crm.dashboard.goalsSave') }}
+          </button>
+        </div>
+
+        <!-- Прогресс целей -->
+        <div v-if="goalsData" class="space-y-3">
+          <div v-for="g in goalProgressItems" :key="g.key">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-xs text-gray-600">{{ g.label }}</span>
+              <span class="text-xs font-semibold" :class="g.pct >= 100 ? 'text-green-600' : g.pct >= 50 ? 'text-blue-600' : 'text-gray-500'">
+                {{ g.current }} / {{ g.target }} ({{ g.pct }}%)
+              </span>
+            </div>
+            <div class="bg-gray-100 rounded-full h-2.5 overflow-hidden">
+              <div class="h-full rounded-full transition-all duration-700"
+                :class="g.pct >= 100 ? 'bg-green-500' : g.pct >= 50 ? 'bg-blue-500' : 'bg-gray-400'"
+                :style="{ width: Math.min(100, g.pct) + '%' }"/>
+            </div>
+          </div>
+          <p v-if="!goalProgressItems.length" class="text-xs text-gray-400 text-center py-4">{{ t('crm.dashboard.goalsEmpty') }}</p>
+        </div>
+      </div>
+
+      <!-- 4. Лента активности -->
+      <div class="bg-white rounded-xl border border-gray-200 p-5">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-semibold text-gray-800 text-sm">{{ t('crm.dashboard.activityTitle') }}</h3>
+          <button v-if="!activityLoaded" @click="loadActivity"
+            class="text-xs font-medium px-3 py-1.5 rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-100 border transition-colors">
+            {{ t('crm.dashboard.activityLoad') }}
+          </button>
+        </div>
+        <div v-if="activityLoading" class="flex justify-center py-6">
+          <div class="animate-spin w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+        </div>
+        <div v-else-if="activityFeed.length" class="space-y-2 max-h-64 overflow-y-auto">
+          <div v-for="(ev, i) in activityFeed" :key="i" class="flex items-start gap-3 text-xs py-2 border-b border-gray-50 last:border-0">
+            <div class="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0"
+              :class="ev.type === 'stage_change' ? 'bg-blue-500' : 'bg-green-500'"></div>
+            <div class="flex-1 min-w-0">
+              <p class="text-gray-700">{{ ev.description }}</p>
+              <p class="text-[10px] text-gray-400 mt-0.5">
+                <span v-if="ev.user_name">{{ ev.user_name }} -- </span>
+                <span v-if="ev.case_number">{{ ev.case_number }} -- </span>
+                {{ formatDate(ev.created_at) }}
+              </p>
+            </div>
+          </div>
+        </div>
+        <p v-else-if="activityLoaded" class="text-xs text-gray-400 text-center py-6">{{ t('crm.dashboard.noData') }}</p>
+      </div>
+
+      <!-- 5. Рейтинг менеджеров -->
+      <div v-if="stats?.managers?.length > 1" class="bg-white rounded-xl border border-gray-200 p-5">
+        <h3 class="font-semibold text-gray-800 text-sm mb-4">{{ t('crm.dashboard.rankingTitle') }}</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div v-for="(rank, i) in managerRanking" :key="rank.id"
+            class="p-3 rounded-lg border text-center"
+            :class="i === 0 ? 'border-yellow-300 bg-yellow-50' : i === 1 ? 'border-gray-300 bg-gray-50' : 'border-orange-200 bg-orange-50'">
+            <div class="text-2xl mb-1">{{ ['1', '2', '3'][i] }}</div>
+            <p class="font-semibold text-sm text-gray-800 truncate">{{ rank.name }}</p>
+            <p class="text-[10px] text-gray-500 mt-1">{{ rank.score }} {{ t('crm.dashboard.rankingPts') }}</p>
+            <div class="mt-2 space-y-0.5 text-[10px] text-gray-500">
+              <p>{{ t('crm.dashboard.rankingCompleted') }}: {{ rank.completed_cases }}</p>
+              <p>{{ t('crm.dashboard.rankingConversion') }}: {{ rank.conversion }}%</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6. Финансовый блок -->
+      <div class="bg-white rounded-xl border border-gray-200 p-5">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-semibold text-gray-800 text-sm">{{ t('crm.dashboard.financialTitle') }}</h3>
+          <button v-if="!financialLoaded" @click="loadFinancial"
+            class="text-xs font-medium px-3 py-1.5 rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-100 border transition-colors">
+            {{ t('crm.dashboard.financialLoad') }}
+          </button>
+        </div>
+        <div v-if="financialLoading" class="flex justify-center py-6">
+          <div class="animate-spin w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+        </div>
+        <div v-else-if="financialData" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div v-for="f in financialCards" :key="f.key" class="text-center p-3 rounded-lg bg-gray-50 border border-gray-100">
+            <p class="text-[10px] font-medium text-gray-400 uppercase tracking-wide">{{ f.label }}</p>
+            <p class="text-lg font-bold mt-1" :class="f.color">{{ f.value }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 7. Экспорт PDF -->
+      <div class="flex justify-end">
+        <button @click="exportPdf"
+          class="flex items-center gap-2 px-4 py-2.5 bg-gray-900 text-white text-xs font-medium rounded-lg hover:bg-gray-800 transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+          {{ t('crm.dashboard.exportPdf') }}
+        </button>
+      </div>
+
     </template>
   </div>
 </template>
@@ -568,6 +741,22 @@ const forecast = ref({
   managers: 3,
   growthPct: 30,
 });
+
+// Цели
+const showGoalForm = ref(false);
+const savingGoal = ref(false);
+const goalsData = ref(null);
+const goalForm = ref({ target_clients: 0, target_cases: 0, target_revenue: 0 });
+
+// Активность
+const activityFeed = ref([]);
+const activityLoading = ref(false);
+const activityLoaded = ref(false);
+
+// Финансы
+const financialData = ref(null);
+const financialLoading = ref(false);
+const financialLoaded = ref(false);
 
 const currentYear = new Date().getFullYear();
 
@@ -821,13 +1010,167 @@ const totalSaved = computed(() => {
   return last?.saved ?? 0;
 });
 
+// === 1. Воронка продаж ===
+const funnelData = computed(() => {
+  if (!stats.value?.cases?.by_stage) return [];
+  const byStage = stats.value.cases.by_stage;
+  const order = STAGES.value;
+  const counts = order.map(s => ({ key: s.key, label: s.label, count: Number(byStage[s.key] ?? 0) }));
+  const total = counts.reduce((s, v) => s + v.count, 0);
+  if (total === 0) return [];
+  let prev = total;
+  return counts.map((c, i) => {
+    const cumulative = counts.slice(i).reduce((s, v) => s + v.count, 0);
+    const percent = Math.round(cumulative / total * 100);
+    const dropoff = i > 0 ? Math.round((1 - cumulative / prev) * 100) : null;
+    if (i > 0) prev = counts.slice(i - 1).reduce((s, v) => s + v.count, 0);
+    return { ...c, percent, dropoff };
+  });
+});
+
+// === 2. Сравнение периодов ===
+const comparisonItems = computed(() => {
+  const g = stats.value?.growth ?? {};
+  return [
+    { key: 'leads', label: t('crm.dashboard.newLeads'), growth: g.new_leads ?? 0 },
+    { key: 'completed', label: t('crm.dashboard.completedPeriod'), growth: g.completed ?? 0 },
+    { key: 'visa', label: t('crm.dashboard.visaIssued'), growth: g.visa_issued ?? 0 },
+  ];
+});
+
+// === 3. Цели и план ===
+const goalProgressItems = computed(() => {
+  if (!goalsData.value) return [];
+  const progress = goalsData.value.progress ?? {};
+  const goals = goalsData.value.goals ?? [];
+  // Суммируем цели за год
+  const yearTarget = goals.reduce((acc, g) => {
+    acc.clients += g.target_clients || 0;
+    acc.cases += g.target_cases || 0;
+    acc.revenue += g.target_revenue || 0;
+    return acc;
+  }, { clients: 0, cases: 0, revenue: 0 });
+
+  const items = [];
+  if (yearTarget.clients > 0) {
+    const pct = Math.round(progress.clients / yearTarget.clients * 100);
+    items.push({ key: 'clients', label: t('crm.dashboard.goalClients'), current: progress.clients, target: yearTarget.clients, pct });
+  }
+  if (yearTarget.cases > 0) {
+    const pct = Math.round(progress.cases / yearTarget.cases * 100);
+    items.push({ key: 'cases', label: t('crm.dashboard.goalCases'), current: progress.cases, target: yearTarget.cases, pct });
+  }
+  if (yearTarget.revenue > 0) {
+    const pct = Math.round(progress.revenue / yearTarget.revenue * 100);
+    items.push({ key: 'revenue', label: t('crm.dashboard.goalRevenue'), current: Math.round(progress.revenue), target: yearTarget.revenue, pct });
+  }
+  return items;
+});
+
+async function saveGoals() {
+  savingGoal.value = true;
+  try {
+    await dashboardApi.saveGoal({
+      year: new Date().getFullYear(),
+      month: null, // годовая цель
+      ...goalForm.value,
+    });
+    await loadGoals();
+    showGoalForm.value = false;
+  } finally {
+    savingGoal.value = false;
+  }
+}
+
+async function loadGoals() {
+  try {
+    const { data } = await dashboardApi.goals({ year: new Date().getFullYear() });
+    goalsData.value = data.data;
+    // Заполним форму из существующих целей
+    const goals = data.data?.goals ?? [];
+    if (goals.length) {
+      const yearGoal = goals.find(g => !g.month) || goals[0];
+      goalForm.value = {
+        target_clients: yearGoal.target_clients || 0,
+        target_cases: yearGoal.target_cases || 0,
+        target_revenue: yearGoal.target_revenue || 0,
+      };
+    }
+  } catch { /* ignore */ }
+}
+
+// === 4. Лента активности ===
+async function loadActivity() {
+  activityLoading.value = true;
+  try {
+    const { data } = await dashboardApi.activityFeed();
+    activityFeed.value = data.data ?? [];
+    activityLoaded.value = true;
+  } finally {
+    activityLoading.value = false;
+  }
+}
+
+function formatDate(dt) {
+  if (!dt) return '';
+  const d = new Date(dt);
+  const now = new Date();
+  const diff = Math.floor((now - d) / 60000);
+  if (diff < 1) return t('crm.dashboard.justNow');
+  if (diff < 60) return `${diff} ${t('crm.dashboard.minuteShort')} ${t('crm.dashboard.ago')}`;
+  if (diff < 1440) return `${Math.floor(diff / 60)} ${t('crm.dashboard.hourShort')} ${t('crm.dashboard.ago')}`;
+  return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+}
+
+// === 5. Рейтинг менеджеров ===
+const managerRanking = computed(() => {
+  if (!stats.value?.managers?.length) return [];
+  return [...stats.value.managers]
+    .map(m => ({
+      ...m,
+      score: (m.completed_cases * 10) + (m.conversion * 2) + (m.active_cases * 3) - (m.overdue_cases * 15),
+    }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3);
+});
+
+// === 6. Финансовый блок ===
+async function loadFinancial() {
+  financialLoading.value = true;
+  try {
+    const { data } = await dashboardApi.financialSummary({ period: period.value });
+    financialData.value = data.data;
+    financialLoaded.value = true;
+  } finally {
+    financialLoading.value = false;
+  }
+}
+
+const financialCards = computed(() => {
+  if (!financialData.value) return [];
+  const f = financialData.value;
+  const fmt = (v) => v != null ? '$' + Number(v).toLocaleString() : '--';
+  return [
+    { key: 'total', label: t('crm.dashboard.finTotal'), value: fmt(f.total_revenue), color: 'text-green-600' },
+    { key: 'period', label: t('crm.dashboard.finPeriod'), value: fmt(f.period_revenue), color: 'text-blue-600' },
+    { key: 'avg', label: t('crm.dashboard.finAvgCheck'), value: fmt(f.avg_check), color: 'text-indigo-600' },
+    { key: 'pending', label: t('crm.dashboard.finPending'), value: fmt(f.pending_payments), color: 'text-amber-600' },
+    { key: 'count', label: t('crm.dashboard.finPayments'), value: String(f.payment_count ?? 0), color: 'text-gray-800' },
+    { key: 'pkg', label: t('crm.dashboard.finAvgPkg'), value: fmt(f.avg_package_price), color: 'text-purple-600' },
+  ];
+});
+
+// === 7. PDF-экспорт ===
+function exportPdf() {
+  window.print();
+}
+
 async function fetchDashboard() {
   loading.value = true;
   try {
     const { data } = await dashboardApi.index({ period: period.value });
     stats.value = data.data;
     hints.value = data.data?.hints ?? [];
-    // Автозаполнение кол-ва менеджеров из реальных данных (только при первой загрузке)
     if (data.data?.managers_count && forecast.value.managers === 3) {
       forecast.value.managers = data.data.managers_count;
     }
@@ -841,5 +1184,8 @@ function changePeriod(p) {
   fetchDashboard();
 }
 
-onMounted(fetchDashboard);
+onMounted(() => {
+  fetchDashboard();
+  loadGoals();
+});
 </script>

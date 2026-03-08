@@ -71,6 +71,10 @@ Route::prefix('v1')->group(function () {
         Route::get('dashboard',                        [DashboardController::class, 'index']);
         Route::get('dashboard/overdue',                [DashboardController::class, 'overdue']);
         Route::get('dashboard/managers/{id}/cases',    [DashboardController::class, 'managerCases']);
+        Route::get('dashboard/goals',                  [DashboardController::class, 'goals']);
+        Route::post('dashboard/goals',                 [DashboardController::class, 'saveGoal']);
+        Route::get('dashboard/activity',               [DashboardController::class, 'activityFeed']);
+        Route::get('dashboard/financial',              [DashboardController::class, 'financialSummary']);
 
         // Заявки
         Route::get('cases/critical',          [CaseController::class, 'critical']);
