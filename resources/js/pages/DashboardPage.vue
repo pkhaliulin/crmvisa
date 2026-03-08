@@ -185,8 +185,8 @@
                 class="flex items-center gap-2 text-xs group hover:bg-gray-50 rounded-lg px-1 -mx-1 py-0.5 transition-colors">
                 <span class="text-sm">{{ c.flag_emoji }}</span>
                 <span class="flex-1 text-gray-600 group-hover:text-blue-600 transition-colors truncate">{{ c.name }}</span>
-                <span v-if="c.agency_works" class="w-2 h-2 rounded-full bg-green-400 shrink-0"></span>
-                <span v-else class="w-2 h-2 rounded-full bg-red-300 shrink-0"></span>
+                <span v-if="c.agency_works" class="text-[9px] font-medium px-1.5 py-0.5 bg-green-50 text-green-600 rounded-full">{{ t('crm.dashboard.works') }}</span>
+                <span v-else class="text-[9px] font-medium px-1.5 py-0.5 bg-red-50 text-red-500 rounded-full">{{ t('crm.dashboard.notWorks') }}</span>
               </router-link>
             </div>
           </div>
@@ -209,15 +209,51 @@
             </div>
           </span>
         </div>
-        <div class="overflow-x-auto">
+        <div>
           <table class="w-full text-sm">
             <thead class="bg-gray-50 border-b text-gray-500 text-[11px] uppercase tracking-wide">
               <tr>
                 <th class="text-left px-4 py-2.5 font-medium">{{ t('crm.dashboard.stageCol') }}</th>
-                <th class="text-right px-4 py-2.5 font-medium cursor-help" :title="t('crm.dashboard.slaNormTooltip')">{{ t('crm.dashboard.slaNorm') }} <span class="text-gray-300">?</span></th>
-                <th class="text-right px-4 py-2.5 font-medium cursor-help" :title="t('crm.dashboard.avgTimeTooltip')">{{ t('crm.dashboard.avgTime') }} <span class="text-gray-300">?</span></th>
-                <th class="text-right px-4 py-2.5 font-medium cursor-help" :title="t('crm.dashboard.deviationTooltip')">{{ t('crm.dashboard.deviation') }} <span class="text-gray-300">?</span></th>
-                <th class="text-right px-4 py-2.5 font-medium cursor-help" :title="t('crm.dashboard.slaComplianceTooltip')">{{ t('crm.dashboard.slaCompliance') }} <span class="text-gray-300">?</span></th>
+                <th class="text-right px-4 py-2.5 font-medium">
+                  <span class="group relative cursor-help inline-flex items-center gap-1">
+                    {{ t('crm.dashboard.slaNorm') }}
+                    <svg class="w-3.5 h-3.5 text-gray-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3m.08 4h.01"/></svg>
+                    <div class="absolute bottom-full right-0 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-52 text-left z-50 normal-case tracking-normal font-normal">
+                      {{ t('crm.dashboard.slaNormTooltip') }}
+                      <div class="absolute top-full right-4 w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
+                    </div>
+                  </span>
+                </th>
+                <th class="text-right px-4 py-2.5 font-medium">
+                  <span class="group relative cursor-help inline-flex items-center gap-1">
+                    {{ t('crm.dashboard.avgTime') }}
+                    <svg class="w-3.5 h-3.5 text-gray-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3m.08 4h.01"/></svg>
+                    <div class="absolute bottom-full right-0 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-52 text-left z-50 normal-case tracking-normal font-normal">
+                      {{ t('crm.dashboard.avgTimeTooltip') }}
+                      <div class="absolute top-full right-4 w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
+                    </div>
+                  </span>
+                </th>
+                <th class="text-right px-4 py-2.5 font-medium">
+                  <span class="group relative cursor-help inline-flex items-center gap-1">
+                    {{ t('crm.dashboard.deviation') }}
+                    <svg class="w-3.5 h-3.5 text-gray-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3m.08 4h.01"/></svg>
+                    <div class="absolute bottom-full right-0 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-52 text-left z-50 normal-case tracking-normal font-normal">
+                      {{ t('crm.dashboard.deviationTooltip') }}
+                      <div class="absolute top-full right-4 w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
+                    </div>
+                  </span>
+                </th>
+                <th class="text-right px-4 py-2.5 font-medium">
+                  <span class="group relative cursor-help inline-flex items-center gap-1">
+                    {{ t('crm.dashboard.slaCompliance') }}
+                    <svg class="w-3.5 h-3.5 text-gray-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3m.08 4h.01"/></svg>
+                    <div class="absolute bottom-full right-0 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-52 text-left z-50 normal-case tracking-normal font-normal">
+                      {{ t('crm.dashboard.slaComplianceTooltip') }}
+                      <div class="absolute top-full right-4 w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
+                    </div>
+                  </span>
+                </th>
                 <th class="px-4 py-2.5 w-28"></th>
               </tr>
             </thead>
@@ -249,16 +285,61 @@
       <!-- Менеджеры -->
       <div v-if="stats?.managers?.length" class="bg-white rounded-xl border border-gray-200 p-5">
         <h3 class="font-semibold text-gray-800 text-sm mb-4">{{ t('crm.dashboard.managersLoad') }}</h3>
-        <div class="overflow-x-auto">
+        <div>
           <table class="w-full text-sm">
             <thead class="bg-gray-50 border-b text-gray-500 text-[11px] uppercase tracking-wide">
               <tr>
                 <th class="text-left px-4 py-2.5 font-medium">{{ t('crm.dashboard.managerCol') }}</th>
-                <th class="text-right px-4 py-2.5 font-medium cursor-help" :title="t('crm.dashboard.activeColTooltip')">{{ t('crm.dashboard.activeCol') }} <span class="text-gray-300">?</span></th>
-                <th class="text-right px-4 py-2.5 font-medium cursor-help" :title="t('crm.dashboard.completedColTooltip')">{{ t('crm.dashboard.completedCol') }} <span class="text-gray-300">?</span></th>
-                <th class="text-right px-4 py-2.5 font-medium cursor-help" :title="t('crm.dashboard.overdueColTooltip')">{{ t('crm.dashboard.overdueCol') }} <span class="text-gray-300">?</span></th>
-                <th class="text-right px-4 py-2.5 font-medium cursor-help" :title="t('crm.dashboard.avgTimeColTooltip')">{{ t('crm.dashboard.avgTimeCol') }} <span class="text-gray-300">?</span></th>
-                <th class="text-right px-4 py-2.5 font-medium cursor-help" :title="t('crm.dashboard.conversionColTooltip')">{{ t('crm.dashboard.conversionCol') }} <span class="text-gray-300">?</span></th>
+                <th class="text-right px-4 py-2.5 font-medium">
+                  <span class="group relative cursor-help inline-flex items-center gap-1">
+                    {{ t('crm.dashboard.activeCol') }}
+                    <svg class="w-3.5 h-3.5 text-gray-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3m.08 4h.01"/></svg>
+                    <div class="absolute bottom-full right-0 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-52 text-left z-50 normal-case tracking-normal font-normal">
+                      {{ t('crm.dashboard.activeColTooltip') }}
+                      <div class="absolute top-full right-4 w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
+                    </div>
+                  </span>
+                </th>
+                <th class="text-right px-4 py-2.5 font-medium">
+                  <span class="group relative cursor-help inline-flex items-center gap-1">
+                    {{ t('crm.dashboard.completedCol') }}
+                    <svg class="w-3.5 h-3.5 text-gray-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3m.08 4h.01"/></svg>
+                    <div class="absolute bottom-full right-0 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-52 text-left z-50 normal-case tracking-normal font-normal">
+                      {{ t('crm.dashboard.completedColTooltip') }}
+                      <div class="absolute top-full right-4 w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
+                    </div>
+                  </span>
+                </th>
+                <th class="text-right px-4 py-2.5 font-medium">
+                  <span class="group relative cursor-help inline-flex items-center gap-1">
+                    {{ t('crm.dashboard.overdueCol') }}
+                    <svg class="w-3.5 h-3.5 text-gray-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3m.08 4h.01"/></svg>
+                    <div class="absolute bottom-full right-0 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-52 text-left z-50 normal-case tracking-normal font-normal">
+                      {{ t('crm.dashboard.overdueColTooltip') }}
+                      <div class="absolute top-full right-4 w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
+                    </div>
+                  </span>
+                </th>
+                <th class="text-right px-4 py-2.5 font-medium">
+                  <span class="group relative cursor-help inline-flex items-center gap-1">
+                    {{ t('crm.dashboard.avgTimeCol') }}
+                    <svg class="w-3.5 h-3.5 text-gray-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3m.08 4h.01"/></svg>
+                    <div class="absolute bottom-full right-0 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-52 text-left z-50 normal-case tracking-normal font-normal">
+                      {{ t('crm.dashboard.avgTimeColTooltip') }}
+                      <div class="absolute top-full right-4 w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
+                    </div>
+                  </span>
+                </th>
+                <th class="text-right px-4 py-2.5 font-medium">
+                  <span class="group relative cursor-help inline-flex items-center gap-1">
+                    {{ t('crm.dashboard.conversionCol') }}
+                    <svg class="w-3.5 h-3.5 text-gray-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3m.08 4h.01"/></svg>
+                    <div class="absolute bottom-full right-0 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-52 text-left z-50 normal-case tracking-normal font-normal">
+                      {{ t('crm.dashboard.conversionColTooltip') }}
+                      <div class="absolute top-full right-4 w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
+                    </div>
+                  </span>
+                </th>
                 <th class="px-4 py-2.5 w-28"></th>
               </tr>
             </thead>
