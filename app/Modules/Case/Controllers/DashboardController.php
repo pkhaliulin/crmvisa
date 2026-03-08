@@ -739,14 +739,14 @@ class DashboardController extends Controller
         if ($hasActivity) {
             $events = DB::table('activity_log')
                 ->leftJoin('cases', function ($join) {
-                    $join->on('activity_log.subject_id', '=', 'cases.id')
+                    $join->whereRaw("activity_log.subject_id::uuid = cases.id")
                          ->where('activity_log.subject_type', 'App\\Modules\\Case\\Models\\VisaCase');
                 })
                 ->leftJoin('clients', function ($join) {
-                    $join->on('activity_log.subject_id', '=', 'clients.id')
+                    $join->whereRaw("activity_log.subject_id::uuid = clients.id")
                          ->where('activity_log.subject_type', 'App\\Modules\\Client\\Models\\Client');
                 })
-                ->leftJoin('users as causer', 'activity_log.causer_id', '=', 'causer.id')
+                ->leftJoin('users as causer', DB::raw('activity_log.causer_id::uuid'), '=', 'causer.id')
                 ->where(function ($q) use ($agencyId) {
                     $q->where('cases.agency_id', $agencyId)
                       ->orWhere('clients.agency_id', $agencyId);
