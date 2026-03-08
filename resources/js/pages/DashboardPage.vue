@@ -187,34 +187,10 @@
             <thead class="bg-gray-50 border-b text-gray-500 text-[11px] uppercase tracking-wide">
               <tr>
                 <th class="text-left px-4 py-2.5 font-medium">{{ t('crm.dashboard.stageCol') }}</th>
-                <th class="text-right px-4 py-2.5 font-medium group relative cursor-help">
-                  {{ t('crm.dashboard.slaNorm') }}
-                  <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-48 text-center z-10 normal-case tracking-normal">
-                    {{ t('crm.dashboard.slaNormTooltip') }}
-                    <div class="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
-                  </div>
-                </th>
-                <th class="text-right px-4 py-2.5 font-medium group relative cursor-help">
-                  {{ t('crm.dashboard.avgTime') }}
-                  <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-48 text-center z-10 normal-case tracking-normal">
-                    {{ t('crm.dashboard.avgTimeTooltip') }}
-                    <div class="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
-                  </div>
-                </th>
-                <th class="text-right px-4 py-2.5 font-medium group relative cursor-help">
-                  {{ t('crm.dashboard.deviation') }}
-                  <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-48 text-center z-10 normal-case tracking-normal">
-                    {{ t('crm.dashboard.deviationTooltip') }}
-                    <div class="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
-                  </div>
-                </th>
-                <th class="text-right px-4 py-2.5 font-medium group relative cursor-help">
-                  {{ t('crm.dashboard.slaCompliance') }}
-                  <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-48 text-center z-10 normal-case tracking-normal">
-                    {{ t('crm.dashboard.slaComplianceTooltip') }}
-                    <div class="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
-                  </div>
-                </th>
+                <th class="text-right px-4 py-2.5 font-medium cursor-help" :title="t('crm.dashboard.slaNormTooltip')">{{ t('crm.dashboard.slaNorm') }} <span class="text-gray-300">?</span></th>
+                <th class="text-right px-4 py-2.5 font-medium cursor-help" :title="t('crm.dashboard.avgTimeTooltip')">{{ t('crm.dashboard.avgTime') }} <span class="text-gray-300">?</span></th>
+                <th class="text-right px-4 py-2.5 font-medium cursor-help" :title="t('crm.dashboard.deviationTooltip')">{{ t('crm.dashboard.deviation') }} <span class="text-gray-300">?</span></th>
+                <th class="text-right px-4 py-2.5 font-medium cursor-help" :title="t('crm.dashboard.slaComplianceTooltip')">{{ t('crm.dashboard.slaCompliance') }} <span class="text-gray-300">?</span></th>
                 <th class="px-4 py-2.5 w-28"></th>
               </tr>
             </thead>
@@ -251,41 +227,11 @@
             <thead class="bg-gray-50 border-b text-gray-500 text-[11px] uppercase tracking-wide">
               <tr>
                 <th class="text-left px-4 py-2.5 font-medium">{{ t('crm.dashboard.managerCol') }}</th>
-                <th class="text-right px-4 py-2.5 font-medium group relative cursor-help">
-                  {{ t('crm.dashboard.activeCol') }}
-                  <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-48 text-center z-10 normal-case tracking-normal">
-                    {{ t('crm.dashboard.activeColTooltip') }}
-                    <div class="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
-                  </div>
-                </th>
-                <th class="text-right px-4 py-2.5 font-medium group relative cursor-help">
-                  {{ t('crm.dashboard.completedCol') }}
-                  <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-48 text-center z-10 normal-case tracking-normal">
-                    {{ t('crm.dashboard.completedColTooltip') }}
-                    <div class="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
-                  </div>
-                </th>
-                <th class="text-right px-4 py-2.5 font-medium group relative cursor-help">
-                  {{ t('crm.dashboard.overdueCol') }}
-                  <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-48 text-center z-10 normal-case tracking-normal">
-                    {{ t('crm.dashboard.overdueColTooltip') }}
-                    <div class="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
-                  </div>
-                </th>
-                <th class="text-right px-4 py-2.5 font-medium group relative cursor-help">
-                  {{ t('crm.dashboard.avgTimeCol') }}
-                  <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-48 text-center z-10 normal-case tracking-normal">
-                    {{ t('crm.dashboard.avgTimeColTooltip') }}
-                    <div class="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
-                  </div>
-                </th>
-                <th class="text-right px-4 py-2.5 font-medium group relative cursor-help">
-                  {{ t('crm.dashboard.conversionCol') }}
-                  <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-48 text-center z-10 normal-case tracking-normal">
-                    {{ t('crm.dashboard.conversionColTooltip') }}
-                    <div class="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
-                  </div>
-                </th>
+                <th class="text-right px-4 py-2.5 font-medium cursor-help" :title="t('crm.dashboard.activeColTooltip')">{{ t('crm.dashboard.activeCol') }} <span class="text-gray-300">?</span></th>
+                <th class="text-right px-4 py-2.5 font-medium cursor-help" :title="t('crm.dashboard.completedColTooltip')">{{ t('crm.dashboard.completedCol') }} <span class="text-gray-300">?</span></th>
+                <th class="text-right px-4 py-2.5 font-medium cursor-help" :title="t('crm.dashboard.overdueColTooltip')">{{ t('crm.dashboard.overdueCol') }} <span class="text-gray-300">?</span></th>
+                <th class="text-right px-4 py-2.5 font-medium cursor-help" :title="t('crm.dashboard.avgTimeColTooltip')">{{ t('crm.dashboard.avgTimeCol') }} <span class="text-gray-300">?</span></th>
+                <th class="text-right px-4 py-2.5 font-medium cursor-help" :title="t('crm.dashboard.conversionColTooltip')">{{ t('crm.dashboard.conversionCol') }} <span class="text-gray-300">?</span></th>
                 <th class="px-4 py-2.5 w-28"></th>
               </tr>
             </thead>
