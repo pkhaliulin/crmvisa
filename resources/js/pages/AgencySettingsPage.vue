@@ -557,7 +557,7 @@ onMounted(async () => {
         role: user.role || '',
       };
     }
-  } catch { /* ignore */ } finally {
+  } catch (e) { console.error('Settings load error:', e); } finally {
     loading.value = false;
   }
 });

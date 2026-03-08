@@ -61,6 +61,14 @@ const titles = computed(() => ({
   clients:        t('crm.nav.clients'),
   'clients.create': t('crm.nav.newClient'),
   'clients.show': t('crm.nav.client'),
+  overdue:        t('crm.nav.overdue'),
+  countries:      t('crm.nav.countries'),
+  'countries.show': t('crm.nav.countries'),
+  reports:        t('crm.nav.reports'),
+  services:       t('crm.nav.services'),
+  'services.show': t('crm.nav.services'),
+  billing:        t('crm.nav.billing'),
+  settings:       t('crm.nav.settings'),
   users:          t('crm.nav.users'),
 }));
 const pageTitle = computed(() => titles.value[route.name] ?? 'VisaCRM');
