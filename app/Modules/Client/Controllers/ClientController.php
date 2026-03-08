@@ -3,9 +3,11 @@
 namespace App\Modules\Client\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Client\Requests\StoreClientRequest;
+use App\Modules\Client\Requests\UpdateClientRequest;
+use App\Modules\Client\Resources\ClientResource;
 use App\Modules\Client\Services\ClientService;
 use App\Support\Helpers\ApiResponse;
-use App\Support\Rules\ReferenceExists;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -18,59 +20,40 @@ class ClientController extends Controller
         if ($request->filled('q')) {
             $clients = $this->service->search($request->q);
 
-            return ApiResponse::success($clients);
+            return ApiResponse::success(ClientResource::collection($clients));
         }
 
         $clients = $this->service->paginate(20);
 
-        return ApiResponse::paginated($clients);
+        return ApiResponse::paginated($clients, 'Success', ClientResource::class);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreClientRequest $request): JsonResponse
     {
-        $data = $request->validate([
-            'name'                => ['required', 'string', 'max:255'],
-            'email'               => ['nullable', 'email', 'max:255'],
-            'phone'               => ['required', 'string', 'max:30'],
-            'telegram_chat_id'    => ['nullable', 'string', 'max:50'],
-            'passport_number'     => ['nullable', 'string', 'max:30'],
-            'nationality'         => ['nullable', 'string', 'size:3'],
-            'date_of_birth'       => ['nullable', 'date'],
-            'passport_expires_at' => ['nullable', 'date'],
-            'source'              => ['nullable', new ReferenceExists('lead_source')],
-            'notes'               => ['nullable', 'string'],
-        ]);
+        $data = $request->validated();
 
         $client = $this->service->create($data);
 
-        return ApiResponse::created($client);
+        return ApiResponse::created(new ClientResource($client));
     }
 
     public function show(string $id): JsonResponse
     {
         $client = $this->service->findOrFail($id);
 
-        return ApiResponse::success($client->load(['cases' => fn ($q) => $q->with('assignee:id,name')->orderBy('created_at', 'desc')]));
+        return ApiResponse::success(
+            (new ClientResource($client->load(['cases' => fn ($q) => $q->with('assignee:id,name')->orderBy('created_at', 'desc')])))
+                ->withPii()
+        );
     }
 
-    public function update(Request $request, string $id): JsonResponse
+    public function update(UpdateClientRequest $request, string $id): JsonResponse
     {
-        $data = $request->validate([
-            'name'                => ['sometimes', 'string', 'max:255'],
-            'email'               => ['sometimes', 'nullable', 'email'],
-            'phone'               => ['sometimes', 'nullable', 'string', 'max:30'],
-            'telegram_chat_id'    => ['sometimes', 'nullable', 'string', 'max:50'],
-            'passport_number'     => ['sometimes', 'nullable', 'string', 'max:30'],
-            'nationality'         => ['sometimes', 'nullable', 'string', 'size:3'],
-            'date_of_birth'       => ['sometimes', 'nullable', 'date'],
-            'passport_expires_at' => ['sometimes', 'nullable', 'date'],
-            'source'              => ['sometimes', new ReferenceExists('lead_source')],
-            'notes'               => ['sometimes', 'nullable', 'string'],
-        ]);
+        $data = $request->validated();
 
         $client = $this->service->update($id, $data);
 
-        return ApiResponse::success($client);
+        return ApiResponse::success(new ClientResource($client));
     }
 
     public function destroy(string $id): JsonResponse

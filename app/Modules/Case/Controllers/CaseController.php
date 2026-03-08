@@ -4,6 +4,11 @@ namespace App\Modules\Case\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Case\Models\VisaCase;
+use App\Modules\Case\Requests\CompleteCaseRequest;
+use App\Modules\Case\Requests\MoveCaseStageRequest;
+use App\Modules\Case\Requests\StoreCaseRequest;
+use App\Modules\Case\Requests\UpdateCaseRequest;
+use App\Modules\Case\Resources\CaseResource;
 use App\Modules\Case\Services\CaseService;
 use App\Support\Helpers\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -117,27 +122,16 @@ class CaseController extends Controller
             cases.created_at DESC
         ");
 
-        return ApiResponse::paginated($query->paginate(20));
+        return ApiResponse::paginated($query->paginate(20), 'Success', CaseResource::class);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreCaseRequest $request): JsonResponse
     {
-        $agencyId = $request->user()->agency_id;
-
-        $data = $request->validate([
-            'client_id'    => ['required', 'uuid', "exists:clients,id,agency_id,{$agencyId}"],
-            'country_code' => ['required', 'string', 'size:2'],
-            'visa_type'    => ['required', 'string', 'max:50', 'exists:portal_visa_types,slug'],
-            'assigned_to'  => ['nullable', 'uuid', "exists:users,id,agency_id,{$agencyId}"],
-            'priority'     => ['nullable', 'in:low,normal,high,urgent'],
-            'critical_date'=> ['nullable', 'date'],
-            'travel_date'  => ['nullable', 'date'],
-            'notes'        => ['nullable', 'string'],
-        ]);
+        $data = $request->validated();
 
         $case = $this->service->createCase($data);
 
-        return ApiResponse::created($case);
+        return ApiResponse::created(new CaseResource($case));
     }
 
     public function show(string $id): JsonResponse
@@ -145,30 +139,17 @@ class CaseController extends Controller
         $case = $this->service->findOrFail($id);
 
         return ApiResponse::success(
-            $case->load(['client', 'assignee', 'stageHistory'])
+            new CaseResource($case->load(['client', 'assignee', 'stageHistory']))
         );
     }
 
-    public function update(Request $request, string $id): JsonResponse
+    public function update(UpdateCaseRequest $request, string $id): JsonResponse
     {
-        $agencyId = $request->user()->agency_id;
-
-        $data = $request->validate([
-            'assigned_to'  => ['sometimes', 'nullable', 'uuid', "exists:users,id,agency_id,{$agencyId}"],
-            'priority'     => ['sometimes', 'in:low,normal,high,urgent'],
-            'critical_date'=> ['sometimes', 'nullable', 'date'],
-            'travel_date'  => ['sometimes', 'nullable', 'date'],
-            'notes'                => ['sometimes', 'nullable', 'string'],
-            'appointment_date'     => ['sometimes', 'nullable', 'date'],
-            'appointment_time'     => ['sometimes', 'nullable', 'string', 'max:10'],
-            'appointment_location' => ['sometimes', 'nullable', 'string', 'max:255'],
-            'expected_result_date' => ['sometimes', 'nullable', 'date'],
-            'return_date'          => ['sometimes', 'nullable', 'date'],
-        ]);
+        $data = $request->validated();
 
         $case = $this->service->updateCase($id, $data);
 
-        return ApiResponse::success($case);
+        return ApiResponse::success(new CaseResource($case));
     }
 
     public function destroy(string $id): JsonResponse
@@ -178,18 +159,15 @@ class CaseController extends Controller
         return ApiResponse::success(null, 'Case deleted.');
     }
 
-    public function moveStage(Request $request, string $id): JsonResponse
+    public function moveStage(MoveCaseStageRequest $request, string $id): JsonResponse
     {
-        $data = $request->validate([
-            'stage' => ['required', 'string', 'in:' . implode(',', array_keys(config('stages')))],
-            'notes' => ['nullable', 'string'],
-        ]);
+        $data = $request->validated();
 
         /** @var VisaCase */
         $case = $this->service->findOrFail($id);
         $case = $this->service->moveToStage($case, $data['stage'], $data['notes'] ?? null);
 
-        return ApiResponse::success($case);
+        return ApiResponse::success(new CaseResource($case));
     }
 
     public function critical(Request $request): JsonResponse
@@ -200,18 +178,9 @@ class CaseController extends Controller
     /**
      * POST /cases/{id}/complete — Завершить заявку (одобрено/отказ).
      */
-    public function complete(Request $request, string $id): JsonResponse
+    public function complete(CompleteCaseRequest $request, string $id): JsonResponse
     {
-        $data = $request->validate([
-            'result_type'            => ['required', 'in:approved,rejected'],
-            'result_notes'           => ['nullable', 'string'],
-            'visa_issued_at'         => ['nullable', 'date'],
-            'visa_received_at'       => ['nullable', 'date'],
-            'visa_validity'          => ['nullable', 'string', 'max:100'],
-            'rejection_reason'       => ['nullable', 'string'],
-            'can_reapply'            => ['nullable', 'boolean'],
-            'reapply_recommendation' => ['nullable', 'string'],
-        ]);
+        $data = $request->validated();
 
         $case = $this->service->findOrFail($id);
 
@@ -221,7 +190,7 @@ class CaseController extends Controller
 
         $case = $this->service->completeCase($case, $data['result_type'], $data);
 
-        return ApiResponse::success($case);
+        return ApiResponse::success(new CaseResource($case));
     }
 
     /**
@@ -255,7 +224,7 @@ class CaseController extends Controller
 
         $this->service->moveToStage($case->fresh(), 'review', 'Документы поданы в посольство');
 
-        return ApiResponse::success($case->fresh(['client', 'assignee', 'stageHistory']));
+        return ApiResponse::success(new CaseResource($case->fresh(['client', 'assignee', 'stageHistory'])));
     }
 
     /**
@@ -274,7 +243,7 @@ class CaseController extends Controller
             'last_manager_update_at' => now(),
         ]);
 
-        return ApiResponse::success($case->fresh());
+        return ApiResponse::success(new CaseResource($case->fresh()));
     }
 
     /**
@@ -289,6 +258,6 @@ class CaseController extends Controller
         $case = $this->service->findOrFail($id);
         $case = $this->service->cancelCase($case, $data['reason'] ?? null);
 
-        return ApiResponse::success($case);
+        return ApiResponse::success(new CaseResource($case));
     }
 }

@@ -55,12 +55,16 @@ class ApiResponse
         return static::error($message, $errors, 422);
     }
 
-    public static function paginated(mixed $paginator, string $message = 'Success'): JsonResponse
+    public static function paginated(mixed $paginator, string $message = 'Success', ?string $resourceClass = null): JsonResponse
     {
+        $items = $resourceClass
+            ? $resourceClass::collection($paginator->items())
+            : $paginator->items();
+
         return response()->json([
             'success' => true,
             'message' => $message,
-            'data'    => $paginator->items(),
+            'data'    => $items,
             'meta'    => [
                 'current_page' => $paginator->currentPage(),
                 'last_page'    => $paginator->lastPage(),

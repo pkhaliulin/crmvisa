@@ -5,6 +5,8 @@ namespace App\Modules\User\Controllers;
 use App\Http\Controllers\Controller;
 use App\Modules\Agency\Models\Agency;
 use App\Modules\User\Models\User;
+use App\Modules\User\Requests\StoreUserRequest;
+use App\Modules\User\Resources\UserResource;
 use App\Support\Helpers\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -17,10 +19,9 @@ class UserController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $users = User::where('agency_id', $request->user()->agency_id)
-            ->get(['id', 'name', 'email', 'phone', 'telegram_username', 'avatar_url', 'role', 'is_active', 'created_at']);
+        $users = User::where('agency_id', $request->user()->agency_id)->get();
 
-        return ApiResponse::success($users);
+        return ApiResponse::success(UserResource::collection($users));
     }
 
     public function show(Request $request, string $id): JsonResponse
@@ -29,25 +30,13 @@ class UserController extends Controller
             ->where('agency_id', $request->user()->agency_id)
             ->firstOrFail();
 
-        $casesCount = $user->cases()->count();
-        $activeCasesCount = $user->cases()->whereNull('deleted_at')->whereNotIn('stage', ['result'])->count();
+        $user->cases_count = $user->cases()->count();
+        $user->active_cases_count = $user->cases()->whereNull('deleted_at')->whereNotIn('stage', ['result'])->count();
 
-        return ApiResponse::success([
-            'id'                => $user->id,
-            'name'              => $user->name,
-            'email'             => $user->email,
-            'phone'             => $user->phone,
-            'telegram_username' => $user->telegram_username,
-            'avatar_url'        => $user->avatar_url,
-            'role'              => $user->role,
-            'is_active'         => $user->is_active,
-            'created_at'        => $user->created_at?->toDateString(),
-            'cases_count'       => $casesCount,
-            'active_cases_count'=> $activeCasesCount,
-        ]);
+        return ApiResponse::success(new UserResource($user));
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreUserRequest $request): JsonResponse
     {
         $agencyId = $request->user()->agency_id;
 
@@ -62,16 +51,7 @@ class UserController extends Controller
             );
         }
 
-        $data = $request->validate([
-            'first_name'        => ['required', 'string', 'max:100', 'regex:/^[A-Za-z\s\-\']+$/'],
-            'last_name'         => ['required', 'string', 'max:100', 'regex:/^[A-Za-z\s\-\']+$/'],
-            'email'             => ['required', 'email', Rule::unique('users', 'email')],
-            'phone'             => ['nullable', 'string', 'regex:/^\+?[0-9]{7,15}$/'],
-            'telegram_username' => ['nullable', 'string', 'regex:/^[a-zA-Z0-9_]{3,32}$/'],
-            'avatar'            => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
-            'role'              => ['required', 'in:manager,partner'],
-            'password'          => ['required', 'string', 'min:8'],
-        ]);
+        $data = $request->validated();
 
         $fullName = trim($data['first_name']) . ' ' . trim($data['last_name']);
 
@@ -95,7 +75,7 @@ class UserController extends Controller
 
         $this->sendWelcomeEmail($user, $data['password'], $agency->name);
 
-        return ApiResponse::created($user->only(['id', 'name', 'email', 'role', 'agency_id', 'avatar_url']));
+        return ApiResponse::created(new UserResource($user));
     }
 
     public function update(Request $request, string $id): JsonResponse
@@ -121,16 +101,7 @@ class UserController extends Controller
 
         $user->update($data);
 
-        return ApiResponse::success([
-            'id'                => $user->id,
-            'name'              => $user->name,
-            'email'             => $user->email,
-            'phone'             => $user->phone,
-            'telegram_username' => $user->telegram_username,
-            'avatar_url'        => $user->avatar_url,
-            'role'              => $user->role,
-            'is_active'         => $user->is_active,
-        ]);
+        return ApiResponse::success(new UserResource($user));
     }
 
     public function resetPassword(Request $request, string $id): JsonResponse

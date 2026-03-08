@@ -5,6 +5,7 @@ namespace App\Modules\Case\Controllers;
 use App\Http\Controllers\Controller;
 use App\Modules\Agency\Models\AgencyWorkCountry;
 use App\Modules\Case\Models\VisaCase;
+use App\Modules\Case\Requests\SaveGoalRequest;
 use App\Modules\Client\Models\Client;
 use App\Modules\Owner\Models\PortalCountry;
 use App\Modules\Agency\Models\AgencyGoal;
@@ -706,16 +707,8 @@ class DashboardController extends Controller
         ]);
     }
 
-    public function saveGoal(Request $request): JsonResponse
+    public function saveGoal(SaveGoalRequest $request): JsonResponse
     {
-        $request->validate([
-            'year'           => 'required|integer|min:2024|max:2030',
-            'month'          => 'nullable|integer|min:1|max:12',
-            'target_clients' => 'nullable|integer|min:0',
-            'target_revenue' => 'nullable|integer|min:0',
-            'target_cases'   => 'nullable|integer|min:0',
-        ]);
-
         $agencyId = $request->user()->agency_id;
 
         $goal = AgencyGoal::updateOrCreate(
