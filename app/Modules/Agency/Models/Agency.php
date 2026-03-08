@@ -7,13 +7,22 @@ use App\Modules\Payment\Models\AgencyProfile;
 use App\Modules\Payment\Models\AgencySubscription;
 use App\Modules\Service\Models\AgencyServicePackage;
 use App\Support\Abstracts\BaseModel;
+use Database\Factories\Modules\Agency\AgencyFactory;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 
 class Agency extends BaseModel
 {
+    use HasFactory;
+
+    protected static function newFactory(): AgencyFactory
+    {
+        return AgencyFactory::new();
+    }
+
     protected $fillable = [
         'name',
         'slug',

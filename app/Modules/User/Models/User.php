@@ -7,6 +7,8 @@ use App\Modules\Case\Models\VisaCase;
 use App\Support\Traits\HasUuid;
 use App\Support\Traits\NormalizesName;
 use App\Support\Traits\NormalizesPhone;
+use Database\Factories\Modules\User\UserFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -18,7 +20,13 @@ use Spatie\Activitylog\Traits\LogsActivity;
 
 class User extends Authenticatable implements JWTSubject
 {
-    use HasUuid, SoftDeletes, Notifiable, NormalizesPhone, NormalizesName, LogsActivity;
+    use HasUuid, HasFactory, SoftDeletes, Notifiable, NormalizesPhone, NormalizesName, LogsActivity;
+
+    protected static function newFactory(): UserFactory
+    {
+        return UserFactory::new();
+    }
+
 
     protected $keyType = 'string';
     public $incrementing = false;

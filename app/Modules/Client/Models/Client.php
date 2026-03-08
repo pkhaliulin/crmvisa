@@ -6,13 +6,21 @@ use App\Support\Abstracts\BaseModel;
 use App\Support\Traits\HasTenant;
 use App\Support\Traits\NormalizesName;
 use App\Support\Traits\NormalizesPhone;
+use Database\Factories\Modules\Client\ClientFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Activitylog\LogOptions;
 
 class Client extends BaseModel
 {
-    use HasTenant, Notifiable, NormalizesPhone, NormalizesName;
+    use HasTenant, HasFactory, Notifiable, NormalizesPhone, NormalizesName;
+
+    protected static function newFactory(): ClientFactory
+    {
+        return ClientFactory::new();
+    }
+
 
     protected $fillable = [
         'agency_id',

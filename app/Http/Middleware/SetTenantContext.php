@@ -20,12 +20,14 @@ class SetTenantContext
                 $role     = $payload['role'] ?? null;
                 $agencyId = $payload['agency_id'] ?? null;
 
-                if ($role === 'superadmin') {
-                    DB::statement("SET app.is_superadmin = 'true'");
-                }
+                if (DB::connection()->getDriverName() !== 'sqlite') {
+                    if ($role === 'superadmin') {
+                        DB::statement("SET app.is_superadmin = 'true'");
+                    }
 
-                if ($agencyId && preg_match('/^[0-9a-f\-]{36}$/i', $agencyId)) {
-                    DB::statement("SET app.current_tenant_id = '{$agencyId}'");
+                    if ($agencyId && preg_match('/^[0-9a-f\-]{36}$/i', $agencyId)) {
+                        DB::statement("SET app.current_tenant_id = '{$agencyId}'");
+                    }
                 }
             }
         }

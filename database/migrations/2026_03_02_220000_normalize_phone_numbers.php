@@ -7,6 +7,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (DB::connection()->getDriverName() === 'sqlite') {
+            return;
+        }
+
         // Шаг 1: Удалить дубли БЕЗ + если запись С + уже существует
         // (public_users имеет unique constraint на phone)
         DB::statement("

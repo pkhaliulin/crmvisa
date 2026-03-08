@@ -12,46 +12,50 @@ return new class extends Migration
 
     public function up(): void
     {
-        foreach ($this->publicTables as $table) {
-            // Удаляем старую политику
-            DB::statement("DROP POLICY IF EXISTS tenant_isolation_{$table} ON {$table}");
+        if (DB::connection()->getDriverName() !== 'sqlite') {
+            foreach ($this->publicTables as $table) {
+                // Удаляем старую политику
+                DB::statement("DROP POLICY IF EXISTS tenant_isolation_{$table} ON {$table}");
 
-            // Новая политика: tenant + superadmin + public user (agency_id IS NULL)
-            DB::statement("
-                CREATE POLICY tenant_isolation_{$table} ON {$table}
-                FOR ALL
-                USING (
-                    agency_id::text = current_setting('app.current_tenant_id', true)
-                    OR current_setting('app.is_superadmin', true) = 'true'
-                    OR (agency_id IS NULL AND current_setting('app.is_public_user', true) = 'true')
-                )
-                WITH CHECK (
-                    agency_id::text = current_setting('app.current_tenant_id', true)
-                    OR current_setting('app.is_superadmin', true) = 'true'
-                    OR (agency_id IS NULL AND current_setting('app.is_public_user', true) = 'true')
-                )
-            ");
+                // Новая политика: tenant + superadmin + public user (agency_id IS NULL)
+                DB::statement("
+                    CREATE POLICY tenant_isolation_{$table} ON {$table}
+                    FOR ALL
+                    USING (
+                        agency_id::text = current_setting('app.current_tenant_id', true)
+                        OR current_setting('app.is_superadmin', true) = 'true'
+                        OR (agency_id IS NULL AND current_setting('app.is_public_user', true) = 'true')
+                    )
+                    WITH CHECK (
+                        agency_id::text = current_setting('app.current_tenant_id', true)
+                        OR current_setting('app.is_superadmin', true) = 'true'
+                        OR (agency_id IS NULL AND current_setting('app.is_public_user', true) = 'true')
+                    )
+                ");
+            }
         }
     }
 
     public function down(): void
     {
-        foreach ($this->publicTables as $table) {
-            DB::statement("DROP POLICY IF EXISTS tenant_isolation_{$table} ON {$table}");
+        if (DB::connection()->getDriverName() !== 'sqlite') {
+            foreach ($this->publicTables as $table) {
+                DB::statement("DROP POLICY IF EXISTS tenant_isolation_{$table} ON {$table}");
 
-            // Восстанавливаем оригинальную политику
-            DB::statement("
-                CREATE POLICY tenant_isolation_{$table} ON {$table}
-                FOR ALL
-                USING (
-                    agency_id::text = current_setting('app.current_tenant_id', true)
-                    OR current_setting('app.is_superadmin', true) = 'true'
-                )
-                WITH CHECK (
-                    agency_id::text = current_setting('app.current_tenant_id', true)
-                    OR current_setting('app.is_superadmin', true) = 'true'
-                )
-            ");
+                // Восстанавливаем оригинальную политику
+                DB::statement("
+                    CREATE POLICY tenant_isolation_{$table} ON {$table}
+                    FOR ALL
+                    USING (
+                        agency_id::text = current_setting('app.current_tenant_id', true)
+                        OR current_setting('app.is_superadmin', true) = 'true'
+                    )
+                    WITH CHECK (
+                        agency_id::text = current_setting('app.current_tenant_id', true)
+                        OR current_setting('app.is_superadmin', true) = 'true'
+                    )
+                ");
+            }
         }
     }
 };

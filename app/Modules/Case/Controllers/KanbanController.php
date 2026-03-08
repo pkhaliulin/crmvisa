@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Modules\Case\Models\CaseStage;
 use App\Modules\Case\Models\VisaCase;
 use App\Support\Helpers\ApiResponse;
+use App\Support\Services\AgencyCacheService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -18,6 +19,15 @@ class KanbanController extends Controller
         $agencyId = $user->agency_id;
         $isOwner  = in_array($user->role, ['owner', 'superadmin']);
 
+        $data = AgencyCacheService::getKanban($agencyId, $user->id, $user->role, function () use ($user, $agencyId, $isOwner) {
+            return $this->buildBoard($agencyId, $user, $isOwner);
+        });
+
+        return ApiResponse::success($data);
+    }
+
+    private function buildBoard(string $agencyId, $user, bool $isOwner): array
+    {
         $query = VisaCase::where('cases.agency_id', $agencyId)
             ->with([
                 'client:id,name,phone,nationality',
@@ -59,13 +69,13 @@ class KanbanController extends Controller
             ];
         })->values();
 
-        return ApiResponse::success([
+        return [
             'board'      => $board,
             'role'       => $user->role,
             'total'      => $cases->count(),
             'overdue'    => $cases->filter(fn ($c) => $this->isOverdue($c))->count(),
             'critical'   => $cases->filter(fn ($c) => $this->isCritical($c))->count(),
-        ]);
+        ];
     }
 
     // -------------------------------------------------------------------------

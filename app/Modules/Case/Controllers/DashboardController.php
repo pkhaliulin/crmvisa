@@ -10,6 +10,7 @@ use App\Modules\Owner\Models\PortalCountry;
 use App\Modules\Agency\Models\AgencyGoal;
 use App\Modules\User\Models\User;
 use App\Support\Helpers\ApiResponse;
+use App\Support\Services\AgencyCacheService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -20,9 +21,19 @@ class DashboardController extends Controller
     public function index(Request $request): JsonResponse
     {
         $agencyId = $request->user()->agency_id;
-        $today    = now()->toDateString();
 
         [$dateFrom, $dateTo, $periodKey] = $this->resolvePeriod($request);
+
+        $data = AgencyCacheService::getDashboard($agencyId, $periodKey, function () use ($agencyId, $dateFrom, $dateTo, $periodKey) {
+            return $this->buildDashboardData($agencyId, $dateFrom, $dateTo, $periodKey);
+        });
+
+        return ApiResponse::success($data);
+    }
+
+    private function buildDashboardData(string $agencyId, ?string $dateFrom, ?string $dateTo, string $periodKey): array
+    {
+        $today = now()->toDateString();
 
         // Исключаем неоплаченные заявки
         $excludeUnpaid = fn ($q) => $q->where(function ($sub) {
@@ -296,7 +307,7 @@ class DashboardController extends Controller
             $topPopular, $trendingPopular, $workCodes
         );
 
-        return ApiResponse::success([
+        return [
             'period' => $periodKey,
             'cases' => [
                 'by_stage'     => $byStage,
@@ -334,7 +345,7 @@ class DashboardController extends Controller
                 'top'      => $topPopular,
                 'trending' => $trendingPopular,
             ],
-        ]);
+        ];
     }
 
     private function resolvePeriod(Request $request): array
@@ -792,6 +803,15 @@ class DashboardController extends Controller
 
         [$dateFrom, $dateTo, $periodKey] = $this->resolvePeriod($request);
 
+        $data = AgencyCacheService::getFinancial($agencyId, $periodKey, function () use ($agencyId, $dateFrom, $dateTo, $periodKey) {
+            return $this->buildFinancialData($agencyId, $dateFrom, $dateTo, $periodKey);
+        });
+
+        return ApiResponse::success($data);
+    }
+
+    private function buildFinancialData(string $agencyId, ?string $dateFrom, ?string $dateTo, string $periodKey): array
+    {
         $totalRevenue = (float) DB::table('client_payments')
             ->where('agency_id', $agencyId)
             ->where('status', 'succeeded')
@@ -832,7 +852,7 @@ class DashboardController extends Controller
             ->where('is_active', true)
             ->avg('price');
 
-        return ApiResponse::success([
+        return [
             'period'            => $periodKey,
             'total_revenue'     => round($totalRevenue, 2),
             'period_revenue'    => round($periodRevenue, 2),
@@ -840,6 +860,6 @@ class DashboardController extends Controller
             'pending_payments'  => round($pendingPayments, 2),
             'payment_count'     => $paymentCount,
             'avg_package_price' => round($avgPackagePrice, 2),
-        ]);
+        ];
     }
 }

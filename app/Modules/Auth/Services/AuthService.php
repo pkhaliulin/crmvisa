@@ -22,7 +22,9 @@ class AuthService
     {
         // RLS bypass: при регистрации пользователь ещё не авторизован
         return DB::transaction(function () use ($dto) {
-            DB::statement("SET LOCAL app.is_superadmin = 'true'");
+            if (DB::connection()->getDriverName() !== 'sqlite') {
+                DB::statement("SET LOCAL app.is_superadmin = 'true'");
+            }
 
             $agencyDTO = RegisterAgencyDTO::fromArray([
                 'name'     => $dto->agencyName,
@@ -81,7 +83,9 @@ class AuthService
         // RLS bypass: при логине пользователь ещё не авторизован,
         // SET LOCAL действует только внутри этой транзакции
         return DB::transaction(function () use ($dto) {
-            DB::statement("SET LOCAL app.is_superadmin = 'true'");
+            if (DB::connection()->getDriverName() !== 'sqlite') {
+                DB::statement("SET LOCAL app.is_superadmin = 'true'");
+            }
 
             $user = User::where('email', $dto->email)->first();
 

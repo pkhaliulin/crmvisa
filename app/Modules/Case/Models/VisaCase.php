@@ -9,6 +9,8 @@ use App\Modules\Owner\Models\CountryVisaTypeSetting;
 use App\Modules\User\Models\User;
 use App\Support\Abstracts\BaseModel;
 use App\Support\Traits\HasTenant;
+use Database\Factories\Modules\Case\VisaCaseFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
@@ -16,7 +18,13 @@ use Illuminate\Support\Facades\DB;
 
 class VisaCase extends BaseModel
 {
-    use HasTenant;
+    use HasTenant, HasFactory;
+
+    protected static function newFactory(): VisaCaseFactory
+    {
+        return VisaCaseFactory::new();
+    }
+
 
     protected $table = 'cases';
 

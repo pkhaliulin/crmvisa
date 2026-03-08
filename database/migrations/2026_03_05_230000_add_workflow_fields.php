@@ -10,8 +10,10 @@ return new class extends Migration
     public function up(): void
     {
         // 1. Расширить статусы case_checklist: + needs_translation, translating, translated, translation_approved
-        DB::statement("ALTER TABLE case_checklist DROP CONSTRAINT IF EXISTS case_checklist_status_check");
-        DB::statement("ALTER TABLE case_checklist ALTER COLUMN status TYPE varchar(30)");
+        if (DB::connection()->getDriverName() !== 'sqlite') {
+            DB::statement("ALTER TABLE case_checklist DROP CONSTRAINT IF EXISTS case_checklist_status_check");
+            DB::statement("ALTER TABLE case_checklist ALTER COLUMN status TYPE varchar(30)");
+        }
 
         // 2. Новые поля case_checklist для перевода
         Schema::table('case_checklist', function (Blueprint $table) {
