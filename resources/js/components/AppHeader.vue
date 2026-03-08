@@ -63,5 +63,5 @@ const titles = computed(() => ({
   'clients.show': t('crm.nav.client'),
   users:          t('crm.nav.users'),
 }));
-const pageTitle = computed(() => titles.value[route.name] ?? 'VisaBor CRM');
+const pageTitle = computed(() => titles.value[route.name] ?? 'VisaCRM');
 </script>
