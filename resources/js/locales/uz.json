@@ -1656,6 +1656,7 @@
       "works": "ishlaymiz",
       "notWorks": "ishlamaymiz",
       "highInterest": "Yuqori qiziqish",
+      "topCountries": "Top davlatlar",
       "managersLoad": "Menejerlar tahlili",
       "managerCol": "Menejer",
       "activeCol": "Faol",
@@ -1738,6 +1739,26 @@
         "allClear_title": "Hammasi nazoratda",
         "allClear_msg": "Faol arizalar va kechikishlar yo'q. Yangi mijozlarni jalb qilish uchun ajoyib vaqt."
       }
+    },
+    "forecast": {
+      "title": "Agentlik o'sish kalkulyatori",
+      "subtitle": "5 yilga rivojlanishni rejalashtiring",
+      "show": "Prognoz hisoblash",
+      "hide": "Yashirish",
+      "clientsPerMonth": "Mijozlar / oy",
+      "avgCheck": "O'rtacha chek ($)",
+      "managers": "Menejerlar",
+      "growthPct": "Yillik o'sish (%)",
+      "currentStats": "Joriy ko'rsatkichlar",
+      "totalClients": "Jami mijozlar",
+      "totalManagers": "Menejerlar",
+      "completedPeriod": "Davr uchun tugallangan",
+      "yearCol": "Yil",
+      "clientsCol": "Mijozlar / yil",
+      "managersCol": "Menejerlar kerak",
+      "revenueCol": "Daromad",
+      "motivation": "{year} yilga qadar joriy rejada — ${revenue} daromad va {clients} mijoz",
+      "motivationSub": "Yuqoridagi ma'lumotlaringizni kiriting va o'sish strategiyasini tuzing. VisaBor har bir bosqichda yordam beradi."
     },
     "leadgen": {
       "title": "Lid generatsiya",

@@ -336,6 +336,106 @@
           </div>
         </router-link>
       </div>
+
+      <!-- Калькулятор прогноза роста -->
+      <div class="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-xl border border-indigo-200 p-5">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="font-semibold text-indigo-900 text-sm">{{ t('crm.forecast.title') }}</h3>
+            <p class="text-[10px] text-indigo-600 mt-0.5">{{ t('crm.forecast.subtitle') }}</p>
+          </div>
+          <button @click="showForecast = !showForecast"
+            class="text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+            :class="showForecast ? 'bg-indigo-600 text-white' : 'bg-white text-indigo-600 border border-indigo-300 hover:bg-indigo-100'">
+            {{ showForecast ? t('crm.forecast.hide') : t('crm.forecast.show') }}
+          </button>
+        </div>
+
+        <div v-if="showForecast" class="space-y-4">
+          <!-- Ввод данных -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div>
+              <label class="text-[10px] font-medium text-indigo-700 uppercase tracking-wide">{{ t('crm.forecast.clientsPerMonth') }}</label>
+              <input v-model.number="forecast.clientsPerMonth" type="number" min="1" max="10000"
+                class="mt-1 w-full px-3 py-2 text-sm border border-indigo-200 rounded-lg bg-white focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 outline-none">
+            </div>
+            <div>
+              <label class="text-[10px] font-medium text-indigo-700 uppercase tracking-wide">{{ t('crm.forecast.avgCheck') }}</label>
+              <input v-model.number="forecast.avgCheck" type="number" min="10" max="100000"
+                class="mt-1 w-full px-3 py-2 text-sm border border-indigo-200 rounded-lg bg-white focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 outline-none">
+            </div>
+            <div>
+              <label class="text-[10px] font-medium text-indigo-700 uppercase tracking-wide">{{ t('crm.forecast.managers') }}</label>
+              <input v-model.number="forecast.managers" type="number" min="1" max="100"
+                class="mt-1 w-full px-3 py-2 text-sm border border-indigo-200 rounded-lg bg-white focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 outline-none">
+            </div>
+            <div>
+              <label class="text-[10px] font-medium text-indigo-700 uppercase tracking-wide">{{ t('crm.forecast.growthPct') }}</label>
+              <input v-model.number="forecast.growthPct" type="number" min="0" max="300"
+                class="mt-1 w-full px-3 py-2 text-sm border border-indigo-200 rounded-lg bg-white focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 outline-none">
+            </div>
+          </div>
+
+          <!-- Текущие показатели -->
+          <div class="bg-white/60 rounded-lg p-3 border border-indigo-100">
+            <p class="text-[10px] font-medium text-indigo-700 uppercase tracking-wide mb-2">{{ t('crm.forecast.currentStats') }}</p>
+            <div class="grid grid-cols-3 gap-3 text-center">
+              <div>
+                <p class="text-lg font-bold text-gray-900">{{ stats?.clients_total ?? 0 }}</p>
+                <p class="text-[10px] text-gray-500">{{ t('crm.forecast.totalClients') }}</p>
+              </div>
+              <div>
+                <p class="text-lg font-bold text-gray-900">{{ stats?.users_total ?? 0 }}</p>
+                <p class="text-[10px] text-gray-500">{{ t('crm.forecast.totalManagers') }}</p>
+              </div>
+              <div>
+                <p class="text-lg font-bold text-gray-900">{{ metrics.completed ?? 0 }}</p>
+                <p class="text-[10px] text-gray-500">{{ t('crm.forecast.completedPeriod') }}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Прогноз по годам -->
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="bg-white/60 border-b text-indigo-700 text-[10px] uppercase tracking-wide">
+                <tr>
+                  <th class="text-left px-3 py-2 font-medium">{{ t('crm.forecast.yearCol') }}</th>
+                  <th class="text-right px-3 py-2 font-medium">{{ t('crm.forecast.clientsCol') }}</th>
+                  <th class="text-right px-3 py-2 font-medium">{{ t('crm.forecast.managersCol') }}</th>
+                  <th class="text-right px-3 py-2 font-medium">{{ t('crm.forecast.revenueCol') }}</th>
+                  <th class="px-3 py-2 w-32"></th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-indigo-100">
+                <tr v-for="row in forecastRows" :key="row.year" class="hover:bg-white/40 transition-colors">
+                  <td class="px-3 py-2.5 font-bold text-indigo-900">{{ row.year }}</td>
+                  <td class="px-3 py-2.5 text-right font-semibold text-gray-800">{{ row.clients.toLocaleString() }}</td>
+                  <td class="px-3 py-2.5 text-right text-gray-700">{{ row.managersNeeded }}</td>
+                  <td class="px-3 py-2.5 text-right font-bold text-green-700">${{ row.revenue.toLocaleString() }}</td>
+                  <td class="px-3 py-2.5">
+                    <div class="bg-indigo-100 rounded-full h-2 overflow-hidden">
+                      <div class="h-full bg-indigo-500 rounded-full transition-all" :style="{ width: Math.min(100, row.clients / maxForecastClients * 100) + '%' }"/>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Мотивационное сообщение -->
+          <div v-if="forecastRows.length" class="bg-white/60 rounded-lg p-3 border border-indigo-100 text-center">
+            <p class="text-sm font-semibold text-indigo-900">
+              {{ t('crm.forecast.motivation', {
+                year: forecastRows[forecastRows.length - 1].year,
+                revenue: forecastRows[forecastRows.length - 1].revenue.toLocaleString(),
+                clients: forecastRows[forecastRows.length - 1].clients.toLocaleString()
+              }) }}
+            </p>
+            <p class="text-xs text-indigo-600 mt-1">{{ t('crm.forecast.motivationSub') }}</p>
+          </div>
+        </div>
+      </div>
     </template>
   </div>
 </template>
@@ -351,9 +451,15 @@ const loading = ref(true);
 const stats = ref(null);
 const hints = ref([]);
 const period = ref('30d');
+const showForecast = ref(false);
+const forecast = ref({
+  clientsPerMonth: 20,
+  avgCheck: 150,
+  managers: 3,
+  growthPct: 30,
+});
 
 const currentYear = new Date().getFullYear();
-const startYear = 2024;
 
 const relativePeriods = computed(() => [
   { value: 'all',  label: t('crm.dashboard.periodAll') },
@@ -368,7 +474,7 @@ const relativePeriods = computed(() => [
 
 const yearOptions = computed(() => {
   const years = [];
-  for (let y = currentYear; y >= startYear; y--) {
+  for (let y = currentYear; y <= currentYear + 2; y++) {
     years.push(y);
   }
   return years;
@@ -557,6 +663,23 @@ const lineCreated = computed(() => linePoints('created'));
 const lineCompleted = computed(() => linePoints('completed'));
 const areaCreated = computed(() => areaPoints('created'));
 const areaCompleted = computed(() => areaPoints('completed'));
+
+// Прогноз роста
+const forecastRows = computed(() => {
+  const f = forecast.value;
+  const rows = [];
+  let clients = f.clientsPerMonth * 12;
+  const clientsPerManager = 80; // норма: 80 клиентов/год на менеджера
+  for (let y = currentYear; y <= currentYear + 4; y++) {
+    const managersNeeded = Math.max(f.managers, Math.ceil(clients / clientsPerManager));
+    const revenue = Math.round(clients * f.avgCheck);
+    rows.push({ year: y, clients: Math.round(clients), managersNeeded, revenue });
+    clients = clients * (1 + f.growthPct / 100);
+  }
+  return rows;
+});
+
+const maxForecastClients = computed(() => Math.max(1, ...forecastRows.value.map(r => r.clients)));
 
 async function fetchDashboard() {
   loading.value = true;
