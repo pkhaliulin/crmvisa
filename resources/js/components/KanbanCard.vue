@@ -73,41 +73,44 @@
     </div>
 
     <!-- Assignee / Assign button -->
-    <div class="mt-2 relative">
-      <div v-if="item.assignee && !showAssignDropdown" class="flex items-center gap-1 group"
-        @click.stop="managers?.length ? showAssignDropdown = true : null">
-        <div class="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center text-xs text-blue-600 font-bold">
-          {{ item.assignee.name[0] }}
-        </div>
-        <span class="text-xs text-gray-400 truncate flex-1">{{ item.assignee.name }}</span>
-        <svg v-if="managers?.length" class="w-3 h-3 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-        </svg>
-      </div>
-      <button v-else-if="!showAssignDropdown" @click.stop="showAssignDropdown = true"
-        class="flex items-center gap-1 text-xs text-purple-500 hover:text-purple-700 font-medium animate-pulse">
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
-        </svg>
-        Назначить
-      </button>
-      <!-- Dropdown -->
-      <div v-if="showAssignDropdown" @click.stop
-        class="absolute bottom-full left-0 mb-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-20 py-1 max-h-40 overflow-y-auto">
-        <button v-for="m in managers" :key="m.id" @click.stop="assignManager(m.id)"
-          :class="['w-full text-left px-3 py-1.5 text-xs hover:bg-blue-50 flex items-center gap-2 transition-colors',
-            item.assigned_to === m.id ? 'bg-blue-50 font-semibold text-blue-700' : 'text-gray-700']">
-          <div class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
-            :class="item.assigned_to === m.id ? 'bg-blue-200 text-blue-700' : 'bg-gray-100 text-gray-500'">
-            {{ m.name[0] }}
+    <div class="mt-2 flex items-center gap-1.5" @click.stop>
+      <!-- Режим выбора менеджера (inline select) -->
+      <template v-if="showAssignDropdown">
+        <select
+          class="text-xs border border-blue-300 rounded-lg px-2 py-0.5 outline-none focus:border-blue-500 bg-white w-full"
+          autofocus
+          @change="onSelectManager($event.target.value)"
+          @blur="showAssignDropdown = false">
+          <option value="">-- выберите --</option>
+          <option v-for="m in managers" :key="m.id" :value="m.id"
+            :selected="item.assigned_to === m.id">{{ m.name }}</option>
+        </select>
+        <button class="text-gray-300 hover:text-gray-500 text-xs shrink-0" @click.stop="showAssignDropdown = false">✕</button>
+      </template>
+
+      <!-- Назначен: аватар + имя + карандаш при ховере -->
+      <template v-else-if="item.assignee">
+        <div class="flex items-center gap-1 group cursor-pointer" @click.stop="managers?.length ? showAssignDropdown = true : null">
+          <div class="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center text-xs text-blue-600 font-bold shrink-0">
+            {{ item.assignee.name[0] }}
           </div>
-          {{ m.name }}
+          <span class="text-xs text-gray-400 truncate">{{ item.assignee.name }}</span>
+          <svg v-if="managers?.length" class="w-3 h-3 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+          </svg>
+        </div>
+      </template>
+
+      <!-- Не назначен: выделенная pill-кнопка как в заявках -->
+      <template v-else>
+        <button @click.stop="showAssignDropdown = true"
+          class="text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-2.5 py-0.5 rounded-full transition-colors flex items-center gap-1">
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+          </svg>
+          Назначить
         </button>
-        <button @click.stop="showAssignDropdown = false"
-          class="w-full text-left px-3 py-1.5 text-xs text-gray-400 hover:bg-gray-50 border-t border-gray-100 mt-1">
-          Отмена
-        </button>
-      </div>
+      </template>
     </div>
   </div>
 </template>
@@ -123,8 +126,9 @@ const emit = defineEmits(['click', 'move', 'assign']);
 const managers = inject('kanbanManagers', ref([]));
 const showAssignDropdown = ref(false);
 
-function assignManager(managerId) {
+function onSelectManager(managerId) {
   showAssignDropdown.value = false;
+  if (!managerId) return;
   emit('assign', { caseId: props.item.id, managerId });
 }
 
