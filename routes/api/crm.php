@@ -99,6 +99,10 @@ Route::middleware(['auth:api', 'role:owner,superadmin', 'plan.active'])->group(f
     Route::post('agency/work-countries',               [AgencySettingsController::class, 'addWorkCountry']);
     Route::delete('agency/work-countries/{cc}',        [AgencySettingsController::class, 'removeWorkCountry']);
 
+    // API-ключ агентства для лидогенерации
+    Route::post('agency/api-key',                     [AgencySettingsController::class, 'generateApiKey']);
+    Route::get('agency/api-key',                      [AgencySettingsController::class, 'apiKeyInfo']);
+
     // Пакеты услуг агентства
     Route::get('agency/packages',          [ServiceCatalogController::class, 'myPackages']);
     Route::get('agency/packages/{id}',     [ServiceCatalogController::class, 'showPackage']);

@@ -8,6 +8,7 @@ use App\Modules\Agency\Models\AgencyWorkCountry;
 use App\Support\Helpers\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class AgencySettingsController extends Controller
 {
@@ -94,6 +95,33 @@ class AgencySettingsController extends Controller
         }
 
         return ApiResponse::created($country);
+    }
+
+    public function generateApiKey(Request $request): JsonResponse
+    {
+        $agency = Agency::findOrFail($request->user()->agency_id);
+
+        $raw = 'vbk_' . Str::random(48);
+        $agency->update([
+            'api_key'              => hash('sha256', $raw),
+            'api_key_generated_at' => now(),
+        ]);
+
+        return ApiResponse::success([
+            'api_key'      => $raw,
+            'generated_at' => $agency->api_key_generated_at->toIso8601String(),
+            'warning'      => 'Сохраните ключ — он показывается только один раз.',
+        ]);
+    }
+
+    public function apiKeyInfo(Request $request): JsonResponse
+    {
+        $agency = Agency::findOrFail($request->user()->agency_id);
+
+        return ApiResponse::success([
+            'has_key'      => (bool) $agency->api_key,
+            'generated_at' => $agency->api_key_generated_at?->toIso8601String(),
+        ]);
     }
 
     public function removeWorkCountry(Request $request, string $cc): JsonResponse
