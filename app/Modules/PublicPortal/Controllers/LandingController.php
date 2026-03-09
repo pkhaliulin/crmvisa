@@ -34,8 +34,8 @@ class LandingController extends Controller
             return Agency::where('is_active', true)
                 ->whereNull('blocked_at')
                 ->with(['workCountries' => fn($q) => $q->where('is_active', true)])
-                ->withCount(['cases as total_cases'])
-                ->orderByDesc('total_cases')
+                ->withCount(['reviews as total_reviews'])
+                ->orderByDesc('total_reviews')
                 ->limit(6)
                 ->get(['id', 'name', 'city', 'plan', 'created_at']);
         });
