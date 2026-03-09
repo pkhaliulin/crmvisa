@@ -157,6 +157,23 @@ class Agency extends BaseModel
         return $this->plan_expires_at->isFuture();
     }
 
+    /**
+     * Реальный план агентства: из активной подписки или fallback на agency.plan.
+     */
+    public function effectivePlan(): string
+    {
+        $sub = AgencySubscription::where('agency_id', $this->id)
+            ->active()
+            ->latest('starts_at')
+            ->first();
+
+        if ($sub && $sub->plan_slug) {
+            return $sub->plan_slug;
+        }
+
+        return $this->plan instanceof Plan ? $this->plan->value : (string) $this->plan;
+    }
+
     public function planExpiresInDays(): ?int
     {
         if ($this->plan_expires_at === null) {

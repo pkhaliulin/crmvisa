@@ -28,9 +28,10 @@ class LeadChannelController extends Controller
             $query->where('min_plan', $request->input('min_plan'));
         }
 
+        $agencyPlan = $request->user()->agency?->effectivePlan() ?? 'starter';
+
         if ($request->boolean('available_only')) {
-            $plan = $request->user()->agency?->plan?->value ?? 'starter';
-            $available = $this->plansAtOrAbove($plan);
+            $available = $this->plansAtOrAbove($agencyPlan);
             $query->whereIn('min_plan', $available);
         }
 
@@ -43,8 +44,6 @@ class LeadChannelController extends Controller
             'enterprise_only', 'min_plan',
             'recommended_for', 'coming_soon', 'is_active', 'sort_order',
         ]);
-
-        $agencyPlan = $request->user()->agency?->plan?->value ?? 'starter';
 
         $channels->each(function ($ch) use ($agencyPlan) {
             $ch->available = $this->isPlanSufficient($agencyPlan, $ch->min_plan);
@@ -66,7 +65,7 @@ class LeadChannelController extends Controller
     {
         $channel = LeadChannel::where('code', $code)->firstOrFail();
 
-        $agencyPlan = $request->user()->agency?->plan?->value ?? 'starter';
+        $agencyPlan = $request->user()->agency?->effectivePlan() ?? 'starter';
         $channel->available = $this->isPlanSufficient($agencyPlan, $channel->min_plan);
 
         $this->trackView($request, $channel->id, 'view');
