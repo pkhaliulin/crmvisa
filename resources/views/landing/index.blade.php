@@ -1012,18 +1012,6 @@ function toggleFaq(el) {
   if (!wasOpen) item.classList.add('open');
 }
 
-// ===== SCROLL ANIMATIONS =====
-const io = new IntersectionObserver((entries) => {
-  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
-}, { threshold: 0.12 });
-document.querySelectorAll('.fade-up').forEach(el => io.observe(el));
-
-// ===== NAVBAR SCROLL =====
-window.addEventListener('scroll', () => {
-  const navbar = document.getElementById('navbar');
-  if (navbar) navbar.style.boxShadow = window.scrollY > 50 ? '0 4px 20px rgba(0,0,0,0.08)' : '';
-});
-
 // ===== AGENCIES =====
 const agencies = [
   {
