@@ -3,8 +3,7 @@
     <div class="w-full max-w-md">
       <!-- Logo -->
       <div class="text-center mb-8">
-        <img :src="logoUrl" :srcset="`${logoUrl} 1x, ${logoUrl2x} 2x`"
-             alt="VisaBor" class="h-10 w-auto mx-auto mb-3">
+        <LogoBrand size="1.6rem" class="mx-auto mb-3" />
         <p class="text-gray-500 text-sm">{{ $t('landing.subtitle') }}</p>
       </div>
 
@@ -17,8 +16,7 @@
 
 <script setup>
 import { useI18n } from 'vue-i18n';
-import { useLogo } from '@/composables/useLogo';
+import LogoBrand from '@/components/LogoBrand.vue';
 
 const { t } = useI18n();
-const { logoUrl, logoUrl2x } = useLogo();
 </script>

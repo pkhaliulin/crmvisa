@@ -939,7 +939,7 @@ footer { background: var(--navy); padding: 80px 0 40px; }
 <!-- NAVBAR -->
 <nav class="navbar" id="navbar">
   <div class="navbar-inner">
-    <a href="/" class="logo"><img src="/images/logo.png" srcset="/images/logo.png 1x, /images/logo@2x.png 2x" alt="VisaBor" style="height:32px; width:auto;"></a>
+    <a href="/" class="logo">visa<span>bor</span><div class="logo-dot"></div></a>
     <div class="nav-links">
       <a href="#scoring" class="nav-link">Проверить шансы</a>
       <a href="#destinations" class="nav-link">Направления</a>
@@ -963,7 +963,7 @@ footer { background: var(--navy); padding: 80px 0 40px; }
   <div class="container">
     <div class="footer-grid">
       <div class="footer-brand fade-up">
-        <a href="/" class="footer-logo"><img src="/images/logo.png" srcset="/images/logo.png 1x, /images/logo@2x.png 2x" alt="VisaBor" style="height:36px; width:auto;"></a>
+        <a href="/" class="footer-logo">visa<span>bor</span>.uz</a>
         <p>AI-платформа для граждан Узбекистана. Умный выбор направления и проверка шансов до подачи визы.</p>
         <div class="footer-social">
           <a class="social-btn" href="#">T</a>
@@ -1067,7 +1067,7 @@ window.addEventListener('scroll', () => {
     <!-- Header -->
     <div style="padding:28px 28px 16px;">
       <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
-        <img src="/images/logo.png" srcset="/images/logo.png 1x, /images/logo@2x.png 2x" alt="VisaBor" style="height:28px; width:auto;">
+        <span style="font-family:var(--font-display); font-weight:800; font-size:1.2rem; color:var(--navy);">visa<span style="color:var(--green);">bor</span></span>
         <button onclick="closeAuthModal()" style="width:36px; height:36px; border:none; background:var(--gray-50); border-radius:50%; cursor:pointer; font-size:1.1rem; color:var(--text-muted); display:flex; align-items:center; justify-content:center;">&#10005;</button>
       </div>
       <h2 id="authTitle" style="font-size:1.5rem; font-weight:700; color:var(--navy); margin-bottom:4px;">Вход в систему</h2>

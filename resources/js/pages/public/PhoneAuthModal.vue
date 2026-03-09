@@ -12,8 +12,7 @@
 
                 <div class="flex items-center justify-between mb-5">
                     <div class="flex items-center gap-2">
-                        <img :src="logoUrl" :srcset="`${logoUrl} 1x, ${logoUrl2x} 2x`"
-                             alt="VisaBor" class="h-7 w-auto">
+                        <LogoBrand size="1.1rem" />
                     </div>
                     <button @click="$emit('close')"
                         class="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100
@@ -221,10 +220,9 @@ import { ref, computed, nextTick, onUnmounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { publicPortalApi } from '@/api/public';
 import { usePublicAuthStore } from '@/stores/publicAuth';
-import { useLogo } from '@/composables/useLogo';
+import LogoBrand from '@/components/LogoBrand.vue';
 
 const { t } = useI18n();
-const { logoUrl, logoUrl2x } = useLogo();
 
 const props = defineProps({ preselectedCountry: String });
 const emit  = defineEmits(['close', 'success']);

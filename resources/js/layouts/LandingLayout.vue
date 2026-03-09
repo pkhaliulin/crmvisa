@@ -5,8 +5,7 @@
             <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
                 <!-- Логотип -->
                 <a href="/" class="flex items-center select-none shrink-0">
-                    <img :src="logoUrl" :srcset="`${logoUrl} 1x, ${logoUrl2x} 2x`"
-                         alt="VisaBor" class="h-8 w-auto">
+                    <LogoBrand size="1.3rem" />
                 </a>
 
                 <!-- Десктоп навигация (скрываем если залогинен) -->
@@ -151,11 +150,10 @@ import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { usePublicAuthStore } from '@/stores/publicAuth';
 import { setLocale, currentLocale } from '@/i18n';
-import { useLogo } from '@/composables/useLogo';
+import LogoBrand from '@/components/LogoBrand.vue';
 import { formatPhone } from '@/utils/format';
 
 const { t } = useI18n();
-const { logoUrl, logoUrl2x } = useLogo();
 defineEmits(['open-auth']);
 const publicAuth = usePublicAuthStore();
 const mobileOpen = ref(false);

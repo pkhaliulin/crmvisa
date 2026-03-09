@@ -4,8 +4,7 @@
         <!-- Header -->
         <header class="fixed top-0 inset-x-0 z-50 h-14 bg-white border-b border-gray-100 flex items-center gap-3 px-4 sm:px-6">
             <a href="/" class="flex items-center shrink-0">
-                <img :src="logoUrl" :srcset="`${logoUrl} 1x, ${logoUrl2x} 2x`"
-                     alt="VisaBor" class="h-7 w-auto">
+                <LogoBrand size="1.1rem" />
             </a>
 
             <!-- Mobile page title -->
@@ -293,14 +292,12 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { setLocale, currentLocale } from '@/i18n';
-import { useLogo } from '@/composables/useLogo';
+import LogoBrand from '@/components/LogoBrand.vue';
 import { usePublicAuthStore } from '@/stores/publicAuth';
 import { publicPortalApi } from '@/api/public';
 import { formatPhone } from '@/utils/format';
 
 const { t } = useI18n();
-const { logoUrl, logoUrl2x } = useLogo();
-
 function toggleLocale() {
     setLocale(currentLocale() === 'ru' ? 'uz' : 'ru');
 }
