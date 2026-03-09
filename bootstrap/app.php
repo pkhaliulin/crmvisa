@@ -45,6 +45,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'tenant.context' => SetTenantContext::class,
             'plan.limit'     => CheckPlanLimits::class,
             'feature'        => CheckFeature::class,
+            'auth.apikey'    => \App\Http\Middleware\AuthenticateApiKey::class,
         ]);
 
         // Rate limiting на все API маршруты
