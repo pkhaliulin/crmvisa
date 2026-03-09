@@ -3,6 +3,7 @@
 namespace App\Modules\Case\Services;
 
 use App\Modules\Agency\Models\Agency;
+use App\Modules\Case\Events\CaseAssigned;
 use App\Modules\Case\Events\CaseCreated;
 use App\Modules\Case\Events\CaseStatusChanged;
 use App\Modules\Case\Models\CaseStage;
@@ -10,6 +11,8 @@ use App\Modules\Case\Models\VisaCase;
 use App\Modules\Case\Repositories\CaseRepository;
 use App\Modules\Document\Services\ChecklistService;
 use App\Modules\Notification\Notifications\CaseStageChangedNotification;
+use App\Modules\Notification\Notifications\TelegramCaseNotification;
+use App\Modules\Notification\Services\NotificationService;
 use App\Modules\Workflow\Services\SlaService;
 use App\Support\Abstracts\BaseService;
 use Illuminate\Database\Eloquent\Collection;
@@ -38,6 +41,7 @@ class CaseService extends BaseService
         CaseRepository $repository,
         private SlaService $slaService,
         private ChecklistService $checklistService,
+        private NotificationService $notificationService,
     ) {
         parent::__construct($repository);
     }
@@ -148,7 +152,15 @@ class CaseService extends BaseService
             }
         }
 
+        // Отслеживаем первое назначение менеджера
+        $isNewAssignment = isset($data['assigned_to']) && $data['assigned_to'] && !$case->assigned_to;
+
         $case = $this->repository->update($id, $data);
+
+        // Событие: менеджер назначен
+        if ($isNewAssignment) {
+            CaseAssigned::dispatch($case, $data['assigned_to'], Auth::id());
+        }
 
         // После сохранения assigned_to — перемещаем из lead в qualification
         if ($shouldMoveToQualification) {
@@ -205,30 +217,40 @@ class CaseService extends BaseService
 
         CaseStatusChanged::dispatch($result, $previousStage, $newStage, Auth::id());
 
-        // Уведомление клиенту — email и Telegram
+        // Уведомление клиенту через единую систему (бренд определяется автоматически)
         if ($result->client) {
-            if ($result->client->email) {
-                $result->client->notify(new CaseStageChangedNotification($result, $previousStage));
-            }
-
-            if ($result->client->telegram_chat_id) {
-                $this->sendTelegramStageNotification($result, $previousStage);
-            }
+            $this->notifyClientAboutStageChange($result, $previousStage);
         }
 
         return $result;
     }
 
-    private function sendTelegramStageNotification(VisaCase $case, string $previousStage): void
+    /**
+     * Уведомить клиента о смене этапа через NotificationService.
+     * Бренд: marketplace → VisaBor, direct → имя агентства.
+     */
+    private function notifyClientAboutStageChange(VisaCase $case, string $previousStage): void
     {
         try {
-            $notification = new \App\Modules\Notification\Notifications\TelegramCaseNotification(
-                $case,
-                $previousStage
+            // Email + database уведомление
+            $this->notificationService->dispatchToClient(
+                $case->client,
+                new CaseStageChangedNotification($case, $previousStage),
+                $case->agency,
+                ['database', 'email'],
             );
-            $case->client->notify($notification);
+
+            // Telegram уведомление (отдельный notification-класс с rich formatting)
+            if ($case->client->telegram_chat_id) {
+                $this->notificationService->dispatchToClient(
+                    $case->client,
+                    new TelegramCaseNotification($case, $previousStage),
+                    $case->agency,
+                    ['telegram'],
+                );
+            }
         } catch (\Throwable) {
-            // Не даём Telegram-ошибке сломать основной флоу
+            // Не даём ошибке уведомления сломать основной флоу
         }
     }
 
@@ -411,7 +433,7 @@ class CaseService extends BaseService
      */
     public function completeCase(VisaCase $case, string $resultType, array $data): VisaCase
     {
-        return DB::transaction(function () use ($case, $resultType, $data) {
+        $result = DB::transaction(function () use ($case, $resultType, $data) {
             $updateData = [
                 'result_type'  => $resultType,
                 'result_notes' => $data['result_notes'] ?? null,
@@ -436,6 +458,32 @@ class CaseService extends BaseService
 
             return $case->fresh(['client', 'assignee', 'stageHistory']);
         });
+
+        // Уведомление клиенту о результате (через единую систему)
+        if ($result->client) {
+            $eventType = $resultType === 'approved' ? 'case.completed' : 'case.rejected';
+            $clientName = $result->client->name;
+            $message = $resultType === 'approved'
+                ? "Ваша виза одобрена! Заявка #{$result->case_number}"
+                : "К сожалению, в визе отказано. Заявка #{$result->case_number}";
+
+            $this->notificationService->dispatchToClient(
+                $result->client,
+                new \App\Modules\Notification\Notifications\BusinessNotification($eventType, [
+                    'case_id'      => $result->id,
+                    'case_number'  => $result->case_number,
+                    'client_name'  => $clientName,
+                    'result_type'  => $resultType,
+                    'country_code' => $result->country_code,
+                    'message'      => $message,
+                    'sms'          => $message,
+                ]),
+                $result->agency,
+                ['database', 'email', 'telegram', 'sms'],
+            );
+        }
+
+        return $result;
     }
 
     /**

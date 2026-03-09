@@ -10,6 +10,7 @@ use Illuminate\Notifications\Notification;
 /**
  * Универсальное уведомление для всех бизнес-событий платформы.
  * Единый класс вместо отдельного Notification на каждый тип события.
+ * Бренд устанавливается через setBrand() из NotificationService.
  */
 class BusinessNotification extends Notification implements ShouldQueue
 {
@@ -19,6 +20,14 @@ class BusinessNotification extends Notification implements ShouldQueue
 
     private array $resolvedChannels = ['database'];
 
+    private array $brand = [
+        'name'               => 'VisaCRM',
+        'email_from'         => 'noreply@visacrm.uz',
+        'email_name'         => 'VisaCRM',
+        'sms_sender'         => 'VisaCRM',
+        'telegram_signature' => 'VisaCRM',
+    ];
+
     public function __construct(
         private readonly string $eventType,
         private readonly array $data,
@@ -27,6 +36,11 @@ class BusinessNotification extends Notification implements ShouldQueue
     public function setChannels(array $channels): void
     {
         $this->resolvedChannels = $channels;
+    }
+
+    public function setBrand(array $brand): void
+    {
+        $this->brand = array_merge($this->brand, $brand);
     }
 
     public function via(mixed $notifiable): array
@@ -45,6 +59,7 @@ class BusinessNotification extends Notification implements ShouldQueue
         $message = $this->data['message'] ?? $this->resolveMessage();
 
         $mail = (new MailMessage)
+            ->from($this->brand['email_from'], $this->brand['email_name'])
             ->subject($subject)
             ->greeting("Здравствуйте, {$notifiable->name}!")
             ->line($message);
@@ -55,13 +70,13 @@ class BusinessNotification extends Notification implements ShouldQueue
             }
         }
 
-        return $mail->salutation('VisaCRM');
+        return $mail->salutation($this->brand['name']);
     }
 
     public function toTelegram(mixed $notifiable): array
     {
         $lines = [
-            '<b>' . ($this->data['brand'] ?? 'VisaCRM') . '</b>',
+            '<b>' . $this->brand['telegram_signature'] . '</b>',
             '',
             $this->data['message'] ?? $this->resolveMessage(),
         ];
@@ -81,8 +96,11 @@ class BusinessNotification extends Notification implements ShouldQueue
 
     public function toSms(mixed $notifiable): array
     {
+        $text = $this->data['sms'] ?? mb_substr($this->resolveMessage(), 0, 160);
+
         return [
-            'text' => $this->data['sms'] ?? mb_substr($this->resolveMessage(), 0, 160),
+            'text'   => $text,
+            'sender' => $this->brand['sms_sender'],
         ];
     }
 
@@ -90,17 +108,24 @@ class BusinessNotification extends Notification implements ShouldQueue
     {
         $subjects = [
             'case.created'         => 'Новая заявка создана',
+            'case.status_changed'  => 'Статус заявки изменён',
             'case.assigned'        => 'Менеджер назначен',
+            'case.completed'       => 'Заявка завершена — виза одобрена',
+            'case.rejected'        => 'Заявка завершена — отказ',
+            'case.cancelled'       => 'Заявка отменена',
             'sla.violation'        => 'Нарушение SLA',
             'sla.warning'          => 'Предупреждение SLA',
             'document.uploaded'    => 'Документ загружен',
+            'document.reviewed'    => 'Документ проверен',
             'payment.received'     => 'Платёж получен',
             'subscription.changed' => 'Подписка изменена',
             'subscription.expired' => 'Подписка истекла',
             'client.registered'    => 'Новый клиент',
+            'client.portal_created' => 'Клиент через портал',
+            'scoring.completed'    => 'Скоринг рассчитан',
         ];
 
-        return $subjects[$this->eventType] ?? 'Уведомление VisaCRM';
+        return $subjects[$this->eventType] ?? "Уведомление {$this->brand['name']}";
     }
 
     private function resolveMessage(): string

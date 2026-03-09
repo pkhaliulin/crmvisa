@@ -9,7 +9,8 @@ class SmsChannel
 {
     /**
      * SMS channel stub.
-     * When Eskiz.uz is integrated, replace with real implementation.
+     * SMS всегда уходят от зарегистрированного sender ID (определяется в notification).
+     * Клиенты получают SMS от VisaBor, агентства — от VisaCRM.
      */
     public function send(mixed $notifiable, Notification $notification): void
     {
@@ -23,14 +24,16 @@ class SmsChannel
         }
 
         $message = $notification->toSms($notifiable);
+        $sender  = $message['sender'] ?? config('notification.brands.visabor.sms_sender', 'VisaBor');
 
         // STUB: log instead of sending
         Log::channel('single')->info('SMS Notification (stub)', [
             'to'      => $phone,
+            'sender'  => $sender,
             'message' => $message['text'] ?? $message,
         ]);
 
         // TODO: Integrate Eskiz.uz
-        // $this->eskiz->send($phone, $message['text']);
+        // $this->eskiz->send($phone, $message['text'], $sender);
     }
 }

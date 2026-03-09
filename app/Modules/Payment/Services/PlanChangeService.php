@@ -3,6 +3,7 @@
 namespace App\Modules\Payment\Services;
 
 use App\Modules\Agency\Models\Agency;
+use App\Modules\Payment\Events\SubscriptionChanged;
 use App\Modules\Payment\Models\AgencySubscription;
 use App\Modules\Payment\Models\BillingEvent;
 use App\Modules\Payment\Models\BillingPlan;
@@ -228,6 +229,9 @@ class PlanChangeService
                 'charge'   => $charge,
                 'period'   => $billingPeriod,
             ]);
+
+            // Событие: подписка повышена
+            SubscriptionChanged::dispatch($subscription, 'upgrade', $current->plan_slug, $newPlan->slug);
 
             return [
                 'type'         => 'upgrade',

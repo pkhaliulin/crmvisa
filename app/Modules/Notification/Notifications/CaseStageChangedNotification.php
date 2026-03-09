@@ -8,6 +8,10 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
+/**
+ * Уведомление клиенту о смене этапа заявки.
+ * Бренд определяется через NotificationService.dispatchToClient().
+ */
 class CaseStageChangedNotification extends Notification implements ShouldQueue
 {
     use Queueable;
@@ -15,6 +19,14 @@ class CaseStageChangedNotification extends Notification implements ShouldQueue
     public bool $deleteWhenMissingModels = true;
 
     private array $resolvedChannels = ['mail', 'database'];
+
+    private array $brand = [
+        'name'               => 'VisaBor',
+        'email_from'         => 'noreply@visabor.uz',
+        'email_name'         => 'VisaBor',
+        'sms_sender'         => 'VisaBor',
+        'telegram_signature' => 'VisaBor',
+    ];
 
     public function __construct(
         public VisaCase $case,
@@ -24,6 +36,11 @@ class CaseStageChangedNotification extends Notification implements ShouldQueue
     public function setChannels(array $channels): void
     {
         $this->resolvedChannels = $channels;
+    }
+
+    public function setBrand(array $brand): void
+    {
+        $this->brand = array_merge($this->brand, $brand);
     }
 
     public function via(object $notifiable): array
@@ -38,12 +55,13 @@ class CaseStageChangedNotification extends Notification implements ShouldQueue
         $clientName    = $this->case->client->name;
 
         return (new MailMessage)
+            ->from($this->brand['email_from'], $this->brand['email_name'])
             ->subject("Обновление заявки: {$clientName} — {$this->case->country_code}")
             ->greeting("Здравствуйте, {$notifiable->name}!")
             ->line("Заявка перешла на новый этап.")
             ->line("**Статус: {$clientMessage}**")
             ->line("Страна: {$this->case->country_code} | Тип визы: {$this->case->visa_type}")
-            ->salutation('VisaCRM');
+            ->salutation($this->brand['name']);
     }
 
     public function toDatabase(object $notifiable): array
@@ -60,17 +78,17 @@ class CaseStageChangedNotification extends Notification implements ShouldQueue
     public function toTelegram(mixed $notifiable): array
     {
         $stageLabel = config("stages.{$this->case->stage}.label", $this->case->stage);
-        $clientName = $this->case->client?->name ?? 'Клиент';
-        $agencyName = $this->case->agency?->name ?? 'VisaCRM';
+        $clientMsg  = config("stages.{$this->case->stage}.client_msg", $stageLabel);
 
         return [
             'text'       => implode("\n", [
-                "<b>{$agencyName}</b>",
+                "<b>{$this->brand['telegram_signature']}</b>",
                 '',
-                "Заявка #{$this->case->case_number}",
-                "Клиент: {$clientName}",
-                "Этап: <b>{$stageLabel}</b>",
+                "Обновление по вашей заявке:",
+                "<b>{$clientMsg}</b>",
+                '',
                 "Страна: {$this->case->country_code}",
+                "Тип визы: {$this->case->visa_type}",
             ]),
             'parse_mode' => 'HTML',
         ];
@@ -80,7 +98,8 @@ class CaseStageChangedNotification extends Notification implements ShouldQueue
     {
         $stageLabel = config("stages.{$this->case->stage}.label", $this->case->stage);
         return [
-            'text' => "Заявка #{$this->case->case_number}: этап «{$stageLabel}»",
+            'text'   => "Заявка #{$this->case->case_number}: этап «{$stageLabel}»",
+            'sender' => $this->brand['sms_sender'],
         ];
     }
 }

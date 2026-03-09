@@ -26,27 +26,119 @@ class NotificationSetting extends BaseModel
     ];
 
     /**
-     * All supported event types with defaults.
+     * Все типы событий с дефолтными настройками.
+     *
+     * audience:
+     *   'agency'  — уведомления для менеджеров/владельцев (бренд VisaCRM)
+     *   'client'  — уведомления клиенту (бренд VisaBor или имя агентства)
+     *   'both'    — и клиенту, и менеджерам
      */
     public static function eventTypes(): array
     {
         return [
-            'lead.incoming'        => ['channels' => ['database', 'telegram'], 'recipients' => ['owner', 'assigned_manager']],
-            'case.created'         => ['channels' => ['database'], 'recipients' => ['owner']],
-            'case.status_changed'  => ['channels' => ['database', 'email'], 'recipients' => ['assigned_manager']],
-            'case.assigned'        => ['channels' => ['database', 'telegram'], 'recipients' => ['assigned_manager']],
-            'sla.violation'        => ['channels' => ['database', 'telegram', 'email'], 'recipients' => ['owner', 'assigned_manager']],
-            'sla.warning'          => ['channels' => ['database'], 'recipients' => ['assigned_manager']],
-            'document.uploaded'    => ['channels' => ['database'], 'recipients' => ['assigned_manager']],
-            'payment.received'     => ['channels' => ['database'], 'recipients' => ['owner']],
-            'subscription.changed' => ['channels' => ['database', 'email'], 'recipients' => ['owner']],
-            'subscription.expired' => ['channels' => ['database', 'email', 'telegram'], 'recipients' => ['owner']],
-            'client.registered'    => ['channels' => ['database'], 'recipients' => ['owner']],
+            // === Лиды ===
+            'lead.incoming' => [
+                'channels'   => ['database', 'telegram'],
+                'recipients' => ['owner', 'assigned_manager'],
+                'audience'   => 'agency',
+            ],
+
+            // === Заявки (для агентства) ===
+            'case.created' => [
+                'channels'   => ['database'],
+                'recipients' => ['owner'],
+                'audience'   => 'agency',
+            ],
+            'case.status_changed' => [
+                'channels'   => ['database', 'email'],
+                'recipients' => ['assigned_manager'],
+                'audience'   => 'both',
+            ],
+            'case.assigned' => [
+                'channels'   => ['database', 'telegram'],
+                'recipients' => ['assigned_manager'],
+                'audience'   => 'agency',
+            ],
+            'case.completed' => [
+                'channels'   => ['database', 'email', 'telegram'],
+                'recipients' => ['owner', 'assigned_manager'],
+                'audience'   => 'both',
+            ],
+            'case.rejected' => [
+                'channels'   => ['database', 'email', 'telegram'],
+                'recipients' => ['owner', 'assigned_manager'],
+                'audience'   => 'both',
+            ],
+            'case.cancelled' => [
+                'channels'   => ['database'],
+                'recipients' => ['owner', 'assigned_manager'],
+                'audience'   => 'both',
+            ],
+
+            // === SLA ===
+            'sla.violation' => [
+                'channels'   => ['database', 'telegram', 'email'],
+                'recipients' => ['owner', 'assigned_manager'],
+                'audience'   => 'agency',
+            ],
+            'sla.warning' => [
+                'channels'   => ['database'],
+                'recipients' => ['assigned_manager'],
+                'audience'   => 'agency',
+            ],
+
+            // === Документы ===
+            'document.uploaded' => [
+                'channels'   => ['database'],
+                'recipients' => ['assigned_manager'],
+                'audience'   => 'agency',
+            ],
+            'document.reviewed' => [
+                'channels'   => ['database'],
+                'recipients' => ['assigned_manager'],
+                'audience'   => 'both',
+            ],
+
+            // === Платежи и подписки ===
+            'payment.received' => [
+                'channels'   => ['database'],
+                'recipients' => ['owner'],
+                'audience'   => 'agency',
+            ],
+            'subscription.changed' => [
+                'channels'   => ['database', 'email'],
+                'recipients' => ['owner'],
+                'audience'   => 'agency',
+            ],
+            'subscription.expired' => [
+                'channels'   => ['database', 'email', 'telegram'],
+                'recipients' => ['owner'],
+                'audience'   => 'agency',
+            ],
+
+            // === Клиенты ===
+            'client.registered' => [
+                'channels'   => ['database'],
+                'recipients' => ['owner'],
+                'audience'   => 'agency',
+            ],
+            'client.portal_created' => [
+                'channels'   => ['database'],
+                'recipients' => ['owner'],
+                'audience'   => 'agency',
+            ],
+
+            // === Скоринг ===
+            'scoring.completed' => [
+                'channels'   => ['database'],
+                'recipients' => ['assigned_manager'],
+                'audience'   => 'both',
+            ],
         ];
     }
 
     /**
-     * Get settings for agency+event, falling back to defaults.
+     * Получить настройки для agency+event, fallback на defaults.
      */
     public static function forAgencyEvent(string $agencyId, string $eventType): array
     {
@@ -68,6 +160,19 @@ class NotificationSetting extends BaseModel
 
         // Default
         $defaults = static::eventTypes()[$eventType] ?? ['channels' => ['database'], 'recipients' => ['owner']];
-        return array_merge($defaults, ['enabled' => true]);
+        return [
+            'channels'   => $defaults['channels'],
+            'recipients' => $defaults['recipients'],
+            'enabled'    => true,
+        ];
+    }
+
+    /**
+     * Аудитория события: 'agency', 'client', 'both'.
+     */
+    public static function audienceFor(string $eventType): string
+    {
+        $types = static::eventTypes();
+        return $types[$eventType]['audience'] ?? 'agency';
     }
 }

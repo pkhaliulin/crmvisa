@@ -5,6 +5,7 @@ namespace App\Modules\Document\Controllers;
 use App\Http\Controllers\Controller;
 use App\Modules\Case\Models\VisaCase;
 use App\Modules\Case\Services\CaseService;
+use App\Modules\Document\Events\DocumentUploaded;
 use App\Modules\Document\Models\CaseChecklist;
 use App\Modules\Document\Services\ChecklistService;
 use App\Support\Helpers\ApiResponse;
@@ -45,6 +46,11 @@ class ChecklistController extends Controller
         ]);
 
         $result = $this->service->uploadToSlot($item, $request->file('file'), $case);
+
+        // Событие: документ загружен
+        if ($result->document) {
+            DocumentUploaded::dispatch($result->document, $request->user()->id, 'crm');
+        }
 
         // Авто-переход: все обязательные документы загружены → doc_review
         $this->caseService->checkAutoTransitionAfterUpload($case->fresh());

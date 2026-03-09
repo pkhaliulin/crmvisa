@@ -3,6 +3,7 @@
 namespace App\Modules\Payment\Services;
 
 use App\Modules\Agency\Models\Agency;
+use App\Modules\Payment\Events\SubscriptionChanged;
 use App\Modules\Payment\Models\AgencySubscription;
 use App\Modules\Payment\Models\AgencyWallet;
 use App\Modules\Payment\Models\BillingEvent;
@@ -103,6 +104,9 @@ class SubscriptionService
                 $subscription->id,
                 ['plan' => $plan->slug, 'model' => $paymentModel, 'period' => $billingPeriod],
             );
+
+            // Событие: подписка активирована
+            SubscriptionChanged::dispatch($subscription, 'activated', null, $plan->slug);
 
             return $subscription;
         });

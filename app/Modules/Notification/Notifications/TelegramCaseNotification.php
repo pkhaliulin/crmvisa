@@ -8,6 +8,10 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 
+/**
+ * Telegram-уведомление клиенту о смене статуса заявки.
+ * Бренд устанавливается через setBrand().
+ */
 class TelegramCaseNotification extends Notification implements ShouldQueue
 {
     use Queueable;
@@ -15,6 +19,11 @@ class TelegramCaseNotification extends Notification implements ShouldQueue
     public bool $deleteWhenMissingModels = true;
 
     private array $resolvedChannels;
+
+    private array $brand = [
+        'name'               => 'VisaBor',
+        'telegram_signature' => 'VisaBor',
+    ];
 
     public function __construct(
         private readonly VisaCase $case,
@@ -28,6 +37,11 @@ class TelegramCaseNotification extends Notification implements ShouldQueue
         $this->resolvedChannels = $channels;
     }
 
+    public function setBrand(array $brand): void
+    {
+        $this->brand = array_merge($this->brand, $brand);
+    }
+
     public function via(mixed $notifiable): array
     {
         return $this->resolvedChannels;
@@ -35,31 +49,24 @@ class TelegramCaseNotification extends Notification implements ShouldQueue
 
     public function toTelegram(mixed $notifiable): array
     {
-        $agency     = $this->case->agency;
         $stage      = config("stages.{$this->case->stage}");
         $clientMsg  = $stage['label'] ?? $this->case->stage;
         $stageMsg   = $stage['client_msg'] ?? 'Статус вашей заявки обновлён.';
 
-        // Брендинг: свой клиент → имя агентства, маркетплейс → CRMBOR
-        $isMarketplace = $notifiable->source === 'marketplace';
-        $brandName     = $isMarketplace
-            ? 'CRMBOR'
-            : ($agency?->name ?? 'Ваше агентство');
-
         $text = implode("\n", [
-            "🏢 <b>{$brandName}</b>",
+            "<b>{$this->brand['telegram_signature']}</b>",
             "",
             "Обновление по вашей заявке:",
             "<b>{$clientMsg}</b>",
             "",
             $stageMsg,
             "",
-            "🇺🇿 Страна: {$this->case->country_code}",
-            "📋 Тип визы: {$this->case->visa_type}",
+            "Страна: {$this->case->country_code}",
+            "Тип визы: {$this->case->visa_type}",
         ]);
 
         if ($this->case->critical_date) {
-            $text .= "\n⏰ Дедлайн: {$this->case->critical_date->format('d.m.Y')}";
+            $text .= "\nДедлайн: {$this->case->critical_date->format('d.m.Y')}";
         }
 
         return [

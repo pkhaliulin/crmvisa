@@ -30,6 +30,7 @@ class NotificationSettingsController extends Controller
                 'recipients' => $setting ? $setting->recipients : $defaults['recipients'],
                 'is_enabled' => $setting ? $setting->is_enabled : true,
                 'is_custom'  => $setting !== null,
+                'audience'   => $defaults['audience'] ?? 'agency',
             ];
         }
 

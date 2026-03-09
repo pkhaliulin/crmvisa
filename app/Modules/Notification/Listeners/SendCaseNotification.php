@@ -87,10 +87,21 @@ class SendCaseNotification
         $prevLabel     = config("stages.{$event->previousStage}.label", $event->previousStage);
         $clientName    = $event->case->client?->name ?? 'Неизвестный';
 
+        // Определяем тип события на основе public_status
+        $eventType = 'case.status_changed';
+        $publicStatus = $event->case->public_status;
+        if ($publicStatus === 'completed') {
+            $eventType = 'case.completed';
+        } elseif ($publicStatus === 'rejected') {
+            $eventType = 'case.rejected';
+        } elseif ($publicStatus === 'cancelled') {
+            $eventType = 'case.cancelled';
+        }
+
         $this->notificationService->dispatch(
             $event->case->agency_id,
-            'case.status_changed',
-            new BusinessNotification('case.status_changed', [
+            $eventType,
+            new BusinessNotification($eventType, [
                 'case_id'        => $event->case->id,
                 'case_number'    => $event->case->case_number,
                 'client_name'    => $clientName,
@@ -116,6 +127,20 @@ class SendCaseNotification
             'assigned_to' => $event->assignedTo,
             'assigned_by' => $event->assignedBy,
         ]);
+
+        try {
+            activity()
+                ->performedOn($event->case)
+                ->causedBy($event->assignedBy ? User::find($event->assignedBy) : null)
+                ->withProperties([
+                    'assigned_to' => $event->assignedTo,
+                ])
+                ->log('Менеджер назначен');
+        } catch (\Throwable $e) {
+            Log::channel('single')->debug('Activity log unavailable for CaseAssigned', [
+                'error' => $e->getMessage(),
+            ]);
+        }
 
         $clientName  = $event->case->client?->name ?? 'Неизвестный';
         $manager     = User::find($event->assignedTo);

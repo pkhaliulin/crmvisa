@@ -17,11 +17,24 @@ class SlaWarningNotification extends Notification implements ShouldQueue
 
     private array $resolvedChannels = ['mail', 'database'];
 
+    private array $brand = [
+        'name'               => 'VisaCRM',
+        'email_from'         => 'noreply@visacrm.uz',
+        'email_name'         => 'VisaCRM',
+        'sms_sender'         => 'VisaCRM',
+        'telegram_signature' => 'VisaCRM',
+    ];
+
     public function __construct(public VisaCase $case) {}
 
     public function setChannels(array $channels): void
     {
         $this->resolvedChannels = $channels;
+    }
+
+    public function setBrand(array $brand): void
+    {
+        $this->brand = array_merge($this->brand, $brand);
     }
 
     public function via(object $notifiable): array
@@ -37,13 +50,14 @@ class SlaWarningNotification extends Notification implements ShouldQueue
         $stage      = config("stages.{$this->case->stage}.label", $this->case->stage);
 
         return (new MailMessage)
+            ->from($this->brand['email_from'], $this->brand['email_name'])
             ->subject("SLA: {$clientName} — {$country}, осталось {$daysLeft} дн.")
             ->greeting("Здравствуйте, {$notifiable->name}!")
             ->line("Заявка **{$clientName}** ({$country}, {$this->case->visa_type}) приближается к дедлайну.")
             ->line("Текущий этап: **{$stage}**")
             ->line("Осталось дней: **{$daysLeft}**")
             ->line("Дедлайн: **{$this->case->critical_date->toDateString()}**")
-            ->salutation('VisaCRM');
+            ->salutation($this->brand['name']);
     }
 
     public function toDatabase(object $notifiable): array
@@ -63,11 +77,10 @@ class SlaWarningNotification extends Notification implements ShouldQueue
     {
         $daysLeft   = Carbon::now()->diffInDays($this->case->critical_date, false);
         $clientName = $this->case->client?->name ?? 'Клиент';
-        $agencyName = $this->case->agency?->name ?? 'VisaCRM';
 
         return [
             'text'       => implode("\n", [
-                "<b>{$agencyName}</b>",
+                "<b>{$this->brand['telegram_signature']}</b>",
                 '',
                 "SLA: заявка #{$this->case->case_number}",
                 "Клиент: {$clientName}",
@@ -82,7 +95,8 @@ class SlaWarningNotification extends Notification implements ShouldQueue
     {
         $daysLeft = Carbon::now()->diffInDays($this->case->critical_date, false);
         return [
-            'text' => "SLA! Заявка #{$this->case->case_number}: осталось {$daysLeft} дн.",
+            'text'   => "SLA! Заявка #{$this->case->case_number}: осталось {$daysLeft} дн.",
+            'sender' => $this->brand['sms_sender'],
         ];
     }
 }
