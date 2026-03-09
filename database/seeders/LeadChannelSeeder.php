@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Modules\Agency\Models\LeadChannel;
+use App\Modules\LeadGen\Models\LeadChannel;
 use Illuminate\Database\Seeder;
 
 class LeadChannelSeeder extends Seeder

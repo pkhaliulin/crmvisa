@@ -320,8 +320,9 @@ async function fetchChannels() {
   try {
     loading.value = true;
     const { data } = await api.get('/owner/lead-channels');
-    channels.value = data.channels || [];
-    stats.value = { total: data.total || 0, active: data.active || 0 };
+    const payload = data?.data || data;
+    channels.value = payload.channels || [];
+    stats.value = { total: payload.total || 0, active: payload.active || 0 };
   } catch (e) {
     alert(e?.response?.data?.message || 'Ошибка загрузки');
   } finally {
@@ -332,8 +333,9 @@ async function fetchChannels() {
 async function toggleActive(ch) {
   try {
     const { data } = await api.post(`/owner/lead-channels/${ch.id}/toggle`);
-    ch.is_active = data.is_active;
-    stats.value.active += data.is_active ? 1 : -1;
+    const togglePayload = data?.data || data;
+    ch.is_active = togglePayload.is_active;
+    stats.value.active += togglePayload.is_active ? 1 : -1;
   } catch (e) {
     alert(e?.response?.data?.message || 'Ошибка');
   }

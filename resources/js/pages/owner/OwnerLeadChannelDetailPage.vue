@@ -287,7 +287,7 @@ async function fetchChannel() {
   try {
     loading.value = true;
     const { data } = await api.get(`/owner/lead-channels/${route.params.id}`);
-    form.value = { ...data };
+    form.value = { ...(data?.data || data) };
   } catch (e) {
     alert(e?.response?.data?.message || 'Ошибка загрузки');
     router.push({ name: 'owner.lead-channels' });

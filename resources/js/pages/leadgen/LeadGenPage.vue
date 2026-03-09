@@ -316,8 +316,9 @@ function categoryIcon(category) {
 onMounted(async () => {
   try {
     const res = await api.get('/lead-channels');
-    channels.value = res.data.channels || [];
-    agencyPlan.value = res.data.agency_plan || '';
+    const payload = res.data?.data || res.data;
+    channels.value = payload.channels || [];
+    agencyPlan.value = payload.agency_plan || '';
   } catch {
     channels.value = [];
   } finally {

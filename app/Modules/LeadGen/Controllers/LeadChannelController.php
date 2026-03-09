@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Modules\Agency\Controllers;
+namespace App\Modules\LeadGen\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Modules\Agency\Models\LeadChannel;
+use App\Modules\LeadGen\Models\LeadChannel;
 use App\Support\Helpers\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -64,12 +64,11 @@ class LeadChannelController extends Controller
 
     public function show(Request $request, string $code): JsonResponse
     {
-        $channel = LeadChannel::active()->where('code', $code)->firstOrFail();
+        $channel = LeadChannel::where('code', $code)->firstOrFail();
 
         $agencyPlan = $request->user()->agency?->plan?->value ?? 'starter';
         $channel->available = $this->isPlanSufficient($agencyPlan, $channel->min_plan);
 
-        // Записываем просмотр
         $this->trackView($request, $channel->id, 'view');
 
         return ApiResponse::success([

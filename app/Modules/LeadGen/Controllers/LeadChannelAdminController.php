@@ -1,14 +1,14 @@
 <?php
 
-namespace App\Modules\Owner\Controllers;
+namespace App\Modules\LeadGen\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Modules\Agency\Models\LeadChannel;
+use App\Modules\LeadGen\Models\LeadChannel;
 use App\Support\Helpers\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-class OwnerLeadChannelController extends Controller
+class LeadChannelAdminController extends Controller
 {
     public function index(Request $request): JsonResponse
     {

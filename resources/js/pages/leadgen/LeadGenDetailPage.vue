@@ -390,8 +390,9 @@ async function fetchChannel() {
     loading.value = true;
     const code = route.params.code;
     const { data } = await api.get(`/lead-channels/${code}`);
-    channel.value = data.channel;
-    agencyPlan.value = data.agency_plan;
+    const payload = data?.data || data;
+    channel.value = payload.channel;
+    agencyPlan.value = payload.agency_plan;
   } catch (e) {
     error.value = e.response?.data?.message || t('crm.leadgen.detail.loadError');
   } finally {

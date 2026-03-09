@@ -131,12 +131,12 @@ Route::middleware(['auth:api', 'role:superadmin'])->prefix('owner')->group(funct
     Route::delete('feature-flags/{id}',  [FeatureFlagController::class, 'destroy']);
 
     // Каналы лидогенерации
-    Route::get('lead-channels',              [\App\Modules\Owner\Controllers\OwnerLeadChannelController::class, 'index']);
-    Route::get('lead-channels/{id}',         [\App\Modules\Owner\Controllers\OwnerLeadChannelController::class, 'show']);
-    Route::post('lead-channels',             [\App\Modules\Owner\Controllers\OwnerLeadChannelController::class, 'store']);
-    Route::patch('lead-channels/{id}',       [\App\Modules\Owner\Controllers\OwnerLeadChannelController::class, 'update']);
-    Route::post('lead-channels/{id}/toggle', [\App\Modules\Owner\Controllers\OwnerLeadChannelController::class, 'toggle']);
-    Route::delete('lead-channels/{id}',      [\App\Modules\Owner\Controllers\OwnerLeadChannelController::class, 'destroy']);
+    Route::get('lead-channels',              [\App\Modules\LeadGen\Controllers\LeadChannelAdminController::class, 'index']);
+    Route::get('lead-channels/{id}',         [\App\Modules\LeadGen\Controllers\LeadChannelAdminController::class, 'show']);
+    Route::post('lead-channels',             [\App\Modules\LeadGen\Controllers\LeadChannelAdminController::class, 'store']);
+    Route::patch('lead-channels/{id}',       [\App\Modules\LeadGen\Controllers\LeadChannelAdminController::class, 'update']);
+    Route::post('lead-channels/{id}/toggle', [\App\Modules\LeadGen\Controllers\LeadChannelAdminController::class, 'toggle']);
+    Route::delete('lead-channels/{id}',      [\App\Modules\LeadGen\Controllers\LeadChannelAdminController::class, 'destroy']);
 
     // Память проекта (документация)
     Route::get('memory', [MemoryController::class, 'index']);

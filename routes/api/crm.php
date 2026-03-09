@@ -1,7 +1,7 @@
 <?php
 
 use App\Modules\Agency\Controllers\AgencySettingsController;
-use App\Modules\Agency\Controllers\LeadChannelController;
+use App\Modules\LeadGen\Controllers\LeadChannelController;
 use App\Modules\Agency\Controllers\ReportController;
 use App\Modules\Case\Controllers\CaseController;
 use App\Modules\Case\Controllers\DashboardController;

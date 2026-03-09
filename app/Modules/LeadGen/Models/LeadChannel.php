@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Modules\Agency\Models;
+namespace App\Modules\LeadGen\Models;
 
 use App\Support\Abstracts\BaseModel;
 
