@@ -37,22 +37,16 @@ class IncomingLeadController extends Controller
 
         try {
             $result = DB::transaction(function () use ($data, $agency) {
-                // 1. Создаём или находим клиента по телефону в рамках агентства
-                $client = Client::withoutGlobalScopes()
-                    ->where('agency_id', $agency->id)
-                    ->where('phone', $data['phone'])
-                    ->first();
-
-                if (! $client) {
-                    $client = new Client();
-                    $client->agency_id = $agency->id;
-                    $client->name      = $data['name'];
-                    $client->phone     = $data['phone'];
-                    $client->email     = $data['email'] ?? null;
-                    $client->source    = 'other';
-                    $client->notes     = $data['message'] ?? null;
-                    $client->save();
-                }
+                // Создаём нового клиента для каждого лида.
+                // Дедупликация по телефону невозможна (phone encrypted), менеджер объединит вручную.
+                $client = new Client();
+                $client->agency_id = $agency->id;
+                $client->name      = $data['name'];
+                $client->phone     = $data['phone'];
+                $client->email     = $data['email'] ?? null;
+                $client->source    = 'other';
+                $client->notes     = $data['message'] ?? null;
+                $client->save();
 
                 // 2. Создаём заявку (лид)
                 $caseData = [
