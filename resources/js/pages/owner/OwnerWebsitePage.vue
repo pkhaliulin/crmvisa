@@ -168,7 +168,7 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue';
-import api from '@/api/auth';
+import api from '@/api/index';
 
 // Inline sub-components
 const SettingToggle = {
