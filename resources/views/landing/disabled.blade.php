@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>VisaBor — Скоро открываемся</title>
+<title>VisaBor — {{ __('landing.maint_title') }}</title>
 <meta name="robots" content="noindex, nofollow">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet">
@@ -204,11 +204,11 @@ body {
     <a href="/locale/uz" class="lang-item {{ ($locale ?? 'ru') === 'uz' ? 'active' : '' }}">UZ</a>
   </div>
   <div class="disabled-logo">visa<span>bor</span><span class="dot"></span></div>
-  <div class="disabled-title">Скоро открываемся</div>
-  <div class="disabled-desc">Платформа временно недоступна. Войдите в личный кабинет, чтобы продолжить работу.</div>
+  <div class="disabled-title">{{ __('landing.maint_title') }}</div>
+  <div class="disabled-desc">{{ __('landing.maint_desc') }}</div>
 
   <div class="login-card">
-    <h3 id="cardTitle">Вход в платформу</h3>
+    <h3 id="cardTitle">{{ __('landing.maint_login_title') }}</h3>
 
     <!-- Step 1: Phone -->
     <div id="stepPhone" class="step active">
@@ -218,16 +218,16 @@ body {
           oninput="formatPhoneInput(this)" onkeydown="phoneKeydown(event)" onkeyup="if(event.key==='Enter')sendOtp()">
       </div>
       <p id="phoneError" class="error-msg"></p>
-      <button id="btnSendOtp" class="btn-main" onclick="sendOtp()" style="margin-top:12px;">Получить код</button>
+      <button id="btnSendOtp" class="btn-main" onclick="sendOtp()" style="margin-top:12px;">{{ __('landing.maint_get_code') }}</button>
       <p style="margin-top:14px; text-align:center;">
-        <button class="btn-link" onclick="showStep('loginPin')">Войти по PIN</button>
+        <button class="btn-link" onclick="showStep('loginPin')">{{ __('landing.maint_login_pin') }}</button>
       </p>
     </div>
 
     <!-- Step 2: OTP -->
     <div id="stepOtp" class="step">
       <p style="margin-bottom:16px; font-size:0.9rem; color:rgba(255,255,255,0.5); text-align:center;">
-        Код отправлен на <strong id="otpPhone" style="color:white;"></strong>
+        {{ __('landing.maint_code_sent') }} <strong id="otpPhone" style="color:white;"></strong>
       </p>
       <div class="otp-row">
         <input class="otp-box" type="tel" inputmode="numeric" maxlength="1" oninput="otpInput(this,0)" onkeydown="otpKeydown(event,0)">
@@ -236,20 +236,20 @@ body {
         <input class="otp-box" type="tel" inputmode="numeric" maxlength="1" oninput="otpInput(this,3)" onkeydown="otpKeydown(event,3)">
       </div>
       <p id="otpError" class="error-msg" style="text-align:center;"></p>
-      <button id="btnVerifyOtp" class="btn-main" onclick="verifyOtp()" disabled style="margin-top:12px;">Подтвердить</button>
+      <button id="btnVerifyOtp" class="btn-main" onclick="verifyOtp()" disabled style="margin-top:12px;">{{ __('landing.maint_confirm') }}</button>
       <div style="margin-top:14px; display:flex; justify-content:space-between; font-size:0.85rem;">
-        <button class="btn-link" onclick="showStep('phone')">Изменить номер</button>
-        <span id="resendWrap"><span style="color:rgba(255,255,255,0.35);">Повторить через <span id="resendTimer">60</span>с</span></span>
+        <button class="btn-link" onclick="showStep('phone')">{{ __('landing.maint_change_number') }}</button>
+        <span id="resendWrap"><span style="color:rgba(255,255,255,0.35);">{{ __('landing.maint_resend_in') }} <span id="resendTimer">60</span>s</span></span>
       </div>
     </div>
 
     <!-- Step 3: Set PIN -->
     <div id="stepPin" class="step">
-      <p style="margin-bottom:16px; font-size:0.9rem; color:rgba(255,255,255,0.5);">Запомните 4-значный PIN для быстрого входа</p>
+      <p style="margin-bottom:16px; font-size:0.9rem; color:rgba(255,255,255,0.5);">{{ __('landing.maint_set_pin_hint') }}</p>
       <input id="pinInput" class="pin-input" type="tel" inputmode="numeric" maxlength="4" placeholder="----"
         oninput="this.value=this.value.replace(/\D/g,'').slice(0,4)">
-      <button class="btn-main" onclick="setPin()" style="margin-top:12px;">Сохранить PIN</button>
-      <button class="btn-link" onclick="authFinish()" style="display:block; width:100%; margin-top:8px; padding:10px;">Пропустить</button>
+      <button class="btn-main" onclick="setPin()" style="margin-top:12px;">{{ __('landing.maint_save_pin') }}</button>
+      <button class="btn-link" onclick="authFinish()" style="display:block; width:100%; margin-top:8px; padding:10px;">{{ __('landing.maint_skip') }}</button>
     </div>
 
     <!-- Step 4: Login by PIN -->
@@ -263,17 +263,24 @@ body {
         oninput="this.value=this.value.replace(/\D/g,'').slice(0,4)"
         onkeyup="if(event.key==='Enter')loginWithPin()">
       <p id="loginPinError" class="error-msg"></p>
-      <button class="btn-main" onclick="loginWithPin()" style="margin-top:12px;">Войти</button>
+      <button class="btn-main" onclick="loginWithPin()" style="margin-top:12px;">{{ __('landing.maint_login_btn2') }}</button>
       <p style="margin-top:14px; text-align:center;">
-        <button class="btn-link" onclick="showStep('phone')">Войти по SMS</button>
+        <button class="btn-link" onclick="showStep('phone')">{{ __('landing.maint_login_sms') }}</button>
       </p>
     </div>
   </div>
 
-  <p class="support-text">Поддержка: support@visabor.uz</p>
+  <p class="support-text">{{ __('landing.maint_support') }}</p>
 </div>
 
 <script>
+const T = @json(collect(__('landing'))->only([
+    'maint_login_title','maint_get_code','maint_sending','maint_sms_error',
+    'maint_confirm','maint_checking','maint_wrong_code','maint_enter_full_number',
+    'maint_enter_pin','maint_wrong_pin','maint_login_error','maint_resend_in',
+    'maint_resend_now','maint_otp_title','maint_pin_title','maint_pin_login_title',
+]));
+
 // Если уже авторизован — перенаправить в ЛК
 (function() {
   try {
@@ -291,9 +298,14 @@ let resendInterval = null;
 function showStep(step) {
   document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
   const map = { phone:'stepPhone', otp:'stepOtp', pin:'stepPin', loginPin:'stepLoginPin' };
-  const titles = { phone:'Вход в платформу', otp:'Введите код', pin:'Установите PIN', loginPin:'Вход по PIN' };
+  const titles = {
+    phone: T.maint_login_title,
+    otp: T.maint_otp_title,
+    pin: T.maint_pin_title,
+    loginPin: T.maint_pin_login_title,
+  };
   document.getElementById(map[step]).classList.add('active');
-  document.getElementById('cardTitle').textContent = titles[step] || 'Вход';
+  document.getElementById('cardTitle').textContent = titles[step] || T.maint_login_title;
   if (step === 'phone') setTimeout(() => document.getElementById('phoneInput').focus(), 100);
   if (step === 'otp') setTimeout(() => document.querySelectorAll('.otp-box')[0].focus(), 100);
   if (step === 'loginPin') setTimeout(() => document.getElementById('loginPhoneInput').focus(), 100);
@@ -353,7 +365,7 @@ function clearOtpBoxes() {
 function startResendTimer() {
   let sec = 60;
   const wrap = document.getElementById('resendWrap');
-  wrap.innerHTML = '<span style="color:rgba(255,255,255,0.35);">Повторить через <span id="resendTimer">' + sec + '</span>с</span>';
+  wrap.innerHTML = '<span style="color:rgba(255,255,255,0.35);">' + T.maint_resend_in + ' <span id="resendTimer">' + sec + '</span>s</span>';
   clearInterval(resendInterval);
   resendInterval = setInterval(() => {
     sec--;
@@ -361,33 +373,33 @@ function startResendTimer() {
     if (t) t.textContent = sec;
     if (sec <= 0) {
       clearInterval(resendInterval);
-      wrap.innerHTML = '<button class="btn-link" onclick="sendOtp()" style="color:white; font-weight:600;">Отправить снова</button>';
+      wrap.innerHTML = '<button class="btn-link" onclick="sendOtp()" style="color:white; font-weight:600;">' + T.maint_resend_now + '</button>';
     }
   }, 1000);
 }
 
 async function sendOtp() {
   const digits = getPhoneDigits('phoneInput');
-  if (digits.length < 9) { showError('phoneError','Введите полный номер'); return; }
+  if (digits.length < 9) { showError('phoneError', T.maint_enter_full_number); return; }
   hideError('phoneError');
   const phone = '+998' + digits;
   const btn = document.getElementById('btnSendOtp');
-  btn.textContent = 'Отправка...'; btn.disabled = true;
+  btn.textContent = T.maint_sending; btn.disabled = true;
   try {
     const r = await fetch(API_BASE + '/auth/send-otp', {
       method:'POST', headers:{'Content-Type':'application/json','Accept':'application/json'},
       body: JSON.stringify({ phone })
     });
     const d = await r.json();
-    if (!r.ok) throw new Error(d.message || 'Ошибка');
+    if (!r.ok) throw new Error(d.message || T.maint_sms_error);
     document.getElementById('otpPhone').textContent = phone;
     showStep('otp');
     clearOtpBoxes();
     startResendTimer();
   } catch(e) {
-    showError('phoneError', e.message || 'Ошибка отправки SMS');
+    showError('phoneError', e.message || T.maint_sms_error);
   } finally {
-    btn.textContent = 'Получить код'; btn.disabled = false;
+    btn.textContent = T.maint_get_code; btn.disabled = false;
   }
 }
 
@@ -398,14 +410,14 @@ async function verifyOtp() {
   hideError('otpError');
   const phone = '+998' + getPhoneDigits('phoneInput');
   const btn = document.getElementById('btnVerifyOtp');
-  btn.textContent = 'Проверка...'; btn.disabled = true;
+  btn.textContent = T.maint_checking; btn.disabled = true;
   try {
     const r = await fetch(API_BASE + '/auth/verify-otp', {
       method:'POST', headers:{'Content-Type':'application/json','Accept':'application/json'},
       body: JSON.stringify({ phone, code })
     });
     const d = await r.json();
-    if (!r.ok) throw new Error(d.message || 'Неверный код');
+    if (!r.ok) throw new Error(d.message || T.maint_wrong_code);
     authToken = d.data.token;
     authUser = d.data.user;
     localStorage.setItem('public_token', authToken);
@@ -416,11 +428,11 @@ async function verifyOtp() {
       authFinish();
     }
   } catch(e) {
-    showError('otpError', e.message || 'Неверный код');
+    showError('otpError', e.message || T.maint_wrong_code);
     clearOtpBoxes();
     setTimeout(() => document.querySelectorAll('.otp-box')[0].focus(), 100);
   } finally {
-    btn.textContent = 'Подтвердить'; btn.disabled = false;
+    btn.textContent = T.maint_confirm; btn.disabled = false;
   }
 }
 
@@ -439,8 +451,8 @@ async function setPin() {
 async function loginWithPin() {
   const digits = getPhoneDigits('loginPhoneInput');
   const pin = document.getElementById('loginPinInput').value;
-  if (digits.length < 9) { showError('loginPinError','Введите полный номер'); return; }
-  if (pin.length < 4) { showError('loginPinError','Введите 4-значный PIN'); return; }
+  if (digits.length < 9) { showError('loginPinError', T.maint_enter_full_number); return; }
+  if (pin.length < 4) { showError('loginPinError', T.maint_enter_pin); return; }
   hideError('loginPinError');
   const phone = '+998' + digits;
   try {
@@ -449,12 +461,12 @@ async function loginWithPin() {
       body: JSON.stringify({ phone, pin })
     });
     const d = await r.json();
-    if (!r.ok) throw new Error(d.message || 'Неверный телефон или PIN');
+    if (!r.ok) throw new Error(d.message || T.maint_wrong_pin);
     localStorage.setItem('public_token', d.data.token);
     localStorage.setItem('public_user', JSON.stringify(d.data.user));
     authFinish();
   } catch(e) {
-    showError('loginPinError', e.message || 'Ошибка входа');
+    showError('loginPinError', e.message || T.maint_login_error);
   }
 }
 
