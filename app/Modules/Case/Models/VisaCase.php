@@ -124,6 +124,7 @@ class VisaCase extends BaseModel
         'previous_case_id',
         'last_manager_update_at',
         'lead_source',
+        'lead_channel_code',
     ];
 
     protected $casts = [

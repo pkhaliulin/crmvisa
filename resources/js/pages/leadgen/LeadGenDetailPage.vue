@@ -115,7 +115,7 @@
           </div>
 
           <!-- Integration how-to -->
-          <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-200 p-6">
+          <div data-section="integration" class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-200 p-6">
             <h2 class="text-base font-semibold text-gray-900 mb-4">{{ t('crm.leadgen.detail.integrationTitle') }}</h2>
             <div class="space-y-4">
               <div class="flex items-start gap-3">
@@ -346,11 +346,26 @@ Content-Type: application/json
           <!-- CTA -->
           <div v-if="channel.cta_actions && channel.cta_actions.length"
             class="bg-white rounded-xl border border-gray-200 p-5">
+            <!-- Connected badge -->
+            <div v-if="channel.connected || connectSuccess" class="mb-3 flex items-center gap-2 text-green-600">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              <span class="text-sm font-medium">{{ t('crm.leadgen.detail.connected') }}</span>
+            </div>
             <div class="flex flex-col gap-2">
               <template v-for="(action, i) in channel.cta_actions" :key="i">
                 <button v-if="action === 'connect'" @click="handleCta('connect')"
-                  class="w-full px-4 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
-                  {{ t('crm.leadgen.detail.ctaConnect') }}
+                  :disabled="connecting || channel.connected || connectSuccess || !channel.available"
+                  class="w-full px-4 py-2.5 text-sm font-medium rounded-lg transition-colors"
+                  :class="channel.connected || connectSuccess
+                    ? 'bg-green-100 text-green-700 cursor-default'
+                    : !channel.available
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      : 'text-white bg-blue-600 hover:bg-blue-700'">
+                  <span v-if="connecting">...</span>
+                  <span v-else-if="channel.connected || connectSuccess">{{ t('crm.leadgen.detail.connected') }}</span>
+                  <span v-else>{{ t('crm.leadgen.detail.ctaConnect') }}</span>
                 </button>
                 <button v-else-if="action === 'instruction'" @click="handleCta('instruction')"
                   class="w-full px-4 py-2.5 text-sm font-medium text-blue-600 border border-blue-300 rounded-lg hover:bg-blue-50 transition-colors">
@@ -473,8 +488,30 @@ async function trackAction(action) {
   }
 }
 
-function handleCta(action) {
+const connecting = ref(false);
+const connectSuccess = ref(false);
+
+async function handleCta(action) {
   trackAction('click_cta');
+
+  if (action === 'connect') {
+    if (!channel.value?.available) return;
+    connecting.value = true;
+    try {
+      const code = route.params.code;
+      await api.post(`/lead-channels/${code}/connect`);
+      connectSuccess.value = true;
+      channel.value.connected = true;
+    } catch {
+      // silently fail
+    } finally {
+      connecting.value = false;
+    }
+  } else if (action === 'instruction') {
+    // Scroll to integration section
+    const el = document.querySelector('[data-section="integration"]');
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
+  }
 }
 
 onMounted(async () => {

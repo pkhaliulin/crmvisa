@@ -18,6 +18,14 @@
               <div class="text-xs text-gray-500">{{ t('crm.leadgen.workspace.yourPlan') }}</div>
               <div class="text-sm font-bold" :class="planColor">{{ planLabel }}</div>
             </div>
+            <button @click="router.push({ name: 'leadgen.analytics' })"
+              class="px-4 py-2 text-xs font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all whitespace-nowrap">
+              {{ t('crm.leadgen.analytics.title') }}
+            </button>
+            <button @click="router.push({ name: 'leadgen.notifications' })"
+              class="px-4 py-2 text-xs font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all whitespace-nowrap">
+              {{ t('crm.leadgen.notifications.title') }}
+            </button>
             <button v-if="canUpgrade" @click="router.push({ name: 'billing' })"
               class="px-4 py-2 text-xs font-medium text-white bg-gradient-to-r from-purple-600 to-indigo-600 rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all whitespace-nowrap">
               {{ t('crm.leadgen.workspace.upgradePlan') }}
@@ -168,8 +176,11 @@
           <!-- Card content -->
           <div class="p-5 flex-1 flex flex-col">
             <div class="flex items-start gap-3 mb-3">
-              <div class="w-10 h-10 rounded-lg flex items-center justify-center text-xl shrink-0" :class="categoryBgClass(channel.category)">
-                {{ channel.icon }}
+              <div class="relative">
+                <div class="w-10 h-10 rounded-lg flex items-center justify-center text-xl shrink-0" :class="categoryBgClass(channel.category)">
+                  {{ channel.icon }}
+                </div>
+                <div v-if="channel.connected" class="absolute -top-1 -right-1 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white" :title="t('crm.leadgen.detail.connected')"></div>
               </div>
               <div class="min-w-0 flex-1">
                 <h3 class="font-semibold text-gray-900 text-sm leading-snug">{{ channelName(channel) }}</h3>
@@ -254,7 +265,7 @@ const planColor = computed(() => {
 const canUpgrade = computed(() => (planOrder[agencyPlan.value] ?? 0) < 3);
 
 const availableCount = computed(() => channels.value.filter(c => c.available).length);
-const activeCount = computed(() => channels.value.filter(c => c.is_active).length);
+const activeCount = computed(() => channels.value.filter(c => c.connected).length);
 const enterpriseCount = computed(() => channels.value.filter(c => c.enterprise_only).length);
 
 const categoryList = computed(() => [

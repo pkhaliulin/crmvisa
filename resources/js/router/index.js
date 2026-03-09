@@ -329,6 +329,18 @@ const routes = [
                 meta: { roles: ['owner', 'superadmin'] },
             },
             {
+                path: 'leadgen/analytics',
+                name: 'leadgen.analytics',
+                component: () => import('@/pages/leadgen/LeadAnalyticsPage.vue'),
+                meta: { roles: ['owner', 'superadmin'] },
+            },
+            {
+                path: 'leadgen/notifications',
+                name: 'leadgen.notifications',
+                component: () => import('@/pages/leadgen/NotificationSettingsPage.vue'),
+                meta: { roles: ['owner', 'superadmin'] },
+            },
+            {
                 path: 'leadgen/:code',
                 name: 'leadgen.detail',
                 component: () => import('@/pages/leadgen/LeadGenDetailPage.vue'),

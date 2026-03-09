@@ -12,14 +12,23 @@ class CaseStageChangedNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
+    public bool $deleteWhenMissingModels = true;
+
+    private array $resolvedChannels = ['mail', 'database'];
+
     public function __construct(
         public VisaCase $case,
         public string $previousStage,
     ) {}
 
+    public function setChannels(array $channels): void
+    {
+        $this->resolvedChannels = $channels;
+    }
+
     public function via(object $notifiable): array
     {
-        return ['mail', 'database'];
+        return $this->resolvedChannels;
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -29,22 +38,49 @@ class CaseStageChangedNotification extends Notification implements ShouldQueue
         $clientName    = $this->case->client->name;
 
         return (new MailMessage)
-            ->subject("Case update: {$clientName} — {$this->case->country_code} visa")
-            ->greeting("Hello, {$notifiable->name}!")
-            ->line("Your visa case has moved to a new stage.")
-            ->line("**Status: {$clientMessage}**")
-            ->line("Country: {$this->case->country_code} | Type: {$this->case->visa_type}")
-            ->salutation('VisaBor');
+            ->subject("Обновление заявки: {$clientName} — {$this->case->country_code}")
+            ->greeting("Здравствуйте, {$notifiable->name}!")
+            ->line("Заявка перешла на новый этап.")
+            ->line("**Статус: {$clientMessage}**")
+            ->line("Страна: {$this->case->country_code} | Тип визы: {$this->case->visa_type}")
+            ->salutation('VisaCRM');
     }
 
-    public function toArray(object $notifiable): array
+    public function toDatabase(object $notifiable): array
     {
         return [
-            'type'           => 'stage_changed',
+            'type'           => 'case.status_changed',
             'case_id'        => $this->case->id,
             'previous_stage' => $this->previousStage,
             'new_stage'      => $this->case->stage,
             'client_message' => config("stages.{$this->case->stage}.client_msg"),
+        ];
+    }
+
+    public function toTelegram(mixed $notifiable): array
+    {
+        $stageLabel = config("stages.{$this->case->stage}.label", $this->case->stage);
+        $clientName = $this->case->client?->name ?? 'Клиент';
+        $agencyName = $this->case->agency?->name ?? 'VisaCRM';
+
+        return [
+            'text'       => implode("\n", [
+                "<b>{$agencyName}</b>",
+                '',
+                "Заявка #{$this->case->case_number}",
+                "Клиент: {$clientName}",
+                "Этап: <b>{$stageLabel}</b>",
+                "Страна: {$this->case->country_code}",
+            ]),
+            'parse_mode' => 'HTML',
+        ];
+    }
+
+    public function toSms(mixed $notifiable): array
+    {
+        $stageLabel = config("stages.{$this->case->stage}.label", $this->case->stage);
+        return [
+            'text' => "Заявка #{$this->case->case_number}: этап «{$stageLabel}»",
         ];
     }
 }

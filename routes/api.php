@@ -18,6 +18,6 @@ Route::prefix('v1')->group(function () {
     require __DIR__.'/api/public.php';
 
     // Приём лидов по API-ключу агентства (без JWT, аутентификация по vbk_ токену)
-    Route::middleware(['auth.apikey', 'throttle:60,1'])
+    Route::middleware(['auth.apikey', 'throttle:leads_per_agency'])
         ->post('leads/incoming', [\App\Modules\LeadGen\Controllers\IncomingLeadController::class, 'store']);
 });

@@ -15,6 +15,8 @@ use App\Modules\Notification\Listeners\SendCaseNotification;
 use App\Modules\Payment\Events\PaymentReceived;
 use App\Modules\Payment\Events\SubscriptionChanged;
 use App\Modules\Payment\Events\SubscriptionExpired;
+use App\Modules\LeadGen\Events\LeadIncoming;
+use App\Modules\Notification\Listeners\SendLeadNotification;
 use App\Modules\Scoring\Events\ScoringCalculated;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 
@@ -57,6 +59,10 @@ class EventServiceProvider extends ServiceProvider
         ],
         ScoringCalculated::class => [
             [LogBusinessEvent::class, 'handleScoringCalculated'],
+        ],
+        LeadIncoming::class => [
+            [SendLeadNotification::class, 'handle'],
+            [InvalidateAgencyCache::class, 'handleCaseCreated'],
         ],
     ];
 }

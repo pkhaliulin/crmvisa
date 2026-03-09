@@ -51,6 +51,13 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(5)->by($request->user()?->id ?? $request->ip());
         });
 
+        // Per-agency rate limiter для входящих лидов
+        RateLimiter::for('leads_per_agency', function (Request $request) {
+            $agency = $request->attributes->get('agency');
+            $key = $agency ? 'leads:' . $agency->id : ($request->ip() ?? 'unknown');
+            return Limit::perMinute(60)->by($key);
+        });
+
         // Логирование медленных SQL запросов (>500ms)
         if (app()->environment('production')) {
             DB::listen(function (QueryExecuted $query) {

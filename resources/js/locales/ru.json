@@ -1915,6 +1915,7 @@
           "api_automation": "API и автоматизация"
         },
         "plan": {
+          "trial": "Trial",
           "starter": "Starter",
           "pro": "Pro",
           "enterprise": "Enterprise"
@@ -1963,7 +1964,9 @@
         "integrationStep4Desc": "Назначайте менеджеров, квалифицируйте, ведите по этапам — как с обычными заявками.",
         "apiExample": "Пример запроса:",
         "apiExampleName": "Имя клиента",
-        "apiExampleMessage": "Хочу визу в Германию"
+        "apiExampleMessage": "Хочу визу в Германию",
+        "connected": "Подключен",
+        "disconnectBtn": "Отключить"
       },
       "workspace": {
         "yourPlan": "Ваш тариф",
@@ -1983,6 +1986,56 @@
         "helpApi": "Настройка API-интеграции",
         "helpWebhook": "Подключение webhook",
         "helpNote": "Со стороны агентства нужен свой специалист для настройки рекламных кабинетов."
+      },
+      "notifications": {
+        "title": "Настройки уведомлений",
+        "subtitle": "Управляйте каналами и получателями уведомлений для каждого события",
+        "event_lead_incoming": "Новый лид",
+        "event_case_created": "Заявка создана",
+        "event_case_status_changed": "Статус изменён",
+        "event_case_assigned": "Менеджер назначен",
+        "event_sla_violation": "Нарушение SLA",
+        "event_sla_warning": "Предупреждение SLA",
+        "event_document_uploaded": "Документ загружен",
+        "event_payment_received": "Платёж получен",
+        "event_subscription_changed": "Подписка изменена",
+        "event_subscription_expired": "Подписка истекла",
+        "event_client_registered": "Клиент зарегистрирован",
+        "channels": "Каналы",
+        "recipients": "Получатели",
+        "enabled": "Включено",
+        "disabled": "Выключено",
+        "channel_database": "В системе",
+        "channel_email": "Email",
+        "channel_telegram": "Telegram",
+        "channel_sms": "SMS",
+        "channel_push": "Push",
+        "channel_call": "Звонок",
+        "recipient_owner": "Владелец",
+        "recipient_assigned_manager": "Назначенный менеджер",
+        "recipient_all_managers": "Все менеджеры",
+        "stub": "Заглушка",
+        "active": "Активен",
+        "saved": "Настройки сохранены",
+        "saveError": "Не удалось сохранить"
+      },
+      "analytics": {
+        "title": "Аналитика лидов",
+        "subtitle": "Статистика по источникам и каналам привлечения",
+        "period": "Период",
+        "days7": "7 дней",
+        "days30": "30 дней",
+        "days90": "90 дней",
+        "totalLeads": "Всего лидов",
+        "bySource": "По источнику",
+        "byChannel": "По каналу",
+        "byStage": "По этапу",
+        "dailyTrend": "Динамика по дням",
+        "noData": "Нет данных за выбранный период",
+        "source": "Источник",
+        "count": "Количество",
+        "channel": "Канал",
+        "stage": "Этап"
       }
     },
     "kanbanPage": {

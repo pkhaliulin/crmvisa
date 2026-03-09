@@ -1915,6 +1915,7 @@
           "api_automation": "API va avtomatlashtirish"
         },
         "plan": {
+          "trial": "Trial",
           "starter": "Starter",
           "pro": "Pro",
           "enterprise": "Enterprise"
@@ -1963,7 +1964,9 @@
         "integrationStep4Desc": "Menejerlarni tayinlang, kvalifikatsiya qiling, bosqichlar bo'ylab olib boring — oddiy arizalar kabi.",
         "apiExample": "So'rov namunasi:",
         "apiExampleName": "Mijoz ismi",
-        "apiExampleMessage": "Germaniyaga viza olmoqchiman"
+        "apiExampleMessage": "Germaniyaga viza olmoqchiman",
+        "connected": "Ulangan",
+        "disconnectBtn": "Uzish"
       },
       "workspace": {
         "yourPlan": "Sizning tarifingiz",
@@ -1983,6 +1986,56 @@
         "helpApi": "API-integratsiya sozlash",
         "helpWebhook": "Webhook ulash",
         "helpNote": "Agentlik tomonidan reklama kabinetlarini sozlash uchun o'z mutaxassisi kerak."
+      },
+      "notifications": {
+        "title": "Bildirishnoma sozlamalari",
+        "subtitle": "Har bir voqea uchun bildirishnoma kanallari va qabul qiluvchilarni boshqaring",
+        "event_lead_incoming": "Yangi lid",
+        "event_case_created": "Ariza yaratildi",
+        "event_case_status_changed": "Status o'zgardi",
+        "event_case_assigned": "Menejer tayinlandi",
+        "event_sla_violation": "SLA buzilishi",
+        "event_sla_warning": "SLA ogohlantirish",
+        "event_document_uploaded": "Hujjat yuklandi",
+        "event_payment_received": "To'lov qabul qilindi",
+        "event_subscription_changed": "Obuna o'zgartirildi",
+        "event_subscription_expired": "Obuna muddati tugadi",
+        "event_client_registered": "Mijoz ro'yxatdan o'tdi",
+        "channels": "Kanallar",
+        "recipients": "Qabul qiluvchilar",
+        "enabled": "Yoqilgan",
+        "disabled": "O'chirilgan",
+        "channel_database": "Tizimda",
+        "channel_email": "Email",
+        "channel_telegram": "Telegram",
+        "channel_sms": "SMS",
+        "channel_push": "Push",
+        "channel_call": "Qo'ng'iroq",
+        "recipient_owner": "Egasi",
+        "recipient_assigned_manager": "Tayinlangan menejer",
+        "recipient_all_managers": "Barcha menejerlar",
+        "stub": "Zaglushka",
+        "active": "Faol",
+        "saved": "Sozlamalar saqlandi",
+        "saveError": "Saqlab bo'lmadi"
+      },
+      "analytics": {
+        "title": "Lidlar analitikasi",
+        "subtitle": "Jalb manbalari va kanallari bo'yicha statistika",
+        "period": "Davr",
+        "days7": "7 kun",
+        "days30": "30 kun",
+        "days90": "90 kun",
+        "totalLeads": "Jami lidlar",
+        "bySource": "Manba bo'yicha",
+        "byChannel": "Kanal bo'yicha",
+        "byStage": "Bosqich bo'yicha",
+        "dailyTrend": "Kunlik dinamika",
+        "noData": "Tanlangan davr uchun ma'lumot yo'q",
+        "source": "Manba",
+        "count": "Soni",
+        "channel": "Kanal",
+        "stage": "Bosqich"
       }
     },
     "kanbanPage": {

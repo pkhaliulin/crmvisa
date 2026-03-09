@@ -110,11 +110,21 @@ Route::middleware(['auth:api', 'role:owner,superadmin', 'plan.active'])->group(f
     Route::patch('agency/packages/{id}',   [ServiceCatalogController::class, 'update']);
     Route::delete('agency/packages/{id}',  [ServiceCatalogController::class, 'destroy']);
 
+    // Настройки уведомлений
+    Route::get('notifications/settings', [\App\Modules\Notification\Controllers\NotificationSettingsController::class, 'index']);
+    Route::put('notifications/settings/{eventType}', [\App\Modules\Notification\Controllers\NotificationSettingsController::class, 'update']);
+
+    // Аналитика лидов
+    Route::get('lead-analytics', [\App\Modules\LeadGen\Controllers\LeadAnalyticsController::class, 'index']);
+
     // Каналы лидогенерации
-    Route::get('lead-channels',              [LeadChannelController::class, 'index']);
-    Route::get('lead-channels/stats',        [LeadChannelController::class, 'stats']);
-    Route::get('lead-channels/{code}',       [LeadChannelController::class, 'show']);
-    Route::post('lead-channels/{code}/track', [LeadChannelController::class, 'trackAction']);
+    Route::get('lead-channels',                    [LeadChannelController::class, 'index']);
+    Route::get('lead-channels-connected',          [LeadChannelController::class, 'connected']);
+    Route::get('lead-channels/stats',              [LeadChannelController::class, 'stats']);
+    Route::get('lead-channels/{code}',             [LeadChannelController::class, 'show']);
+    Route::post('lead-channels/{code}/track',      [LeadChannelController::class, 'trackAction']);
+    Route::post('lead-channels/{code}/connect',    [LeadChannelController::class, 'connect']);
+    Route::delete('lead-channels/{code}/disconnect', [LeadChannelController::class, 'disconnect']);
 
     // Отчёты (только owner, rate limited)
     Route::middleware('throttle:heavy')->group(function () {

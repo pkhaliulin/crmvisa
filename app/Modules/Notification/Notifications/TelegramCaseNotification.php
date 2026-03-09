@@ -14,14 +14,23 @@ class TelegramCaseNotification extends Notification implements ShouldQueue
 
     public bool $deleteWhenMissingModels = true;
 
+    private array $resolvedChannels;
+
     public function __construct(
         private readonly VisaCase $case,
         private readonly string $previousStage,
-    ) {}
+    ) {
+        $this->resolvedChannels = [TelegramChannel::class];
+    }
+
+    public function setChannels(array $channels): void
+    {
+        $this->resolvedChannels = $channels;
+    }
 
     public function via(mixed $notifiable): array
     {
-        return [TelegramChannel::class];
+        return $this->resolvedChannels;
     }
 
     public function toTelegram(mixed $notifiable): array

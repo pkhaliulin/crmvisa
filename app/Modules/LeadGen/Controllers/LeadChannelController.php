@@ -3,6 +3,7 @@
 namespace App\Modules\LeadGen\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Modules\LeadGen\Models\AgencyLeadChannel;
 use App\Modules\LeadGen\Models\LeadChannel;
 use App\Support\Helpers\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -45,8 +46,14 @@ class LeadChannelController extends Controller
             'recommended_for', 'coming_soon', 'is_active', 'sort_order',
         ]);
 
-        $channels->each(function ($ch) use ($agencyPlan) {
+        $connectedIds = AgencyLeadChannel::where('agency_id', $request->user()->agency_id)
+            ->where('is_active', true)
+            ->pluck('channel_id')
+            ->toArray();
+
+        $channels->each(function ($ch) use ($agencyPlan, $connectedIds) {
             $ch->available = $this->isPlanSufficient($agencyPlan, $ch->min_plan);
+            $ch->connected = in_array($ch->id, $connectedIds);
         });
 
         $categories = LeadChannel::active()
@@ -67,6 +74,10 @@ class LeadChannelController extends Controller
 
         $agencyPlan = $request->user()->agency?->effectivePlan() ?? 'starter';
         $channel->available = $this->isPlanSufficient($agencyPlan, $channel->min_plan);
+        $channel->connected = AgencyLeadChannel::where('agency_id', $request->user()->agency_id)
+            ->where('channel_id', $channel->id)
+            ->where('is_active', true)
+            ->exists();
 
         $this->trackView($request, $channel->id, 'view');
 
@@ -102,6 +113,76 @@ class LeadChannelController extends Controller
             ->map(fn ($group) => $group->pluck('count', 'action'));
 
         return ApiResponse::success($stats);
+    }
+
+    public function connect(Request $request, string $code): JsonResponse
+    {
+        $channel = LeadChannel::active()->where('code', $code)->firstOrFail();
+        $agencyId = $request->user()->agency_id;
+        $agencyPlan = $request->user()->agency?->effectivePlan() ?? 'starter';
+
+        if (!$this->isPlanSufficient($agencyPlan, $channel->min_plan)) {
+            return ApiResponse::error('Ваш тариф не позволяет подключить этот канал.', null, 403);
+        }
+
+        $connection = AgencyLeadChannel::withTrashed()
+            ->where('agency_id', $agencyId)
+            ->where('channel_id', $channel->id)
+            ->first();
+
+        if ($connection && !$connection->trashed()) {
+            return ApiResponse::success($connection, 'Канал уже подключён.');
+        }
+
+        if ($connection && $connection->trashed()) {
+            $connection->restore();
+            $connection->update(['is_active' => true, 'connected_at' => now()]);
+        } else {
+            $connection = AgencyLeadChannel::create([
+                'agency_id'    => $agencyId,
+                'channel_id'   => $channel->id,
+                'is_active'    => true,
+                'connected_at' => now(),
+            ]);
+        }
+
+        $this->trackView($request, $channel->id, 'click_connect');
+
+        return ApiResponse::success([
+            'channel_code' => $code,
+            'connected'    => true,
+            'connected_at' => $connection->connected_at,
+        ], 'Канал подключён.');
+    }
+
+    public function disconnect(Request $request, string $code): JsonResponse
+    {
+        $channel = LeadChannel::where('code', $code)->firstOrFail();
+        $agencyId = $request->user()->agency_id;
+
+        $connection = AgencyLeadChannel::where('agency_id', $agencyId)
+            ->where('channel_id', $channel->id)
+            ->first();
+
+        if (!$connection) {
+            return ApiResponse::error('Канал не подключён.', null, 404);
+        }
+
+        $connection->delete();
+
+        return ApiResponse::success(null, 'Канал отключён.');
+    }
+
+    public function connected(Request $request): JsonResponse
+    {
+        $agencyId = $request->user()->agency_id;
+
+        $connections = AgencyLeadChannel::where('agency_id', $agencyId)
+            ->where('is_active', true)
+            ->with('channel:id,code,name,name_uz,icon,category')
+            ->get();
+
+        return ApiResponse::success($connections);
     }
 
     private function trackView(Request $request, string $channelId, string $action): void
