@@ -1864,6 +1864,93 @@
         "marketplace_s1": "Заполните профиль агентства: описание, страны, отзывы",
         "marketplace_s2": "Добавьте рабочие страны и пакеты услуг",
         "marketplace_s3": "Лиды с маркетплейса автоматически попадают в CRM"
+      },
+      "catalog": {
+        "title": "Каталог каналов лидогенерации",
+        "subtitle": "Все доступные каналы привлечения клиентов для вашего агентства",
+        "searchPlaceholder": "Поиск каналов...",
+        "filterByCategory": "Все категории",
+        "filterByComplexity": "Любая сложность",
+        "onlyAvailable": "Только доступные",
+        "totalChannels": "Всего каналов",
+        "availableChannels": "Доступно",
+        "enterpriseChannels": "Enterprise",
+        "noResults": "Каналы не найдены",
+        "noResultsHint": "Попробуйте изменить фильтры или поисковый запрос",
+        "details": "Подробнее",
+        "comingSoon": "СКОРО",
+        "comingSoonHint": "Этот канал находится в разработке",
+        "comingSoonOverlay": "Этот канал находится в разработке. Мы активно работаем над его запуском.",
+        "enterpriseOnly": "Enterprise",
+        "apiBadge": "API",
+        "upgradePlan": "Обновите тариф",
+        "upgradeHint": "Этот канал доступен на тарифе {plan} и выше",
+        "requiresBudget": "Платный",
+        "effectiveness": {
+          "label": "Эффективность",
+          "low": "Низкая",
+          "medium": "Средняя",
+          "high": "Высокая",
+          "very_high": "Очень высокая"
+        },
+        "complexity": {
+          "label": "Сложность",
+          "easy": "Просто",
+          "medium": "Средне",
+          "hard": "Сложно"
+        },
+        "launchSpeed": {
+          "label": "Запуск",
+          "1_day": "1 день",
+          "3_days": "3 дня",
+          "1_week": "1 неделя",
+          "2_weeks": "2 недели"
+        },
+        "categories": {
+          "messenger": "Мессенджеры",
+          "advertising": "Реклама",
+          "web": "Веб",
+          "content_seo": "Контент и SEO",
+          "partnership": "Партнёрство",
+          "api_automation": "API и автоматизация"
+        },
+        "plan": {
+          "starter": "Starter",
+          "pro": "Pro",
+          "enterprise": "Enterprise"
+        }
+      },
+      "detail": {
+        "backToList": "Назад к каналам",
+        "loadError": "Не удалось загрузить информацию о канале",
+        "comingSoonBanner": "Этот канал находится в разработке. Мы работаем над его подключением.",
+        "comingSoonTitle": "СКОРО",
+        "comingSoonDesc": "Этот канал лидогенерации находится в активной разработке. Мы работаем над его запуском и скоро он станет доступен для использования.",
+        "upsellTitle": "Этот канал доступен на тарифе {plan}",
+        "upsellDesc": "Перейдите на расширенный тариф, чтобы получить доступ к этому каналу лидогенерации.",
+        "upgradeBtn": "Перейти на Enterprise",
+        "aboutChannel": "О канале",
+        "howItWorks": "Как это работает",
+        "whenToUse": "Когда использовать",
+        "whenNotToUse": "Когда не использовать",
+        "characteristics": "Характеристики",
+        "requiresBudgetLabel": "Требует бюджета",
+        "requiresApiLabel": "Требует API",
+        "minPlanLabel": "Минимальный тариф",
+        "recommendedFor": "Рекомендовано для",
+        "useCases": "Варианты использования",
+        "requiredPreparation": "Что нужно для запуска",
+        "expectedResult": "Ожидаемый результат",
+        "effectivenessFactors": "Факторы эффективности",
+        "risks": "Риски и ограничения",
+        "bestPractices": "Лучшие практики",
+        "trends": "Тренды",
+        "ctaConnect": "Подключить",
+        "ctaInstruction": "Инструкция",
+        "ctaUpgrade": "Перейти на Enterprise",
+        "ctaLearnMore": "Узнать подробнее",
+        "yes": "Да",
+        "no": "Нет"
       }
     },
     "kanbanPage": {

@@ -192,6 +192,16 @@ const routes = [
                 component: () => import('@/pages/owner/OwnerBillingPage.vue'),
             },
             {
+                path: 'lead-channels',
+                name: 'owner.lead-channels',
+                component: () => import('@/pages/owner/OwnerLeadChannelsPage.vue'),
+            },
+            {
+                path: 'lead-channels/:id',
+                name: 'owner.lead-channels.detail',
+                component: () => import('@/pages/owner/OwnerLeadChannelDetailPage.vue'),
+            },
+            {
                 path: 'memory',
                 name: 'owner.memory',
                 component: () => import('@/pages/owner/OwnerMemoryPage.vue'),
@@ -315,7 +325,13 @@ const routes = [
             {
                 path: 'leadgen',
                 name: 'leadgen',
-                component: () => import('@/pages/LeadGenPage.vue'),
+                component: () => import('@/pages/leadgen/LeadGenPage.vue'),
+                meta: { roles: ['owner', 'superadmin'] },
+            },
+            {
+                path: 'leadgen/:code',
+                name: 'leadgen.detail',
+                component: () => import('@/pages/leadgen/LeadGenDetailPage.vue'),
                 meta: { roles: ['owner', 'superadmin'] },
             },
         ],

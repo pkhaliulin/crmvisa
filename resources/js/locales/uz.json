@@ -1864,6 +1864,93 @@
         "marketplace_s1": "Agentlik profilini to'ldiring: tavsif, davlatlar, sharhlar",
         "marketplace_s2": "Ish davlatlari va xizmat paketlarini qo'shing",
         "marketplace_s3": "Marketpleysdan lidlar avtomatik CRM ga tushadi"
+      },
+      "catalog": {
+        "title": "Lid generatsiya kanallari katalogi",
+        "subtitle": "Agentligingiz uchun barcha mavjud mijoz jalb qilish kanallari",
+        "searchPlaceholder": "Kanallarni qidirish...",
+        "filterByCategory": "Barcha kategoriyalar",
+        "filterByComplexity": "Har qanday murakkablik",
+        "onlyAvailable": "Faqat mavjudlari",
+        "totalChannels": "Jami kanallar",
+        "availableChannels": "Mavjud",
+        "enterpriseChannels": "Enterprise",
+        "noResults": "Kanallar topilmadi",
+        "noResultsHint": "Filtrlarni yoki qidiruv so'rovini o'zgartirib ko'ring",
+        "details": "Batafsil",
+        "comingSoon": "TEZ KUNDA",
+        "comingSoonHint": "Bu kanal ishlab chiqilmoqda",
+        "comingSoonOverlay": "Bu kanal ishlab chiqilmoqda. Biz uni ishga tushirish ustida faol ishlamoqdamiz.",
+        "enterpriseOnly": "Enterprise",
+        "apiBadge": "API",
+        "upgradePlan": "Tarifni yangilang",
+        "upgradeHint": "Bu kanal {plan} va undan yuqori tarifda mavjud",
+        "requiresBudget": "Pullik",
+        "effectiveness": {
+          "label": "Samaradorlik",
+          "low": "Past",
+          "medium": "O'rtacha",
+          "high": "Yuqori",
+          "very_high": "Juda yuqori"
+        },
+        "complexity": {
+          "label": "Murakkablik",
+          "easy": "Oson",
+          "medium": "O'rtacha",
+          "hard": "Qiyin"
+        },
+        "launchSpeed": {
+          "label": "Ishga tushirish",
+          "1_day": "1 kun",
+          "3_days": "3 kun",
+          "1_week": "1 hafta",
+          "2_weeks": "2 hafta"
+        },
+        "categories": {
+          "messenger": "Messenjerlar",
+          "advertising": "Reklama",
+          "web": "Veb",
+          "content_seo": "Kontent va SEO",
+          "partnership": "Hamkorlik",
+          "api_automation": "API va avtomatlashtirish"
+        },
+        "plan": {
+          "starter": "Starter",
+          "pro": "Pro",
+          "enterprise": "Enterprise"
+        }
+      },
+      "detail": {
+        "backToList": "Kanallarga qaytish",
+        "loadError": "Kanal ma'lumotlarini yuklab bo'lmadi",
+        "comingSoonBanner": "Bu kanal ishlab chiqilmoqda. Biz uni ulash ustida ishlamoqdamiz.",
+        "comingSoonTitle": "TEZ KUNDA",
+        "comingSoonDesc": "Bu lid generatsiya kanali faol ishlab chiqilmoqda. Biz uni ishga tushirish ustida ishlamoqdamiz va tez orada foydalanish uchun mavjud bo'ladi.",
+        "upsellTitle": "Bu kanal {plan} tarifida mavjud",
+        "upsellDesc": "Bu lid generatsiya kanaliga kirish uchun kengaytirilgan tarifga o'ting.",
+        "upgradeBtn": "Enterprise ga o'tish",
+        "aboutChannel": "Kanal haqida",
+        "howItWorks": "Bu qanday ishlaydi",
+        "whenToUse": "Qachon foydalanish kerak",
+        "whenNotToUse": "Qachon foydalanmaslik kerak",
+        "characteristics": "Xarakteristikalar",
+        "requiresBudgetLabel": "Byudjet talab qiladi",
+        "requiresApiLabel": "API talab qiladi",
+        "minPlanLabel": "Minimal tarif",
+        "recommendedFor": "Tavsiya etiladi",
+        "useCases": "Foydalanish variantlari",
+        "requiredPreparation": "Ishga tushirish uchun nima kerak",
+        "expectedResult": "Kutilayotgan natija",
+        "effectivenessFactors": "Samaradorlik omillari",
+        "risks": "Risklar va cheklovlar",
+        "bestPractices": "Eng yaxshi amaliyotlar",
+        "trends": "Trendlar",
+        "ctaConnect": "Ulash",
+        "ctaInstruction": "Yo'riqnoma",
+        "ctaUpgrade": "Enterprise ga o'tish",
+        "ctaLearnMore": "Batafsil ma'lumot",
+        "yes": "Ha",
+        "no": "Yo'q"
       }
     },
     "kanbanPage": {

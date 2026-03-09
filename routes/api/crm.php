@@ -1,6 +1,7 @@
 <?php
 
 use App\Modules\Agency\Controllers\AgencySettingsController;
+use App\Modules\Agency\Controllers\LeadChannelController;
 use App\Modules\Agency\Controllers\ReportController;
 use App\Modules\Case\Controllers\CaseController;
 use App\Modules\Case\Controllers\DashboardController;
@@ -104,6 +105,12 @@ Route::middleware(['auth:api', 'role:owner,superadmin', 'plan.active'])->group(f
     Route::post('agency/packages',         [ServiceCatalogController::class, 'store']);
     Route::patch('agency/packages/{id}',   [ServiceCatalogController::class, 'update']);
     Route::delete('agency/packages/{id}',  [ServiceCatalogController::class, 'destroy']);
+
+    // Каналы лидогенерации
+    Route::get('lead-channels',              [LeadChannelController::class, 'index']);
+    Route::get('lead-channels/stats',        [LeadChannelController::class, 'stats']);
+    Route::get('lead-channels/{code}',       [LeadChannelController::class, 'show']);
+    Route::post('lead-channels/{code}/track', [LeadChannelController::class, 'trackAction']);
 
     // Отчёты (только owner, rate limited)
     Route::middleware('throttle:heavy')->group(function () {

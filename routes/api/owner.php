@@ -130,6 +130,14 @@ Route::middleware(['auth:api', 'role:superadmin'])->prefix('owner')->group(funct
     Route::patch('feature-flags/{id}',   [FeatureFlagController::class, 'update']);
     Route::delete('feature-flags/{id}',  [FeatureFlagController::class, 'destroy']);
 
+    // Каналы лидогенерации
+    Route::get('lead-channels',              [\App\Modules\Owner\Controllers\OwnerLeadChannelController::class, 'index']);
+    Route::get('lead-channels/{id}',         [\App\Modules\Owner\Controllers\OwnerLeadChannelController::class, 'show']);
+    Route::post('lead-channels',             [\App\Modules\Owner\Controllers\OwnerLeadChannelController::class, 'store']);
+    Route::patch('lead-channels/{id}',       [\App\Modules\Owner\Controllers\OwnerLeadChannelController::class, 'update']);
+    Route::post('lead-channels/{id}/toggle', [\App\Modules\Owner\Controllers\OwnerLeadChannelController::class, 'toggle']);
+    Route::delete('lead-channels/{id}',      [\App\Modules\Owner\Controllers\OwnerLeadChannelController::class, 'destroy']);
+
     // Память проекта (документация)
     Route::get('memory', [MemoryController::class, 'index']);
 
