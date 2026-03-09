@@ -171,14 +171,19 @@ h3 { font-size: clamp(1.2rem, 2vw, 1.6rem); letter-spacing: -0.01em; }
 }
 .nav-link:hover { color: var(--text-primary); background: var(--gray-100); }
 .nav-actions { display: flex; align-items: center; gap: 12px; }
-.nav-lang {
-  font-family: var(--font-display); font-size: 0.82rem; font-weight: 600;
-  color: var(--text-secondary); cursor: pointer; padding: 6px 12px; border-radius: 8px;
-  border: 1px solid var(--border); background: white; transition: all 0.2s;
-  text-decoration: none;
+.lang-toggle {
+  display: flex; align-items: center; border-radius: 8px; border: 1px solid var(--border);
+  overflow: hidden; background: white;
 }
-.nav-lang:hover { border-color: var(--blue-bright); color: var(--blue-bright); }
-.nav-lang.active { color: var(--blue-bright); font-weight: 700; }
+.lang-toggle-item {
+  font-family: var(--font-display); font-size: 0.75rem; font-weight: 600;
+  color: var(--text-muted); padding: 5px 10px; text-decoration: none;
+  transition: all 0.2s; line-height: 1;
+}
+.lang-toggle-item:hover { color: var(--text-primary); }
+.lang-toggle-item.lang-active {
+  background: var(--navy); color: white;
+}
 
 /* ===================== HERO ===================== */
 .hero {
@@ -948,8 +953,10 @@ footer { background: var(--navy); padding: 80px 0 40px; }
       <a href="#faq" class="nav-link">FAQ</a>
     </div>
     <div class="nav-actions">
-      <a href="/locale/ru" class="nav-lang {{ ($locale ?? 'ru') === 'ru' ? 'active' : '' }}">RU</a>
-      <a href="/locale/uz" class="nav-lang {{ ($locale ?? 'ru') === 'uz' ? 'active' : '' }}">UZ</a>
+      <div class="lang-toggle">
+        <a href="/locale/ru" class="lang-toggle-item {{ ($locale ?? 'ru') === 'ru' ? 'lang-active' : '' }}">RU</a>
+        <a href="/locale/uz" class="lang-toggle-item {{ ($locale ?? 'ru') === 'uz' ? 'lang-active' : '' }}">UZ</a>
+      </div>
       <!-- Гость -->
       <a href="javascript:void(0)" onclick="openAuthModal()" class="btn btn-secondary btn-sm" id="navBtnLogin">Войти</a>
       <a href="#scoring" class="btn btn-primary btn-sm" id="navBtnScoring">Проверить шансы</a>
