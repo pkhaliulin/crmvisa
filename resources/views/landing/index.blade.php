@@ -781,7 +781,7 @@
             <div class="cab-feature-desc">Важные напоминания и обновления статусов</div>
           </div>
         </div>
-        <a href="/me/cases" class="btn btn-primary btn-lg" style="margin-top:32px;">Войти в личный кабинет →</a>
+        <a href="javascript:void(0)" onclick="openAuthModal()" class="btn btn-primary btn-lg" style="margin-top:32px;">Войти в личный кабинет →</a>
       </div>
       <div class="fade-up fade-up-delay-2">
         <div class="dashboard-preview">
@@ -1002,7 +1002,7 @@ function resetQ() {
   document.getElementById('scoreResult').classList.remove('show');
 }
 
-function showCabinet() { window.location.href = '/me/scoring'; }
+function showCabinet() { if (localStorage.getItem('public_token')) { window.location.href = '/me/scoring'; } else { openAuthModal(); } }
 
 // ===== FAQ =====
 function toggleFaq(el) {

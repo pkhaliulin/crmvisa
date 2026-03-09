@@ -926,7 +926,7 @@ footer { background: var(--navy); padding: 80px 0 40px; }
       <span class="phone-flag">🇺🇿</span>
       <input type="tel" class="phone-input" placeholder="+998 __ ___ __ __" style="background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.15); color: white;">
     </div>
-    <a href="/me/cases" class="btn btn-primary btn-lg" style="width:100%;text-decoration:none;">Войти по номеру</a>
+    <a href="javascript:void(0)" onclick="openAuthModal()" class="btn btn-primary btn-lg" style="width:100%;text-decoration:none;">Войти по номеру</a>
     <p style="margin-top:12px; font-size:0.8rem; color:rgba(255,255,255,0.35);">Поддержка: support@visabor.uz</p>
   </div>
 </div>
@@ -950,7 +950,7 @@ footer { background: var(--navy); padding: 80px 0 40px; }
     <div class="nav-actions">
       <a href="/locale/ru" class="nav-lang {{ ($locale ?? 'ru') === 'ru' ? 'active' : '' }}">RU</a>
       <a href="/locale/uz" class="nav-lang {{ ($locale ?? 'ru') === 'uz' ? 'active' : '' }}">UZ</a>
-      <a href="/me/cases" class="btn btn-secondary btn-sm">Войти</a>
+      <a href="javascript:void(0)" onclick="openAuthModal()" class="btn btn-secondary btn-sm">Войти</a>
       <a href="#scoring" class="btn btn-primary btn-sm">Проверить шансы</a>
     </div>
   </div>
@@ -994,7 +994,7 @@ footer { background: var(--navy); padding: 80px 0 40px; }
           <a href="/#faq" class="footer-link">FAQ</a>
           <a href="/blog" class="footer-link">Блог</a>
           <a href="/#trust" class="footer-link">Отзывы</a>
-          <a href="/me/cases" class="footer-link">Личный кабинет</a>
+          <a href="javascript:void(0)" onclick="openAuthModal()" class="footer-link">Личный кабинет</a>
         </div>
       </div>
       <div class="footer-col fade-up">
@@ -1059,6 +1059,311 @@ window.addEventListener('scroll', () => {
   style.textContent = css;
   document.head.appendChild(style);
 })();
+</script>
+
+<!-- ===== AUTH MODAL ===== -->
+<div id="authModal" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.5); backdrop-filter:blur(4px); justify-content:center; align-items:center;" onclick="if(event.target===this)closeAuthModal()">
+  <div style="background:white; border-radius:20px; width:100%; max-width:400px; margin:16px; overflow:hidden; box-shadow:0 25px 50px rgba(0,0,0,0.2);">
+    <!-- Header -->
+    <div style="padding:28px 28px 16px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+        <span style="font-family:var(--font-display); font-weight:800; font-size:1.2rem; color:var(--navy);">visa<span style="color:var(--green);">bor</span></span>
+        <button onclick="closeAuthModal()" style="width:36px; height:36px; border:none; background:var(--gray-50); border-radius:50%; cursor:pointer; font-size:1.1rem; color:var(--text-muted); display:flex; align-items:center; justify-content:center;">&#10005;</button>
+      </div>
+      <h2 id="authTitle" style="font-size:1.5rem; font-weight:700; color:var(--navy); margin-bottom:4px;">Вход в систему</h2>
+      <p id="authSubtitle" style="color:var(--text-muted); font-size:0.9rem;">Введите номер телефона</p>
+    </div>
+    <!-- Body -->
+    <div style="padding:0 28px 28px;">
+      <!-- Step: Phone -->
+      <div id="stepPhone">
+        <div id="phoneWrap" style="display:flex; border:2px solid var(--border); border-radius:12px; overflow:hidden; transition:border-color 0.2s;">
+          <span style="padding:14px 16px; font-weight:600; color:var(--navy); background:var(--gray-50); border-right:1px solid var(--border); font-size:1rem;">+998</span>
+          <input id="phoneInput" type="tel" inputmode="numeric" placeholder="97 123 45 67" maxlength="12"
+            style="flex:1; padding:14px 16px; border:none; outline:none; font-size:1rem; font-weight:500; color:var(--navy); letter-spacing:0.05em;"
+            onfocus="document.getElementById('phoneWrap').style.borderColor='var(--green)'"
+            onblur="document.getElementById('phoneWrap').style.borderColor='var(--border)'"
+            oninput="formatPhoneInput(this)" onkeydown="phoneKeydown(event)" onkeyup="if(event.key==='Enter')sendOtp()">
+        </div>
+        <p style="margin-top:6px; font-size:0.78rem; color:var(--text-muted);">Пример: +998 97 123 45 67</p>
+        <p id="phoneError" style="margin-top:4px; font-size:0.85rem; color:var(--red); display:none;"></p>
+        <button id="btnSendOtp" onclick="sendOtp()" style="margin-top:16px; width:100%; padding:14px; background:var(--navy); color:white; border:none; border-radius:12px; font-size:1rem; font-weight:600; cursor:pointer; transition:background 0.2s;" onmouseover="this.style.background='#0d2a5e'" onmouseout="this.style.background='var(--navy)'">
+          Получить код
+        </button>
+        <p style="margin-top:14px; text-align:center; font-size:0.85rem; color:var(--text-muted);">
+          Есть PIN?
+          <a href="javascript:void(0)" onclick="showStep('loginPin')" style="color:var(--navy); font-weight:600; text-decoration:none;">Войти по PIN</a>
+        </p>
+      </div>
+
+      <!-- Step: OTP -->
+      <div id="stepOtp" style="display:none;">
+        <p style="margin-bottom:16px; font-size:0.9rem; color:var(--text-secondary); text-align:center;">Код отправлен на <strong id="otpPhone"></strong></p>
+        <div style="display:flex; gap:10px; justify-content:center;">
+          <input class="otp-box" type="tel" inputmode="numeric" maxlength="1" oninput="otpInput(this,0)" onkeydown="otpKeydown(event,0)" style="width:60px; height:68px; text-align:center; font-size:1.6rem; font-weight:700; border:2px solid var(--border); border-radius:12px; outline:none; color:var(--navy); transition:border-color 0.2s;" onfocus="this.style.borderColor='var(--green)'" onblur="this.style.borderColor=this.value?'var(--green)':'var(--border)'">
+          <input class="otp-box" type="tel" inputmode="numeric" maxlength="1" oninput="otpInput(this,1)" onkeydown="otpKeydown(event,1)" style="width:60px; height:68px; text-align:center; font-size:1.6rem; font-weight:700; border:2px solid var(--border); border-radius:12px; outline:none; color:var(--navy); transition:border-color 0.2s;" onfocus="this.style.borderColor='var(--green)'" onblur="this.style.borderColor=this.value?'var(--green)':'var(--border)'">
+          <input class="otp-box" type="tel" inputmode="numeric" maxlength="1" oninput="otpInput(this,2)" onkeydown="otpKeydown(event,2)" style="width:60px; height:68px; text-align:center; font-size:1.6rem; font-weight:700; border:2px solid var(--border); border-radius:12px; outline:none; color:var(--navy); transition:border-color 0.2s;" onfocus="this.style.borderColor='var(--green)'" onblur="this.style.borderColor=this.value?'var(--green)':'var(--border)'">
+          <input class="otp-box" type="tel" inputmode="numeric" maxlength="1" oninput="otpInput(this,3)" onkeydown="otpKeydown(event,3)" style="width:60px; height:68px; text-align:center; font-size:1.6rem; font-weight:700; border:2px solid var(--border); border-radius:12px; outline:none; color:var(--navy); transition:border-color 0.2s;" onfocus="this.style.borderColor='var(--green)'" onblur="this.style.borderColor=this.value?'var(--green)':'var(--border)'">
+        </div>
+        <p id="otpError" style="margin-top:8px; font-size:0.85rem; color:var(--red); text-align:center; display:none;"></p>
+        <button id="btnVerifyOtp" onclick="verifyOtp()" disabled style="margin-top:16px; width:100%; padding:14px; background:var(--navy); color:white; border:none; border-radius:12px; font-size:1rem; font-weight:600; cursor:pointer; opacity:0.4; transition:all 0.2s;">
+          Подтвердить
+        </button>
+        <div style="margin-top:14px; display:flex; justify-content:space-between; font-size:0.85rem;">
+          <a href="javascript:void(0)" onclick="showStep('phone')" style="color:var(--text-muted); text-decoration:none;">Изменить номер</a>
+          <span id="resendWrap"><span style="color:var(--text-muted);">Повторить через <span id="resendTimer">60</span>с</span></span>
+        </div>
+      </div>
+
+      <!-- Step: Set PIN -->
+      <div id="stepPin" style="display:none;">
+        <p style="margin-bottom:16px; font-size:0.9rem; color:var(--text-secondary);">Запомните 4-значный PIN для быстрого входа</p>
+        <input id="pinInput" type="tel" inputmode="numeric" maxlength="4" placeholder="----"
+          style="width:100%; padding:14px; border:2px solid var(--border); border-radius:12px; text-align:center; font-size:2rem; font-weight:700; letter-spacing:0.5em; color:var(--navy); outline:none; transition:border-color 0.2s;"
+          oninput="this.value=this.value.replace(/\D/g,'').slice(0,4)" onfocus="this.style.borderColor='var(--green)'" onblur="this.style.borderColor='var(--border)'">
+        <button onclick="setPin()" style="margin-top:16px; width:100%; padding:14px; background:var(--green); color:white; border:none; border-radius:12px; font-size:1rem; font-weight:600; cursor:pointer;">
+          Сохранить PIN
+        </button>
+        <button onclick="authFinish()" style="margin-top:8px; width:100%; padding:12px; background:none; border:none; font-size:0.9rem; color:var(--text-muted); cursor:pointer;">
+          Пропустить
+        </button>
+      </div>
+
+      <!-- Step: Login by PIN -->
+      <div id="stepLoginPin" style="display:none;">
+        <div style="margin-bottom:12px;">
+          <div id="loginPhoneWrap" style="display:flex; border:2px solid var(--border); border-radius:12px; overflow:hidden; transition:border-color 0.2s;">
+            <span style="padding:14px 16px; font-weight:600; color:var(--navy); background:var(--gray-50); border-right:1px solid var(--border); font-size:1rem;">+998</span>
+            <input id="loginPhoneInput" type="tel" inputmode="numeric" placeholder="97 123 45 67" maxlength="12"
+              style="flex:1; padding:14px 16px; border:none; outline:none; font-size:1rem; font-weight:500; color:var(--navy); letter-spacing:0.05em;"
+              onfocus="document.getElementById('loginPhoneWrap').style.borderColor='var(--green)'"
+              onblur="document.getElementById('loginPhoneWrap').style.borderColor='var(--border)'"
+              oninput="formatPhoneInput(this)" onkeydown="phoneKeydown(event)">
+          </div>
+        </div>
+        <input id="loginPinInput" type="tel" inputmode="numeric" maxlength="4" placeholder="----"
+          style="width:100%; padding:14px; border:2px solid var(--border); border-radius:12px; text-align:center; font-size:2rem; font-weight:700; letter-spacing:0.5em; color:var(--navy); outline:none; transition:border-color 0.2s;"
+          oninput="this.value=this.value.replace(/\D/g,'').slice(0,4)" onfocus="this.style.borderColor='var(--green)'" onblur="this.style.borderColor='var(--border)'"
+          onkeyup="if(event.key==='Enter')loginWithPin()">
+        <p id="loginPinError" style="margin-top:4px; font-size:0.85rem; color:var(--red); display:none;"></p>
+        <button onclick="loginWithPin()" style="margin-top:16px; width:100%; padding:14px; background:var(--navy); color:white; border:none; border-radius:12px; font-size:1rem; font-weight:600; cursor:pointer;">
+          Войти
+        </button>
+        <p style="margin-top:14px; text-align:center;">
+          <a href="javascript:void(0)" onclick="showStep('phone')" style="font-size:0.85rem; color:var(--text-muted); text-decoration:none;">Войти по SMS</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== AUTH MODAL LOGIC =====
+const API_BASE = '/api/v1/public';
+let authToken = null;
+let authUser = null;
+let resendInterval = null;
+
+function openAuthModal() {
+  // Если уже авторизован — перейти в ЛК
+  if (localStorage.getItem('public_token')) {
+    window.location.href = '/me/cases';
+    return;
+  }
+  const m = document.getElementById('authModal');
+  m.style.display = 'flex';
+  showStep('phone');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeAuthModal() {
+  document.getElementById('authModal').style.display = 'none';
+  document.body.style.overflow = '';
+  clearInterval(resendInterval);
+}
+
+function showStep(step) {
+  ['stepPhone','stepOtp','stepPin','stepLoginPin'].forEach(id => document.getElementById(id).style.display = 'none');
+  const titles = { phone: ['Вход в систему','Введите номер телефона'], otp: ['Введите код','SMS отправлено'], pin: ['Установите PIN','Для быстрого входа в будущем'], loginPin: ['Вход по PIN','Введите телефон и PIN'] };
+  const t = titles[step] || titles.phone;
+  document.getElementById('authTitle').textContent = t[0];
+  document.getElementById('authSubtitle').textContent = t[1];
+  const map = { phone:'stepPhone', otp:'stepOtp', pin:'stepPin', loginPin:'stepLoginPin' };
+  document.getElementById(map[step]).style.display = 'block';
+  if (step === 'phone') setTimeout(() => document.getElementById('phoneInput').focus(), 100);
+  if (step === 'otp') setTimeout(() => document.querySelectorAll('.otp-box')[0].focus(), 100);
+  if (step === 'loginPin') setTimeout(() => document.getElementById('loginPhoneInput').focus(), 100);
+}
+
+function formatPhoneInput(el) {
+  const raw = el.value.replace(/\D/g, '').slice(0, 9);
+  let r = '';
+  if (raw.length > 0) r += raw.slice(0, 2);
+  if (raw.length > 2) r += ' ' + raw.slice(2, 5);
+  if (raw.length > 5) r += ' ' + raw.slice(5, 7);
+  if (raw.length > 7) r += ' ' + raw.slice(7, 9);
+  el.value = r;
+}
+
+function phoneKeydown(e) {
+  const ok = ['Backspace','Delete','Tab','ArrowLeft','ArrowRight','Home','End','Enter'];
+  if (ok.includes(e.key) || (e.key >= '0' && e.key <= '9')) return;
+  e.preventDefault();
+}
+
+function getPhoneDigits(inputId) {
+  return document.getElementById(inputId).value.replace(/\D/g, '');
+}
+
+function showError(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg; el.style.display = 'block';
+}
+function hideError(id) {
+  document.getElementById(id).style.display = 'none';
+}
+
+// OTP box logic
+function otpInput(el, i) {
+  el.value = el.value.replace(/\D/g, '').slice(-1);
+  if (el.value) el.style.borderColor = 'var(--green)';
+  const boxes = document.querySelectorAll('.otp-box');
+  if (el.value && i < 3) boxes[i+1].focus();
+  const code = Array.from(boxes).map(b => b.value).join('');
+  document.getElementById('btnVerifyOtp').disabled = code.length < 4;
+  document.getElementById('btnVerifyOtp').style.opacity = code.length < 4 ? '0.4' : '1';
+  if (code.length === 4) verifyOtp();
+}
+
+function otpKeydown(e, i) {
+  if (e.key === 'Backspace' && !e.target.value && i > 0) {
+    const boxes = document.querySelectorAll('.otp-box');
+    boxes[i-1].value = ''; boxes[i-1].style.borderColor = 'var(--border)';
+    boxes[i-1].focus();
+  }
+}
+
+function clearOtpBoxes() {
+  document.querySelectorAll('.otp-box').forEach(b => { b.value = ''; b.style.borderColor = 'var(--border)'; });
+  document.getElementById('btnVerifyOtp').disabled = true;
+  document.getElementById('btnVerifyOtp').style.opacity = '0.4';
+}
+
+function startResendTimer() {
+  let sec = 60;
+  const wrap = document.getElementById('resendWrap');
+  const timer = document.getElementById('resendTimer');
+  timer.textContent = sec;
+  wrap.innerHTML = '<span style="color:var(--text-muted);">Повторить через <span id="resendTimer">' + sec + '</span>с</span>';
+  clearInterval(resendInterval);
+  resendInterval = setInterval(() => {
+    sec--;
+    const t = document.getElementById('resendTimer');
+    if (t) t.textContent = sec;
+    if (sec <= 0) {
+      clearInterval(resendInterval);
+      wrap.innerHTML = '<a href="javascript:void(0)" onclick="sendOtp()" style="color:var(--navy); font-weight:600; text-decoration:none;">Отправить снова</a>';
+    }
+  }, 1000);
+}
+
+// API calls
+async function sendOtp() {
+  const digits = getPhoneDigits('phoneInput');
+  if (digits.length < 9) { showError('phoneError','Введите полный номер'); return; }
+  hideError('phoneError');
+  const phone = '+998' + digits;
+  const btn = document.getElementById('btnSendOtp');
+  btn.textContent = 'Отправка...'; btn.disabled = true;
+  try {
+    const r = await fetch(API_BASE + '/auth/send-otp', {
+      method:'POST', headers:{'Content-Type':'application/json','Accept':'application/json'},
+      body: JSON.stringify({ phone })
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.message || 'Ошибка');
+    document.getElementById('otpPhone').textContent = phone;
+    showStep('otp');
+    clearOtpBoxes();
+    startResendTimer();
+  } catch(e) {
+    showError('phoneError', e.message || 'Ошибка отправки SMS');
+  } finally {
+    btn.textContent = 'Получить код'; btn.disabled = false;
+  }
+}
+
+async function verifyOtp() {
+  const boxes = document.querySelectorAll('.otp-box');
+  const code = Array.from(boxes).map(b => b.value).join('');
+  if (code.length < 4) return;
+  hideError('otpError');
+  const phone = '+998' + getPhoneDigits('phoneInput');
+  const btn = document.getElementById('btnVerifyOtp');
+  btn.textContent = 'Проверка...'; btn.disabled = true;
+  try {
+    const r = await fetch(API_BASE + '/auth/verify-otp', {
+      method:'POST', headers:{'Content-Type':'application/json','Accept':'application/json'},
+      body: JSON.stringify({ phone, code })
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.message || 'Неверный код');
+    authToken = d.data.token;
+    authUser = d.data.user;
+    localStorage.setItem('public_token', authToken);
+    localStorage.setItem('public_user', JSON.stringify(authUser));
+    if (d.data.is_new) {
+      showStep('pin');
+    } else {
+      authFinish();
+    }
+  } catch(e) {
+    showError('otpError', e.message || 'Неверный код');
+    clearOtpBoxes();
+    setTimeout(() => document.querySelectorAll('.otp-box')[0].focus(), 100);
+  } finally {
+    btn.textContent = 'Подтвердить'; btn.disabled = false;
+  }
+}
+
+async function setPin() {
+  const pin = document.getElementById('pinInput').value;
+  if (pin.length < 4) return;
+  try {
+    await fetch(API_BASE + '/auth/set-pin', {
+      method:'POST', headers:{'Content-Type':'application/json','Accept':'application/json','Authorization':'Bearer ' + authToken},
+      body: JSON.stringify({ pin })
+    });
+  } catch(e) {}
+  authFinish();
+}
+
+async function loginWithPin() {
+  const digits = getPhoneDigits('loginPhoneInput');
+  const pin = document.getElementById('loginPinInput').value;
+  if (digits.length < 9) { showError('loginPinError','Введите полный номер'); return; }
+  if (pin.length < 4) { showError('loginPinError','Введите 4-значный PIN'); return; }
+  hideError('loginPinError');
+  const phone = '+998' + digits;
+  try {
+    const r = await fetch(API_BASE + '/auth/login', {
+      method:'POST', headers:{'Content-Type':'application/json','Accept':'application/json'},
+      body: JSON.stringify({ phone, pin })
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.message || 'Неверный телефон или PIN');
+    localStorage.setItem('public_token', d.data.token);
+    localStorage.setItem('public_user', JSON.stringify(d.data.user));
+    authFinish();
+  } catch(e) {
+    showError('loginPinError', e.message || 'Ошибка входа');
+  }
+}
+
+function authFinish() {
+  closeAuthModal();
+  window.location.href = '/me/cases';
+}
 </script>
 
 </body>
