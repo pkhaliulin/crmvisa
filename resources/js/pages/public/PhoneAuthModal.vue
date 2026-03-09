@@ -221,10 +221,10 @@ import { ref, computed, nextTick, onUnmounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { publicPortalApi } from '@/api/public';
 import { usePublicAuthStore } from '@/stores/publicAuth';
-import logoUrl from '@/assets/logo.png';
-import logoUrl2x from '@/assets/logo@2x.png';
+import { useLogo } from '@/composables/useLogo';
 
 const { t } = useI18n();
+const { logoUrl, logoUrl2x } = useLogo();
 
 const props = defineProps({ preselectedCountry: String });
 const emit  = defineEmits(['close', 'success']);

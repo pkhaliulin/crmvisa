@@ -17,8 +17,8 @@
 
 <script setup>
 import { useI18n } from 'vue-i18n';
-import logoUrl from '@/assets/logo.png';
-import logoUrl2x from '@/assets/logo@2x.png';
+import { useLogo } from '@/composables/useLogo';
 
 const { t } = useI18n();
+const { logoUrl, logoUrl2x } = useLogo();
 </script>

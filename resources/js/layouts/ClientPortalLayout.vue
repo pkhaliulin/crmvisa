@@ -293,13 +293,13 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { setLocale, currentLocale } from '@/i18n';
-import logoUrl from '@/assets/logo.png';
-import logoUrl2x from '@/assets/logo@2x.png';
+import { useLogo } from '@/composables/useLogo';
 import { usePublicAuthStore } from '@/stores/publicAuth';
 import { publicPortalApi } from '@/api/public';
 import { formatPhone } from '@/utils/format';
 
 const { t } = useI18n();
+const { logoUrl, logoUrl2x } = useLogo();
 
 function toggleLocale() {
     setLocale(currentLocale() === 'ru' ? 'uz' : 'ru');
