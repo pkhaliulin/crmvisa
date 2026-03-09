@@ -62,7 +62,6 @@ class EventServiceProvider extends ServiceProvider
         ],
         LeadIncoming::class => [
             [SendLeadNotification::class, 'handle'],
-            [InvalidateAgencyCache::class, 'handleCaseCreated'],
         ],
     ];
 }
