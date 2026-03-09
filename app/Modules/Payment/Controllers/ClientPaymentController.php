@@ -76,12 +76,12 @@ class ClientPaymentController extends Controller
             return response()->json(['error' => 'Unknown provider'], 400);
         }
 
-        // Тестовый провайдер разрешён только вне production
-        if ($provider === 'test' && app()->environment('production')) {
-            Log::channel('billing')->warning('Test webhook rejected in production', [
+        // Тестовый провайдер запрещён если явно отключено
+        if ($provider === 'test' && config('services.payments.disable_test', false)) {
+            Log::channel('billing')->warning('Test webhook rejected (disabled)', [
                 'ip' => $request->ip(),
             ]);
-            return response()->json(['error' => 'Test provider not allowed in production'], 403);
+            return response()->json(['error' => 'Test provider not allowed'], 403);
         }
 
         // Валидация подписи webhook
@@ -138,7 +138,7 @@ class ClientPaymentController extends Controller
 
         // Если ключи не настроены — пропускаем (dev/staging)
         if (empty($merchantId) || empty($merchantKey)) {
-            return ! app()->environment('production');
+            return ! config('services.payments.disable_test', false);
         }
 
         $authHeader = $request->header('Authorization', '');
@@ -164,7 +164,7 @@ class ClientPaymentController extends Controller
 
         // Если ключи не настроены — пропускаем (dev/staging)
         if (empty($secretKey) || empty($serviceId)) {
-            return ! app()->environment('production');
+            return ! config('services.payments.disable_test', false);
         }
 
         $signString = $request->input('sign_string');
@@ -227,9 +227,9 @@ class ClientPaymentController extends Controller
      */
     public function markAsPaid(Request $request): JsonResponse
     {
-        // Запрет тестовой оплаты на production
-        if (app()->environment('production')) {
-            return ApiResponse::error('Тестовая оплата недоступна в production', null, 403);
+        // Запрет тестовой оплаты если явно отключено (по умолчанию разрешено)
+        if (config('services.payments.disable_test', false)) {
+            return ApiResponse::error('Тестовая оплата отключена', null, 403);
         }
 
         $publicUser = $request->get('_public_user');
