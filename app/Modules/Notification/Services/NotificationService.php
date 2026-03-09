@@ -64,7 +64,9 @@ class NotificationService
 
         foreach ($recipients as $recipient) {
             try {
-                $recipient->notify($notification);
+                // notifyNow вместо notify — не зависим от queue worker.
+                // Когда queue worker будет запущен, можно заменить на notify().
+                $recipient->notifyNow($notification);
             } catch (\Throwable $e) {
                 Log::warning('Notification dispatch failed', [
                     'event_type' => $eventType,
