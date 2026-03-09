@@ -27,6 +27,10 @@
       <div class="animate-spin w-7 h-7 border-2 border-blue-500 border-t-transparent rounded-full"></div>
     </div>
 
+    <div v-else-if="errorMsg && !form.description && !form.email" class="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+      <p class="text-red-600 font-medium">{{ errorMsg }}</p>
+    </div>
+
     <template v-else>
       <!-- ==================== ВКЛАДКА: Агентство ==================== -->
       <template v-if="activeTab === 'agency'">
@@ -557,7 +561,10 @@ onMounted(async () => {
         role: user.role || '',
       };
     }
-  } catch (e) { console.error('Settings load error:', e); } finally {
+  } catch (e) {
+    console.error('Settings load error:', e);
+    errorMsg.value = e.response?.data?.message || t('crm.settings.loadError');
+  } finally {
     loading.value = false;
   }
 });

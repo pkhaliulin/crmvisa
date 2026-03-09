@@ -381,6 +381,11 @@ router.beforeEach((to) => {
             : { name: 'dashboard' };
     }
 
+    // Суперадмин без agency_id не должен быть в /app (CRM агентства)
+    if (to.path.startsWith('/app') && auth.user?.role === 'superadmin' && !auth.user?.agency_id) {
+        return { name: 'owner.dashboard' };
+    }
+
     // Проверка ролей на маршруте
     if (to.meta.roles && auth.user?.role && !to.meta.roles.includes(auth.user.role)) {
         // Суперадмин → owner dashboard, остальные → dashboard

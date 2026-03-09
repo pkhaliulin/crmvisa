@@ -2300,6 +2300,7 @@
       "countries": "Davlatlar",
       "saved": "Agentlik sozlamalari saqlandi",
       "saveError": "Saqlashda xatolik",
+      "loadError": "Sozlamalarni yuklab bo'lmadi. Ehtimol siz agentlikka biriktirilmagansiz.",
       "saving": "Saqlanmoqda...",
       "save": "Saqlash",
       "roleOwner": "Egasi",
