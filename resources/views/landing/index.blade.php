@@ -14,13 +14,13 @@
 @section('structured_data')
 <script type="application/ld+json">
 {
-  "@context": "https://schema.org",
-  "@type": "Organization",
+  "@@context": "https://schema.org",
+  "@@type": "Organization",
   "name": "visabor.uz",
   "url": "https://visabor.uz",
   "logo": "https://visabor.uz/logo.png",
   "contactPoint": {
-    "@type": "ContactPoint",
+    "@@type": "ContactPoint",
     "telephone": "+998-71-200-00-00",
     "contactType": "customer service",
     "availableLanguage": ["Russian", "Uzbek"]
@@ -29,13 +29,13 @@
 </script>
 <script type="application/ld+json">
 {
-  "@context": "https://schema.org",
-  "@type": "WebSite",
+  "@@context": "https://schema.org",
+  "@@type": "WebSite",
   "name": "visabor.uz",
   "url": "https://visabor.uz",
   "description": "AI-платформа для граждан Узбекистана — проверка вероятности получения визы, сравнение направлений, умная анкета и личный кабинет",
   "potentialAction": {
-    "@type": "SearchAction",
+    "@@type": "SearchAction",
     "target": "https://visabor.uz/search?q={search_term_string}",
     "query-input": "required name=search_term_string"
   }
@@ -43,54 +43,54 @@
 </script>
 <script type="application/ld+json">
 {
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
+  "@@context": "https://schema.org",
+  "@@type": "FAQPage",
   "mainEntity": [
     {
-      "@type": "Question",
+      "@@type": "Question",
       "name": "Насколько точен AI-скоринг?",
       "acceptedAnswer": {
-        "@type": "Answer",
+        "@@type": "Answer",
         "text": "Точность нашей модели составляет около 94% на основе исторических данных по одобрениям и отказам. Скоринг анализирует более 12 факторов, включая визовую историю, занятость, финансовую привязку и цель поездки."
       }
     },
     {
-      "@type": "Question",
+      "@@type": "Question",
       "name": "Нужно ли платить за проверку шансов?",
       "acceptedAnswer": {
-        "@type": "Answer",
+        "@@type": "Answer",
         "text": "Базовая проверка AI Visa Chance Score полностью бесплатна. Вы можете бесплатно пройти анкету, получить оценку и войти в личный кабинет без каких-либо платежей."
       }
     },
     {
-      "@type": "Question",
+      "@@type": "Question",
       "name": "Как сохранить результат?",
       "acceptedAnswer": {
-        "@type": "Answer",
+        "@@type": "Answer",
         "text": "После прохождения анкеты введите ваш номер телефона — результат автоматически привяжется к нему. При следующем входе вы сразу попадёте в свой личный кабинет со всеми данными."
       }
     },
     {
-      "@type": "Question",
+      "@@type": "Question",
       "name": "Мои данные в безопасности?",
       "acceptedAnswer": {
-        "@type": "Answer",
+        "@@type": "Answer",
         "text": "Да. Мы не продаём и не передаём ваши данные третьим лицам. Платформа соответствует стандартам защиты данных. Все соединения шифруются по протоколу HTTPS."
       }
     },
     {
-      "@type": "Question",
+      "@@type": "Question",
       "name": "Работаете ли вы с визовыми агентствами?",
       "acceptedAnswer": {
-        "@type": "Answer",
+        "@@type": "Answer",
         "text": "Да. visabor.uz объединяет проверенные визовые агентства Узбекистана на одной платформе. После анализа профиля вы можете напрямую продолжить оформление с партнёрским агентством."
       }
     },
     {
-      "@type": "Question",
+      "@@type": "Question",
       "name": "На каких языках работает платформа?",
       "acceptedAnswer": {
-        "@type": "Answer",
+        "@@type": "Answer",
         "text": "Платформа полностью поддерживает русский и узбекский языки. Поддержка также доступна на обоих языках через Telegram и WhatsApp."
       }
     }

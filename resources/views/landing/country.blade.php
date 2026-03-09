@@ -14,41 +14,41 @@
 @section('structured_data')
 <script type="application/ld+json">
 {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
+    "@@context": "https://schema.org",
+    "@@type": "BreadcrumbList",
     "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Главная", "item": "{{ url('/') }}"},
-        {"@type": "ListItem", "position": 2, "name": "Направления", "item": "{{ url('/#destinations') }}"},
-        {"@type": "ListItem", "position": 3, "name": "{{ $country->name }}"}
+        {"@@type": "ListItem", "position": 1, "name": "Главная", "item": "{{ url('/') }}"},
+        {"@@type": "ListItem", "position": 2, "name": "Направления", "item": "{{ url('/#destinations') }}"},
+        {"@@type": "ListItem", "position": 3, "name": "{{ $country->name }}"}
     ]
 }
 </script>
 <script type="application/ld+json">
 {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
+    "@@context": "https://schema.org",
+    "@@type": "FAQPage",
     "mainEntity": [
         {
-            "@type": "Question",
+            "@@type": "Question",
             "name": "Какие шансы на визу в {{ $country->name }} для граждан Узбекистана?",
             "acceptedAnswer": {
-                "@type": "Answer",
+                "@@type": "Answer",
                 "text": "Шансы зависят от вашего профиля. AI-скоринг visabor.uz анализирует 12+ факторов и даёт персональную оценку. Средний минимальный скоринг для {{ $country->name }}: {{ $country->min_score ?? 'N/A' }}%."
             }
         },
         {
-            "@type": "Question",
+            "@@type": "Question",
             "name": "Сколько стоит виза в {{ $country->name }}?",
             "acceptedAnswer": {
-                "@type": "Answer",
+                "@@type": "Answer",
                 "text": "Консульский сбор составляет {{ $country->visa_fee_usd ? '$' . $country->visa_fee_usd : 'уточняется' }}. Дополнительные расходы зависят от типа визы и агентства."
             }
         },
         {
-            "@type": "Question",
+            "@@type": "Question",
             "name": "Есть ли посольство {{ $country->name }} в Узбекистане?",
             "acceptedAnswer": {
-                "@type": "Answer",
+                "@@type": "Answer",
                 "text": "{{ $country->has_embassy ? 'Да, посольство ' . $country->name . ' расположено в Ташкенте.' : 'Информация уточняется. Подача может осуществляться через визовый центр или посольство в соседней стране.' }}"
             }
         }

@@ -13,19 +13,19 @@
 @section('structured_data')
 <script type="application/ld+json">
 {
-    "@context": "https://schema.org",
-    "@type": "Organization",
+    "@@context": "https://schema.org",
+    "@@type": "Organization",
     "name": "VisaBor",
     "url": "https://visabor.uz",
     "logo": "https://visabor.uz/logo.png",
     "description": "AI-платформа для граждан Узбекистана. Проверка шансов на визу, сравнение направлений и подбор агентства.",
     "address": {
-        "@type": "PostalAddress",
+        "@@type": "PostalAddress",
         "addressLocality": "Ташкент",
         "addressCountry": "UZ"
     },
     "contactPoint": {
-        "@type": "ContactPoint",
+        "@@type": "ContactPoint",
         "contactType": "customer support",
         "email": "info@visabor.uz",
         "availableLanguage": ["Russian", "Uzbek"]
