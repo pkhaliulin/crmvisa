@@ -124,17 +124,17 @@ class PublicScoringController extends Controller
 
         return ApiResponse::success($served->map(function ($row) use ($allowedTypes, $packageTypes) {
             $countryTypes = $packageTypes[$row->country_code] ?? [];
-            // Пересечение: только разрешённые суперадмином + доступные у агентств
+            // Пересечение: только разрешённые суперадмином + реально доступные у агентств
             $visaTypes = $countryTypes
                 ? array_values(array_intersect($allowedTypes, $countryTypes))
-                : $allowedTypes;
+                : [];
 
             return [
                 'country_code'   => $row->country_code,
                 'agencies_count' => (int) $row->agencies_count,
                 'visa_types'     => $visaTypes,
             ];
-        })->values());
+        })->filter(fn ($item) => count($item['visa_types']) > 0)->values());
     }
 
     /**

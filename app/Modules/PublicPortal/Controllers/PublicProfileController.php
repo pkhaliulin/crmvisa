@@ -286,16 +286,38 @@ class PublicProfileController extends Controller
             'notes'                => ['nullable', 'string', 'max:1000'],
         ]);
 
-        // Проверяем, есть ли хотя бы одно агентство, работающее с этой страной
-        $hasAgencies = \App\Modules\Agency\Models\AgencyWorkCountry::where('country_code', strtoupper($data['country_code']))
+        // Проверяем, есть ли хотя бы одно агентство с пакетом услуг для этой страны и типа визы
+        $countryCode = strtoupper($data['country_code']);
+        $visaType = $data['visa_type'];
+
+        $hasAgencies = \App\Modules\Agency\Models\AgencyWorkCountry::where('country_code', $countryCode)
             ->where('is_active', true)
-            ->whereHas('agency', fn ($q) => $q->where('is_active', true))
+            ->whereHas('agency', fn ($q) => $q->where('is_active', true)->whereNull('blocked_at'))
             ->exists();
 
         if (! $hasAgencies) {
             return ApiResponse::error('К сожалению, пока ни одно агентство не работает с этой страной. Заявку создать невозможно.', [
                 'no_agencies' => true,
-                'country_code' => strtoupper($data['country_code']),
+                'country_code' => $countryCode,
+            ], 422);
+        }
+
+        $hasPackage = \DB::table('agency_service_packages')
+            ->where('country_code', $countryCode)
+            ->where('visa_type', $visaType)
+            ->where('is_active', true)
+            ->whereIn('agency_id', function ($q) {
+                $q->select('id')->from('agencies')
+                  ->where('is_active', true)
+                  ->whereNull('blocked_at');
+            })
+            ->exists();
+
+        if (! $hasPackage) {
+            return ApiResponse::error('Ни одно агентство пока не предлагает этот тип визы для выбранной страны.', [
+                'no_packages' => true,
+                'country_code' => $countryCode,
+                'visa_type' => $visaType,
             ], 422);
         }
 
