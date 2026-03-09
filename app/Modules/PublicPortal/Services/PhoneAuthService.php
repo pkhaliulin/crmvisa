@@ -72,8 +72,7 @@ class PhoneAuthService
             return true; // заглушка -- SMS не отправляется
         }
 
-        $message = "Ваш код VisaBor: {$code}. Действует 10 минут.";
-        return $this->sms->send($phone, $message);
+        return $this->sms->sendOtp($phone, $code, 'visabor');
     }
 
     // -------------------------------------------------------------------------

@@ -11,8 +11,28 @@ class SmsService
     private const TOKEN_CACHE_KEY = 'eskiz_token';
     private const BASE_URL        = 'https://notify.eskiz.uz/api';
 
+    /** Шаблоны OTP по контексту (латиница, до 160 символов = 1 SMS) */
+    private const OTP_TEMPLATES = [
+        'visabor' => "Sizning raqamingizdan VisaBor platformasiga kirish so'raldi. Tasdiqlash kodi: %s. Kodni hech kimga bermang. Kod 10 daqiqa amal qiladi.",
+        'visacrm' => "Sizning raqamingizdan VisaCRM tizimiga kirish so'raldi. Tasdiqlash kodi: %s. Kodni hech kimga bermang. Kod 10 daqiqa amal qiladi.",
+        'default' => "Sizning raqamingizdan tizimga kirish so'raldi. Tasdiqlash kodi: %s. Ushbu kodni hech kimga bermang. Kod 10 daqiqa amal qiladi.",
+    ];
+
     /**
-     * Отправить SMS через Eskiz.uz.
+     * Отправить OTP-код с брендированным шаблоном.
+     *
+     * @param string $context  visabor|visacrm|default
+     */
+    public function sendOtp(string $phone, string $code, string $context = 'visabor'): bool
+    {
+        $template = self::OTP_TEMPLATES[$context] ?? self::OTP_TEMPLATES['default'];
+        $message  = sprintf($template, $code);
+
+        return $this->send($phone, $message);
+    }
+
+    /**
+     * Отправить произвольную SMS через Eskiz.uz.
      * В dev-режиме только логирует, не отправляет реально.
      */
     public function send(string $phone, string $message): bool
@@ -34,7 +54,11 @@ class SmsService
                 ]);
 
             if ($response->failed()) {
-                // Токен мог устареть — обновляем и пробуем ещё раз
+                Log::channel('auth')->warning('[SMS] First attempt failed, refreshing token', [
+                    'status' => $response->status(),
+                    'body'   => mb_substr($response->body(), 0, 200),
+                ]);
+
                 Cache::forget(self::TOKEN_CACHE_KEY);
                 $token    = $this->getToken();
                 $response = Http::withToken($token)
@@ -43,6 +67,13 @@ class SmsService
                         'message'      => $message,
                         'from'         => config('services.eskiz.from'),
                     ]);
+            }
+
+            if ($response->failed()) {
+                Log::channel('auth')->error('[SMS] Eskiz send failed', [
+                    'status' => $response->status(),
+                    'body'   => mb_substr($response->body(), 0, 300),
+                ]);
             }
 
             return $response->successful();
@@ -66,7 +97,6 @@ class SmsService
 
     private function normalizePhone(string $phone): string
     {
-        // Приводим к формату: 998901234567 (без + и пробелов)
         return preg_replace('/[^0-9]/', '', $phone);
     }
 }
