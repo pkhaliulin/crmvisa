@@ -950,8 +950,14 @@ footer { background: var(--navy); padding: 80px 0 40px; }
     <div class="nav-actions">
       <a href="/locale/ru" class="nav-lang {{ ($locale ?? 'ru') === 'ru' ? 'active' : '' }}">RU</a>
       <a href="/locale/uz" class="nav-lang {{ ($locale ?? 'ru') === 'uz' ? 'active' : '' }}">UZ</a>
-      <a href="javascript:void(0)" onclick="openAuthModal()" class="btn btn-secondary btn-sm">Войти</a>
-      <a href="#scoring" class="btn btn-primary btn-sm">Проверить шансы</a>
+      <!-- Гость -->
+      <a href="javascript:void(0)" onclick="openAuthModal()" class="btn btn-secondary btn-sm" id="navBtnLogin">Войти</a>
+      <a href="#scoring" class="btn btn-primary btn-sm" id="navBtnScoring">Проверить шансы</a>
+      <!-- Авторизован -->
+      <a href="/me/cases" class="btn btn-secondary btn-sm" id="navUserLink" style="display:none;">
+        <span id="navUserName"></span>
+      </a>
+      <a href="/me/cases" class="btn btn-primary btn-sm" id="navBtnCabinet" style="display:none;">Личный кабинет</a>
     </div>
   </div>
 </nav>
@@ -1030,6 +1036,30 @@ footer { background: var(--navy); padding: 80px 0 40px; }
 </footer>
 
 <script>
+// ===== AUTH STATE IN NAVBAR =====
+(function() {
+  try {
+    const u = JSON.parse(localStorage.getItem('public_user'));
+    const t = localStorage.getItem('public_token');
+    if (u && t) {
+      document.getElementById('navBtnLogin').style.display = 'none';
+      document.getElementById('navBtnScoring').style.display = 'none';
+      const nameEl = document.getElementById('navUserName');
+      const linkEl = document.getElementById('navUserLink');
+      const cabEl = document.getElementById('navBtnCabinet');
+      if (u.name) {
+        nameEl.textContent = u.name;
+      } else if (u.phone) {
+        nameEl.textContent = u.phone.replace(/^\+998/, '+998 ').replace(/(\d{2})(\d{3})(\d{2})(\d{2})/, '$1 $2 $3 $4');
+      } else {
+        nameEl.textContent = 'Мой профиль';
+      }
+      linkEl.style.display = '';
+      cabEl.style.display = '';
+    }
+  } catch(e) {}
+})();
+
 // ===== SCROLL ANIMATIONS =====
 const io = new IntersectionObserver((entries) => {
   entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
@@ -1362,6 +1392,16 @@ async function loginWithPin() {
 
 function authFinish() {
   closeAuthModal();
+  // Обновить navbar без перезагрузки
+  try {
+    const u = JSON.parse(localStorage.getItem('public_user'));
+    document.getElementById('navBtnLogin').style.display = 'none';
+    document.getElementById('navBtnScoring').style.display = 'none';
+    const nameEl = document.getElementById('navUserName');
+    nameEl.textContent = (u && u.name) ? u.name : 'Мой профиль';
+    document.getElementById('navUserLink').style.display = '';
+    document.getElementById('navBtnCabinet').style.display = '';
+  } catch(e) {}
   window.location.href = '/me/cases';
 }
 </script>
