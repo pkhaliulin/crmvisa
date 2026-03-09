@@ -185,6 +185,33 @@ h3 { font-size: clamp(1.2rem, 2vw, 1.6rem); letter-spacing: -0.01em; }
   background: var(--navy); color: white;
 }
 
+/* ===================== NAV BADGES ===================== */
+.nav-badges { display: flex; align-items: center; gap: 6px; margin-right: 4px; }
+.nav-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 8px; border-radius: 8px;
+  font-family: var(--font-display); font-size: 0.72rem; font-weight: 600;
+  text-decoration: none; transition: all 0.2s; white-space: nowrap;
+}
+.nav-badge-blue { background: rgba(59,130,246,0.08); color: #2563eb; }
+.nav-badge-blue:hover { background: rgba(59,130,246,0.15); }
+.nav-badge-amber { background: rgba(245,158,11,0.08); color: #d97706; }
+.nav-badge-red { background: rgba(239,68,68,0.08); color: #dc2626; animation: pulse-badge 2s infinite; }
+.nav-badge-red:hover { background: rgba(239,68,68,0.15); }
+@keyframes pulse-badge { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+.nav-badge-green { background: rgba(34,197,94,0.08); color: #16a34a; }
+.nav-user-name {
+  font-family: var(--font-display); font-size: 0.88rem; font-weight: 600;
+  color: var(--text-primary); text-decoration: none; transition: opacity 0.2s;
+}
+.nav-user-name:hover { opacity: 0.7; }
+.nav-logout-btn {
+  background: none; border: none; cursor: pointer;
+  color: var(--gray-400); padding: 6px; border-radius: 8px;
+  transition: all 0.2s; display: flex; align-items: center; justify-content: center;
+}
+.nav-logout-btn:hover { color: var(--red); background: rgba(239,68,68,0.06); }
+
 /* ===================== HERO ===================== */
 .hero {
   min-height: 100vh; display: flex; align-items: center;
@@ -953,18 +980,40 @@ footer { background: var(--navy); padding: 80px 0 40px; }
       <a href="#faq" class="nav-link">FAQ</a>
     </div>
     <div class="nav-actions">
+      <!-- Status badges (авторизован) -->
+      <div id="navStatusBadges" style="display:none;" class="nav-badges">
+        <a href="/me/cases" id="badgeActive" class="nav-badge nav-badge-blue" style="display:none;">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          <span id="badgeActiveCount"></span>
+        </a>
+        <span id="badgeDocs" class="nav-badge nav-badge-amber" style="display:none;">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+          Документы: <span id="badgeDocsCount"></span>
+        </span>
+        <a href="/me/billing" id="badgeUnpaid" class="nav-badge nav-badge-red" style="display:none;">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+          <span id="badgeUnpaidCount"></span>
+        </a>
+      </div>
+
+      <!-- Имя пользователя (авторизован) -->
+      <a href="/me/profile" id="navUserLink" class="nav-user-name" style="display:none;">
+        <span id="navUserName"></span>
+      </a>
+
       <div class="lang-toggle">
         <a href="/locale/ru" class="lang-toggle-item {{ ($locale ?? 'ru') === 'ru' ? 'lang-active' : '' }}">RU</a>
         <a href="/locale/uz" class="lang-toggle-item {{ ($locale ?? 'ru') === 'uz' ? 'lang-active' : '' }}">UZ</a>
       </div>
+
       <!-- Гость -->
       <a href="javascript:void(0)" onclick="openAuthModal()" class="btn btn-secondary btn-sm" id="navBtnLogin">Войти</a>
       <a href="#scoring" class="btn btn-primary btn-sm" id="navBtnScoring">Проверить шансы</a>
-      <!-- Авторизован -->
-      <a href="/me/cases" class="btn btn-secondary btn-sm" id="navUserLink" style="display:none;">
-        <span id="navUserName"></span>
-      </a>
-      <a href="/me/cases" class="btn btn-primary btn-sm" id="navBtnCabinet" style="display:none;">Личный кабинет</a>
+
+      <!-- Выход (авторизован) -->
+      <button id="navBtnLogout" onclick="publicLogout()" class="nav-logout-btn" style="display:none;" title="Выход">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+      </button>
     </div>
   </div>
 </nav>
@@ -1049,11 +1098,11 @@ footer { background: var(--navy); padding: 80px 0 40px; }
     const u = JSON.parse(localStorage.getItem('public_user'));
     const t = localStorage.getItem('public_token');
     if (u && t) {
+      // Скрываем гостевые кнопки
       document.getElementById('navBtnLogin').style.display = 'none';
       document.getElementById('navBtnScoring').style.display = 'none';
+      // Показываем имя
       const nameEl = document.getElementById('navUserName');
-      const linkEl = document.getElementById('navUserLink');
-      const cabEl = document.getElementById('navBtnCabinet');
       if (u.name) {
         nameEl.textContent = u.name;
       } else if (u.phone) {
@@ -1061,11 +1110,56 @@ footer { background: var(--navy); padding: 80px 0 40px; }
       } else {
         nameEl.textContent = 'Мой профиль';
       }
-      linkEl.style.display = '';
-      cabEl.style.display = '';
+      document.getElementById('navUserLink').style.display = '';
+      document.getElementById('navBtnLogout').style.display = '';
+      document.getElementById('navStatusBadges').style.display = 'flex';
+      // Загружаем бейджи статусов
+      loadNavStatusBadges(t);
     }
   } catch(e) {}
 })();
+
+async function loadNavStatusBadges(token) {
+  const headers = { 'Accept': 'application/json', 'Authorization': 'Bearer ' + token };
+  try {
+    // Загружаем заявки
+    const casesRes = await fetch('/api/v1/public/cases', { headers });
+    if (casesRes.ok) {
+      const casesData = await casesRes.json();
+      const cases = casesData?.data ?? [];
+      const TERMINAL = ['rejected', 'cancelled', 'completed'];
+      const active = cases.filter(c => !TERMINAL.includes(c.public_status));
+      if (active.length > 0) {
+        document.getElementById('badgeActiveCount').textContent = active.length;
+        document.getElementById('badgeActive').style.display = 'inline-flex';
+      }
+      const docsNeeded = active.filter(c => c.public_status === 'document_collection').length;
+      if (docsNeeded > 0) {
+        document.getElementById('badgeDocsCount').textContent = docsNeeded;
+        document.getElementById('badgeDocs').style.display = 'inline-flex';
+      }
+    }
+  } catch(e) {}
+  try {
+    // Загружаем биллинг
+    const billRes = await fetch('/api/v1/public/billing/history', { headers });
+    if (billRes.ok) {
+      const billData = await billRes.json();
+      const payments = billData?.data?.payments ?? [];
+      const unpaid = payments.filter(p => p.status === 'pending').length;
+      if (unpaid > 0) {
+        document.getElementById('badgeUnpaidCount').textContent = unpaid;
+        document.getElementById('badgeUnpaid').style.display = 'inline-flex';
+      }
+    }
+  } catch(e) {}
+}
+
+function publicLogout() {
+  localStorage.removeItem('public_token');
+  localStorage.removeItem('public_user');
+  window.location.reload();
+}
 
 // ===== SCROLL ANIMATIONS =====
 const io = new IntersectionObserver((entries) => {
@@ -1399,15 +1493,18 @@ async function loginWithPin() {
 
 function authFinish() {
   closeAuthModal();
-  // Обновить navbar без перезагрузки
+  // Обновить navbar
   try {
     const u = JSON.parse(localStorage.getItem('public_user'));
+    const t = localStorage.getItem('public_token');
     document.getElementById('navBtnLogin').style.display = 'none';
     document.getElementById('navBtnScoring').style.display = 'none';
     const nameEl = document.getElementById('navUserName');
     nameEl.textContent = (u && u.name) ? u.name : 'Мой профиль';
     document.getElementById('navUserLink').style.display = '';
-    document.getElementById('navBtnCabinet').style.display = '';
+    document.getElementById('navBtnLogout').style.display = '';
+    document.getElementById('navStatusBadges').style.display = 'flex';
+    if (t) loadNavStatusBadges(t);
   } catch(e) {}
   window.location.href = '/me/cases';
 }
