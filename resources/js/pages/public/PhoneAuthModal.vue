@@ -12,11 +12,8 @@
 
                 <div class="flex items-center justify-between mb-5">
                     <div class="flex items-center gap-2">
-                        <svg width="22" height="22" viewBox="0 0 28 28" fill="none">
-                            <path d="M2 8L10 20L14 14L18 20L26 8" stroke="#1BA97F" stroke-width="3"
-                                  stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                        <span class="font-bold text-[#0A1F44]">VisaBor</span>
+                        <img :src="logoUrl" :srcset="`${logoUrl} 1x, ${logoUrl2x} 2x`"
+                             alt="VisaBor" class="h-7 w-auto">
                     </div>
                     <button @click="$emit('close')"
                         class="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100
@@ -224,6 +221,8 @@ import { ref, computed, nextTick, onUnmounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { publicPortalApi } from '@/api/public';
 import { usePublicAuthStore } from '@/stores/publicAuth';
+import logoUrl from '@/assets/logo.png';
+import logoUrl2x from '@/assets/logo@2x.png';
 
 const { t } = useI18n();
 

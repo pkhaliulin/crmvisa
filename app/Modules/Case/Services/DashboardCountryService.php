@@ -27,7 +27,8 @@ class DashboardCountryService
             ->get();
 
         // Источники лидов
-        $byLeadSource = VisaCase::where('cases.agency_id', $agencyId)
+        $byLeadSource = VisaCase::from('cases')
+            ->where('cases.agency_id', $agencyId)
             ->where($excludeUnpaid)
             ->where($inPeriod)
             ->leftJoin('clients', 'clients.id', '=', 'cases.client_id')

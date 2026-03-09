@@ -67,11 +67,9 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions): void {
         Integration::handles($exceptions);
 
-        // 401 Unauthenticated
+        // 401 Unauthenticated — всегда JSON (SPA, нет route 'login')
         $exceptions->render(function (AuthenticationException $e, $request) {
-            if ($request->is('api/*') || $request->expectsJson()) {
-                return ApiResponse::unauthorized('Unauthenticated.');
-            }
+            return ApiResponse::unauthorized('Unauthenticated.');
         });
 
         // 422 Validation

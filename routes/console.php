@@ -20,3 +20,5 @@ Schedule::call(function () {
 })->dailyAt('01:00')->name('billing:process-expired');
 
 Schedule::job(new \App\Modules\Case\Jobs\SendSlaWarningsJob)->everyFifteenMinutes();
+
+Schedule::command('app:verify-backup')->dailyAt('04:00');

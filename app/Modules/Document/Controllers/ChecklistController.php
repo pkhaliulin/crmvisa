@@ -41,7 +41,7 @@ class ChecklistController extends Controller
         $item = $this->authorizeItem($request, $caseId, $itemId);
 
         $request->validate([
-            'file' => ['required', 'file', 'max:20480'],
+            'file' => ['required', 'file', 'max:20480', 'mimes:pdf,jpg,jpeg,png,webp,doc,docx,xls,xlsx,tiff,bmp'],
         ]);
 
         $result = $this->service->uploadToSlot($item, $request->file('file'), $case);
@@ -94,7 +94,7 @@ class ChecklistController extends Controller
         }
 
         $request->validate([
-            'file' => ['required', 'file', 'max:20480'],
+            'file' => ['required', 'file', 'max:20480', 'mimes:pdf,jpg,jpeg,png,webp,doc,docx,xls,xlsx,tiff,bmp'],
         ]);
 
         $result = $this->service->uploadTranslation($item, $request->file('file'), $case);

@@ -52,4 +52,16 @@ return [
         'from'     => env('ESKIZ_FROM', '4546'),   // имя отправителя
     ],
 
+    'payme' => [
+        'merchant_id'  => env('PAYME_MERCHANT_ID'),
+        'merchant_key' => env('PAYME_MERCHANT_KEY'),
+        'test_mode'    => env('PAYME_TEST_MODE', false),
+    ],
+
+    'click' => [
+        'merchant_id' => env('CLICK_MERCHANT_ID'),
+        'service_id'  => env('CLICK_SERVICE_ID'),
+        'secret_key'  => env('CLICK_SECRET_KEY'),
+    ],
+
 ];

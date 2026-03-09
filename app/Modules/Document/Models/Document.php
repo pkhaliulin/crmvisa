@@ -6,6 +6,7 @@ use App\Support\Abstracts\BaseModel;
 use App\Support\Traits\HasTenant;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 
 class Document extends BaseModel
 {
@@ -30,15 +31,20 @@ class Document extends BaseModel
     ];
 
     protected $casts = [
-        'extracted_data'   => 'array',
+        'extracted_data'   => 'encrypted:array',
         'ocr_processed_at' => 'datetime',
     ];
 
     protected $appends = ['url'];
 
-    public function getUrlAttribute(): string
+    public function getUrlAttribute(): ?string
     {
-        return Storage::url($this->file_path);
+        if (!$this->file_path) return null;
+        return URL::temporarySignedRoute(
+            'documents.download',
+            now()->addMinutes(30),
+            ['document' => $this->id]
+        );
     }
 
     public function case(): BelongsTo

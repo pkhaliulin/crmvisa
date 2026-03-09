@@ -12,7 +12,7 @@ class DocumentService
     public function upload(UploadedFile $file, array $data): Document
     {
         $agencyId = Auth::user()->agency_id;
-        $path     = $file->store("agencies/{$agencyId}/cases/{$data['case_id']}", 'public');
+        $path     = $file->store("agencies/{$agencyId}/cases/{$data['case_id']}", 'documents');
 
         return Document::create([
             'agency_id'     => $agencyId,
@@ -40,7 +40,7 @@ class DocumentService
 
     public function delete(Document $document): void
     {
-        Storage::disk('public')->delete($document->file_path);
+        Storage::disk('documents')->delete($document->file_path);
         $document->delete();
     }
 

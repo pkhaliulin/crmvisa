@@ -144,12 +144,12 @@ class ChecklistService
             if ($item->document_id) {
                 $old = Document::find($item->document_id);
                 if ($old) {
-                    Storage::disk('public')->delete($old->file_path);
+                    Storage::disk('documents')->delete($old->file_path);
                     $old->forceDelete();
                 }
             }
 
-            $path = $file->store("agencies/{$case->agency_id}/cases/{$case->id}", 'public');
+            $path = $file->store("agencies/{$case->agency_id}/cases/{$case->id}", 'documents');
 
             $document = Document::create([
                 'agency_id'     => $case->agency_id,
@@ -235,12 +235,12 @@ class ChecklistService
             if ($item->translation_document_id) {
                 $old = Document::find($item->translation_document_id);
                 if ($old) {
-                    Storage::disk('public')->delete($old->file_path);
+                    Storage::disk('documents')->delete($old->file_path);
                     $old->forceDelete();
                 }
             }
 
-            $path = $file->store("agencies/{$case->agency_id}/cases/{$case->id}/translations", 'public');
+            $path = $file->store("agencies/{$case->agency_id}/cases/{$case->id}/translations", 'documents');
 
             $document = Document::create([
                 'agency_id'     => $case->agency_id,
@@ -312,7 +312,7 @@ class ChecklistService
         if ($item->document_id) {
             $doc = Document::find($item->document_id);
             if ($doc) {
-                Storage::disk('public')->delete($doc->file_path);
+                Storage::disk('documents')->delete($doc->file_path);
                 $doc->forceDelete();
             }
         }

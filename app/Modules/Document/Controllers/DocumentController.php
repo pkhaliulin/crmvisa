@@ -18,10 +18,11 @@ class DocumentController extends Controller
 
     public function index(Request $request, string $caseId): JsonResponse
     {
-        // Проверка принадлежности заявки агентству
-        VisaCase::where('id', $caseId)
+        $case = VisaCase::where('id', $caseId)
             ->where('agency_id', $request->user()->agency_id)
             ->firstOrFail();
+
+        $this->authorize('view', $case);
 
         return ApiResponse::success($this->service->listForCase($caseId));
     }
@@ -35,8 +36,10 @@ class DocumentController extends Controller
             ->where('agency_id', $agencyId)
             ->firstOrFail();
 
+        $this->authorize('update', $case);
+
         $data = $request->validate([
-            'file'  => ['required', 'file', 'max:20480'], // 20 MB
+            'file'  => ['required', 'file', 'max:20480', 'mimes:pdf,jpg,jpeg,png,webp,doc,docx,xls,xlsx,tiff,bmp'], // 20 MB
             'type'  => ['required', 'string', 'max:60'],
             'notes' => ['nullable', 'string'],
         ]);
@@ -93,6 +96,8 @@ class DocumentController extends Controller
                         ->where('agency_id', $request->user()->agency_id)
                         ->firstOrFail();
 
+        $this->authorize('view', $case);
+
         $documents = Document::where('case_id', $caseId)->get();
 
         if ($documents->isEmpty()) {
@@ -104,7 +109,7 @@ class DocumentController extends Controller
         $zip->open($tmpFile, ZipArchive::CREATE | ZipArchive::OVERWRITE);
 
         foreach ($documents as $doc) {
-            $content = Storage::disk('public')->get($doc->file_path);
+            $content = Storage::disk('documents')->get($doc->file_path);
             if ($content !== null) {
                 $zip->addFromString($doc->original_name, $content);
             }

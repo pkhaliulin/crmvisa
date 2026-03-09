@@ -79,7 +79,7 @@ class ClientController extends Controller
             'file' => ['required', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:10240'],
         ]);
 
-        $path = $request->file('file')->store('passports', 'public');
+        $path = $request->file('file')->store('passports', 'documents');
 
         // TODO: dispatch OCR job — пока возвращаем пустые поля
         return ApiResponse::success([

@@ -11,6 +11,8 @@ use App\Modules\Payment\Models\ClientPayment;
 use App\Modules\PublicPortal\Models\PublicLead;
 use App\Modules\PublicPortal\Models\PublicUser;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use App\Support\Helpers\AuditLog;
 
 class ClientPaymentService
 {
@@ -20,7 +22,7 @@ class ClientPaymentService
     public function createPayment(VisaCase $case, PublicUser $publicUser, string $provider): ClientPayment
     {
         return DB::transaction(function () use ($case, $publicUser, $provider) {
-            if ($case->agency_id) {
+            if ($case->agency_id && DB::connection()->getDriverName() !== 'sqlite') {
                 DB::statement("SET LOCAL app.current_tenant_id = '{$case->agency_id}'");
             }
 
@@ -172,92 +174,164 @@ class ClientPaymentService
     /**
      * Обработать callback от платёжной системы.
      */
-    public function handleCallback(string $provider, array $data): void
+    public function handleCallback(string $provider, array $data): ?ClientPayment
     {
-        // TODO: реальная обработка webhook от Click/Payme/Uzum
         $paymentId = $data['payment_id'] ?? $data['transaction_id'] ?? null;
-        if (! $paymentId) return;
+        if (! $paymentId) return null;
 
         $payment = ClientPayment::find($paymentId);
-        if (! $payment) return;
+        if (! $payment) return null;
 
-        DB::transaction(function () use ($payment, $provider, $data) {
-            if ($payment->agency_id) {
-                DB::statement("SET LOCAL app.current_tenant_id = '{$payment->agency_id}'");
-            }
+        // Идемпотентность: если транзакция уже обработана — вернуть без повторной обработки
+        $providerTxnId = $data['provider_transaction_id'] ?? null;
+        if ($providerTxnId) {
+            $existing = ClientPayment::where('provider', $provider)
+                ->where('provider_transaction_id', $providerTxnId)
+                ->where('status', 'succeeded')
+                ->first();
 
-            $payment->update([
-                'status'                 => 'succeeded',
-                'provider_transaction_id' => $data['provider_transaction_id'] ?? null,
-                'paid_at'                => now(),
-                'metadata'               => array_merge($payment->metadata ?? [], $data),
-            ]);
-
-            if ($payment->group_id) {
-                app(GroupService::class)->handleGroupPaymentSuccess($payment);
-            } else {
-                $case = VisaCase::find($payment->case_id);
-                if (! $case) return;
-
-                $caseService = app(CaseService::class);
-
-                // Обновить payment_status
-                $case->update([
-                    'payment_status' => 'paid',
-                    'public_status'  => 'submitted',
-                    'stage'          => 'lead',
+            if ($existing) {
+                Log::channel('billing')->info('Webhook idempotency hit: already processed', [
+                    'provider'               => $provider,
+                    'provider_transaction_id' => $providerTxnId,
+                    'payment_id'             => $existing->id,
                 ]);
+                return $existing;
+            }
+        }
 
-                // Создать запись в case_stages (SLA + история) если её нет
-                $hasStageEntry = \App\Modules\Case\Models\CaseStage::where('case_id', $case->id)
-                    ->where('stage', 'lead')
-                    ->exists();
-                if (! $hasStageEntry) {
-                    $stageEntry = \App\Modules\Case\Models\CaseStage::create([
-                        'case_id'    => $case->id,
-                        'user_id'    => null,
-                        'stage'      => 'lead',
-                        'entered_at' => now(),
-                        'notes'      => 'Оплата подтверждена',
-                    ]);
-                    app(\App\Modules\Workflow\Services\SlaService::class)->applyStageSla($stageEntry, $case);
+        if ($payment->status === 'succeeded') {
+            Log::channel('billing')->info('Webhook skipped: payment already succeeded', [
+                'provider'   => $provider,
+                'payment_id' => $payment->id,
+            ]);
+            return $payment;
+        }
+
+        try {
+            DB::transaction(function () use ($payment, $provider, $data) {
+                if ($payment->agency_id) {
+                    if (DB::connection()->getDriverName() !== 'sqlite') {
+                        DB::statement("SET LOCAL app.current_tenant_id = '{$payment->agency_id}'");
+                    }
                 }
 
-                // Создать PublicLead
-                $score = (int) DB::table('public_score_cache')
-                    ->where('public_user_id', $case->client?->public_user_id)
-                    ->where('country_code', $case->country_code)
-                    ->value('score');
+                // SELECT FOR UPDATE для предотвращения race condition
+                $lockedPayment = ClientPayment::where('id', $payment->id)
+                    ->lockForUpdate()
+                    ->first();
 
-                $lead = PublicLead::create([
-                    'public_user_id'     => $case->client?->public_user_id,
-                    'country_code'       => $case->country_code,
-                    'visa_type'          => $case->visa_type,
-                    'score'              => $score,
-                    'status'             => 'new',
-                    'assigned_agency_id' => $case->agency_id,
-                    'case_id'            => $case->id,
-                    'client_id'          => $case->client_id,
+                if (! $lockedPayment || $lockedPayment->status === 'succeeded') {
+                    return;
+                }
+
+                $lockedPayment->update([
+                    'status'                  => 'succeeded',
+                    'provider_transaction_id' => $data['provider_transaction_id'] ?? null,
+                    'paid_at'                 => now(),
+                    'metadata'                => array_merge($lockedPayment->metadata ?? [], $data),
                 ]);
 
-                // Авто-назначение менеджера по стратегии агентства
-                if ($case->agency_id) {
-                    $agency = Agency::find($case->agency_id);
-                    if ($agency && $agency->lead_assignment_mode !== 'manual') {
-                        $manager = app(AgencyService::class)->assignLead($lead, $agency);
-                        if ($manager) {
-                            $case->refresh();
-                            $case->update([
-                                'assigned_to'    => $manager->id,
-                                'public_status'  => 'manager_assigned',
-                            ]);
-                            // Переход lead -> qualification через CaseService (SLA + история)
-                            $caseService->moveToStageSystem($case->fresh(), 'qualification', 'Менеджер назначен автоматически');
-                            $lead->update(['status' => 'assigned']);
+                if ($lockedPayment->group_id) {
+                    app(GroupService::class)->handleGroupPaymentSuccess($lockedPayment);
+                } else {
+                    $case = VisaCase::find($lockedPayment->case_id);
+                    if (! $case) return;
+
+                    $caseService = app(CaseService::class);
+
+                    // Обновить payment_status
+                    $case->update([
+                        'payment_status' => 'paid',
+                        'public_status'  => 'submitted',
+                        'stage'          => 'lead',
+                    ]);
+
+                    // Создать запись в case_stages (SLA + история) если её нет
+                    $hasStageEntry = \App\Modules\Case\Models\CaseStage::where('case_id', $case->id)
+                        ->where('stage', 'lead')
+                        ->exists();
+                    if (! $hasStageEntry) {
+                        $stageEntry = \App\Modules\Case\Models\CaseStage::create([
+                            'case_id'    => $case->id,
+                            'user_id'    => null,
+                            'stage'      => 'lead',
+                            'entered_at' => now(),
+                            'notes'      => 'Оплата подтверждена',
+                        ]);
+                        app(\App\Modules\Workflow\Services\SlaService::class)->applyStageSla($stageEntry, $case);
+                    }
+
+                    // Создать PublicLead
+                    $score = (int) DB::table('public_score_cache')
+                        ->where('public_user_id', $case->client?->public_user_id)
+                        ->where('country_code', $case->country_code)
+                        ->value('score');
+
+                    $lead = PublicLead::create([
+                        'public_user_id'     => $case->client?->public_user_id,
+                        'country_code'       => $case->country_code,
+                        'visa_type'          => $case->visa_type,
+                        'score'              => $score,
+                        'status'             => 'new',
+                        'assigned_agency_id' => $case->agency_id,
+                        'case_id'            => $case->id,
+                        'client_id'          => $case->client_id,
+                    ]);
+
+                    // Авто-назначение менеджера по стратегии агентства
+                    if ($case->agency_id) {
+                        $agency = Agency::find($case->agency_id);
+                        if ($agency && $agency->lead_assignment_mode !== 'manual') {
+                            $manager = app(AgencyService::class)->assignLead($lead, $agency);
+                            if ($manager) {
+                                $case->refresh();
+                                $case->update([
+                                    'assigned_to'    => $manager->id,
+                                    'public_status'  => 'manager_assigned',
+                                ]);
+                                // Переход lead -> qualification через CaseService (SLA + история)
+                                $caseService->moveToStageSystem($case->fresh(), 'qualification', 'Менеджер назначен автоматически');
+                                $lead->update(['status' => 'assigned']);
+                            }
                         }
                     }
                 }
-            }
-        });
+            });
+
+            Log::channel('billing')->info('Webhook processed successfully', [
+                'provider'               => $provider,
+                'payment_id'             => $payment->id,
+                'provider_transaction_id' => $providerTxnId,
+            ]);
+
+            AuditLog::log('payment.webhook_processed', [
+                'provider'               => $provider,
+                'payment_id'             => $payment->id,
+                'provider_transaction_id' => $providerTxnId,
+            ]);
+
+            return $payment->fresh();
+
+        } catch (\Throwable $e) {
+            // Dead-letter: логируем ошибку, но не меняем статус платежа (оставляем pending для retry)
+            Log::channel('billing')->error('Webhook processing failed', [
+                'provider'               => $provider,
+                'payment_id'             => $payment->id,
+                'provider_transaction_id' => $providerTxnId,
+                'error'                  => $e->getMessage(),
+                'trace'                  => $e->getTraceAsString(),
+            ]);
+
+            AuditLog::log('payment.webhook_failed', [
+                'provider'               => $provider,
+                'payment_id'             => $payment->id,
+                'provider_transaction_id' => $providerTxnId,
+                'error'                  => $e->getMessage(),
+            ]);
+
+            // Возвращаем null, но не бросаем исключение — контроллер вернёт 200
+            return null;
+        }
     }
 }

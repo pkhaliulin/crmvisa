@@ -172,8 +172,8 @@ class DashboardMetricsService
     public static function excludeUnpaidScope(): \Closure
     {
         return fn ($q) => $q->where(function ($sub) {
-            $sub->whereNotIn('public_status', ['draft', 'awaiting_payment', 'cancelled'])
-                ->orWhereNull('public_status');
+            $sub->whereNotIn('cases.public_status', ['draft', 'awaiting_payment', 'cancelled'])
+                ->orWhereNull('cases.public_status');
         });
     }
 }

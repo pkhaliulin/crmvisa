@@ -19,6 +19,8 @@ class UserController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', User::class);
+
         $users = User::where('agency_id', $request->user()->agency_id)->get();
 
         return ApiResponse::success(UserResource::collection($users));
@@ -30,6 +32,8 @@ class UserController extends Controller
             ->where('agency_id', $request->user()->agency_id)
             ->firstOrFail();
 
+        $this->authorize('view', $user);
+
         $user->cases_count = $user->cases()->count();
         $user->active_cases_count = $user->cases()->whereNull('deleted_at')->whereNotIn('stage', ['result'])->count();
 
@@ -38,6 +42,8 @@ class UserController extends Controller
 
     public function store(StoreUserRequest $request): JsonResponse
     {
+        $this->authorize('create', User::class);
+
         $agencyId = $request->user()->agency_id;
 
         $agency      = Agency::findOrFail($agencyId);
@@ -84,6 +90,8 @@ class UserController extends Controller
             ->where('agency_id', $request->user()->agency_id)
             ->firstOrFail();
 
+        $this->authorize('update', $user);
+
         $data = $request->validate([
             'name'              => ['sometimes', 'string', 'max:255'],
             'email'             => ['sometimes', 'email', Rule::unique('users', 'email')->ignore($user->id)],
@@ -109,6 +117,8 @@ class UserController extends Controller
         $user = User::where('id', $id)
             ->where('agency_id', $request->user()->agency_id)
             ->firstOrFail();
+
+        $this->authorize('update', $user);
 
         $data = $request->validate([
             'password'   => ['required', 'string', 'min:8'],

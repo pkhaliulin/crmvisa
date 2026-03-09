@@ -7,8 +7,10 @@ use App\Modules\Case\Models\VisaCase;
 use App\Modules\Payment\Models\ClientPayment;
 use App\Modules\Payment\Services\ClientPaymentService;
 use App\Support\Helpers\ApiResponse;
+use App\Support\Helpers\AuditLog;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class ClientPaymentController extends Controller
 {
@@ -70,13 +72,117 @@ class ClientPaymentController extends Controller
      */
     public function callback(string $provider, Request $request): JsonResponse
     {
-        if (! in_array($provider, ['click', 'payme', 'uzum'])) {
+        if (! in_array($provider, ['click', 'payme', 'uzum', 'test'])) {
             return response()->json(['error' => 'Unknown provider'], 400);
         }
 
+        // Тестовый провайдер разрешён только вне production
+        if ($provider === 'test' && app()->environment('production')) {
+            Log::channel('billing')->warning('Test webhook rejected in production', [
+                'ip' => $request->ip(),
+            ]);
+            return response()->json(['error' => 'Test provider not allowed in production'], 403);
+        }
+
+        // Валидация подписи webhook
+        if ($provider !== 'test' && ! $this->validateWebhookSignature($provider, $request)) {
+            Log::channel('billing')->warning('Webhook signature validation failed', [
+                'provider' => $provider,
+                'ip'       => $request->ip(),
+            ]);
+            return response()->json(['error' => 'Invalid signature'], 403);
+        }
+
+        // Логирование входящего webhook
+        $sanitizedPayload = $request->except(['sign_string', 'auth_header']);
+        Log::channel('billing')->info('Webhook received', [
+            'provider'       => $provider,
+            'transaction_id' => $request->input('provider_transaction_id') ?? $request->input('transaction_id'),
+            'amount'         => $request->input('amount'),
+            'payload'        => $sanitizedPayload,
+        ]);
+
+        AuditLog::log('payment.webhook_received', [
+            'provider'       => $provider,
+            'transaction_id' => $request->input('provider_transaction_id') ?? $request->input('transaction_id'),
+            'amount'         => $request->input('amount'),
+            'ip'             => $request->ip(),
+        ]);
+
+        // handleCallback возвращает null при ошибке, но мы всегда отвечаем 200
+        // чтобы платёжная система не повторяла запросы бесконечно
         $this->paymentService->handleCallback($provider, $request->all());
 
         return response()->json(['ok' => true]);
+    }
+
+    /**
+     * Валидация подписи webhook от платёжных провайдеров.
+     */
+    private function validateWebhookSignature(string $provider, Request $request): bool
+    {
+        return match ($provider) {
+            'payme' => $this->validatePaymeSignature($request),
+            'click' => $this->validateClickSignature($request),
+            default => true, // uzum и другие — пока без валидации
+        };
+    }
+
+    /**
+     * Payme: проверка Authorization header (Basic base64(merchant_id:key)).
+     */
+    private function validatePaymeSignature(Request $request): bool
+    {
+        $merchantId  = config('services.payme.merchant_id');
+        $merchantKey = config('services.payme.merchant_key');
+
+        // Если ключи не настроены — пропускаем (dev/staging)
+        if (empty($merchantId) || empty($merchantKey)) {
+            return ! app()->environment('production');
+        }
+
+        $authHeader = $request->header('Authorization', '');
+
+        if (! str_starts_with($authHeader, 'Basic ')) {
+            return false;
+        }
+
+        $decoded  = base64_decode(substr($authHeader, 6));
+        $expected = $merchantId . ':' . $merchantKey;
+
+        return hash_equals($expected, $decoded);
+    }
+
+    /**
+     * Click: проверка sign_string (MD5 hash).
+     * sign_string = md5(click_trans_id + service_id + secret_key + merchant_trans_id + amount + action + sign_time)
+     */
+    private function validateClickSignature(Request $request): bool
+    {
+        $secretKey = config('services.click.secret_key');
+        $serviceId = config('services.click.service_id');
+
+        // Если ключи не настроены — пропускаем (dev/staging)
+        if (empty($secretKey) || empty($serviceId)) {
+            return ! app()->environment('production');
+        }
+
+        $signString = $request->input('sign_string');
+        if (empty($signString)) {
+            return false;
+        }
+
+        $expected = md5(
+            $request->input('click_trans_id') .
+            $serviceId .
+            $secretKey .
+            $request->input('merchant_trans_id') .
+            $request->input('amount') .
+            $request->input('action') .
+            $request->input('sign_time')
+        );
+
+        return hash_equals($expected, $signString);
     }
 
     /**
@@ -121,6 +227,11 @@ class ClientPaymentController extends Controller
      */
     public function markAsPaid(Request $request): JsonResponse
     {
+        // Запрет тестовой оплаты на production
+        if (app()->environment('production')) {
+            return ApiResponse::error('Тестовая оплата недоступна в production', null, 403);
+        }
+
         $publicUser = $request->get('_public_user');
 
         // RLS superadmin для доступа к cases/clients (кроссирующие tenant)

@@ -1,0 +1,1524 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VisaBor CRM — Архитектурный отчёт v2</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --surface: #1e293b;
+    --surface2: #334155;
+    --border: #475569;
+    --text: #e2e8f0;
+    --text-muted: #94a3b8;
+    --accent: #3b82f6;
+    --accent2: #8b5cf6;
+    --green: #22c55e;
+    --yellow: #eab308;
+    --red: #ef4444;
+    --orange: #f97316;
+    --cyan: #06b6d4;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    padding: 0;
+  }
+  .hero {
+    background: linear-gradient(135deg, #1e3a5f 0%, #0f172a 50%, #1a1040 100%);
+    padding: 80px 40px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -50%; left: -50%;
+    width: 200%; height: 200%;
+    background: radial-gradient(circle at 30% 50%, rgba(59,130,246,0.08) 0%, transparent 50%),
+                radial-gradient(circle at 70% 50%, rgba(139,92,246,0.06) 0%, transparent 50%);
+  }
+  .hero h1 {
+    font-size: 3em;
+    font-weight: 800;
+    background: linear-gradient(135deg, #60a5fa, #a78bfa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 12px;
+    position: relative;
+  }
+  .hero .subtitle {
+    font-size: 1.3em;
+    color: var(--text-muted);
+    position: relative;
+  }
+  .hero .version {
+    margin-top: 16px;
+    font-size: 0.9em;
+    color: var(--text-muted);
+    position: relative;
+  }
+  .container { max-width: 1200px; margin: 0 auto; padding: 40px 24px; }
+  section { margin-bottom: 60px; }
+  h2 {
+    font-size: 1.8em;
+    font-weight: 700;
+    margin-bottom: 24px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--accent);
+    display: inline-block;
+  }
+  h3 { font-size: 1.3em; margin: 24px 0 12px; color: var(--cyan); }
+  h4 { font-size: 1.1em; margin: 16px 0 8px; color: var(--text-muted); }
+  p { margin-bottom: 16px; }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+  }
+  .stat-card .number {
+    font-size: 2.5em;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .stat-card .label { color: var(--text-muted); font-size: 0.9em; margin-top: 4px; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+  }
+  th, td {
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  th { background: var(--surface2); font-weight: 600; color: var(--cyan); }
+  tr:hover { background: rgba(59,130,246,0.05); }
+  .badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 0.8em;
+    font-weight: 600;
+  }
+  .badge-green { background: rgba(34,197,94,0.15); color: var(--green); }
+  .badge-yellow { background: rgba(234,179,8,0.15); color: var(--yellow); }
+  .badge-red { background: rgba(239,68,68,0.15); color: var(--red); }
+  .badge-blue { background: rgba(59,130,246,0.15); color: var(--accent); }
+  .badge-orange { background: rgba(249,115,22,0.15); color: var(--orange); }
+  .badge-muted { background: rgba(148,163,184,0.15); color: var(--text-muted); }
+  ul { margin: 8px 0 16px 24px; }
+  li { margin-bottom: 6px; }
+  code {
+    background: var(--surface2);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .code-block {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85em;
+    overflow-x: auto;
+    margin: 12px 0;
+    white-space: pre;
+    line-height: 1.5;
+  }
+  .timeline { position: relative; padding-left: 30px; }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 8px; top: 0; bottom: 0;
+    width: 2px;
+    background: var(--border);
+  }
+  .timeline-item { position: relative; margin-bottom: 24px; }
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -26px; top: 6px;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: var(--green);
+    border: 2px solid var(--bg);
+  }
+  .warning-box {
+    background: rgba(234,179,8,0.08);
+    border: 1px solid rgba(234,179,8,0.3);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 16px 0;
+  }
+  .warning-box .warning-title {
+    color: var(--yellow);
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .risk-box {
+    background: rgba(239,68,68,0.08);
+    border: 1px solid rgba(239,68,68,0.3);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 16px 0;
+  }
+  .risk-box .risk-title {
+    color: var(--red);
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .honest-note {
+    background: rgba(6,182,212,0.08);
+    border: 1px solid rgba(6,182,212,0.3);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 16px 0;
+  }
+  .honest-note .note-title {
+    color: var(--cyan);
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .toc { margin: 20px 0; }
+  .toc a { color: var(--accent); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .toc li { margin-bottom: 8px; }
+  .flow-diagram {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 16px 0;
+  }
+  .flow-step {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 0.9em;
+  }
+  .flow-arrow { color: var(--accent); font-weight: bold; }
+  .maturity-meter {
+    display: flex;
+    height: 24px;
+    border-radius: 12px;
+    overflow: hidden;
+    margin: 12px 0;
+    border: 1px solid var(--border);
+  }
+  .maturity-fill {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75em;
+    font-weight: 600;
+  }
+  @media print {
+    body { background: #fff; color: #1a1a1a; }
+    .hero { background: #f8fafc; border-bottom: 2px solid #e2e8f0; }
+    .hero h1 { -webkit-text-fill-color: #1e40af; }
+    .card, .stat-card { border: 1px solid #e2e8f0; background: #f8fafc; }
+    th { background: #f1f5f9; }
+    .warning-box { background: #fefce8; border-color: #eab308; }
+    .risk-box { background: #fef2f2; border-color: #ef4444; }
+    .honest-note { background: #f0fdfa; border-color: #06b6d4; }
+    .code-block { background: #f1f5f9; border-color: #e2e8f0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>VisaBor / VisaCRM</h1>
+  <div class="subtitle">Архитектурный отчёт: текущее состояние, достижения и открытые вопросы</div>
+  <div class="version">v2.0 &mdash; 9 марта 2026 &mdash; Controlled Production Pilot</div>
+</div>
+
+<div class="container">
+
+<!-- ============================================ -->
+<!-- СОДЕРЖАНИЕ -->
+<!-- ============================================ -->
+<section>
+  <h2>Содержание</h2>
+  <ol class="toc">
+    <li><a href="#overview">Обзор проекта</a></li>
+    <li><a href="#maturity">Оценка зрелости (честная)</a></li>
+    <li><a href="#architecture">Архитектура и организация кода</a></li>
+    <li><a href="#modules">Модульная структура</a></li>
+    <li><a href="#security">Безопасность: что сделано и что ещё нужно</a></li>
+    <li><a href="#testing">Тестирование: покрытие и ограничения</a></li>
+    <li><a href="#performance">Производительность: меры и отсутствие метрик</a></li>
+    <li><a href="#billing">Биллинг: архитектура и открытые вопросы</a></li>
+    <li><a href="#observability">Observability</a></li>
+    <li><a href="#debt">Архитектурный долг: что закрыто, что осталось</a></li>
+    <li><a href="#scalability">Масштабируемость: гипотезы и необходимые проверки</a></li>
+    <li><a href="#risks">Риски и план митигации</a></li>
+    <li><a href="#dr">Disaster Recovery: текущий пробел</a></li>
+    <li><a href="#roadmap">Дорожная карта до production GA</a></li>
+    <li><a href="#verdict">Итоговый вердикт</a></li>
+    <li><a href="#backlog">Полный бэклог (Wave 1-3 + ИИ + каналы лидов)</a></li>
+  </ol>
+</section>
+
+<!-- ============================================ -->
+<!-- 1. ОБЗОР ПРОЕКТА -->
+<!-- ============================================ -->
+<section id="overview">
+  <h2>1. Обзор проекта</h2>
+
+  <div class="card">
+    <h3>Два бренда &mdash; один бэкенд</h3>
+    <table>
+      <tr><th>Бренд</th><th>Назначение</th><th>URL</th><th>Аудитория</th></tr>
+      <tr><td><strong>VisaBor</strong></td><td>B2C маркетплейс/лендинг для клиентов</td><td>visabor.uz</td><td>Соискатели виз</td></tr>
+      <tr><td><strong>VisaCRM</strong></td><td>B2B SaaS CRM для визовых агентств</td><td>visacrm.uz (план)</td><td>Агентства, менеджеры</td></tr>
+      <tr><td><strong>Owner Panel</strong></td><td>Суперадмин-панель</td><td>visabor.uz/crm</td><td>Оператор платформы</td></tr>
+    </table>
+  </div>
+
+  <div class="card-grid">
+    <div class="stat-card">
+      <div class="number">15</div>
+      <div class="label">Доменных модулей (организационных)</div>
+    </div>
+    <div class="stat-card">
+      <div class="number">259</div>
+      <div class="label">API-маршрутов</div>
+    </div>
+    <div class="stat-card">
+      <div class="number">159</div>
+      <div class="label">PHPUnit тестов</div>
+    </div>
+    <div class="stat-card">
+      <div class="number">474</div>
+      <div class="label">Assertions</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Стек технологий</h3>
+    <table>
+      <tr><th>Компонент</th><th>Технология</th><th>Версия</th></tr>
+      <tr><td>Backend</td><td>Laravel</td><td>12 (PHP 8.4)</td></tr>
+      <tr><td>Frontend</td><td>Vue.js 3 + Tailwind CSS</td><td>3.x</td></tr>
+      <tr><td>База данных</td><td>PostgreSQL</td><td>16</td></tr>
+      <tr><td>Кэш / Очереди</td><td>Redis + Laravel Horizon</td><td>&mdash;</td></tr>
+      <tr><td>Аутентификация</td><td>JWT (phpopensourcesaver/jwt-auth)</td><td>&mdash;</td></tr>
+      <tr><td>SMS</td><td>Eskiz.uz <span class="badge badge-yellow">stub</span></td><td>PIN=6236</td></tr>
+      <tr><td>Платежи</td><td>Manual <span class="badge badge-yellow">без webhook</span></td><td>&mdash;</td></tr>
+      <tr><td>CI/CD</td><td>GitHub Actions</td><td>&mdash;</td></tr>
+      <tr><td>Мониторинг</td><td>Sentry + Health endpoint</td><td>&mdash;</td></tr>
+    </table>
+  </div>
+
+  <div class="honest-note">
+    <div class="note-title">Текущий статус</div>
+    Проект находится на стадии <strong>controlled production pilot</strong>. Основной бэкенд, CRM-интерфейс, клиентский портал и Owner-панель функционируют.
+    Однако SMS-верификация работает через заглушку (фиксированный PIN), платежи принимаются вручную (без webhook-интеграции с платёжными системами),
+    OCR документов отсутствует. Это означает, что система пригодна для ограниченного пилотного запуска с контролируемым набором агентств и сценариев,
+    но не для полноценного GA (General Availability) без доработки критичных интеграций.
+  </div>
+</section>
+
+<!-- ============================================ -->
+<!-- 2. ОЦЕНКА ЗРЕЛОСТИ -->
+<!-- ============================================ -->
+<section id="maturity">
+  <h2>2. Оценка зрелости (честная)</h2>
+
+  <div class="card">
+    <table>
+      <tr><th>Область</th><th>Зрелость</th><th>Комментарий</th></tr>
+      <tr>
+        <td>Архитектура кода</td>
+        <td><span class="badge badge-green">Хорошо</span></td>
+        <td>Сервисный слой, разделение ответственности, facade pattern, Resources/FormRequests</td>
+      </tr>
+      <tr>
+        <td>Tenant Isolation</td>
+        <td><span class="badge badge-green">Хорошо</span></td>
+        <td>Двухуровневая: Eloquent Global Scope + PostgreSQL RLS. Но RLS не покрыт integration-тестами на PostgreSQL</td>
+      </tr>
+      <tr>
+        <td>Авторизация</td>
+        <td><span class="badge badge-yellow">Базовая</span></td>
+        <td>4 Policy класса (Case, Client, Document, User), owner/manager/superadmin. Нет полной permission matrix</td>
+      </tr>
+      <tr>
+        <td>Тестирование</td>
+        <td><span class="badge badge-yellow">Средне</span></td>
+        <td>159 тестов на SQLite in-memory. Нет integration-suite на PostgreSQL, нет e2e, нет нагрузочных</td>
+      </tr>
+      <tr>
+        <td>Биллинг</td>
+        <td><span class="badge badge-yellow">Структура есть</span></td>
+        <td>Чистая архитектура (facade + 4 сервиса). Нет webhook, идемпотентности, reconciliation</td>
+      </tr>
+      <tr>
+        <td>Observability</td>
+        <td><span class="badge badge-yellow">Базовая</span></td>
+        <td>Health (liveness), structured logs, Sentry. Нет readiness probe, APM, нет метрик p95/p99</td>
+      </tr>
+      <tr>
+        <td>SMS / Платежи</td>
+        <td><span class="badge badge-red">Заглушки</span></td>
+        <td>SMS stub PIN=6236, платежи manual. Критично для GA</td>
+      </tr>
+      <tr>
+        <td>Документы / OCR</td>
+        <td><span class="badge badge-red">Отсутствует</span></td>
+        <td>Загрузка/хранение работает. OCR &mdash; нет. Для визового продукта это core, не десерт</td>
+      </tr>
+      <tr>
+        <td>Disaster Recovery</td>
+        <td><span class="badge badge-red">Не описан</span></td>
+        <td>Нет задокументированного RPO/RTO, нет тестов восстановления</td>
+      </tr>
+      <tr>
+        <td>API Governance</td>
+        <td><span class="badge badge-red">Нет</span></td>
+        <td>Нет OpenAPI spec, нет versioning strategy, нет контрактного тестирования</td>
+      </tr>
+    </table>
+  </div>
+
+  <h3>Визуальная шкала зрелости</h3>
+  <div class="card">
+    <p style="margin-bottom:8px"><strong>Код и архитектура</strong></p>
+    <div class="maturity-meter">
+      <div class="maturity-fill" style="width:75%;background:var(--green)">75%</div>
+      <div class="maturity-fill" style="width:25%;background:var(--surface2)"></div>
+    </div>
+
+    <p style="margin-bottom:8px"><strong>Безопасность</strong></p>
+    <div class="maturity-meter">
+      <div class="maturity-fill" style="width:55%;background:var(--yellow)">55%</div>
+      <div class="maturity-fill" style="width:45%;background:var(--surface2)"></div>
+    </div>
+
+    <p style="margin-bottom:8px"><strong>Интеграции (SMS, платежи, OCR)</strong></p>
+    <div class="maturity-meter">
+      <div class="maturity-fill" style="width:20%;background:var(--red)">20%</div>
+      <div class="maturity-fill" style="width:80%;background:var(--surface2)"></div>
+    </div>
+
+    <p style="margin-bottom:8px"><strong>Операционная готовность (DR, monitoring, runbooks)</strong></p>
+    <div class="maturity-meter">
+      <div class="maturity-fill" style="width:30%;background:var(--orange)">30%</div>
+      <div class="maturity-fill" style="width:70%;background:var(--surface2)"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================ -->
+<!-- 3. АРХИТЕКТУРА -->
+<!-- ============================================ -->
+<section id="architecture">
+  <h2>3. Архитектура и организация кода</h2>
+
+  <div class="card">
+    <h3>Слои приложения</h3>
+    <div class="flow-diagram">
+      <div class="flow-step">HTTP Request</div>
+      <span class="flow-arrow">&rarr;</span>
+      <div class="flow-step">Middleware (JWT, RLS, Plan, Role)</div>
+      <span class="flow-arrow">&rarr;</span>
+      <div class="flow-step">FormRequest (валидация)</div>
+      <span class="flow-arrow">&rarr;</span>
+      <div class="flow-step">Controller (тонкий)</div>
+      <span class="flow-arrow">&rarr;</span>
+      <div class="flow-step">Policy (авторизация)</div>
+      <span class="flow-arrow">&rarr;</span>
+      <div class="flow-step">Service (бизнес-логика)</div>
+      <span class="flow-arrow">&rarr;</span>
+      <div class="flow-step">Model (Eloquent + Scope)</div>
+      <span class="flow-arrow">&rarr;</span>
+      <div class="flow-step">Resource (ответ)</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Мультитенантность: двухуровневая изоляция</h3>
+    <table>
+      <tr><th>Уровень</th><th>Механизм</th><th>Что делает</th><th>Ограничения</th></tr>
+      <tr>
+        <td>Application</td>
+        <td>HasTenant trait + Global Scope</td>
+        <td>Все Eloquent-запросы автоматически фильтруются по agency_id текущего пользователя</td>
+        <td>Работает только через Eloquent. Raw SQL обходит scope</td>
+      </tr>
+      <tr>
+        <td>Database</td>
+        <td>PostgreSQL RLS policies</td>
+        <td>Даже при raw SQL запросе БД возвращает только данные текущего тенанта</td>
+        <td>Зависит от корректного SET context. Не тестируется в CI (SQLite)</td>
+      </tr>
+    </table>
+
+    <div class="warning-box">
+      <div class="warning-title">Честное замечание о RLS</div>
+      RLS &mdash; мощный защитный механизм, но его эффективность зависит от корректной настройки: запрет bypassrls для application-роли,
+      отсутствие superuser-подключений из приложения, правильная установка session context. В текущем CI RLS не тестируется (тесты на SQLite),
+      поэтому корректность RLS-политик подтверждена только ручной проверкой на production PostgreSQL, а не автоматически.
+      <br><br>
+      <strong>Рекомендация:</strong> добавить отдельный integration test suite на реальном PostgreSQL с проверкой RLS, session context,
+      raw SQL access и отрицательными кейсами (попытка доступа к чужим данным через raw query).
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Маршрутизация</h3>
+    <p>259 маршрутов разделены на 4 файла:</p>
+    <table>
+      <tr><th>Файл</th><th>Зона</th><th>Middleware</th></tr>
+      <tr><td><code>routes/api/auth.php</code></td><td>Регистрация, логин, refresh, logout</td><td>guest / auth:api</td></tr>
+      <tr><td><code>routes/api/crm.php</code></td><td>CRM агентства (cases, clients, documents, users)</td><td>auth:api + set.tenant + check.plan</td></tr>
+      <tr><td><code>routes/api/owner.php</code></td><td>Owner Panel (суперадмин)</td><td>auth:api + role:superadmin</td></tr>
+      <tr><td><code>routes/api/public.php</code></td><td>Публичный портал клиентов</td><td>auth.public (SMS OTP)</td></tr>
+    </table>
+
+    <div class="warning-box">
+      <div class="warning-title">Отсутствие API versioning</div>
+      Все маршруты живут под <code>/api/v1/</code>, но формальной стратегии версионирования нет. При едином бэкенде для B2C, B2B
+      и Owner Panel без контрактного управления изменение API для одного интерфейса может сломать другой. OpenAPI-спецификация ещё не создана.
+      При росте команды это станет болезненным.
+    </div>
+  </div>
+</section>
+
+<!-- ============================================ -->
+<!-- 4. МОДУЛИ -->
+<!-- ============================================ -->
+<section id="modules">
+  <h2>4. Модульная структура</h2>
+
+  <div class="card">
+    <h3>15 доменных папок</h3>
+    <table>
+      <tr><th>Модуль</th><th>Содержимое</th><th>Ключевая ответственность</th></tr>
+      <tr><td>Agency</td><td>Model, Service, DTO, Events</td><td>Регистрация, настройки, plan, рабочие страны</td></tr>
+      <tr><td>Auth</td><td>Service, DTOs, Controllers</td><td>JWT-аутентификация CRM</td></tr>
+      <tr><td>User</td><td>Model, Policy, Controller, Resource</td><td>Пользователи агентства (owner/manager)</td></tr>
+      <tr><td>Client</td><td>Model, Policy, Service, Events</td><td>Клиенты, семья, scoring</td></tr>
+      <tr><td>Case</td><td>Model, Policy, Service, Jobs, Events</td><td>Визовые заявки, SLA, stage flow</td></tr>
+      <tr><td>Document</td><td>Model, Policy, Controller</td><td>Загрузка/хранение документов</td></tr>
+      <tr><td>Payment</td><td>BillingEngine (facade), 4 сервиса</td><td>Подписки, платежи, wallet, ledger</td></tr>
+      <tr><td>Scoring</td><td>Service, Events</td><td>Оценка шансов по 5 блокам + red flags</td></tr>
+      <tr><td>PublicPortal</td><td>Controllers, Auth (SMS OTP)</td><td>Клиентский портал</td></tr>
+      <tr><td>Owner</td><td>Controllers</td><td>Суперадмин-панель, аналитика</td></tr>
+      <tr><td>TelegramBot</td><td>Controllers</td><td>Telegram webhook (заготовка)</td></tr>
+      <tr><td>Service</td><td>Model, Controller</td><td>Глобальные услуги, пакеты</td></tr>
+      <tr><td>Group</td><td>Model, Controller</td><td>Группировка заявок</td></tr>
+      <tr><td>Notification</td><td>Listeners</td><td>Обработка событий, activity log</td></tr>
+      <tr><td>Workflow</td><td>Stage transitions config</td><td>Конфигурация переходов этапов</td></tr>
+    </table>
+
+    <div class="honest-note">
+      <div class="note-title">Про "независимость" модулей</div>
+      Модули организованы как доменные папки с собственными Models, Controllers, Services, Events, Policies, Resources, Requests.
+      Это хорошо как организационная структура кода и значительно лучше, чем монолитная свалка.<br><br>
+      Однако это не доказанные bounded contexts с контрактными зависимостями и слабым сцеплением.
+      Модули ссылаются друг на друга напрямую (Service одного модуля инжектит Model другого).
+      Правильнее называть это <strong>"доменно-организованный код"</strong>, а не "независимые модули".
+      Для настоящей модульной архитектуры нужны: явные публичные API модулей, запрет прямых cross-module зависимостей,
+      контрактные интерфейсы и event-driven communication между bounded contexts.
+    </div>
+  </div>
+</section>
+
+<!-- ============================================ -->
+<!-- 5. БЕЗОПАСНОСТЬ -->
+<!-- ============================================ -->
+<section id="security">
+  <h2>5. Безопасность: что сделано и что ещё нужно</h2>
+
+  <h3>Что реализовано</h3>
+  <div class="card">
+    <table>
+      <tr><th>Мера</th><th>Реализация</th><th>Статус</th></tr>
+      <tr><td>Аутентификация</td><td>JWT с TTL, refresh, blacklist</td><td><span class="badge badge-green">Работает</span></td></tr>
+      <tr><td>Tenant Isolation (App)</td><td>HasTenant global scope, auto agency_id</td><td><span class="badge badge-green">Работает</span></td></tr>
+      <tr><td>Tenant Isolation (DB)</td><td>PostgreSQL RLS policies</td><td><span class="badge badge-yellow">Работает, не тестируется в CI</span></td></tr>
+      <tr><td>Authorization</td><td>4 Laravel Policies (Case, Client, Document, User)</td><td><span class="badge badge-green">Работает + тесты</span></td></tr>
+      <tr><td>Input Validation</td><td>8 FormRequest классов с кастомными правилами</td><td><span class="badge badge-green">Работает</span></td></tr>
+      <tr><td>PII Filtering</td><td>API Resources скрывают passport, date_of_birth по умолчанию</td><td><span class="badge badge-green">Работает</span></td></tr>
+      <tr><td>Password Hashing</td><td>bcrypt</td><td><span class="badge badge-green">Стандарт</span></td></tr>
+      <tr><td>Auth Logging</td><td>Все попытки входа (success/fail) в auth channel</td><td><span class="badge badge-green">Работает</span></td></tr>
+      <tr><td>Rate Limiting</td><td>Laravel throttle middleware</td><td><span class="badge badge-green">Работает</span></td></tr>
+      <tr><td>HTTPS</td><td>Nginx SSL termination</td><td><span class="badge badge-green">Работает</span></td></tr>
+      <tr><td>CORS</td><td>Laravel CORS middleware</td><td><span class="badge badge-green">Работает</span></td></tr>
+      <tr><td>.env Protection</td><td>Не в git, server-only</td><td><span class="badge badge-green">Стандарт</span></td></tr>
+    </table>
+  </div>
+
+  <h3>Авторизационная модель</h3>
+  <div class="card">
+    <table>
+      <tr><th>Policy</th><th>Действие</th><th>owner</th><th>manager</th><th>superadmin</th></tr>
+      <tr><td rowspan="5">CasePolicy</td><td>view</td><td>Все в агентстве</td><td>Только assigned или managers_see_all_cases</td><td>Все</td></tr>
+      <tr><td>update / moveStage</td><td>Все</td><td>Только assigned</td><td>Все</td></tr>
+      <tr><td>cancel</td><td>Да</td><td>Нет</td><td>Да</td></tr>
+      <tr><td>delete</td><td>Да</td><td>Нет</td><td>Да</td></tr>
+      <tr><td>reassign</td><td>Да</td><td>Нет</td><td>Да</td></tr>
+      <tr><td rowspan="3">ClientPolicy</td><td>view</td><td>Все</td><td>Все (same agency)</td><td>Все</td></tr>
+      <tr><td>update</td><td>Все</td><td>Только с assigned cases</td><td>Все</td></tr>
+      <tr><td>delete</td><td>Да</td><td>Нет</td><td>Да</td></tr>
+      <tr><td rowspan="3">DocumentPolicy</td><td>upload</td><td>Все</td><td>Assigned case</td><td>Все</td></tr>
+      <tr><td>updateStatus</td><td>Все</td><td>Assigned case</td><td>Все</td></tr>
+      <tr><td>delete</td><td>Да</td><td>Нет</td><td>Да</td></tr>
+      <tr><td rowspan="3">UserPolicy</td><td>viewAny / create</td><td>Да</td><td>Нет</td><td>Да</td></tr>
+      <tr><td>update</td><td>Да</td><td>Нет</td><td>Да</td></tr>
+      <tr><td>delete</td><td>Да (не себя, не owner)</td><td>Нет</td><td>Да</td></tr>
+    </table>
+
+    <div class="warning-box">
+      <div class="warning-title">Неполнота авторизационной модели</div>
+      Текущие Policies покрывают 4 основные сущности. Но для CRM с документами, финансами, группами, public portal и Owner Panel
+      остаются вопросы без явного ответа:
+      <ul>
+        <li>Кто видит полные PII (паспорт, дату рождения) &mdash; сейчас скрыты для всех через Resource, но нет Policy на "раскрытие"</li>
+        <li>Кто может экспортировать данные (ZIP, CSV)?</li>
+        <li>Кто меняет country requirements и service packages?</li>
+        <li>Кто видит платёжную информацию других агентств (Owner Panel)?</li>
+        <li>Кто может impersonate клиента на портале?</li>
+        <li>Governance на уровне полной permission matrix отсутствует</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Что НЕ реализовано (security gaps)</h3>
+  <div class="risk-box">
+    <div class="risk-title">Открытые вопросы безопасности</div>
+    <table>
+      <tr><th>Область</th><th>Текущее состояние</th><th>Что нужно</th><th>Приоритет</th></tr>
+      <tr>
+        <td>At-rest encryption</td>
+        <td>Паспортные данные хранятся в БД без шифрования полей</td>
+        <td>Шифрование чувствительных полей (passport_number, date_of_birth) на уровне application или column-level encryption</td>
+        <td><span class="badge badge-red">Высокий</span></td>
+      </tr>
+      <tr>
+        <td>Файловая безопасность</td>
+        <td>Документы хранятся на диске в storage/, доступ через контроллер</td>
+        <td>Signed URLs, private storage, antivirus/content scanning загрузок, миграция на S3 с server-side encryption</td>
+        <td><span class="badge badge-red">Высокий</span></td>
+      </tr>
+      <tr>
+        <td>Secret rotation</td>
+        <td>.env с фиксированными ключами</td>
+        <td>KMS или vault, ротация JWT secret, DB credentials</td>
+        <td><span class="badge badge-yellow">Средний</span></td>
+      </tr>
+      <tr>
+        <td>Audit trail на PII</td>
+        <td>activity_log через Spatie (события), auth logging</td>
+        <td>Логирование просмотра PII (кто когда смотрел паспорт клиента)</td>
+        <td><span class="badge badge-yellow">Средний</span></td>
+      </tr>
+      <tr>
+        <td>Data retention / deletion</td>
+        <td>SoftDeletes, но нет явной retention policy</td>
+        <td>Автоматическое удаление/анонимизация персональных данных по истечении срока (GDPR-like)</td>
+        <td><span class="badge badge-yellow">Средний</span></td>
+      </tr>
+      <tr>
+        <td>Backup encryption</td>
+        <td>Не задокументировано</td>
+        <td>Encrypted backups, проверка восстановления</td>
+        <td><span class="badge badge-yellow">Средний</span></td>
+      </tr>
+    </table>
+  </div>
+</section>
+
+<!-- ============================================ -->
+<!-- 6. ТЕСТИРОВАНИЕ -->
+<!-- ============================================ -->
+<section id="testing">
+  <h2>6. Тестирование: покрытие и ограничения</h2>
+
+  <div class="card">
+    <h3>Текущее покрытие: 159 тестов, 474 assertions</h3>
+    <table>
+      <tr><th>Suite</th><th>Тестов</th><th>Assertions</th><th>Что проверяет</th></tr>
+      <tr><td>CaseService</td><td>20</td><td>&mdash;</td><td>Создание, лимиты плана, ВСЕ переходы этапов, отмена, завершение, полный путь</td></tr>
+      <tr><td>BillingEngine</td><td>21</td><td>&mdash;</td><td>Подписки, купоны, НДС, лимиты, смена плана, earn-first</td></tr>
+      <tr><td>API Endpoints</td><td>14</td><td>&mdash;</td><td>CRUD клиентов/заявок, middleware (роли, план, auth)</td></tr>
+      <tr><td>Auth</td><td>11</td><td>&mdash;</td><td>Регистрация, логин, me, refresh, logout, валидация</td></tr>
+      <tr><td>Policies</td><td>13</td><td>&mdash;</td><td>CasePolicy, ClientPolicy, UserPolicy &mdash; owner vs manager vs self</td></tr>
+      <tr><td>SLA</td><td>10</td><td>&mdash;</td><td>critical_date, applyStageSla, markOverdue, approachingDeadline</td></tr>
+      <tr><td>Tenant Isolation</td><td>7</td><td>&mdash;</td><td>Cross-tenant block, auto agency_id, scope filtering</td></tr>
+      <tr><td>Unit (Scoring, Helpers)</td><td>60+</td><td>&mdash;</td><td>Score calculation, Support helpers</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>Инфраструктура тестов</h3>
+    <ul>
+      <li><strong>Engine:</strong> PHPUnit + SQLite in-memory (быстро: ~3.5 секунды)</li>
+      <li><strong>Фабрики:</strong> <code>database/factories/Modules/{Agency,User,Client,Case,Payment}/</code></li>
+      <li><strong>Helpers:</strong> createAgencyWithOwner(), createManager(), createClient(), authHeaders(), actingAsUser()</li>
+      <li><strong>CI:</strong> GitHub Actions &mdash; автозапуск при push/PR</li>
+    </ul>
+  </div>
+
+  <div class="risk-box">
+    <div class="risk-title">Ключевое ограничение: SQLite vs PostgreSQL</div>
+    <p>
+      Все 159 тестов выполняются на <strong>SQLite in-memory</strong>. PostgreSQL-специфичный SQL обёрнут в driver-check условия,
+      RLS-политики и <code>SET LOCAL</code> обходятся условием <code>if (driver !== 'sqlite')</code>.
+    </p>
+    <p>
+      Для обычного Laravel CRUD это приемлемый trade-off (скорость vs точность). Но для системы, где один из ключевых
+      security pillars &mdash; именно PostgreSQL RLS, это означает, что <strong>главный защитный механизм не тестируется автоматически</strong>.
+    </p>
+    <p><strong>Рекомендация:</strong></p>
+    <ul>
+      <li>Добавить отдельный integration test suite на реальном PostgreSQL (можно в Docker)</li>
+      <li>Тесты: включённый RLS, проверка session context, raw SQL access, отрицательные кейсы (попытка доступа к чужим данным)</li>
+      <li>Запускать как отдельный job в CI (не блокирует основной suite)</li>
+    </ul>
+  </div>
+
+  <div class="warning-box">
+    <div class="warning-title">Что не покрыто тестами</div>
+    <ul>
+      <li>E2E тесты (browser-based)</li>
+      <li>Нагрузочное тестирование</li>
+      <li>PostgreSQL RLS integration tests</li>
+      <li>Contract tests для API (нет OpenAPI spec)</li>
+      <li>Concurrency tests для биллинга (double-charge, race conditions)</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============================================ -->
+<!-- 7. ПРОИЗВОДИТЕЛЬНОСТЬ -->
+<!-- ============================================ -->
+<section id="performance">
+  <h2>7. Производительность: меры и отсутствие метрик</h2>
+
+  <div class="card">
+    <h3>Реализованные меры</h3>
+    <table>
+      <tr><th>Мера</th><th>Реализация</th><th>Где</th></tr>
+      <tr><td>Redis-кэш</td><td>AgencyCacheService &mdash; dashboard (3 мин), kanban (2 мин), financial (5 мин)</td><td>DashboardController, CaseController</td></tr>
+      <tr><td>Event-driven инвалидация</td><td>CaseCreated, CaseStatusChanged, ClientRegistered, PaymentReceived &rarr; cache flush</td><td>Listeners</td></tr>
+      <tr><td>Composite индексы (7 шт)</td><td>cases(agency+stage+status), cases(agency+critical+stage), payments(agency+status+created), и др.</td><td>Migrations</td></tr>
+      <tr><td>Eager loading</td><td>with() в queries для предотвращения N+1</td><td>Controllers, Services</td></tr>
+      <tr><td>Пагинация</td><td>Все list-endpoints &mdash; paginated</td><td>Controllers</td></tr>
+      <tr><td>Queue processing</td><td>Laravel Horizon (Redis), SLA/billing jobs в фоне</td><td>Supervisor</td></tr>
+      <tr><td>Slow query detection</td><td>DB::listen >500ms &rarr; slow-queries.log (production only)</td><td>AppServiceProvider</td></tr>
+    </table>
+  </div>
+
+  <div class="risk-box">
+    <div class="risk-title">Отсутствие метрик и бенчмарков</div>
+    <p>
+      Перечисленные меры &mdash; это правильные архитектурные решения, но их эффективность <strong>не доказана измерениями</strong>.
+    </p>
+    <p>На данный момент отсутствуют:</p>
+    <ul>
+      <li>Baseline latency (p50/p95/p99) для ключевых эндпоинтов</li>
+      <li>Cache hit ratio (какой % запросов реально обслуживается из кэша)</li>
+      <li>CPU/RAM/IO профиль под нагрузкой</li>
+      <li>Результаты нагрузочного тестирования (k6, artillery, или хотя бы ab)</li>
+      <li>Сравнение warm cache vs cold cache</li>
+      <li>Benchmark read-heavy vs report-heavy сценариев</li>
+    </ul>
+    <p>
+      Утверждения о конкретных процентах снижения нагрузки или миллисекундах ответа невозможно сделать без этих данных.
+      <strong>Архитектура спроектирована с запасом, но доказательство &mdash; только нагрузочное тестирование.</strong>
+    </p>
+  </div>
+</section>
+
+<!-- ============================================ -->
+<!-- 8. БИЛЛИНГ -->
+<!-- ============================================ -->
+<section id="billing">
+  <h2>8. Биллинг: архитектура и открытые вопросы</h2>
+
+  <div class="card">
+    <h3>Архитектура: Facade + 4 сервиса</h3>
+    <p>BillingEngine (130 строк) &mdash; фасад, делегирующий в специализированные сервисы:</p>
+    <div class="flow-diagram">
+      <div class="flow-step">BillingEngine (facade)</div>
+      <span class="flow-arrow">&rarr;</span>
+      <div class="flow-step">SubscriptionService</div>
+    </div>
+    <div class="flow-diagram">
+      <div class="flow-step">BillingEngine (facade)</div>
+      <span class="flow-arrow">&rarr;</span>
+      <div class="flow-step">PlanChangeService</div>
+    </div>
+    <div class="flow-diagram">
+      <div class="flow-step">BillingEngine (facade)</div>
+      <span class="flow-arrow">&rarr;</span>
+      <div class="flow-step">PaymentProcessingService</div>
+    </div>
+    <div class="flow-diagram">
+      <div class="flow-step">BillingEngine (facade)</div>
+      <span class="flow-arrow">&rarr;</span>
+      <div class="flow-step">BillingHelperService</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>4 тарифных плана</h3>
+    <table>
+      <tr><th>План</th><th>Стоимость</th><th>Лимит заявок</th><th>Менеджеров</th><th>Модель</th></tr>
+      <tr><td>Free</td><td>0</td><td>5</td><td>1</td><td>&mdash;</td></tr>
+      <tr><td>Starter</td><td>$29/мес</td><td>50</td><td>3</td><td>Prepaid</td></tr>
+      <tr><td>Pro</td><td>$79/мес</td><td>200</td><td>10</td><td>Prepaid</td></tr>
+      <tr><td>Enterprise</td><td>$199/мес</td><td>Безлимит</td><td>Безлимит</td><td>Earn-first</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>Возможности биллинга</h3>
+    <ul>
+      <li><strong>Upgrade / Downgrade:</strong> pro-rata credit при upgrade, отложенный downgrade (в конце периода)</li>
+      <li><strong>Earn-first модель (Enterprise):</strong> платформа зарабатывает % от платежей клиентов агентства</li>
+      <li><strong>Wallet / Ledger:</strong> внутренний баланс, все операции записываются в ledger</li>
+      <li><strong>Купоны:</strong> процентные и фиксированные скидки</li>
+      <li><strong>Аддоны:</strong> дополнительные менеджеры, кейсы сверх лимита</li>
+      <li><strong>НДС:</strong> расчёт по стране агентства</li>
+      <li><strong>Invoices:</strong> автоматическая генерация при подписке</li>
+      <li><strong>Expired subscriptions:</strong> фоновый job (ежедневно 01:00)</li>
+      <li><strong>Pending downgrades:</strong> фоновый job (ежедневно 00:05)</li>
+    </ul>
+  </div>
+
+  <div class="risk-box">
+    <div class="risk-title">Открытые вопросы биллинга</div>
+    <p>Архитектура чистая, тесты покрывают основные сценарии (21 тест). Но для финансовой системы под боем есть критичные пробелы:</p>
+    <table>
+      <tr><th>Вопрос</th><th>Статус</th><th>Риск</th></tr>
+      <tr>
+        <td>Webhook-интеграция (Stripe/Payme)</td>
+        <td><span class="badge badge-red">Нет</span></td>
+        <td>Платежи принимаются вручную. Автоматическое подтверждение оплаты невозможно</td>
+      </tr>
+      <tr>
+        <td>Идемпотентность обработки событий</td>
+        <td><span class="badge badge-red">Не реализовано</span></td>
+        <td>Повторный webhook может привести к double-charge</td>
+      </tr>
+      <tr>
+        <td>Reconciliation</td>
+        <td><span class="badge badge-red">Нет</span></td>
+        <td>Нет механизма сверки внутреннего ledger с платёжной системой</td>
+      </tr>
+      <tr>
+        <td>Unique constraints на external payment IDs</td>
+        <td><span class="badge badge-yellow">Не проверено</span></td>
+        <td>Защита от дублей на уровне БД</td>
+      </tr>
+      <tr>
+        <td>Freeze на закрытый период</td>
+        <td><span class="badge badge-red">Нет</span></td>
+        <td>Можно задним числом модифицировать ledger</td>
+      </tr>
+      <tr>
+        <td>Concurrency tests</td>
+        <td><span class="badge badge-red">Нет</span></td>
+        <td>Race conditions при одновременных операциях на одном wallet</td>
+      </tr>
+      <tr>
+        <td>Accounting invariant tests</td>
+        <td><span class="badge badge-yellow">Частично</span></td>
+        <td>Есть тесты на баланс, но нет проверки "сумма всех операций = текущий баланс" как инвариант</td>
+      </tr>
+    </table>
+  </div>
+</section>
+
+<!-- ============================================ -->
+<!-- 9. OBSERVABILITY -->
+<!-- ============================================ -->
+<section id="observability">
+  <h2>9. Observability</h2>
+
+  <div class="card">
+    <h3>Текущая реализация</h3>
+    <table>
+      <tr><th>Компонент</th><th>Реализация</th><th>Retention</th></tr>
+      <tr><td>Health endpoint</td><td><code>GET /api/health</code> &mdash; DB, Redis, disk</td><td>&mdash;</td></tr>
+      <tr><td>Error tracking</td><td>Sentry</td><td>По настройкам Sentry</td></tr>
+      <tr><td>Auth logging</td><td>Все попытки входа (success/fail) в <code>auth</code> channel</td><td>30 дней</td></tr>
+      <tr><td>Billing logging</td><td>Платежи, подписки в <code>billing</code> channel</td><td>90 дней</td></tr>
+      <tr><td>Slow queries</td><td>>500ms &rarr; <code>slow_queries</code> channel (production)</td><td>14 дней</td></tr>
+      <tr><td>Audit trail</td><td>Spatie activity_log + audit channel</td><td>90 дней</td></tr>
+      <tr><td>Business events</td><td>11 Events &rarr; Listeners &rarr; structured logs</td><td>&mdash;</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>Events и Jobs</h3>
+    <table>
+      <tr><th>Event</th><th>Источник</th><th>Listener действие</th></tr>
+      <tr><td>CaseCreated</td><td>CaseService::create</td><td>Activity log, cache invalidation</td></tr>
+      <tr><td>CaseStatusChanged</td><td>CaseService::moveStage</td><td>Activity log, cache invalidation, structured log</td></tr>
+      <tr><td>CaseAssigned</td><td>CaseController::reassign</td><td>Activity log</td></tr>
+      <tr><td>SlaViolation</td><td>SendSlaWarningsJob</td><td>Structured log warning</td></tr>
+      <tr><td>ClientRegistered</td><td>ClientService::create</td><td>Structured log, cache invalidation</td></tr>
+      <tr><td>ClientCreatedViaPortal</td><td>PublicPortal</td><td>Structured log</td></tr>
+      <tr><td>PaymentReceived</td><td>PaymentController</td><td>Billing log, cache invalidation</td></tr>
+      <tr><td>DocumentUploaded</td><td>DocumentController</td><td>Structured log</td></tr>
+      <tr><td>ScoringCalculated</td><td>ScoringService</td><td>Structured log</td></tr>
+      <tr><td>SubscriptionChanged</td><td>BillingEngine</td><td>Billing log</td></tr>
+      <tr><td>SubscriptionExpired</td><td>ProcessExpiredSubscriptionsJob</td><td>Billing log warning</td></tr>
+    </table>
+
+    <h4>Background Jobs</h4>
+    <table>
+      <tr><th>Job</th><th>Расписание</th><th>Что делает</th></tr>
+      <tr><td>SendSlaWarningsJob</td><td>Каждые 15 мин</td><td>Проверяет critical_date, диспатчит SlaViolation для просроченных</td></tr>
+      <tr><td>ProcessExpiredSubscriptionsJob</td><td>Ежедневно 01:00</td><td>Обрабатывает истёкшие подписки</td></tr>
+      <tr><td>GenerateDashboardCacheJob</td><td>По событию</td><td>Обновляет кэш дашборда</td></tr>
+    </table>
+  </div>
+
+  <div class="warning-box">
+    <div class="warning-title">Ограничения health-check</div>
+    <p>
+      Текущий <code>/api/health</code> проверяет только liveness (DB подключение, Redis ping, disk space).
+      Это полезно для UptimeRobot/Pingdom, но недостаточно для оценки реального состояния бизнес-логики.
+    </p>
+    <p><strong>Рекомендации:</strong></p>
+    <ul>
+      <li>Разделить на <code>/health/live</code> (liveness) и <code>/health/ready</code> (readiness)</li>
+      <li>Readiness: проверка Horizon, проверка последнего SLA job выполнения, smoke-check ключевых зависимостей</li>
+      <li>Synthetic transaction: создание и удаление тестовой записи для проверки полного pipeline</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============================================ -->
+<!-- 10. АРХИТЕКТУРНЫЙ ДОЛГ -->
+<!-- ============================================ -->
+<section id="debt">
+  <h2>10. Архитектурный долг: что закрыто, что осталось</h2>
+
+  <div class="card">
+    <h3>Закрыты 7 выделенных блоков</h3>
+    <div class="timeline">
+      <div class="timeline-item">
+        <strong>Блок 1: Тесты</strong> <span class="badge badge-green">Done</span><br>
+        159 тестов, 474 assertions. CaseService, Auth, TenantIsolation, BillingEngine, API Endpoints, SLA, Policies.
+      </div>
+      <div class="timeline-item">
+        <strong>Блок 2: Performance</strong> <span class="badge badge-green">Done</span><br>
+        Redis-кэш (3 слоя), event-driven invalidation, 7 composite индексов, Horizon, scheduled jobs.
+      </div>
+      <div class="timeline-item">
+        <strong>Блок 3: API Resources</strong> <span class="badge badge-green">Done</span><br>
+        5 Resource классов, 8 FormRequest, PII скрыт по умолчанию, agency_id/deleted_at/password не возвращаются.
+      </div>
+      <div class="timeline-item">
+        <strong>Блок 4: Рефакторинг</strong> <span class="badge badge-green">Done</span><br>
+        DashboardController 845&rarr;346 (5 сервисов), BillingEngine 883&rarr;130 (facade + 4 сервиса), routes 4 файла.
+      </div>
+      <div class="timeline-item">
+        <strong>Блок 5: Policies</strong> <span class="badge badge-green">Done</span><br>
+        4 Policy класса, AuthorizesRequests в Controller, authorize() в контроллерах, 13 тестов.
+      </div>
+      <div class="timeline-item">
+        <strong>Блок 6: Events/Jobs</strong> <span class="badge badge-green">Done</span><br>
+        11 Events, 3 Jobs (SLA warnings, expired subscriptions, dashboard cache), Listeners + activity_log.
+      </div>
+      <div class="timeline-item">
+        <strong>Блок 7: Observability</strong> <span class="badge badge-green">Done</span><br>
+        Health endpoint, slow queries, 4 лог-канала (billing, auth, slow_queries, audit), auth logging.
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Что осталось за рамками 7 блоков</h3>
+
+    <div class="honest-note">
+      <div class="note-title">Важное уточнение</div>
+      Закрытие 7 выделенных блоков &mdash; это значительное улучшение кодовой базы.
+      Но это не означает "100% архитектурный долг закрыт". Архитектурный долг &mdash; это не чекбокс, а хроническое состояние.
+      Ниже &mdash; то, что осталось.
+    </div>
+
+    <table>
+      <tr><th>Задача</th><th>Статус</th><th>Приоритет для GA</th></tr>
+      <tr><td>Реальная SMS-интеграция (Eskiz.uz)</td><td><span class="badge badge-red">Заглушка</span></td><td><span class="badge badge-red">Критично</span></td></tr>
+      <tr><td>Платёжные webhook (Stripe/Payme)</td><td><span class="badge badge-red">Нет</span></td><td><span class="badge badge-red">Критично</span></td></tr>
+      <tr><td>OpenAPI спецификация</td><td><span class="badge badge-red">Нет</span></td><td><span class="badge badge-yellow">Высокий</span></td></tr>
+      <tr><td>PostgreSQL integration tests</td><td><span class="badge badge-red">Нет</span></td><td><span class="badge badge-yellow">Высокий</span></td></tr>
+      <tr><td>Нагрузочное тестирование</td><td><span class="badge badge-red">Нет</span></td><td><span class="badge badge-yellow">Высокий</span></td></tr>
+      <tr><td>At-rest encryption для PII</td><td><span class="badge badge-red">Нет</span></td><td><span class="badge badge-yellow">Высокий</span></td></tr>
+      <tr><td>Disaster recovery план</td><td><span class="badge badge-red">Нет</span></td><td><span class="badge badge-yellow">Высокий</span></td></tr>
+      <tr><td>OCR документов</td><td><span class="badge badge-red">Нет</span></td><td><span class="badge badge-yellow">Высокий*</span></td></tr>
+      <tr><td>Telegram webhook</td><td><span class="badge badge-yellow">Заготовка</span></td><td><span class="badge badge-muted">Средний</span></td></tr>
+      <tr><td>visacrm.uz домен</td><td><span class="badge badge-yellow">Не настроен</span></td><td><span class="badge badge-muted">Средний</span></td></tr>
+      <tr><td>Permission matrix (полная)</td><td><span class="badge badge-yellow">Частично</span></td><td><span class="badge badge-muted">Средний</span></td></tr>
+      <tr><td>API versioning strategy</td><td><span class="badge badge-yellow">Нет</span></td><td><span class="badge badge-muted">Средний</span></td></tr>
+      <tr><td>Billing: идемпотентность, reconciliation</td><td><span class="badge badge-red">Нет</span></td><td><span class="badge badge-yellow">Высокий (при webhook)</span></td></tr>
+    </table>
+
+    <p style="margin-top:12px">
+      <strong>* OCR:</strong> Для визового продукта обработка паспортов и документов &mdash; это часть core workflow, а не "приятный десерт".
+      В текущем MVP ставка сделана на ручную обработку документов менеджерами. Это осознанное решение для пилота, но
+      для GA с масштабированием OCR становится высокоприоритетной задачей.
+    </p>
+  </div>
+</section>
+
+<!-- ============================================ -->
+<!-- 11. МАСШТАБИРУЕМОСТЬ -->
+<!-- ============================================ -->
+<section id="scalability">
+  <h2>11. Масштабируемость: гипотезы и необходимые проверки</h2>
+
+  <div class="card">
+    <h3>Целевые параметры</h3>
+    <table>
+      <tr><th>Параметр</th><th>Целевое значение</th></tr>
+      <tr><td>Агентств</td><td>200</td></tr>
+      <tr><td>Заявок в год</td><td>50 000</td></tr>
+      <tr><td>Одновременных пользователей</td><td>~200-400</td></tr>
+      <tr><td>Документов</td><td>~150 000 (3 на заявку)</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>Архитектурные решения, работающие на масштаб</h3>
+    <ul>
+      <li><strong>Redis-кэш:</strong> снижает нагрузку на БД для read-heavy дашбордов (TTL 2-5 мин)</li>
+      <li><strong>Composite индексы:</strong> 7 индексов на часто фильтруемые комбинации (agency+stage+status и др.)</li>
+      <li><strong>Background jobs:</strong> SLA-проверки и billing не блокируют HTTP-запросы</li>
+      <li><strong>Пагинация:</strong> все list-endpoints возвращают постраничные результаты</li>
+      <li><strong>Eager loading:</strong> предотвращает N+1 проблемы</li>
+      <li><strong>Tenant scoping:</strong> каждый запрос фильтрован по agency_id &mdash; объём данных в query пропорционален размеру агентства, а не всей платформы</li>
+    </ul>
+  </div>
+
+  <div class="honest-note">
+    <div class="note-title">Честная оценка</div>
+    <p>
+      Архитектура <strong>спроектирована с запасом</strong> для заявленных параметров. Принятые решения (кэш, индексы, очереди, tenant scoping)
+      &mdash; это стандартные и проверенные подходы для подобных нагрузок.
+    </p>
+    <p>
+      Однако <strong>это гипотеза, а не доказанный факт</strong>. Для подтверждения необходимо:
+    </p>
+    <ul>
+      <li>Нагрузочное тестирование (k6/artillery) с реалистичными сценариями</li>
+      <li>Профилирование CPU/RAM/IO под нагрузкой</li>
+      <li>Измерение p95/p99 latency для ключевых эндпоинтов</li>
+      <li>Проверка поведения при 200 агентствах с реальным объёмом данных</li>
+      <li>Тестирование cache hit ratio и warm/cold cache сценариев</li>
+    </ul>
+    <p>
+      <strong>Вероятный сценарий:</strong> при росте потребуются read replica для аналитических запросов,
+      S3/CDN для документов, materialized views для тяжёлых отчётов, отдельный queue server.
+      Это нормально &mdash; но означает, что "без изменений инфраструктуры" &mdash; слишком категоричное утверждение.
+    </p>
+  </div>
+</section>
+
+<!-- ============================================ -->
+<!-- 12. РИСКИ -->
+<!-- ============================================ -->
+<section id="risks">
+  <h2>12. Риски и план митигации</h2>
+
+  <h3>Риски, закрытые к моменту пилота</h3>
+  <div class="card">
+    <table>
+      <tr><th>Риск</th><th>Как закрыт</th></tr>
+      <tr><td>Cross-tenant data leak</td><td>Двухуровневая изоляция (Eloquent scope + RLS)</td></tr>
+      <tr><td>God-object controllers</td><td>Рефакторинг в сервисы (Dashboard 845&rarr;346, BillingEngine 883&rarr;130)</td></tr>
+      <tr><td>Отсутствие авторизации на уровне сущностей</td><td>4 Policy класса + authorize() в контроллерах</td></tr>
+      <tr><td>PII leak через API</td><td>API Resources скрывают чувствительные поля по умолчанию</td></tr>
+      <tr><td>Нет мониторинга</td><td>Health endpoint + Sentry + structured logging</td></tr>
+      <tr><td>Нет фоновой обработки</td><td>3 Jobs: SLA, expired subscriptions, cache</td></tr>
+      <tr><td>Нет тестов</td><td>159 тестов, CI через GitHub Actions</td></tr>
+    </table>
+  </div>
+
+  <h3>Открытые риски</h3>
+  <div class="card">
+    <table>
+      <tr><th>Риск</th><th>Влияние</th><th>Вероятность</th><th>Митигация (план)</th></tr>
+      <tr>
+        <td>SMS-заглушка в production</td>
+        <td><span class="badge badge-red">Высокое</span></td>
+        <td><span class="badge badge-red">100%</span></td>
+        <td>Подключить Eskiz.uz API до GA. В пилоте &mdash; контролируемый набор пользователей</td>
+      </tr>
+      <tr>
+        <td>Отсутствие платёжных webhook</td>
+        <td><span class="badge badge-red">Высокое</span></td>
+        <td><span class="badge badge-red">100%</span></td>
+        <td>Manual payments для пилота. Stripe/Payme интеграция до GA</td>
+      </tr>
+      <tr>
+        <td>RLS не тестируется в CI</td>
+        <td><span class="badge badge-yellow">Среднее</span></td>
+        <td><span class="badge badge-yellow">Среднее</span></td>
+        <td>Добавить PostgreSQL integration test suite</td>
+      </tr>
+      <tr>
+        <td>Нет DR плана</td>
+        <td><span class="badge badge-red">Высокое</span></td>
+        <td><span class="badge badge-yellow">Низкое (пилот)</span></td>
+        <td>Задокументировать RPO/RTO, настроить encrypted backups, протестировать восстановление</td>
+      </tr>
+      <tr>
+        <td>Паспортные данные без at-rest encryption</td>
+        <td><span class="badge badge-red">Высокое</span></td>
+        <td><span class="badge badge-yellow">Среднее</span></td>
+        <td>Column-level encryption для passport_number, date_of_birth</td>
+      </tr>
+      <tr>
+        <td>Документы на диске без защиты</td>
+        <td><span class="badge badge-yellow">Среднее</span></td>
+        <td><span class="badge badge-yellow">Среднее</span></td>
+        <td>S3 с server-side encryption, signed URLs, content scanning</td>
+      </tr>
+      <tr>
+        <td>Нет API versioning</td>
+        <td><span class="badge badge-yellow">Среднее</span></td>
+        <td><span class="badge badge-yellow">При росте команды</span></td>
+        <td>OpenAPI spec + контрактное тестирование + deprecation policy</td>
+      </tr>
+      <tr>
+        <td>Double-charge при конкурентных операциях</td>
+        <td><span class="badge badge-red">Высокое</span></td>
+        <td><span class="badge badge-yellow">Низкое (manual payments)</span></td>
+        <td>Идемпотентность, unique constraints на external payment IDs, accounting invariant tests</td>
+      </tr>
+      <tr>
+        <td>Single server SPOF</td>
+        <td><span class="badge badge-red">Высокое</span></td>
+        <td><span class="badge badge-yellow">При росте</span></td>
+        <td>Load balancer + минимум 2 app servers, managed DB</td>
+      </tr>
+    </table>
+  </div>
+</section>
+
+<!-- ============================================ -->
+<!-- 13. DISASTER RECOVERY -->
+<!-- ============================================ -->
+<section id="dr">
+  <h2>13. Disaster Recovery: текущий пробел</h2>
+
+  <div class="risk-box">
+    <div class="risk-title">Состояние: не задокументировано</div>
+    <p>Для SaaS с документами и платежами disaster recovery &mdash; обязательный раздел. На данный момент:</p>
+  </div>
+
+  <div class="card">
+    <table>
+      <tr><th>Параметр</th><th>Текущее состояние</th><th>Рекомендация</th></tr>
+      <tr>
+        <td>RPO (Recovery Point Objective)</td>
+        <td><span class="badge badge-red">Не определён</span></td>
+        <td>Установить RPO &le; 1 час для данных, &le; 24 часа для документов</td>
+      </tr>
+      <tr>
+        <td>RTO (Recovery Time Objective)</td>
+        <td><span class="badge badge-red">Не определён</span></td>
+        <td>Установить RTO &le; 4 часа</td>
+      </tr>
+      <tr>
+        <td>Database backups</td>
+        <td><span class="badge badge-yellow">Вероятно есть (VPS provider)</span></td>
+        <td>Автоматический pg_dump + encrypted offsite backup (S3)</td>
+      </tr>
+      <tr>
+        <td>Backup verification</td>
+        <td><span class="badge badge-red">Нет</span></td>
+        <td>Ежемесячный тест восстановления из backup</td>
+      </tr>
+      <tr>
+        <td>Rollback strategy</td>
+        <td><span class="badge badge-yellow">git revert + deploy</span></td>
+        <td>Blue/green или canary deploy, database migration rollback plan</td>
+      </tr>
+      <tr>
+        <td>Runbooks</td>
+        <td><span class="badge badge-red">Нет</span></td>
+        <td>Документация: что делать при падении DB, Redis, disk full, certificate expiry</td>
+      </tr>
+      <tr>
+        <td>Документы (файлы)</td>
+        <td><span class="badge badge-yellow">Только на диске сервера</span></td>
+        <td>S3 + cross-region replication</td>
+      </tr>
+    </table>
+  </div>
+</section>
+
+<!-- ============================================ -->
+<!-- 14. ДОРОЖНАЯ КАРТА -->
+<!-- ============================================ -->
+<section id="roadmap">
+  <h2>14. Дорожная карта до Production GA</h2>
+
+  <div class="card">
+    <h3>Текущая стадия: Controlled Production Pilot</h3>
+    <p>Система работает с ограниченным набором агентств, SMS через заглушку, платежи вручную.</p>
+  </div>
+
+  <div class="card">
+    <h3>Фаза 1: Критичные интеграции (до GA)</h3>
+    <table>
+      <tr><th>Задача</th><th>Зависимости</th><th>Блокирует GA</th></tr>
+      <tr><td>SMS: подключить Eskiz.uz API</td><td>API ключ, тестирование</td><td><span class="badge badge-red">Да</span></td></tr>
+      <tr><td>Платежи: Stripe или Payme webhook</td><td>Merchant account, идемпотентность</td><td><span class="badge badge-red">Да</span></td></tr>
+      <tr><td>At-rest encryption для PII</td><td>Column-level encryption, key management</td><td><span class="badge badge-yellow">Рекомендовано</span></td></tr>
+      <tr><td>DR plan: backups, RPO/RTO, runbooks</td><td>Инфраструктура</td><td><span class="badge badge-yellow">Рекомендовано</span></td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>Фаза 2: Качество и уверенность</h3>
+    <table>
+      <tr><th>Задача</th><th>Цель</th></tr>
+      <tr><td>PostgreSQL integration tests</td><td>Подтвердить RLS работает корректно в CI</td></tr>
+      <tr><td>Нагрузочное тестирование</td><td>Получить реальные p95/p99, подтвердить или скорректировать гипотезы о масштабе</td></tr>
+      <tr><td>OpenAPI спецификация</td><td>Контрактное управление API, автогенерация клиентов</td></tr>
+      <tr><td>Permission matrix</td><td>Полная матрица: кто что видит и может делать</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>Фаза 3: Масштабирование</h3>
+    <table>
+      <tr><th>Задача</th><th>Когда нужно</th></tr>
+      <tr><td>OCR документов</td><td>При масштабировании обработки заявок</td></tr>
+      <tr><td>S3 + CDN для документов</td><td>При >50K документов или multi-server</td></tr>
+      <tr><td>Read replica для аналитики</td><td>При >100 агентств с тяжёлыми отчётами</td></tr>
+      <tr><td>Отдельный queue server</td><td>При >200 агентств</td></tr>
+      <tr><td>Telegram webhook</td><td>Для push-нотификаций клиентам</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- ============================================ -->
+<!-- 15. ИТОГОВЫЙ ВЕРДИКТ -->
+<!-- ============================================ -->
+<section id="verdict">
+  <h2>15. Итоговый вердикт</h2>
+
+  <div class="card" style="border-color: var(--accent); border-width: 2px;">
+    <h3>Что сделано хорошо</h3>
+    <ul>
+      <li>Система перешла от "контроллер на стероидах" к зрелой сервисной архитектуре</li>
+      <li>Двухуровневая tenant isolation (Eloquent scope + PostgreSQL RLS) &mdash; серьёзный defence-in-depth</li>
+      <li>BillingEngine рефакторирован из монолита в facade с 4 специализированными сервисами</li>
+      <li>4 Policy класса обеспечивают гранулярную авторизацию owner/manager</li>
+      <li>159 тестов покрывают ключевые бизнес-сценарии и запускаются в CI</li>
+      <li>Event-driven архитектура с 11 событиями и фоновыми задачами</li>
+      <li>Structured logging по доменным каналам (auth, billing, slow queries)</li>
+      <li>Redis-кэш с event-driven инвалидацией для read-heavy операций</li>
+      <li>Все 7 выделенных блоков архитектурного долга закрыты</li>
+    </ul>
+  </div>
+
+  <div class="card" style="border-color: var(--yellow); border-width: 2px;">
+    <h3>Что требует внимания до GA</h3>
+    <ul>
+      <li>SMS и платежи &mdash; заглушки, критично для полноценного запуска</li>
+      <li>RLS не тестируется в CI &mdash; главный защитный механизм не подтверждён автоматически</li>
+      <li>Отсутствуют нагрузочные тесты &mdash; масштабируемость остаётся гипотезой</li>
+      <li>Нет at-rest encryption для паспортных данных</li>
+      <li>Disaster recovery не задокументирован</li>
+      <li>OpenAPI и API versioning отсутствуют</li>
+      <li>OCR документов &mdash; core workflow для визового продукта, пока ручная обработка</li>
+    </ul>
+  </div>
+
+  <div class="card" style="border-color: var(--cyan); border-width: 2px;">
+    <h3>Формулировка статуса</h3>
+    <p style="font-size:1.15em; line-height:1.8">
+      Проект готов к <strong>controlled production pilot</strong> &mdash; ограниченному пилотному запуску
+      с контролируемым набором агентств и сценариев. Инженерная база сильная: чистая архитектура, тестовое покрытие,
+      мультитенантная изоляция, авторизация на уровне сущностей, event-driven обработка и observability.
+    </p>
+    <p style="font-size:1.15em; line-height:1.8">
+      Для перехода к <strong>General Availability</strong> необходимы: реальные SMS и платёжные интеграции,
+      PostgreSQL integration tests, at-rest encryption для PII, disaster recovery план и нагрузочное подтверждение.
+    </p>
+    <p style="font-size:1.15em; line-height:1.8">
+      Закрытие 7 блоков архитектурного долга &mdash; значительный шаг. Но архитектурный долг &mdash; это не чекбокс,
+      а хроническое состояние, которое требует постоянного внимания. Описанные рекомендации &mdash; следующие шаги
+      на пути от "система работает" к "система доказала, что работает надёжно".
+    </p>
+  </div>
+</section>
+
+<!-- ============================================ -->
+<!-- 16. ПОЛНЫЙ БЭКЛОГ -->
+<!-- ============================================ -->
+<section id="backlog">
+  <h2>16. Полный бэклог (Wave 1-3 + ИИ + каналы лидов)</h2>
+
+  <div class="card" style="border-color: var(--red); border-width: 2px;">
+    <h3>Wave 1 &mdash; Обязательно до GA <span class="badge badge-red">Critical</span></h3>
+
+    <h4>Epic 1: Security & Compliance Foundation</h4>
+    <table>
+      <tr><th>#</th><th>Feature</th><th>Ключевые задачи</th><th>DoD</th></tr>
+      <tr>
+        <td>1.1</td>
+        <td><strong>Шифрование PII</strong></td>
+        <td>
+          <ul>
+            <li>Определить перечень PII-полей</li>
+            <li>At-rest encryption (passport_number, date_of_birth и др.)</li>
+            <li>Стратегия ротации ключей (KMS)</li>
+            <li>Model mutators/accessors, прозрачное чтение/запись</li>
+            <li>Тесты: поиск, фильтрация, экспорт с шифрованием</li>
+          </ul>
+        </td>
+        <td>PII зашифрованы в БД, ключи не в коде, негативные тесты проходят</td>
+      </tr>
+      <tr>
+        <td>1.2</td>
+        <td><strong>Защита файлов</strong></td>
+        <td>
+          <ul>
+            <li>Private storage, signed URLs</li>
+            <li>MIME/type/content validation</li>
+            <li>Antivirus (начать с validation, позже ClamAV/облачный*)</li>
+            <li>Запрет прямой раздачи из public/</li>
+            <li>Журнал скачивания/просмотра</li>
+            <li>Подготовка к S3 + server-side encryption</li>
+          </ul>
+          <em>*ClamAV ~1GB RAM. Начать с MIME, антивирус при S3</em>
+        </td>
+        <td>Документы не по прямым ссылкам, заражённые отклоняются, аудит доступа</td>
+      </tr>
+      <tr>
+        <td>1.3</td>
+        <td><strong>Permission Matrix</strong></td>
+        <td>
+          <ul>
+            <li>Полная матрица: owner/manager/superadmin/client</li>
+            <li>Права на PII, экспорт, документы, финансы, скоринг, impersonation</li>
+            <li>Доработка policies/gates</li>
+            <li>Тесты на запрет/разрешение</li>
+          </ul>
+        </td>
+        <td>Утверждённая матрица, все операции покрыты policy/gate</td>
+      </tr>
+    </table>
+
+    <h4>Epic 2: Core Integrations</h4>
+    <table>
+      <tr><th>#</th><th>Feature</th><th>Ключевые задачи</th><th>DoD</th></tr>
+      <tr>
+        <td>2.1</td>
+        <td><strong>SMS Eskiz.uz</strong></td>
+        <td>
+          <ul>
+            <li>Eskiz API интеграция</li>
+            <li>OTP lifecycle (одноразовый, TTL)</li>
+            <li>Rate limit, anti-bruteforce</li>
+            <li>Логирование отправок и статусов</li>
+            <li>Fallback policy, шаблоны SMS в конфиг</li>
+          </ul>
+        </td>
+        <td>SMS в реальный шлюз, OTP одноразовый, rate limit работает</td>
+      </tr>
+      <tr>
+        <td>2.2</td>
+        <td><strong>Платежи webhook</strong></td>
+        <td>
+          <ul>
+            <li>Payme/Stripe webhook + валидация подписи</li>
+            <li>Идемпотентная обработка</li>
+            <li>Unique constraint на external payment id</li>
+            <li>webhook &rarr; invoice &rarr; ledger &rarr; wallet</li>
+            <li>Retry/dead-letter, reconciliation report</li>
+          </ul>
+        </td>
+        <td>Платёж автоматически, двойная обработка исключена, reconciliation</td>
+      </tr>
+    </table>
+
+    <h4>Epic 3: Reliability</h4>
+    <table>
+      <tr><th>#</th><th>Feature</th><th>Ключевые задачи</th><th>DoD</th></tr>
+      <tr>
+        <td>3.1</td>
+        <td><strong>Backup & Restore</strong></td>
+        <td>
+          <ul>
+            <li>RPO &le;1ч (данные), &le;24ч (файлы) / RTO &le;4ч</li>
+            <li>pg_dump + encrypted offsite (S3)</li>
+            <li>Restore drill (ежемесячно)</li>
+            <li>Документация восстановления</li>
+          </ul>
+        </td>
+        <td>Backup автоматический, restore протестирован, копии offsite</td>
+      </tr>
+    </table>
+
+    <h4>Epic 5: Testing</h4>
+    <table>
+      <tr><th>#</th><th>Feature</th><th>Ключевые задачи</th><th>DoD</th></tr>
+      <tr>
+        <td>5.1</td>
+        <td><strong>PostgreSQL RLS tests</strong></td>
+        <td>
+          <ul>
+            <li>PostgreSQL в CI (Docker)</li>
+            <li>RLS policies включены</li>
+            <li>Positive/negative cases, session context, raw SQL</li>
+          </ul>
+        </td>
+        <td>RLS на PostgreSQL, cross-tenant блокируется автоматически</td>
+      </tr>
+      <tr>
+        <td>5.4</td>
+        <td><strong>Billing invariants</strong></td>
+        <td>
+          <ul>
+            <li>Double webhook tests</li>
+            <li>Race conditions для wallet</li>
+            <li>Invariant: сумма операций = баланс</li>
+            <li>Coupon/addon/proration, rollback</li>
+          </ul>
+        </td>
+        <td>Ledger consistency, duplicate webhook безопасен</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="card" style="border-color: var(--yellow); border-width: 2px;">
+    <h3>Wave 2 &mdash; Управляемая платформа <span class="badge badge-yellow">High</span></h3>
+    <table>
+      <tr><th>#</th><th>Feature</th><th>Суть</th></tr>
+      <tr><td>3.2</td><td><strong>Runbooks</strong></td><td>Инструкции на DB/Redis/disk/queue/SSL/webhook сбои, эскалация, post-incident review</td></tr>
+      <tr><td>3.3</td><td><strong>Health-check v2</strong></td><td>/health/live + /health/ready, synthetic transaction, alerting</td></tr>
+      <tr><td>4.1</td><td><strong>OpenAPI</strong></td><td>Описание endpoints, request/response schemas, связь с CI, автогенерация docs</td></tr>
+      <tr><td>4.2</td><td><strong>API versioning</strong></td><td>Deprecation policy, contract tests, backward compatibility, migration playbook</td></tr>
+      <tr><td>5.2</td><td><strong>E2E тесты</strong></td><td>Playwright, критичные сценарии, smoke suite в CI</td></tr>
+      <tr><td>5.3</td><td><strong>Нагрузочное тестирование</strong></td><td>k6, baseline p50/p95/p99, capacity report, триггеры масштабирования</td></tr>
+      <tr><td>6.2</td><td><strong>Data lifecycle</strong></td><td>Сроки хранения, архивирование, anonymization, retention policy</td></tr>
+      <tr><td>7.1</td><td><strong>APM / Observability</strong></td><td>Tracing, метрики, alerting thresholds, operational dashboard</td></tr>
+    </table>
+  </div>
+
+  <div class="card" style="border-color: var(--text-muted); border-width: 2px;">
+    <h3>Wave 3 &mdash; Масштабирование <span class="badge badge-muted">Medium</span></h3>
+    <table>
+      <tr><th>#</th><th>Feature</th><th>Суть</th><th>Замечание</th></tr>
+      <tr><td>2.3</td><td><strong>Telegram webhook</strong></td><td>Уведомления по событиям, user preferences</td><td>&mdash;</td></tr>
+      <tr><td>2.4</td><td><strong>OCR документов</strong></td><td>Pipeline загрузка &rarr; OCR &rarr; review, confidence score</td><td>Core workflow для визового продукта. В MVP &mdash; ручная обработка (осознанно)</td></tr>
+      <tr><td>6.1</td><td><strong>Контракты модулей</strong></td><td>Boundaries, events, запрет cross-module</td><td>Over-engineering при 1-2 разработчиках. Актуально при 3+</td></tr>
+      <tr><td>7.2</td><td><strong>Масштабирование infra</strong></td><td>Read replica, queue server, S3/CDN</td><td>Infra roadmap с условиями включения</td></tr>
+    </table>
+  </div>
+
+  <div class="card" style="border-color: var(--accent2); border-width: 2px;">
+    <h3>ИИ-функции для Enterprise <span class="badge badge-blue">Feature Pack</span></h3>
+
+    <h4>Бизнес-модель</h4>
+    <ul>
+      <li>Свой API-ключ на сервере (ANTHROPIC_API_KEY)</li>
+      <li>Enterprise ($99/мес) = 100 генераций/мес включено</li>
+      <li>Доп. пакет: +500 генераций за $29/мес</li>
+      <li>Себестоимость: Haiku ~$0.30/мес, Sonnet ~$2/мес &rarr; маржа 97-99%</li>
+    </ul>
+
+    <h4>Доступ по тарифам</h4>
+    <table>
+      <tr><th>Возможность</th><th>Trial/Starter</th><th>Pro</th><th>Enterprise</th></tr>
+      <tr><td>Шаблоны документов</td><td>&mdash;</td><td>3 базовых</td><td>Все</td></tr>
+      <tr><td>База знаний (глобальная)</td><td>&mdash;</td><td>Чтение</td><td>Чтение</td></tr>
+      <tr><td>База знаний (своя wiki)</td><td>&mdash;</td><td>&mdash;</td><td>Свои + редактирование</td></tr>
+      <tr><td>Онбординг менеджеров</td><td>&mdash;</td><td>Да</td><td>Да</td></tr>
+      <tr><td>ИИ-генерация документов</td><td>&mdash;</td><td>&mdash;</td><td>100/мес</td></tr>
+      <tr><td>ИИ-проверка пакета</td><td>&mdash;</td><td>&mdash;</td><td>100/мес</td></tr>
+      <tr><td>ИИ-памятка клиенту</td><td>&mdash;</td><td>&mdash;</td><td>100/мес</td></tr>
+      <tr><td>ИИ-оценка рисков</td><td>&mdash;</td><td>&mdash;</td><td>100/мес</td></tr>
+    </table>
+
+    <h4>Этапы реализации</h4>
+    <table>
+      <tr><th>Этап</th><th>Содержание</th></tr>
+      <tr><td>1. Инфраструктура ИИ</td><td>Таблицы ai_usage_log + ai_quota, AiService (Claude API), middleware ai.quota, покупка доп. пакета</td></tr>
+      <tr><td>2. Генерация документов</td><td>Шаблоны в БД, cover letter, справка с работы, спонсорское, визовые анкеты (DS-160, Шенген, UK), PDF</td></tr>
+      <tr><td>3. ИИ-анализ</td><td>Проверка пакета документов, оценка рисков отказа, персональная памятка, рекомендации по усилению</td></tr>
+      <tr><td>4. База знаний</td><td>Глобальная wiki (суперадмин), wiki агентства (Enterprise), онбординг менеджеров, шаблоны процессов</td></tr>
+    </table>
+  </div>
+
+  <div class="card" style="border-color: var(--cyan); border-width: 2px;">
+    <h3>Внешние каналы лидов (Этап 5) <span class="badge badge-blue">Feature Pack</span></h3>
+    <table>
+      <tr><th>Канал</th><th>Starter</th><th>Pro</th><th>Enterprise</th></tr>
+      <tr><td>Ручное создание</td><td>Да</td><td>Да</td><td>Да</td></tr>
+      <tr><td>Маркетплейс VisaBor</td><td>Да</td><td>Да</td><td>Да</td></tr>
+      <tr><td>API-ключ для внешних лидов</td><td>&mdash;</td><td>Да</td><td>Да</td></tr>
+      <tr><td>JS-виджет для сайта</td><td>&mdash;</td><td>Да</td><td>Да</td></tr>
+      <tr><td>Instagram Lead Ads (Meta)</td><td>&mdash;</td><td>&mdash;</td><td>Да</td></tr>
+      <tr><td>Zapier/Make интеграция</td><td>&mdash;</td><td>&mdash;</td><td>Да</td></tr>
+    </table>
+    <p>Задачи: API-ключ агентства, POST /external/leads, JS-виджет, Instagram Lead Ads (Meta OAuth), Zapier/Make webhook, поле lead_source, дашборд по источникам.</p>
+  </div>
+
+  <div class="card" style="border-color: var(--green); border-width: 2px;">
+    <h3>Минимальные критерии GA</h3>
+    <table>
+      <tr><th>#</th><th>Критерий</th><th>Статус</th></tr>
+      <tr><td>1</td><td>Реальная SMS работает</td><td><span class="badge badge-red">Заглушка</span></td></tr>
+      <tr><td>2</td><td>Webhook-платежи идемпотентны</td><td><span class="badge badge-red">Нет</span></td></tr>
+      <tr><td>3</td><td>RLS integration suite зелёный</td><td><span class="badge badge-red">Нет</span></td></tr>
+      <tr><td>4</td><td>Backup/restore проверен</td><td><span class="badge badge-red">Нет</span></td></tr>
+      <tr><td>5</td><td>PII и файлы защищены</td><td><span class="badge badge-red">Частично</span></td></tr>
+      <tr><td>6</td><td>Permission matrix утверждена</td><td><span class="badge badge-yellow">Частично (4 Policy)</span></td></tr>
+      <tr><td>7</td><td>p95/p99 измерены и в норме</td><td><span class="badge badge-red">Нет метрик</span></td></tr>
+      <tr><td>8</td><td>OpenAPI baseline опубликован</td><td><span class="badge badge-red">Нет</span></td></tr>
+      <tr><td>9</td><td>E2E smoke suite стабилен</td><td><span class="badge badge-red">Нет</span></td></tr>
+    </table>
+  </div>
+</section>
+
+<div style="text-align:center; padding: 40px 0; color: var(--text-muted); font-size: 0.9em; border-top: 1px solid var(--border);">
+  VisaBor / VisaCRM &mdash; Архитектурный отчёт v2.0 + Полный бэклог &mdash; 9 марта 2026<br>
+  Ревизия: честная оценка состояния, без маркетинга
+</div>
+
+</div>
+</body>
+</html>
