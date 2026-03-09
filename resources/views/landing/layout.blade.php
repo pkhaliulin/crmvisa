@@ -950,22 +950,22 @@ footer { background: var(--navy); padding: 80px 0 40px; }
 <!-- MAINTENANCE OVERLAY -->
 <div class="maintenance-overlay" id="maintenanceOverlay">
   <div class="maintenance-logo">visa<span>bor</span>.uz</div>
-  <div class="maintenance-title">Скоро открываемся</div>
-  <div class="maintenance-desc">Платформа временно недоступна. Войдите в личный кабинет, чтобы продолжить.</div>
+  <div class="maintenance-title">{{ __('landing.maint_title') }}</div>
+  <div class="maintenance-desc">{{ __('landing.maint_desc') }}</div>
   <div class="maintenance-login">
-    <h3>Вход в платформу</h3>
+    <h3>{{ __('landing.maint_login_title') }}</h3>
     <div class="phone-input-wrap" style="margin-bottom: 16px;">
       <span class="phone-flag">🇺🇿</span>
       <input type="tel" class="phone-input" placeholder="+998 __ ___ __ __" style="background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.15); color: white;">
     </div>
-    <a href="javascript:void(0)" onclick="openAuthModal()" class="btn btn-primary btn-lg" style="width:100%;text-decoration:none;">Войти по номеру</a>
-    <p style="margin-top:12px; font-size:0.8rem; color:rgba(255,255,255,0.35);">Поддержка: support@visabor.uz</p>
+    <a href="javascript:void(0)" onclick="openAuthModal()" class="btn btn-primary btn-lg" style="width:100%;text-decoration:none;">{{ __('landing.maint_login_btn') }}</a>
+    <p style="margin-top:12px; font-size:0.8rem; color:rgba(255,255,255,0.35);">{{ __('landing.maint_support') }}</p>
   </div>
 </div>
 
 <!-- SITE STATUS BANNER -->
 <div class="site-status-banner" id="statusBanner">
-  Сайт временно работает в ограниченном режиме. Некоторые функции недоступны.
+  {{ __('landing.status_banner') }}
 </div>
 
 <!-- NAVBAR -->
@@ -973,11 +973,11 @@ footer { background: var(--navy); padding: 80px 0 40px; }
   <div class="navbar-inner">
     <a href="/" class="logo">visa<span>bor</span><div class="logo-dot"></div></a>
     <div class="nav-links">
-      <a href="#scoring" class="nav-link">Проверить шансы</a>
-      <a href="#destinations" class="nav-link">Направления</a>
-      <a href="#agencies" class="nav-link">Агентства</a>
-      <a href="#how" class="nav-link">Как работает</a>
-      <a href="#faq" class="nav-link">FAQ</a>
+      <a href="#scoring" class="nav-link">{{ __('landing.nav_check') }}</a>
+      <a href="#destinations" class="nav-link">{{ __('landing.nav_destinations') }}</a>
+      <a href="#agencies" class="nav-link">{{ __('landing.nav_agencies') }}</a>
+      <a href="#how" class="nav-link">{{ __('landing.nav_how') }}</a>
+      <a href="#faq" class="nav-link">{{ __('landing.nav_faq') }}</a>
     </div>
     <div class="nav-actions">
       <!-- Status badges (авторизован) -->
@@ -988,7 +988,7 @@ footer { background: var(--navy); padding: 80px 0 40px; }
         </a>
         <span id="badgeDocs" class="nav-badge nav-badge-amber" style="display:none;">
           <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
-          Документы: <span id="badgeDocsCount"></span>
+          {{ __('landing.nav_docs') }} <span id="badgeDocsCount"></span>
         </span>
         <a href="/me/billing" id="badgeUnpaid" class="nav-badge nav-badge-red" style="display:none;">
           <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
@@ -1007,11 +1007,11 @@ footer { background: var(--navy); padding: 80px 0 40px; }
       </div>
 
       <!-- Гость -->
-      <a href="javascript:void(0)" onclick="openAuthModal()" class="btn btn-secondary btn-sm" id="navBtnLogin">Войти</a>
-      <a href="#scoring" class="btn btn-primary btn-sm" id="navBtnScoring">Проверить шансы</a>
+      <a href="javascript:void(0)" onclick="openAuthModal()" class="btn btn-secondary btn-sm" id="navBtnLogin">{{ __('landing.nav_login') }}</a>
+      <a href="#scoring" class="btn btn-primary btn-sm" id="navBtnScoring">{{ __('landing.nav_check') }}</a>
 
       <!-- Выход (авторизован) -->
-      <button id="navBtnLogout" onclick="publicLogout()" class="nav-logout-btn" style="display:none;" title="Выход">
+      <button id="navBtnLogout" onclick="publicLogout()" class="nav-logout-btn" style="display:none;" title="{{ __('landing.nav_logout') }}">
         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
       </button>
     </div>
@@ -1026,7 +1026,7 @@ footer { background: var(--navy); padding: 80px 0 40px; }
     <div class="footer-grid">
       <div class="footer-brand fade-up">
         <a href="/" class="footer-logo">visa<span>bor</span>.uz</a>
-        <p>AI-платформа для граждан Узбекистана. Умный выбор направления и проверка шансов до подачи визы.</p>
+        <p>{{ __('landing.footer_desc') }}</p>
         <div class="footer-social">
           <a class="social-btn" href="#">T</a>
           <a class="social-btn" href="#">W</a>
@@ -1035,56 +1035,56 @@ footer { background: var(--navy); padding: 80px 0 40px; }
         </div>
       </div>
       <div class="footer-col fade-up">
-        <h4>Направления</h4>
+        <h4>{{ __('landing.footer_directions') }}</h4>
         <div class="footer-links">
-          <a href="/country/DE" class="footer-link">🇩🇪 Германия</a>
-          <a href="/country/IT" class="footer-link">🇮🇹 Италия</a>
-          <a href="/country/FR" class="footer-link">🇫🇷 Франция</a>
-          <a href="/country/JP" class="footer-link">🇯🇵 Япония</a>
-          <a href="/country/KR" class="footer-link">🇰🇷 Южная Корея</a>
-          <a href="/country/US" class="footer-link">🇺🇸 США</a>
-          <a href="/country/GB" class="footer-link">🇬🇧 Великобритания</a>
-          <a href="/country/CA" class="footer-link">🇨🇦 Канада</a>
+          <a href="/country/DE" class="footer-link">🇩🇪 {{ __('landing.country_de') }}</a>
+          <a href="/country/IT" class="footer-link">🇮🇹 {{ __('landing.country_it') }}</a>
+          <a href="/country/FR" class="footer-link">🇫🇷 {{ __('landing.country_fr') }}</a>
+          <a href="/country/JP" class="footer-link">🇯🇵 {{ __('landing.country_jp') }}</a>
+          <a href="/country/KR" class="footer-link">🇰🇷 {{ __('landing.country_kr') }}</a>
+          <a href="/country/US" class="footer-link">🇺🇸 {{ __('landing.country_us') }}</a>
+          <a href="/country/GB" class="footer-link">🇬🇧 {{ __('landing.country_gb') }}</a>
+          <a href="/country/CA" class="footer-link">🇨🇦 {{ __('landing.country_ca') }}</a>
         </div>
       </div>
       <div class="footer-col fade-up">
-        <h4>Клиентам</h4>
+        <h4>{{ __('landing.footer_clients') }}</h4>
         <div class="footer-links">
-          <a href="/#how" class="footer-link">Как это работает</a>
-          <a href="/#scoring" class="footer-link">Проверить шансы</a>
-          <a href="/#destinations" class="footer-link">Сравнить направления</a>
-          <a href="/#faq" class="footer-link">FAQ</a>
-          <a href="/blog" class="footer-link">Блог</a>
-          <a href="/#trust" class="footer-link">Отзывы</a>
-          <a href="javascript:void(0)" onclick="openAuthModal()" class="footer-link">Личный кабинет</a>
+          <a href="/#how" class="footer-link">{{ __('landing.footer_how') }}</a>
+          <a href="/#scoring" class="footer-link">{{ __('landing.footer_check') }}</a>
+          <a href="/#destinations" class="footer-link">{{ __('landing.footer_compare') }}</a>
+          <a href="/#faq" class="footer-link">{{ __('landing.nav_faq') }}</a>
+          <a href="/blog" class="footer-link">{{ __('landing.footer_blog') }}</a>
+          <a href="/#trust" class="footer-link">{{ __('landing.footer_reviews') }}</a>
+          <a href="javascript:void(0)" onclick="openAuthModal()" class="footer-link">{{ __('landing.footer_cabinet') }}</a>
         </div>
       </div>
       <div class="footer-col fade-up">
-        <h4>Доверие</h4>
+        <h4>{{ __('landing.footer_trust') }}</h4>
         <div class="footer-links">
-          <a href="#" class="footer-link">AI-оценка шансов</a>
-          <a href="#" class="footer-link">Прозрачный путь</a>
-          <a href="#" class="footer-link">Проверенные партнёры</a>
-          <a href="/privacy" class="footer-link">Политика конфиденциальности</a>
-          <a href="/terms" class="footer-link">Пользовательское соглашение</a>
+          <a href="#" class="footer-link">{{ __('landing.footer_ai') }}</a>
+          <a href="#" class="footer-link">{{ __('landing.footer_transparent') }}</a>
+          <a href="#" class="footer-link">{{ __('landing.footer_verified') }}</a>
+          <a href="/privacy" class="footer-link">{{ __('landing.footer_privacy') }}</a>
+          <a href="/terms" class="footer-link">{{ __('landing.footer_terms') }}</a>
         </div>
       </div>
       <div class="footer-col fade-up">
-        <h4>Контакты</h4>
+        <h4>{{ __('landing.footer_contacts') }}</h4>
         <div class="footer-links">
           <a href="#" class="footer-link">+998 71 200-00-00</a>
           <a href="#" class="footer-link">info@visabor.uz</a>
           <a href="https://t.me/visaborbot" class="footer-link">Telegram</a>
           <a href="#" class="footer-link">WhatsApp</a>
-          <a href="#" class="footer-link">Ташкент, Узбекистан</a>
+          <a href="#" class="footer-link">{{ __('landing.footer_city') }}</a>
         </div>
       </div>
     </div>
     <div class="footer-bottom">
-      <span class="footer-bottom-text">&copy; {{ date('Y') }} visabor.uz -- AI Visa Platform. Все права защищены.</span>
+      <span class="footer-bottom-text">{{ __('landing.footer_copyright', ['year' => date('Y')]) }}</span>
       <div class="footer-bottom-links">
-        <a href="/privacy" class="footer-link" style="font-size:0.78rem;">Конфиденциальность</a>
-        <a href="/terms" class="footer-link" style="font-size:0.78rem;">Соглашение</a>
+        <a href="/privacy" class="footer-link" style="font-size:0.78rem;">{{ __('landing.footer_privacy_short') }}</a>
+        <a href="/terms" class="footer-link" style="font-size:0.78rem;">{{ __('landing.footer_terms_short') }}</a>
         <a href="/sitemap.xml" class="footer-link" style="font-size:0.78rem;">Sitemap</a>
       </div>
     </div>
@@ -1092,6 +1092,7 @@ footer { background: var(--navy); padding: 80px 0 40px; }
 </footer>
 
 <script>
+const T_LAYOUT = @json(__('landing'));
 // ===== AUTH STATE IN NAVBAR =====
 (function() {
   try {
@@ -1108,7 +1109,7 @@ footer { background: var(--navy); padding: 80px 0 40px; }
       } else if (u.phone) {
         nameEl.textContent = u.phone.replace(/^\+998/, '+998 ').replace(/(\d{2})(\d{3})(\d{2})(\d{2})/, '$1 $2 $3 $4');
       } else {
-        nameEl.textContent = 'Мой профиль';
+        nameEl.textContent = T_LAYOUT.nav_my_profile;
       }
       document.getElementById('navUserLink').style.display = '';
       document.getElementById('navBtnLogout').style.display = '';
@@ -1201,8 +1202,8 @@ window.addEventListener('scroll', () => {
         <span style="font-family:var(--font-display); font-weight:800; font-size:1.2rem; color:var(--navy);">visa<span style="color:var(--green);">bor</span></span>
         <button onclick="closeAuthModal()" style="width:36px; height:36px; border:none; background:var(--gray-50); border-radius:50%; cursor:pointer; font-size:1.1rem; color:var(--text-muted); display:flex; align-items:center; justify-content:center;">&#10005;</button>
       </div>
-      <h2 id="authTitle" style="font-size:1.5rem; font-weight:700; color:var(--navy); margin-bottom:4px;">Вход в систему</h2>
-      <p id="authSubtitle" style="color:var(--text-muted); font-size:0.9rem;">Введите номер телефона</p>
+      <h2 id="authTitle" style="font-size:1.5rem; font-weight:700; color:var(--navy); margin-bottom:4px;">{{ __('landing.auth_title') }}</h2>
+      <p id="authSubtitle" style="color:var(--text-muted); font-size:0.9rem;">{{ __('landing.auth_subtitle') }}</p>
     </div>
     <!-- Body -->
     <div style="padding:0 28px 28px;">
@@ -1216,20 +1217,20 @@ window.addEventListener('scroll', () => {
             onblur="document.getElementById('phoneWrap').style.borderColor='var(--border)'"
             oninput="formatPhoneInput(this)" onkeydown="phoneKeydown(event)" onkeyup="if(event.key==='Enter')sendOtp()">
         </div>
-        <p style="margin-top:6px; font-size:0.78rem; color:var(--text-muted);">Пример: +998 97 123 45 67</p>
+        <p style="margin-top:6px; font-size:0.78rem; color:var(--text-muted);">{{ __('landing.auth_phone_hint') }}</p>
         <p id="phoneError" style="margin-top:4px; font-size:0.85rem; color:var(--red); display:none;"></p>
         <button id="btnSendOtp" onclick="sendOtp()" style="margin-top:16px; width:100%; padding:14px; background:var(--navy); color:white; border:none; border-radius:12px; font-size:1rem; font-weight:600; cursor:pointer; transition:background 0.2s;" onmouseover="this.style.background='#0d2a5e'" onmouseout="this.style.background='var(--navy)'">
-          Получить код
+          {{ __('landing.auth_get_code') }}
         </button>
         <p style="margin-top:14px; text-align:center; font-size:0.85rem; color:var(--text-muted);">
-          Есть PIN?
-          <a href="javascript:void(0)" onclick="showStep('loginPin')" style="color:var(--navy); font-weight:600; text-decoration:none;">Войти по PIN</a>
+          {{ __('landing.auth_have_pin') }}
+          <a href="javascript:void(0)" onclick="showStep('loginPin')" style="color:var(--navy); font-weight:600; text-decoration:none;">{{ __('landing.auth_login_pin') }}</a>
         </p>
       </div>
 
       <!-- Step: OTP -->
       <div id="stepOtp" style="display:none;">
-        <p style="margin-bottom:16px; font-size:0.9rem; color:var(--text-secondary); text-align:center;">Код отправлен на <strong id="otpPhone"></strong></p>
+        <p style="margin-bottom:16px; font-size:0.9rem; color:var(--text-secondary); text-align:center;">{{ __('landing.auth_code_sent') }} <strong id="otpPhone"></strong></p>
         <div style="display:flex; gap:10px; justify-content:center;">
           <input class="otp-box" type="tel" inputmode="numeric" maxlength="1" oninput="otpInput(this,0)" onkeydown="otpKeydown(event,0)" style="width:60px; height:68px; text-align:center; font-size:1.6rem; font-weight:700; border:2px solid var(--border); border-radius:12px; outline:none; color:var(--navy); transition:border-color 0.2s;" onfocus="this.style.borderColor='var(--green)'" onblur="this.style.borderColor=this.value?'var(--green)':'var(--border)'">
           <input class="otp-box" type="tel" inputmode="numeric" maxlength="1" oninput="otpInput(this,1)" onkeydown="otpKeydown(event,1)" style="width:60px; height:68px; text-align:center; font-size:1.6rem; font-weight:700; border:2px solid var(--border); border-radius:12px; outline:none; color:var(--navy); transition:border-color 0.2s;" onfocus="this.style.borderColor='var(--green)'" onblur="this.style.borderColor=this.value?'var(--green)':'var(--border)'">
@@ -1238,25 +1239,25 @@ window.addEventListener('scroll', () => {
         </div>
         <p id="otpError" style="margin-top:8px; font-size:0.85rem; color:var(--red); text-align:center; display:none;"></p>
         <button id="btnVerifyOtp" onclick="verifyOtp()" disabled style="margin-top:16px; width:100%; padding:14px; background:var(--navy); color:white; border:none; border-radius:12px; font-size:1rem; font-weight:600; cursor:pointer; opacity:0.4; transition:all 0.2s;">
-          Подтвердить
+          {{ __('landing.auth_confirm') }}
         </button>
         <div style="margin-top:14px; display:flex; justify-content:space-between; font-size:0.85rem;">
-          <a href="javascript:void(0)" onclick="showStep('phone')" style="color:var(--text-muted); text-decoration:none;">Изменить номер</a>
-          <span id="resendWrap"><span style="color:var(--text-muted);">Повторить через <span id="resendTimer">60</span>с</span></span>
+          <a href="javascript:void(0)" onclick="showStep('phone')" style="color:var(--text-muted); text-decoration:none;">{{ __('landing.auth_change_num') }}</a>
+          <span id="resendWrap"><span style="color:var(--text-muted);">{{ __('landing.auth_resend_in') }} <span id="resendTimer">60</span>с</span></span>
         </div>
       </div>
 
       <!-- Step: Set PIN -->
       <div id="stepPin" style="display:none;">
-        <p style="margin-bottom:16px; font-size:0.9rem; color:var(--text-secondary);">Запомните 4-значный PIN для быстрого входа</p>
+        <p style="margin-bottom:16px; font-size:0.9rem; color:var(--text-secondary);">{{ __('landing.auth_pin_remember') }}</p>
         <input id="pinInput" type="tel" inputmode="numeric" maxlength="4" placeholder="----"
           style="width:100%; padding:14px; border:2px solid var(--border); border-radius:12px; text-align:center; font-size:2rem; font-weight:700; letter-spacing:0.5em; color:var(--navy); outline:none; transition:border-color 0.2s;"
           oninput="this.value=this.value.replace(/\D/g,'').slice(0,4)" onfocus="this.style.borderColor='var(--green)'" onblur="this.style.borderColor='var(--border)'">
         <button onclick="setPin()" style="margin-top:16px; width:100%; padding:14px; background:var(--green); color:white; border:none; border-radius:12px; font-size:1rem; font-weight:600; cursor:pointer;">
-          Сохранить PIN
+          {{ __('landing.auth_save_pin') }}
         </button>
         <button onclick="authFinish()" style="margin-top:8px; width:100%; padding:12px; background:none; border:none; font-size:0.9rem; color:var(--text-muted); cursor:pointer;">
-          Пропустить
+          {{ __('landing.auth_skip') }}
         </button>
       </div>
 
@@ -1278,10 +1279,10 @@ window.addEventListener('scroll', () => {
           onkeyup="if(event.key==='Enter')loginWithPin()">
         <p id="loginPinError" style="margin-top:4px; font-size:0.85rem; color:var(--red); display:none;"></p>
         <button onclick="loginWithPin()" style="margin-top:16px; width:100%; padding:14px; background:var(--navy); color:white; border:none; border-radius:12px; font-size:1rem; font-weight:600; cursor:pointer;">
-          Войти
+          {{ __('landing.auth_login') }}
         </button>
         <p style="margin-top:14px; text-align:center;">
-          <a href="javascript:void(0)" onclick="showStep('phone')" style="font-size:0.85rem; color:var(--text-muted); text-decoration:none;">Войти по SMS</a>
+          <a href="javascript:void(0)" onclick="showStep('phone')" style="font-size:0.85rem; color:var(--text-muted); text-decoration:none;">{{ __('landing.auth_login_sms') }}</a>
         </p>
       </div>
     </div>
@@ -1315,7 +1316,7 @@ function closeAuthModal() {
 
 function showStep(step) {
   ['stepPhone','stepOtp','stepPin','stepLoginPin'].forEach(id => document.getElementById(id).style.display = 'none');
-  const titles = { phone: ['Вход в систему','Введите номер телефона'], otp: ['Введите код','SMS отправлено'], pin: ['Установите PIN','Для быстрого входа в будущем'], loginPin: ['Вход по PIN','Введите телефон и PIN'] };
+  const titles = { phone: [T_LAYOUT.auth_title, T_LAYOUT.auth_subtitle], otp: [T_LAYOUT.auth_code_sent, 'SMS'], pin: [T_LAYOUT.auth_set_pin, T_LAYOUT.auth_set_pin_desc], loginPin: [T_LAYOUT.auth_login_by_pin, T_LAYOUT.auth_enter_phone_pin] };
   const t = titles[step] || titles.phone;
   document.getElementById('authTitle').textContent = t[0];
   document.getElementById('authSubtitle').textContent = t[1];
@@ -1385,7 +1386,7 @@ function startResendTimer() {
   const wrap = document.getElementById('resendWrap');
   const timer = document.getElementById('resendTimer');
   timer.textContent = sec;
-  wrap.innerHTML = '<span style="color:var(--text-muted);">Повторить через <span id="resendTimer">' + sec + '</span>с</span>';
+  wrap.innerHTML = '<span style="color:var(--text-muted);">' + T_LAYOUT.auth_resend_in + ' <span id="resendTimer">' + sec + '</span>с</span>';
   clearInterval(resendInterval);
   resendInterval = setInterval(() => {
     sec--;
@@ -1393,7 +1394,7 @@ function startResendTimer() {
     if (t) t.textContent = sec;
     if (sec <= 0) {
       clearInterval(resendInterval);
-      wrap.innerHTML = '<a href="javascript:void(0)" onclick="sendOtp()" style="color:var(--navy); font-weight:600; text-decoration:none;">Отправить снова</a>';
+      wrap.innerHTML = '<a href="javascript:void(0)" onclick="sendOtp()" style="color:var(--navy); font-weight:600; text-decoration:none;">' + T_LAYOUT.auth_resend + '</a>';
     }
   }, 1000);
 }
@@ -1401,26 +1402,26 @@ function startResendTimer() {
 // API calls
 async function sendOtp() {
   const digits = getPhoneDigits('phoneInput');
-  if (digits.length < 9) { showError('phoneError','Введите полный номер'); return; }
+  if (digits.length < 9) { showError('phoneError', T_LAYOUT.auth_enter_full); return; }
   hideError('phoneError');
   const phone = '+998' + digits;
   const btn = document.getElementById('btnSendOtp');
-  btn.textContent = 'Отправка...'; btn.disabled = true;
+  btn.textContent = T_LAYOUT.auth_sending; btn.disabled = true;
   try {
     const r = await fetch(API_BASE + '/auth/send-otp', {
       method:'POST', headers:{'Content-Type':'application/json','Accept':'application/json'},
       body: JSON.stringify({ phone })
     });
     const d = await r.json();
-    if (!r.ok) throw new Error(d.message || 'Ошибка');
+    if (!r.ok) throw new Error(d.message || T_LAYOUT.auth_error);
     document.getElementById('otpPhone').textContent = phone;
     showStep('otp');
     clearOtpBoxes();
     startResendTimer();
   } catch(e) {
-    showError('phoneError', e.message || 'Ошибка отправки SMS');
+    showError('phoneError', e.message || T_LAYOUT.auth_error_sms);
   } finally {
-    btn.textContent = 'Получить код'; btn.disabled = false;
+    btn.textContent = T_LAYOUT.auth_get_code; btn.disabled = false;
   }
 }
 
@@ -1431,14 +1432,14 @@ async function verifyOtp() {
   hideError('otpError');
   const phone = '+998' + getPhoneDigits('phoneInput');
   const btn = document.getElementById('btnVerifyOtp');
-  btn.textContent = 'Проверка...'; btn.disabled = true;
+  btn.textContent = T_LAYOUT.auth_checking; btn.disabled = true;
   try {
     const r = await fetch(API_BASE + '/auth/verify-otp', {
       method:'POST', headers:{'Content-Type':'application/json','Accept':'application/json'},
       body: JSON.stringify({ phone, code })
     });
     const d = await r.json();
-    if (!r.ok) throw new Error(d.message || 'Неверный код');
+    if (!r.ok) throw new Error(d.message || T_LAYOUT.auth_wrong_code);
     authToken = d.data.token;
     authUser = d.data.user;
     localStorage.setItem('public_token', authToken);
@@ -1449,11 +1450,11 @@ async function verifyOtp() {
       authFinish();
     }
   } catch(e) {
-    showError('otpError', e.message || 'Неверный код');
+    showError('otpError', e.message || T_LAYOUT.auth_wrong_code);
     clearOtpBoxes();
     setTimeout(() => document.querySelectorAll('.otp-box')[0].focus(), 100);
   } finally {
-    btn.textContent = 'Подтвердить'; btn.disabled = false;
+    btn.textContent = T_LAYOUT.auth_confirm; btn.disabled = false;
   }
 }
 
@@ -1472,8 +1473,8 @@ async function setPin() {
 async function loginWithPin() {
   const digits = getPhoneDigits('loginPhoneInput');
   const pin = document.getElementById('loginPinInput').value;
-  if (digits.length < 9) { showError('loginPinError','Введите полный номер'); return; }
-  if (pin.length < 4) { showError('loginPinError','Введите 4-значный PIN'); return; }
+  if (digits.length < 9) { showError('loginPinError', T_LAYOUT.auth_enter_full); return; }
+  if (pin.length < 4) { showError('loginPinError', T_LAYOUT.auth_enter_pin); return; }
   hideError('loginPinError');
   const phone = '+998' + digits;
   try {
@@ -1482,12 +1483,12 @@ async function loginWithPin() {
       body: JSON.stringify({ phone, pin })
     });
     const d = await r.json();
-    if (!r.ok) throw new Error(d.message || 'Неверный телефон или PIN');
+    if (!r.ok) throw new Error(d.message || T_LAYOUT.auth_wrong_pin);
     localStorage.setItem('public_token', d.data.token);
     localStorage.setItem('public_user', JSON.stringify(d.data.user));
     authFinish();
   } catch(e) {
-    showError('loginPinError', e.message || 'Ошибка входа');
+    showError('loginPinError', e.message || T_LAYOUT.auth_error_login);
   }
 }
 
@@ -1500,7 +1501,7 @@ function authFinish() {
     document.getElementById('navBtnLogin').style.display = 'none';
     document.getElementById('navBtnScoring').style.display = 'none';
     const nameEl = document.getElementById('navUserName');
-    nameEl.textContent = (u && u.name) ? u.name : 'Мой профиль';
+    nameEl.textContent = (u && u.name) ? u.name : T_LAYOUT.nav_my_profile;
     document.getElementById('navUserLink').style.display = '';
     document.getElementById('navBtnLogout').style.display = '';
     document.getElementById('navStatusBadges').style.display = 'flex';

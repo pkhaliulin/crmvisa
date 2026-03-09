@@ -23,7 +23,7 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        //
+        $this->app->useLangPath(base_path('lang'));
     }
 
     public function boot(): void
