@@ -56,22 +56,16 @@ class IncomingLeadController extends Controller
 
                 // 2. Создаём заявку (лид)
                 $caseData = [
-                    'agency_id'    => $agency->id,
-                    'client_id'    => $client->id,
-                    'stage'        => 'lead',
+                    'agency_id'     => $agency->id,
+                    'client_id'     => $client->id,
+                    'stage'         => 'lead',
                     'public_status' => 'submitted',
-                    'priority'     => 'normal',
-                    'lead_source'  => $data['source'] ?? 'api',
-                    'notes'        => $this->buildNotes($data),
+                    'priority'      => 'normal',
+                    'lead_source'   => $data['source'] ?? 'api',
+                    'notes'         => $this->buildNotes($data),
+                    'country_code'  => ! empty($data['country']) ? strtoupper($data['country']) : 'XX',
+                    'visa_type'     => $data['visa_type'] ?? 'tourist',
                 ];
-
-                if (! empty($data['country'])) {
-                    $caseData['country_code'] = strtoupper($data['country']);
-                }
-
-                if (! empty($data['visa_type'])) {
-                    $caseData['visa_type'] = $data['visa_type'];
-                }
 
                 if (! empty($data['travel_date'])) {
                     $caseData['travel_date'] = $data['travel_date'];
