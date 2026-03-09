@@ -145,6 +145,12 @@ const navGroups = [
     ],
   },
   {
+    title: 'Сайт VisaBor',
+    items: [
+      { to: '/crm/website',  icon: '🌐', label: 'Управление сайтом' },
+    ],
+  },
+  {
     title: 'Финансы',
     items: [
       { to: '/crm/billing',  icon: '💳', label: 'Биллинг и тарифы' },
@@ -169,6 +175,7 @@ const routeTitles = {
   '/crm/finance':      'Финансовые транзакции',
   '/crm/monitoring':   'Мониторинг системы',
   '/crm/memory':       'Память проекта',
+  '/crm/website':      'Сайт VisaBor',
 };
 
 const currentPageTitle = computed(() => routeTitles[route.path] ?? 'Owner Panel');

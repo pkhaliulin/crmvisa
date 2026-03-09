@@ -8,6 +8,7 @@ use App\Modules\Owner\Controllers\MemoryController;
 use App\Modules\Owner\Controllers\MonitoringController;
 use App\Modules\Owner\Controllers\OwnerBillingController;
 use App\Modules\Owner\Controllers\OwnerController;
+use App\Modules\Owner\Controllers\WebsiteSettingsController;
 use App\Modules\Payment\Controllers\BillingController;
 use App\Modules\Payment\Controllers\MarketplaceController;
 use App\Modules\Service\Controllers\ServiceCatalogController;
@@ -140,6 +141,11 @@ Route::middleware(['auth:api', 'role:superadmin'])->prefix('owner')->group(funct
 
     // Память проекта (документация)
     Route::get('memory', [MemoryController::class, 'index']);
+
+    // Настройки сайта VisaBor
+    Route::get('website-settings', [WebsiteSettingsController::class, 'index']);
+    Route::put('website-settings', [WebsiteSettingsController::class, 'update']);
+    Route::post('website-settings/clear-cache', [WebsiteSettingsController::class, 'clearCache']);
 
     // Мониторинг системы
     Route::prefix('monitoring')->group(function () {

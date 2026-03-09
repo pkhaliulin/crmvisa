@@ -1,2 +1,14 @@
 User-agent: *
-Disallow:
+Allow: /
+Allow: /about
+Allow: /privacy
+Allow: /terms
+Allow: /country/
+Disallow: /api/
+Disallow: /app/
+Disallow: /crm/
+Disallow: /me/
+Disallow: /login
+Disallow: /register
+
+Sitemap: https://visabor.uz/sitemap.xml

@@ -12,6 +12,8 @@ class SetLocale
     {
         $locale = $request->header('X-Locale')
             ?? $request->query('lang')
+            ?? $request->cookie('locale')
+            ?? session('locale')
             ?? 'ru';
 
         if (in_array($locale, ['ru', 'uz'])) {

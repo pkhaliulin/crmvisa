@@ -206,6 +206,11 @@ const routes = [
                 name: 'owner.memory',
                 component: () => import('@/pages/owner/OwnerMemoryPage.vue'),
             },
+            {
+                path: 'website',
+                name: 'owner.website',
+                component: () => import('@/pages/owner/OwnerWebsitePage.vue'),
+            },
         ],
     },
 

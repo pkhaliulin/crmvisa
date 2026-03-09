@@ -33,6 +33,9 @@ return Application::configure(basePath: dirname(__DIR__))
         // Глобальный middleware — security headers на все ответы
         $middleware->append(SecurityHeaders::class);
 
+        // Локализация на web-маршруты (cookie/session/header)
+        $middleware->web(append: [SetLocale::class]);
+
         // SetTenantContext глобально ПЕРВЫМ — до auth middleware и любых DB-запросов
         $middleware->prepend(SetTenantContext::class);
 
