@@ -18,10 +18,29 @@ class LandingController extends Controller
     }
 
     /**
+     * Проверка: включён ли публичный сайт
+     */
+    protected function isSiteEnabled(): bool
+    {
+        return Cache::remember('landing:site_enabled', 60, function () {
+            $row = DB::table('site_settings')->where('key', 'site.enabled')->first();
+            return $row ? json_decode($row->value, true) : true;
+        });
+    }
+
+    /**
      * GET / — Главная страница (Blade, SSR для SEO)
      */
     public function index()
     {
+        $siteEnabled = $this->isSiteEnabled();
+        $locale = app()->getLocale();
+
+        // Если сайт отключён — показываем только форму входа (JS на клиенте проверит localStorage)
+        if (!$siteEnabled) {
+            return view('landing.disabled', compact('locale', 'siteEnabled'));
+        }
+
         $countries = Cache::remember('landing:countries', 300, function () {
             return PortalCountry::where('is_active', true)
                 ->orderBy('sort_order')
@@ -47,9 +66,7 @@ class LandingController extends Controller
             ];
         });
 
-        $locale = app()->getLocale();
-
-        return view('landing.index', compact('countries', 'agencies', 'stats', 'locale'));
+        return view('landing.index', compact('countries', 'agencies', 'stats', 'locale', 'siteEnabled'));
     }
 
     /**
@@ -57,6 +74,11 @@ class LandingController extends Controller
      */
     public function country(string $code)
     {
+        // Если сайт отключён — редирект на главную (там форма входа)
+        if (!$this->isSiteEnabled()) {
+            return redirect('/');
+        }
+
         $country = PortalCountry::where('country_code', strtoupper($code))
             ->where('is_active', true)
             ->firstOrFail();
@@ -82,6 +104,9 @@ class LandingController extends Controller
      */
     public function about()
     {
+        if (!$this->isSiteEnabled()) {
+            return redirect('/');
+        }
         return view('landing.about');
     }
 

@@ -1,16 +1,39 @@
 <template>
   <div class="space-y-6">
+    <!-- Большой статус-бейдж -->
+    <div v-if="!loading" class="rounded-xl border-2 p-4 flex items-center gap-4"
+      :class="settings['site.enabled']
+        ? 'border-green-200 bg-green-50'
+        : 'border-red-200 bg-red-50'">
+      <div class="w-3 h-3 rounded-full shrink-0"
+        :class="settings['site.enabled'] ? 'bg-green-500 animate-pulse' : 'bg-red-500'"></div>
+      <div class="flex-1">
+        <div class="text-sm font-bold"
+          :class="settings['site.enabled'] ? 'text-green-800' : 'text-red-800'">
+          {{ settings['site.enabled'] ? 'Сайт включён и доступен' : 'Сайт отключён — только форма входа' }}
+        </div>
+        <div class="text-xs mt-0.5"
+          :class="settings['site.enabled'] ? 'text-green-600' : 'text-red-600'">
+          {{ settings['site.enabled']
+            ? 'Все посетители видят полную версию visabor.uz'
+            : 'Неавторизованные посетители видят только экран входа. Авторизованные работают как обычно.' }}
+        </div>
+      </div>
+      <a href="/" target="_blank"
+        class="px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors shrink-0"
+        :class="settings['site.enabled']
+          ? 'text-green-700 border-green-300 hover:bg-green-100'
+          : 'text-red-700 border-red-300 hover:bg-red-100'">
+        Открыть сайт
+      </a>
+    </div>
+
     <div class="flex items-center justify-between">
       <div>
         <h1 class="text-xl font-bold text-gray-800">Сайт VisaBor</h1>
         <p class="text-sm text-gray-500 mt-1">Управление контентом и настройками visabor.uz</p>
       </div>
       <div class="flex items-center gap-3">
-        <a href="/" target="_blank"
-          class="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200
-                 rounded-lg hover:bg-gray-50 transition-colors">
-          Открыть сайт
-        </a>
         <button @click="clearCache" :disabled="clearing"
           class="px-4 py-2 text-sm font-medium text-amber-700 bg-amber-50 border border-amber-200
                  rounded-lg hover:bg-amber-100 transition-colors disabled:opacity-50">

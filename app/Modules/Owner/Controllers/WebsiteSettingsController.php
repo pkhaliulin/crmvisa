@@ -56,6 +56,7 @@ class WebsiteSettingsController extends Controller
 
         // Очищаем кэш лендинга
         Cache::forget('landing:settings');
+        Cache::forget('landing:site_enabled');
 
         return ApiResponse::success(null, 'Настройки сохранены');
     }
@@ -69,6 +70,7 @@ class WebsiteSettingsController extends Controller
         Cache::forget('landing:agencies');
         Cache::forget('landing:stats');
         Cache::forget('landing:settings');
+        Cache::forget('landing:site_enabled');
 
         return ApiResponse::success(null, 'Кэш лендинга очищен');
     }
