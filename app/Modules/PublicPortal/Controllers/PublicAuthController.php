@@ -22,7 +22,11 @@ class PublicAuthController extends Controller
             'phone' => 'required|string|min:9|max:20',
         ]);
 
-        $sent = $this->auth->sendOtp($request->phone);
+        try {
+            $sent = $this->auth->sendOtp($request->phone);
+        } catch (\InvalidArgumentException $e) {
+            return ApiResponse::error($e->getMessage(), null, 422);
+        }
 
         if (! $sent) {
             return ApiResponse::error('Не удалось отправить SMS. Попробуйте ещё раз.', null, 503);
