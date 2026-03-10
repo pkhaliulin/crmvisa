@@ -42,7 +42,7 @@ class IncomingLeadController extends Controller
             'source'       => ['nullable', 'string', 'max:50'],
             'channel_code' => ['nullable', 'string', 'max:50'],
             'message'      => ['nullable', 'string', 'max:2000'],
-            'travel_date'  => ['nullable', 'date'],
+            'travel_date'  => ['nullable', 'date', 'after_or_equal:today'],
             'extra'        => ['nullable', 'array'],
         ]);
 

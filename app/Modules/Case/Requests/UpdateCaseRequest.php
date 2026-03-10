@@ -19,7 +19,7 @@ class UpdateCaseRequest extends FormRequest
             'assigned_to'          => ['sometimes', 'nullable', 'uuid', "exists:users,id,agency_id,{$agencyId}"],
             'priority'             => ['sometimes', 'in:low,normal,high,urgent'],
             'critical_date'        => ['sometimes', 'nullable', 'date'],
-            'travel_date'          => ['sometimes', 'nullable', 'date'],
+            'travel_date'          => ['sometimes', 'nullable', 'date', 'after_or_equal:today'],
             'notes'                => ['sometimes', 'nullable', 'string'],
             'appointment_date'     => ['sometimes', 'nullable', 'date'],
             'appointment_time'     => ['sometimes', 'nullable', 'string', 'max:10'],

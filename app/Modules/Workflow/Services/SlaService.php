@@ -242,7 +242,10 @@ class SlaService
             ->filter(function (VisaCase $case) use ($rules) {
                 $rule        = $rules->get("{$case->country_code}:{$case->visa_type}");
                 $warningDays = $rule ? $rule->warning_days : 5;
-                $daysLeft    = Carbon::now()->diffInDays($case->critical_date, false);
+                // Используем Asia/Tashkent для корректного расчёта дней (#6)
+                $now      = Carbon::now('Asia/Tashkent')->startOfDay();
+                $deadline = $case->critical_date->copy()->startOfDay();
+                $daysLeft = $now->diffInDays($deadline, false);
 
                 return $daysLeft >= 0 && $daysLeft <= $warningDays;
             });

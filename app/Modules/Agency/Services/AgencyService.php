@@ -112,12 +112,13 @@ class AgencyService extends BaseService
             return $this->assignByWorkload($agency);
         }
 
+        // Считаем ВСЕ кейсы по стране (не только result), чтобы для новых стран
+        // не всегда срабатывал fallback (#13)
         $manager = User::where('agency_id', $agency->id)
             ->where('role', 'manager')
             ->where('is_active', true)
             ->withCount(['cases as country_cases' => fn ($q) => $q
                 ->where('country_code', $countryCode)
-                ->where('stage', 'result')
             ])
             ->orderByDesc('country_cases')
             ->first();

@@ -282,6 +282,21 @@ class CaseService extends BaseService
     {
         $previousStage = $case->stage;
 
+        // Терминальный статус — переход запрещён (#3)
+        if ($previousStage === 'result') {
+            throw ValidationException::withMessages([
+                'stage' => ['Заявка уже завершена, переход невозможен.'],
+            ]);
+        }
+
+        // Проверка допустимости перехода
+        $allowed = self::ALLOWED_TRANSITIONS[$previousStage] ?? [];
+        if (!in_array($newStage, $allowed)) {
+            throw ValidationException::withMessages([
+                'stage' => ["Системный переход из «{$previousStage}» в «{$newStage}» невозможен."],
+            ]);
+        }
+
         $result = DB::transaction(function () use ($case, $newStage, $notes) {
             CaseStage::where('case_id', $case->id)
                 ->whereNull('exited_at')

@@ -11,6 +11,7 @@ use App\Modules\Payment\Models\ClientPayment;
 use App\Support\Helpers\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -44,12 +45,30 @@ class PublicFamilyController extends Controller
         $data = $request->validate([
             'name'               => ['required', 'string', 'max:255'],
             'relationship'       => ['required', Rule::in(['child', 'spouse', 'parent', 'sibling', 'other'])],
-            'dob'                => ['nullable', 'date', 'before:today'],
+            'dob'                => ['required', 'date', 'before:today', 'after:1900-01-01'],
             'gender'             => ['nullable', Rule::in(['M', 'F'])],
             'citizenship'        => ['nullable', 'string', 'size:2'],
             'passport_number'    => ['nullable', 'string', 'regex:/^[A-Z]{2}[0-9]{7}$/'],
             'passport_expires_at'=> ['nullable', 'date', 'after:today'],
         ]);
+
+        // Валидация возраста для child: до 18 лет (#17)
+        if ($data['relationship'] === 'child') {
+            $age = Carbon::parse($data['dob'])->age;
+            if ($age >= 18) {
+                return ApiResponse::error('Ребёнок должен быть младше 18 лет.', null, 422);
+            }
+        }
+
+        // Максимум 1 spouse (#17)
+        if ($data['relationship'] === 'spouse') {
+            $existingSpouse = PublicUserFamilyMember::where('public_user_id', $publicUser->id)
+                ->where('relationship', 'spouse')
+                ->exists();
+            if ($existingSpouse) {
+                return ApiResponse::error('Супруг(а) уже добавлен(а).', null, 422);
+            }
+        }
 
         $data['public_user_id'] = $publicUser->id;
 

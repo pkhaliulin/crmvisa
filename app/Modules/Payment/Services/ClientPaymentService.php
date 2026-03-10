@@ -94,6 +94,17 @@ class ClientPaymentService
     {
         if ($payment->status !== 'pending' || ! $payment->case_id) return;
 
+        // lockForUpdate для предотвращения race condition при параллельных attach/detach (#12)
+        DB::transaction(function () use (&$payment) {
+            $payment = ClientPayment::where('id', $payment->id)->lockForUpdate()->first();
+            if (!$payment || $payment->status !== 'pending') return;
+
+            static::doRecalculate($payment);
+        });
+    }
+
+    private static function doRecalculate(ClientPayment $payment): void
+    {
         // Базовая цена: из metadata или из пакета
         $basePrice = $payment->metadata['base_price'] ?? null;
 
