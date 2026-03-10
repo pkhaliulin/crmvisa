@@ -531,15 +531,9 @@ class BillingInvariantTest extends TestCase
 
         $payment->refresh();
 
-        // handleCallback НЕ проверяет expires_at.
-        // Документируем: просроченный платёж обрабатывается (баг или фича — зависит от бизнес-требований).
-        // Если в будущем добавится проверка expires_at — обновить этот тест.
-        if ($result !== null) {
-            $this->assertEquals('succeeded', $payment->status,
-                'Текущая реализация не блокирует просроченные платежи (documented behavior)');
-        } else {
-            $this->assertEquals('pending', $payment->status,
-                'Просроченный платёж не был обработан');
-        }
+        // handleCallback проверяет expires_at и отклоняет просроченные платежи (fix #10)
+        $this->assertNull($result, 'Просроченный платёж не должен обрабатываться');
+        $this->assertEquals('expired', $payment->status,
+            'Просроченный платёж должен получить статус expired');
     }
 }

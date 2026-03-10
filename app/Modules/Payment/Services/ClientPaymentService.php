@@ -182,8 +182,17 @@ class ClientPaymentService
         $payment = ClientPayment::find($paymentId);
         if (! $payment) return null;
 
-        // Идемпотентность: если транзакция уже обработана — вернуть без повторной обработки
+        // Идемпотентность: проверяем по provider_transaction_id ИЛИ по payment_id + status
         $providerTxnId = $data['provider_transaction_id'] ?? null;
+
+        if ($payment->status === 'succeeded') {
+            Log::channel('billing')->info('Webhook skipped: payment already succeeded', [
+                'provider'   => $provider,
+                'payment_id' => $payment->id,
+            ]);
+            return $payment;
+        }
+
         if ($providerTxnId) {
             $existing = ClientPayment::where('provider', $provider)
                 ->where('provider_transaction_id', $providerTxnId)
@@ -198,14 +207,13 @@ class ClientPaymentService
                 ]);
                 return $existing;
             }
-        }
-
-        if ($payment->status === 'succeeded') {
-            Log::channel('billing')->info('Webhook skipped: payment already succeeded', [
+        } else {
+            // NULL provider_transaction_id — логируем предупреждение,
+            // полагаемся на lockForUpdate + status check внутри транзакции
+            Log::channel('billing')->warning('Webhook without provider_transaction_id — relying on lock-based idempotency', [
                 'provider'   => $provider,
                 'payment_id' => $payment->id,
             ]);
-            return $payment;
         }
 
         // Проверка истечения срока платежа
@@ -245,9 +253,13 @@ class ClientPaymentService
                     return;
                 }
 
+                // Если provider_transaction_id не пришел — генерируем fallback для идемпотентности
+                $txnId = $data['provider_transaction_id']
+                    ?? 'auto_' . $provider . '_' . $lockedPayment->id . '_' . now()->timestamp;
+
                 $lockedPayment->update([
                     'status'                  => 'succeeded',
-                    'provider_transaction_id' => $data['provider_transaction_id'] ?? null,
+                    'provider_transaction_id' => $txnId,
                     'paid_at'                 => now(),
                     'metadata'                => array_merge($lockedPayment->metadata ?? [], $data),
                 ]);

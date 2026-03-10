@@ -37,6 +37,7 @@ class CaseResource extends JsonResource
             'can_reapply'            => $this->can_reapply,
             'reapply_recommendation' => $this->reapply_recommendation,
             'payment_status'         => $this->payment_status,
+            'lock_version'           => $this->lock_version ?? 0,
             'lead_source'            => $this->lead_source,
             'created_at'             => $this->created_at?->toDateTimeString(),
             'updated_at'             => $this->updated_at?->toDateTimeString(),

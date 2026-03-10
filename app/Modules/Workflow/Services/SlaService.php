@@ -11,6 +11,13 @@ use Illuminate\Support\Collection;
 class SlaService
 {
     /**
+     * Рабочие часы: 09:00 - 18:00 (UTC+5, Ташкент).
+     * Выходные: суббота, воскресенье.
+     */
+    private const WORK_START_HOUR = 9;
+    private const WORK_END_HOUR   = 18;
+    private const WORK_HOURS_PER_DAY = 9; // 18 - 9
+    /**
      * Рассчитать critical_date на основе даты вылета и данных посольства.
      * critical_date = travel_date − (processing_days_standard + appointment_wait_days + buffer_days_recommended)
      */
@@ -68,6 +75,7 @@ class SlaService
 
     /**
      * Установить sla_due_at для CaseStage на основе stage_sla_days из правила SLA.
+     * Учитывает рабочие часы (Пн-Пт, 09:00-18:00 UTC+5).
      */
     public function applyStageSla(CaseStage $caseStage, VisaCase $case): void
     {
@@ -77,7 +85,7 @@ class SlaService
         $configHours = config("stages.{$stage}.sla_hours");
         if ($configHours && $configHours > 0) {
             $caseStage->update([
-                'sla_due_at' => Carbon::now()->addHours($configHours),
+                'sla_due_at' => $this->addBusinessHours(Carbon::now(), $configHours),
             ]);
             return;
         }
@@ -92,10 +100,72 @@ class SlaService
         $stageSla = $rule->stage_sla_days;
 
         if (isset($stageSla[$stage]) && $stageSla[$stage] > 0) {
+            // stage_sla_days — в рабочих днях, конвертируем в рабочие часы
+            $hours = $stageSla[$stage] * self::WORK_HOURS_PER_DAY;
             $caseStage->update([
-                'sla_due_at' => Carbon::now()->addDays($stageSla[$stage]),
+                'sla_due_at' => $this->addBusinessHours(Carbon::now(), $hours),
             ]);
         }
+    }
+
+    /**
+     * Добавить N рабочих часов к дате, пропуская выходные (Сб/Вс)
+     * и нерабочее время (до 09:00, после 18:00 UTC+5).
+     */
+    public function addBusinessHours(Carbon $from, int $hours): Carbon
+    {
+        $tz = 'Asia/Tashkent';
+        $cursor = $from->copy()->setTimezone($tz);
+
+        // Если сейчас выходной или нерабочее время — перенести на начало рабочего дня
+        $cursor = $this->moveToWorkTime($cursor);
+
+        $remainingHours = $hours;
+
+        while ($remainingHours > 0) {
+            // Сколько рабочих часов осталось до конца текущего рабочего дня
+            $endOfDay = $cursor->copy()->setTime(self::WORK_END_HOUR, 0, 0);
+            $hoursLeftToday = max(0, $cursor->floatDiffInHours($endOfDay, false));
+
+            if ($hoursLeftToday >= $remainingHours) {
+                $cursor->addHours($remainingHours);
+                $remainingHours = 0;
+            } else {
+                $remainingHours -= (int) floor($hoursLeftToday);
+                // Переход на следующий рабочий день
+                $cursor->addDay()->setTime(self::WORK_START_HOUR, 0, 0);
+                $cursor = $this->moveToWorkTime($cursor);
+            }
+        }
+
+        return $cursor->setTimezone('UTC');
+    }
+
+    /**
+     * Перенести дату на начало ближайшего рабочего времени,
+     * если текущая дата — выходной или нерабочее время.
+     */
+    private function moveToWorkTime(Carbon $date): Carbon
+    {
+        // Пропустить выходные
+        while ($date->isWeekend()) {
+            $date->addDay()->setTime(self::WORK_START_HOUR, 0, 0);
+        }
+
+        // До начала рабочего дня — перенести на начало
+        if ($date->hour < self::WORK_START_HOUR) {
+            $date->setTime(self::WORK_START_HOUR, 0, 0);
+        }
+
+        // После конца рабочего дня — перенести на следующий рабочий день
+        if ($date->hour >= self::WORK_END_HOUR) {
+            $date->addDay()->setTime(self::WORK_START_HOUR, 0, 0);
+            while ($date->isWeekend()) {
+                $date->addDay();
+            }
+        }
+
+        return $date;
     }
 
     /**

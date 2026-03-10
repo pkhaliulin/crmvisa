@@ -28,7 +28,7 @@ class CaseService extends BaseService
      */
     const ALLOWED_TRANSITIONS = [
         'lead'          => ['qualification'],
-        'qualification' => ['lead', 'documents'],
+        'qualification' => ['documents'],
         'documents'     => ['qualification', 'doc_review'],
         'doc_review'    => ['documents', 'translation', 'ready'],
         'translation'   => ['doc_review', 'ready'],
@@ -155,11 +155,20 @@ class CaseService extends BaseService
         // Отслеживаем первое назначение менеджера
         $isNewAssignment = isset($data['assigned_to']) && $data['assigned_to'] && !$case->assigned_to;
 
-        $case = $this->repository->update($id, $data);
+        // Оптимистичная блокировка: если фронт передал lock_version — используем
+        $lockVersion = $data['lock_version'] ?? null;
+        unset($data['lock_version']);
+
+        if ($lockVersion !== null) {
+            $case->optimisticUpdate($data, (int) $lockVersion);
+            $case = $case->fresh(['client', 'assignee']);
+        } else {
+            $case = $this->repository->update($id, $data);
+        }
 
         // Событие: менеджер назначен
         if ($isNewAssignment) {
-            CaseAssigned::dispatch($case, $data['assigned_to'], Auth::id());
+            CaseAssigned::dispatch($case, $data['assigned_to'] ?? $case->assigned_to, Auth::id());
         }
 
         // После сохранения assigned_to — перемещаем из lead в qualification
@@ -209,12 +218,6 @@ class CaseService extends BaseService
                 if ($mappedStatus) {
                     $updateData['public_status'] = $mappedStatus;
                 }
-            }
-
-            // Возврат в lead: снять менеджера и вернуть public_status
-            if ($newStage === 'lead') {
-                $updateData['assigned_to'] = null;
-                $updateData['public_status'] = 'submitted';
             }
 
             $case->update($updateData);
@@ -334,8 +337,7 @@ class CaseService extends BaseService
 
     /**
      * Проверить автопереход после загрузки документа.
-     * Все обязательные документы КЛИЕНТА загружены → documents → doc_review.
-     * Документы агентства (responsibility=agency) не блокируют переход.
+     * Все обязательные документы (и клиента, и агентства) загружены → documents → doc_review.
      */
     public function checkAutoTransitionAfterUpload(VisaCase $case): bool
     {
@@ -348,16 +350,18 @@ class CaseService extends BaseService
             ->whereNull('deleted_at')
             ->get(['is_required', 'status', 'responsibility']);
 
-        // Проверяем только документы клиента (responsibility = client или null)
-        $clientRequired = $checklist
-            ->where('is_required', true)
-            ->whereIn('responsibility', ['client', null]);
+        // Проверяем ВСЕ обязательные документы (и клиента, и агентства)
+        $allRequired = $checklist->where('is_required', true);
 
-        $allClientUploaded = $clientRequired
+        if ($allRequired->isEmpty()) {
+            return false;
+        }
+
+        $allUploaded = $allRequired
             ->every(fn ($item) => in_array($item->status, ['uploaded', 'approved', 'needs_translation']));
 
-        if ($allClientUploaded && $clientRequired->count() > 0) {
-            $this->moveToStageSystem($case, 'doc_review', 'Все обязательные документы клиента загружены');
+        if ($allUploaded) {
+            $this->moveToStageSystem($case, 'doc_review', 'Все обязательные документы загружены');
             return true;
         }
 

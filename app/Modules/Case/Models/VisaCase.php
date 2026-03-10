@@ -128,6 +128,7 @@ class VisaCase extends BaseModel
         'last_manager_update_at',
         'lead_source',
         'lead_channel_code',
+        'lock_version',
     ];
 
     protected $casts = [
@@ -167,6 +168,34 @@ class VisaCase extends BaseModel
     public function stageHistory(): HasMany
     {
         return $this->hasMany(CaseStage::class, 'case_id')->orderBy('entered_at');
+    }
+
+    /**
+     * Оптимистичное обновление: проверяет lock_version перед записью.
+     * Бросает ConflictException если версия устарела (другой менеджер обновил раньше).
+     *
+     * @throws \Illuminate\Validation\ValidationException
+     */
+    public function optimisticUpdate(array $data, ?int $expectedVersion = null): bool
+    {
+        $version = $expectedVersion ?? ($data['lock_version'] ?? $this->lock_version);
+        unset($data['lock_version']);
+
+        $affected = static::where('id', $this->id)
+            ->where('lock_version', $version)
+            ->update(array_merge($data, [
+                'lock_version' => \Illuminate\Support\Facades\DB::raw('lock_version + 1'),
+                'updated_at'   => now(),
+            ]));
+
+        if ($affected === 0) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'lock_version' => ['Заявка была изменена другим пользователем. Обновите страницу и попробуйте снова.'],
+            ]);
+        }
+
+        $this->refresh();
+        return true;
     }
 
     // Критично: дедлайн через ≤2 дня или уже прошёл
