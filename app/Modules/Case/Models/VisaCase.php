@@ -58,11 +58,14 @@ class VisaCase extends BaseModel
      */
     public static function calcCriticalDate(string $countryCode, string $visaType, $travelDate): ?Carbon
     {
+        $date = $travelDate instanceof Carbon ? $travelDate : Carbon::parse($travelDate);
+
         $setting = CountryVisaTypeSetting::findSetting($countryCode, $visaType);
         if (! $setting || ! $setting->min_days_before_departure) {
-            return null;
+            // Fallback: 30 дней до вылета если нет справочных данных по стране
+            return $date->copy()->subDays(30);
         }
-        $date = $travelDate instanceof Carbon ? $travelDate : Carbon::parse($travelDate);
+
         return $date->copy()->subDays($setting->min_days_before_departure);
     }
 

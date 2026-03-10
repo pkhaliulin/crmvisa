@@ -22,7 +22,7 @@ class StoreCaseRequest extends FormRequest
             'assigned_to'   => ['nullable', 'uuid', "exists:users,id,agency_id,{$agencyId}"],
             'priority'      => ['nullable', 'in:low,normal,high,urgent'],
             'critical_date' => ['nullable', 'date'],
-            'travel_date'   => ['nullable', 'date'],
+            'travel_date'   => ['nullable', 'date', 'after_or_equal:today'],
             'notes'         => ['nullable', 'string'],
         ];
     }

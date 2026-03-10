@@ -319,7 +319,7 @@ class CaseService extends BaseService
             'translation'   => 'translation',
             'ready'         => 'ready_for_submission',
             'review'        => 'under_review',
-            'result'        => null, // зависит от результата (completed/rejected)
+            'result'        => 'under_review', // result stage: public_status обновляется в completeCase()
         ];
 
         return $map[$stage] ?? null;

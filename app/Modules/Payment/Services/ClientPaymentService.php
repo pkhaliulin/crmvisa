@@ -208,6 +208,17 @@ class ClientPaymentService
             return $payment;
         }
 
+        // Проверка истечения срока платежа
+        if ($payment->expires_at && $payment->expires_at->isPast()) {
+            Log::channel('billing')->warning('Webhook rejected: payment expired', [
+                'provider'   => $provider,
+                'payment_id' => $payment->id,
+                'expires_at' => $payment->expires_at->toIso8601String(),
+            ]);
+            $payment->update(['status' => 'expired']);
+            return null;
+        }
+
         try {
             DB::transaction(function () use ($payment, $provider, $data) {
                 if ($payment->agency_id) {
@@ -221,7 +232,16 @@ class ClientPaymentService
                     ->lockForUpdate()
                     ->first();
 
-                if (! $lockedPayment || $lockedPayment->status === 'succeeded') {
+                if (! $lockedPayment || in_array($lockedPayment->status, ['succeeded', 'expired'])) {
+                    return;
+                }
+
+                // Повторная проверка expires_at под блокировкой
+                if ($lockedPayment->expires_at && $lockedPayment->expires_at->isPast()) {
+                    $lockedPayment->update(['status' => 'expired']);
+                    Log::channel('billing')->warning('Payment expired during processing', [
+                        'payment_id' => $lockedPayment->id,
+                    ]);
                     return;
                 }
 
