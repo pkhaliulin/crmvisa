@@ -1,5 +1,8 @@
 <template>
   <div class="space-y-4">
+    <div v-if="renderError" class="bg-red-100 border border-red-300 rounded-lg p-4 text-red-700 text-sm">
+      {{ renderError }}
+    </div>
     <div>
       <h1 class="text-xl font-bold text-gray-900">{{ t('crm.settings.title') }}</h1>
       <p class="text-sm text-gray-500 mt-1">{{ t('crm.settings.subtitle') }}</p>
@@ -473,12 +476,19 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted, onErrorCaptured } from 'vue';
 import { useI18n } from 'vue-i18n';
 import api from '@/api/index';
 import AppInput from '@/components/AppInput.vue';
 import AppTextarea from '@/components/AppTextarea.vue';
 import { useAuthStore } from '@/stores/auth';
+
+const renderError = ref(null);
+onErrorCaptured((err) => {
+  console.error('AgencySettingsPage error:', err);
+  renderError.value = err.message;
+  return false;
+});
 
 const { t } = useI18n();
 const auth = useAuthStore();
@@ -542,11 +552,11 @@ const passwordStrengthLabel = computed(() => {
 });
 
 onMounted(async () => {
+  console.log('[Settings] onMounted start');
   try {
-    const [settingsRes] = await Promise.all([
-      api.get('/agency/settings'),
-    ]);
-    const data = settingsRes.data.data;
+    const settingsRes = await api.get('/agency/settings');
+    console.log('[Settings] API response:', settingsRes.status);
+    const data = settingsRes.data?.data || {};
     Object.keys(form.value).forEach(key => {
       if (data[key] !== undefined && data[key] !== null) form.value[key] = data[key];
     });
@@ -561,11 +571,13 @@ onMounted(async () => {
         role: user.role || '',
       };
     }
+    console.log('[Settings] loaded OK');
   } catch (e) {
-    console.error('Settings load error:', e);
+    console.error('[Settings] load error:', e);
     errorMsg.value = e.response?.data?.message || t('crm.settings.loadError');
   } finally {
     loading.value = false;
+    console.log('[Settings] loading=false, errorMsg=', errorMsg.value);
   }
 });
 
