@@ -79,7 +79,6 @@ const navItems = computed(() => {
   // Страны — для owner и manager
   items.push(
     { to: { name: 'countries' }, icon: GlobeAltIcon, label: t('crm.nav.countries') },
-    { to: { name: 'knowledge.notes' }, icon: BookOpenIcon, label: t('crm.nav.knowledgeNotes') },
     { to: { name: 'knowledge' }, icon: BookOpenIcon, label: t('crm.nav.knowledge') },
   );
 

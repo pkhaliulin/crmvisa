@@ -333,14 +333,9 @@ const routes = [
                 meta: { roles: ['owner', 'manager', 'superadmin'] },
             },
             {
-                path: 'knowledge/notes',
-                name: 'knowledge.notes',
-                component: () => import('@/pages/KnowledgeNotesPage.vue'),
-            },
-            {
                 path: 'knowledge',
                 name: 'knowledge',
-                component: () => import('@/pages/KnowledgeBasePage.vue'),
+                component: () => import('@/pages/KnowledgePage.vue'),
             },
             {
                 path: 'leadgen',

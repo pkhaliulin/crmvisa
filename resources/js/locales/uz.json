@@ -2887,6 +2887,9 @@
     "knowledge": {
       "title": "Bilimlar bazasi",
       "subtitle": "Mamlakatlar va viza jarayonlari bo'yicha ma'lumotlar",
+      "pageSubtitle": "Agentlik qaydlari va ma'lumot maqolalari",
+      "tabNotes": "Qaydlar",
+      "tabArticles": "Global BB",
       "globalKb": "Global BB",
       "myNotes": "Agentlik qaydlari",
       "moderation": "Moderatsiya",
