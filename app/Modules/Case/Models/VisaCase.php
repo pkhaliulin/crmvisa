@@ -129,6 +129,18 @@ class VisaCase extends BaseModel
         'lead_source',
         'lead_channel_code',
         'lock_version',
+        'visa_case_rule_id',
+        'visa_subtype',
+        'applicant_type',
+        'embassy_platform',
+        'submission_method',
+        'appointment_required',
+        'biometrics_required',
+        'reference_number',
+        'readiness_score',
+        'form_data',
+        'missing_items',
+        'next_action',
     ];
 
     protected $casts = [
@@ -141,8 +153,13 @@ class VisaCase extends BaseModel
         'visa_issued_at'       => 'date',
         'visa_received_at'     => 'date',
         'reviewed_at'          => 'datetime',
-        'can_reapply'          => 'boolean',
+        'can_reapply'            => 'boolean',
         'last_manager_update_at' => 'datetime',
+        'appointment_required'   => 'boolean',
+        'biometrics_required'    => 'boolean',
+        'readiness_score'        => 'integer',
+        'form_data'              => 'array',
+        'missing_items'          => 'array',
     ];
 
     public function agency(): BelongsTo
@@ -168,6 +185,16 @@ class VisaCase extends BaseModel
     public function stageHistory(): HasMany
     {
         return $this->hasMany(CaseStage::class, 'case_id')->orderBy('entered_at');
+    }
+
+    public function rule(): BelongsTo
+    {
+        return $this->belongsTo(VisaCaseRule::class, 'visa_case_rule_id');
+    }
+
+    public function checkpointStatuses(): HasMany
+    {
+        return $this->hasMany(CaseCheckpointStatus::class, 'case_id');
     }
 
     /**

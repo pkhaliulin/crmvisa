@@ -2884,6 +2884,23 @@
       "taskResult3": "Отказ: разъяснить причины",
       "taskResult4": "Отказ: подготовить план повторной подачи"
     },
+    "engine": {
+      "readiness": "Готовность",
+      "initialize": "Подключить Engine",
+      "noRules": "Для этой страны/типа визы нет правил автоматизации",
+      "ready": "Заявка готова",
+      "inProgress": "В процессе подготовки",
+      "biometrics": "Биометрия",
+      "referenceNumber": "Reference number",
+      "missingItems": "Не хватает ({n})",
+      "andMore": "... и ещё {n}",
+      "checkpoints": "Чекпоинты",
+      "blocking": "блокирует",
+      "formHelper": "Анкета посольства",
+      "autofill": "Заполнить из данных",
+      "copyToClipboard": "Скопировать",
+      "noFormFields": "Нет полей анкеты"
+    },
     "knowledge": {
       "title": "База знаний",
       "subtitle": "Справочная информация по странам и визовым процессам",

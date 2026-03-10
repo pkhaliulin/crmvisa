@@ -4,6 +4,7 @@ use App\Modules\Agency\Controllers\AgencySettingsController;
 use App\Modules\LeadGen\Controllers\LeadChannelController;
 use App\Modules\Agency\Controllers\ReportController;
 use App\Modules\Case\Controllers\CaseController;
+use App\Modules\Case\Controllers\CaseEngineController;
 use App\Modules\Case\Controllers\DashboardController;
 use App\Modules\Case\Controllers\KanbanController;
 use App\Modules\Client\Controllers\ClientController;
@@ -71,6 +72,20 @@ Route::middleware(['auth:api', 'role:owner,manager,superadmin', 'plan.active'])-
         Route::patch('/{itemId}/approve-translation',  [ChecklistController::class, 'approveTranslation']);
         Route::delete('/{itemId}',             [ChecklistController::class, 'destroy']);
     });
+
+    // Visa Case Engine
+    Route::prefix('cases/{id}/engine')->group(function () {
+        Route::get('readiness',              [CaseEngineController::class, 'readiness']);
+        Route::get('checkpoints',            [CaseEngineController::class, 'checkpoints']);
+        Route::patch('checkpoints/{cpId}',   [CaseEngineController::class, 'toggleCheckpoint']);
+        Route::get('form',                   [CaseEngineController::class, 'form']);
+        Route::put('form/{step}',            [CaseEngineController::class, 'saveFormStep']);
+        Route::post('form/prefill',          [CaseEngineController::class, 'prefillForm']);
+        Route::get('form/progress',          [CaseEngineController::class, 'formProgress']);
+        Route::post('init',                  [CaseEngineController::class, 'initialize']);
+    });
+    Route::get('engine/rules',                        [CaseEngineController::class, 'rules']);
+    Route::get('engine/rules/{countryCode}/{visaType}',[CaseEngineController::class, 'ruleDetail']);
 
     // Скоринг
     Route::get('scoring/countries',                        [ScoringController::class, 'countries']);

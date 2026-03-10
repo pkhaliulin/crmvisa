@@ -260,6 +260,12 @@
           </div>
         </div>
 
+        <!-- ===== FORM WIZARD (Visa Case Engine) ===== -->
+        <FormWizard v-if="caseData.visa_case_rule_id && caseData.embassy_platform"
+          ref="formWizardRef"
+          :case-id="caseData.id"
+          @updated="onEngineUpdate" />
+
         <!-- ===== DOCUMENTS ===== -->
         <div class="bg-white rounded-xl border border-gray-100 overflow-hidden">
           <div class="flex items-center justify-between px-5 py-3 border-b border-gray-50">
@@ -360,6 +366,20 @@
               class="text-xs px-3 py-1.5 rounded-lg bg-green-50 text-green-600 hover:bg-green-100 font-medium transition-colors">{{ t('crm.caseDetail.whatsappBtn') }}</a>
           </div>
         </div>
+
+        <!-- Visa Case Engine: Readiness -->
+        <ReadinessPanel v-if="hasEngine || caseData.visa_case_rule_id"
+          ref="readinessPanelRef"
+          :case-id="caseData.id"
+          :has-rule="!!caseData.visa_case_rule_id"
+          @initialized="onEngineInit"
+          @updated="onEngineUpdate" />
+
+        <!-- Visa Case Engine: Checkpoints -->
+        <CheckpointsList v-if="caseData.visa_case_rule_id"
+          ref="checkpointsListRef"
+          :case-id="caseData.id"
+          @updated="onEngineUpdate" />
 
         <!-- Case meta -->
         <div class="bg-white rounded-xl border border-gray-100 p-4">
@@ -574,6 +594,9 @@ import AppModal  from '@/components/AppModal.vue';
 import AppSelect from '@/components/AppSelect.vue';
 import AppInput  from '@/components/AppInput.vue';
 import DocItem   from '@/components/DocItem.vue';
+import ReadinessPanel from '@/components/engine/ReadinessPanel.vue';
+import CheckpointsList from '@/components/engine/CheckpointsList.vue';
+import FormWizard from '@/components/engine/FormWizard.vue';
 import { useAuthStore } from '@/stores/auth';
 import { usersApi } from '@/api/users';
 import { formatPhone } from '@/utils/format';
@@ -603,6 +626,19 @@ const rejectItem = ref(null);
 const translationItem = ref(null);
 const preview = ref(null);
 const zipLoading = ref(false);
+
+// Engine refs
+const readinessPanelRef = ref(null);
+const checkpointsListRef = ref(null);
+const formWizardRef = ref(null);
+const hasEngine = computed(() => ['FR'].includes(caseData.value?.country_code)); // Countries with engine rules
+
+function onEngineInit() {
+  load(); // Reload case data to get new visa_case_rule_id
+}
+function onEngineUpdate() {
+  readinessPanelRef.value?.refresh();
+}
 
 const managers = ref([]);
 const showAssignModal = ref(false);

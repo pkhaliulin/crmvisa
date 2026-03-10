@@ -2884,6 +2884,23 @@
       "taskResult3": "Rad etilgan: sabablarni tushuntirish",
       "taskResult4": "Rad etilgan: qayta topshirish rejasini tayyorlash"
     },
+    "engine": {
+      "readiness": "Tayyorlik",
+      "initialize": "Engine ulash",
+      "noRules": "Bu mamlakat/viza turi uchun avtomatlashtirish qoidalari yo'q",
+      "ready": "Ariza tayyor",
+      "inProgress": "Tayyorlanmoqda",
+      "biometrics": "Biometriya",
+      "referenceNumber": "Reference number",
+      "missingItems": "Yetishmaydi ({n})",
+      "andMore": "... va yana {n}",
+      "checkpoints": "Tekshirish nuqtalari",
+      "blocking": "bloklaydi",
+      "formHelper": "Elchixona anketasi",
+      "autofill": "Ma'lumotlardan to'ldirish",
+      "copyToClipboard": "Nusxalash",
+      "noFormFields": "Anketa maydonlari yo'q"
+    },
     "knowledge": {
       "title": "Bilimlar bazasi",
       "subtitle": "Mamlakatlar va viza jarayonlari bo'yicha ma'lumotlar",

@@ -39,6 +39,15 @@ class CaseResource extends JsonResource
             'payment_status'         => $this->payment_status,
             'lock_version'           => $this->lock_version ?? 0,
             'lead_source'            => $this->lead_source,
+
+            // Visa Case Engine
+            'visa_case_rule_id'    => $this->visa_case_rule_id,
+            'visa_subtype'         => $this->visa_subtype,
+            'applicant_type'       => $this->applicant_type,
+            'embassy_platform'     => $this->embassy_platform,
+            'submission_method'    => $this->submission_method,
+            'readiness_score'      => $this->readiness_score,
+            'reference_number'     => $this->reference_number,
             'created_at'             => $this->created_at?->toDateTimeString(),
             'updated_at'             => $this->updated_at?->toDateTimeString(),
 
