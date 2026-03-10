@@ -83,6 +83,7 @@ Route::middleware(['auth:api', 'role:owner,manager,superadmin', 'plan.active'])-
         Route::post('form/prefill',          [CaseEngineController::class, 'prefillForm']);
         Route::get('form/progress',          [CaseEngineController::class, 'formProgress']);
         Route::post('init',                  [CaseEngineController::class, 'initialize']);
+        Route::get('guidance',               [CaseEngineController::class, 'guidance']);
     });
     Route::get('engine/rules',                        [CaseEngineController::class, 'rules']);
     Route::get('engine/rules/{countryCode}/{visaType}',[CaseEngineController::class, 'ruleDetail']);

@@ -381,6 +381,12 @@
           :case-id="caseData.id"
           @updated="onEngineUpdate" />
 
+        <!-- Visa Case Engine: Guidance -->
+        <CaseGuidancePanel v-if="caseData.visa_case_rule_id"
+          ref="guidancePanelRef"
+          :case-id="caseData.id"
+          :stage="caseData.stage" />
+
         <!-- Case meta -->
         <div class="bg-white rounded-xl border border-gray-100 p-4">
           <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">{{ t('crm.caseDetail.infoTitle') }}</p>
@@ -597,6 +603,7 @@ import DocItem   from '@/components/DocItem.vue';
 import ReadinessPanel from '@/components/engine/ReadinessPanel.vue';
 import CheckpointsList from '@/components/engine/CheckpointsList.vue';
 import FormWizard from '@/components/engine/FormWizard.vue';
+import CaseGuidancePanel from '@/components/engine/CaseGuidancePanel.vue';
 import { useAuthStore } from '@/stores/auth';
 import { usersApi } from '@/api/users';
 import { formatPhone } from '@/utils/format';
@@ -631,6 +638,7 @@ const zipLoading = ref(false);
 const readinessPanelRef = ref(null);
 const checkpointsListRef = ref(null);
 const formWizardRef = ref(null);
+const guidancePanelRef = ref(null);
 const hasEngine = computed(() => ['FR'].includes(caseData.value?.country_code)); // Countries with engine rules
 
 function onEngineInit() {

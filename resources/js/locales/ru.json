@@ -2899,7 +2899,19 @@
       "formHelper": "Анкета посольства",
       "autofill": "Заполнить из данных",
       "copyToClipboard": "Скопировать",
-      "noFormFields": "Нет полей анкеты"
+      "copied": "Скопировано",
+      "copyAllStep": "Скопировать все",
+      "noFormFields": "Нет полей анкеты",
+      "guidance": "Помощник менеджера",
+      "currentStageTips": "Подсказки по текущему этапу",
+      "generalTips": "Общие рекомендации",
+      "knowledgeBase": "Справочные статьи",
+      "noGuidance": "Нет подсказок для этого кейса",
+      "processingTime": "Срок обработки",
+      "consularFee": "Консульский сбор",
+      "serviceFee": "Сервисный сбор",
+      "maxStay": "Макс. пребывание",
+      "days": "дн."
     },
     "knowledge": {
       "title": "База знаний",

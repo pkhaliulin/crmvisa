@@ -19,6 +19,7 @@ class VisaCaseRule extends BaseModel
         'consular_fee_eur', 'service_fee_eur',
         'max_stay_days', 'validity_months',
         'workflow_steps', 'notes',
+        'guidance',
         'is_active', 'effective_from', 'effective_to',
     ];
 
@@ -31,6 +32,7 @@ class VisaCaseRule extends BaseModel
         'service_fee_eur'         => 'decimal:2',
         'workflow_steps'          => 'array',
         'is_active'               => 'boolean',
+        'guidance'                => 'array',
         'effective_from'          => 'date',
         'effective_to'            => 'date',
     ];

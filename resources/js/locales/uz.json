@@ -2899,7 +2899,19 @@
       "formHelper": "Elchixona anketasi",
       "autofill": "Ma'lumotlardan to'ldirish",
       "copyToClipboard": "Nusxalash",
-      "noFormFields": "Anketa maydonlari yo'q"
+      "copied": "Nusxalandi",
+      "copyAllStep": "Hammasini nusxalash",
+      "noFormFields": "Anketa maydonlari yo'q",
+      "guidance": "Menejer yordamchisi",
+      "currentStageTips": "Joriy bosqich bo'yicha maslahatlar",
+      "generalTips": "Umumiy tavsiyalar",
+      "knowledgeBase": "Ma'lumotnoma maqolalari",
+      "noGuidance": "Bu keys uchun maslahatlar yo'q",
+      "processingTime": "Ishlov berish muddati",
+      "consularFee": "Konsullik to'lovi",
+      "serviceFee": "Xizmat to'lovi",
+      "maxStay": "Maks. qolish muddati",
+      "days": "kun"
     },
     "knowledge": {
       "title": "Bilimlar bazasi",

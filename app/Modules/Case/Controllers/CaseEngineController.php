@@ -7,6 +7,7 @@ use App\Modules\Case\Models\VisaCase;
 use App\Modules\Case\Models\VisaCaseRule;
 use App\Modules\Case\Services\FranceFormService;
 use App\Modules\Case\Services\VisaCaseEngineService;
+use App\Modules\Knowledge\Models\KnowledgeArticle;
 use App\Support\Helpers\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -187,6 +188,54 @@ class CaseEngineController extends Controller
             'missing_items'     => $case->missing_items,
             'next_action'       => $case->next_action,
         ], 'Visa Case Engine инициализирован.');
+    }
+
+    /**
+     * GET /cases/{id}/engine/guidance
+     */
+    public function guidance(Request $request, string $id): JsonResponse
+    {
+        $case = VisaCase::where('agency_id', $request->user()->agency_id)
+            ->findOrFail($id);
+
+        $rule = $case->rule;
+
+        // Guidance tips из правила
+        $guidanceTips = $rule?->guidance ?? [];
+
+        // Фильтрация по текущему этапу заявки
+        $currentStage = $case->stage;
+        $stageTips = [];
+        $generalTips = [];
+
+        foreach ($guidanceTips as $tip) {
+            if (! empty($tip['stage']) && $tip['stage'] === $currentStage) {
+                $stageTips[] = $tip;
+            } elseif (empty($tip['stage'])) {
+                $generalTips[] = $tip;
+            }
+        }
+
+        // KB статьи по стране (краткие, для контекста)
+        $articles = KnowledgeArticle::published()
+            ->byCountry($case->country_code)
+            ->select('id', 'title', 'title_uz', 'summary', 'summary_uz', 'category', 'slug')
+            ->orderBy('sort_order')
+            ->limit(10)
+            ->get();
+
+        return ApiResponse::success([
+            'stage_tips'   => $stageTips,
+            'general_tips' => $generalTips,
+            'articles'     => $articles,
+            'rule_info'    => $rule ? [
+                'processing_days' => $rule->processing_days_min . '-' . $rule->processing_days_max,
+                'consular_fee'    => $rule->consular_fee_eur,
+                'service_fee'     => $rule->service_fee_eur,
+                'max_stay_days'   => $rule->max_stay_days,
+                'notes'           => $rule->notes,
+            ] : null,
+        ]);
     }
 
     /**

@@ -7,6 +7,10 @@
         <span v-if="progress" class="text-xs text-gray-400 tabular-nums">{{ progress.percent }}%</span>
       </div>
       <div class="flex items-center gap-2">
+        <button @click="copyAllStep" v-if="currentStepData"
+          class="text-[10px] text-gray-500 hover:text-blue-600 font-medium px-2 py-1 rounded hover:bg-blue-50 transition-colors">
+          {{ copyAllLabel }}
+        </button>
         <button @click="doPrefill" :disabled="prefilling"
           class="text-[10px] text-blue-600 hover:text-blue-700 font-medium px-2 py-1 rounded hover:bg-blue-50 transition-colors disabled:opacity-50">
           {{ prefilling ? '...' : t('crm.engine.autofill') }}
@@ -58,9 +62,15 @@
                   :class="['flex-1 text-sm border rounded-lg px-3 py-2 outline-none transition-colors resize-none',
                     field.value ? 'border-green-200 bg-green-50/30' : 'border-gray-200 focus:border-blue-400']" />
                 <button @click="copyField(field.key)"
-                  class="shrink-0 w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 transition-colors"
+                  :class="['shrink-0 w-8 h-8 flex items-center justify-center rounded-lg border transition-all duration-200',
+                    copiedKey === field.key
+                      ? 'border-green-300 bg-green-50 text-green-600'
+                      : 'border-gray-200 text-gray-400 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50']"
                   :title="t('crm.engine.copyToClipboard')">
-                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <svg v-if="copiedKey === field.key" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                  </svg>
+                  <svg v-else class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
                   </svg>
                 </button>
@@ -82,8 +92,14 @@
                   <option v-for="(label, val) in (field.options || {})" :key="val" :value="val">{{ label }}</option>
                 </select>
                 <button @click="copyField(field.key)"
-                  class="shrink-0 w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 transition-colors">
-                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  :class="['shrink-0 w-8 h-8 flex items-center justify-center rounded-lg border transition-all duration-200',
+                    copiedKey === field.key
+                      ? 'border-green-300 bg-green-50 text-green-600'
+                      : 'border-gray-200 text-gray-400 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50']">
+                  <svg v-if="copiedKey === field.key" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                  </svg>
+                  <svg v-else class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
                   </svg>
                 </button>
@@ -154,6 +170,8 @@ const progress = ref(null)
 const currentStep = ref(1)
 const formValues = reactive({})
 const checkboxValues = reactive({})
+const copiedKey = ref(null)
+const copyAllDone = ref(false)
 
 const currentStepData = computed(() => steps.value.find(s => s.step === currentStep.value))
 
@@ -235,10 +253,35 @@ async function doPrefill() {
   }
 }
 
+let copiedTimer = null
+
 function copyField(key) {
   const val = formValues[key]
   if (val) {
     navigator.clipboard.writeText(String(val))
+    copiedKey.value = key
+    clearTimeout(copiedTimer)
+    copiedTimer = setTimeout(() => { copiedKey.value = null }, 1500)
+  }
+}
+
+const copyAllLabel = computed(() =>
+  copyAllDone.value ? t('crm.engine.copied') : t('crm.engine.copyAllStep')
+)
+
+function copyAllStep() {
+  const fields = currentStepData.value?.fields ?? []
+  const lines = []
+  for (const f of fields) {
+    const val = formValues[f.key]
+    if (val) {
+      lines.push(`${f.label}: ${val}`)
+    }
+  }
+  if (lines.length) {
+    navigator.clipboard.writeText(lines.join('\n'))
+    copyAllDone.value = true
+    setTimeout(() => { copyAllDone.value = false }, 2000)
   }
 }
 

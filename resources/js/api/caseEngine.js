@@ -17,6 +17,9 @@ export const caseEngineApi = {
     // Инициализация engine
     initialize:    (caseId) => api.post(`/cases/${caseId}/engine/init`),
 
+    // Контекстная помощь
+    guidance:      (caseId) => api.get(`/cases/${caseId}/engine/guidance`),
+
     // Справочник правил
     getRules:      () => api.get('/engine/rules'),
     getRuleDetail: (cc, vt) => api.get(`/engine/rules/${cc}/${vt}`),

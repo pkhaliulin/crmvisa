@@ -38,6 +38,29 @@ class FranceVisaCaseEngineSeeder extends Seeder
                 'contacts_funding', 'documents',
             ]),
             'notes'                   => 'France Schengen C visa (short stay <= 90 days). Fill France-Visas portal, then book TLScontact.',
+            'guidance'                => json_encode([
+                // Stage-specific tips
+                ['stage' => 'lead', 'title' => 'Проверьте паспорт клиента', 'description' => 'Паспорт должен быть действителен минимум 3 месяца после даты выезда из Шенгена. Минимум 2 чистые страницы.'],
+                ['stage' => 'lead', 'title' => 'Уточните даты поездки', 'description' => 'Точные даты нужны для бронирования отеля, билетов и расчета страховки.'],
+
+                ['stage' => 'in_progress', 'title' => 'Соберите все документы', 'description' => '8 обязательных документов. Начните со справки с работы и выписки из банка — они готовятся дольше всего.'],
+                ['stage' => 'in_progress', 'title' => 'Проверьте страховку', 'description' => 'Покрытие 30 000 EUR, зона действия — весь Шенген, на весь период поездки + 15 дней запас.', 'warning' => 'Без страховки заявку не примут.'],
+
+                ['stage' => 'documents_review', 'title' => 'Заполните анкету France-Visas', 'description' => 'Откройте france-visas.gouv.fr, создайте аккаунт. Используйте Form Helper для копирования данных. Все текстовые поля — ЗАГЛАВНЫМИ БУКВАМИ.', 'warning' => 'Формат дат: DD/MM/YYYY (не YYYY-MM-DD).'],
+                ['stage' => 'documents_review', 'title' => 'Получите reference number', 'description' => 'После заполнения анкеты на France-Visas скачайте PDF и запишите reference number. Он понадобится для записи в TLScontact.'],
+
+                ['stage' => 'ready_to_submit', 'title' => 'Запишитесь в TLScontact', 'description' => 'Зайдите на tls.tlscontact.com, используйте reference number от France-Visas. Ближайшие слоты бывают через 1-3 недели.', 'warning' => 'Без reference number запись невозможна.'],
+                ['stage' => 'ready_to_submit', 'title' => 'Подготовьте пакет документов', 'description' => 'Распечатайте анкету (подпись клиента), фото 3.5x4.5 (2 шт), оригиналы и копии всех документов. Документы — в папке по порядку.'],
+                ['stage' => 'ready_to_submit', 'title' => 'Оплата сборов', 'description' => 'Консульский сбор 80 EUR + сервисный сбор TLS 43.50 EUR. Оплата на месте при подаче.'],
+
+                ['stage' => 'submitted', 'title' => 'Ожидание результата', 'description' => 'Срок рассмотрения 5-15 рабочих дней. Отслеживайте статус на tls.tlscontact.com. SMS уведомление придет при готовности.'],
+
+                // General tips (no stage)
+                ['stage' => null, 'title' => 'Порядок работы: France-Visas -> TLScontact', 'description' => 'СНАЧАЛА заполните анкету на France-Visas и получите reference number. ПОТОМ запишитесь в TLScontact. Не наоборот.'],
+                ['stage' => null, 'title' => 'Все текстовые поля — UPPERCASE', 'description' => 'France-Visas требует заполнения всех текстовых полей заглавными буквами.'],
+                ['stage' => null, 'title' => 'Формат дат: DD/MM/YYYY', 'description' => 'На портале France-Visas даты указываются в европейском формате.'],
+                ['stage' => null, 'title' => 'Биометрия обязательна', 'description' => 'Клиент должен лично явиться в TLScontact для сдачи отпечатков пальцев. Если биометрия сдавалась менее 59 месяцев назад — повторная сдача не требуется.'],
+            ]),
             'is_active'               => true,
             'effective_from'          => '2026-01-01',
             'created_at'              => now(),
