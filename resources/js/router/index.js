@@ -207,6 +207,11 @@ const routes = [
                 component: () => import('@/pages/owner/OwnerMemoryPage.vue'),
             },
             {
+                path: 'knowledge',
+                name: 'owner.knowledge',
+                component: () => import('@/pages/owner/OwnerKnowledgePage.vue'),
+            },
+            {
                 path: 'website',
                 name: 'owner.website',
                 component: () => import('@/pages/owner/OwnerWebsitePage.vue'),
@@ -326,6 +331,16 @@ const routes = [
                 name: 'countries.show',
                 component: () => import('@/pages/AgencyCountryDetailPage.vue'),
                 meta: { roles: ['owner', 'manager', 'superadmin'] },
+            },
+            {
+                path: 'knowledge/notes',
+                name: 'knowledge.notes',
+                component: () => import('@/pages/KnowledgeNotesPage.vue'),
+            },
+            {
+                path: 'knowledge',
+                name: 'knowledge',
+                component: () => import('@/pages/KnowledgeBasePage.vue'),
             },
             {
                 path: 'leadgen',

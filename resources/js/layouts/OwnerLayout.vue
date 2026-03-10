@@ -145,6 +145,12 @@ const navGroups = [
     ],
   },
   {
+    title: 'Контент',
+    items: [
+      { to: '/crm/knowledge', icon: '📚', label: 'База знаний' },
+    ],
+  },
+  {
     title: 'Сайт VisaBor',
     items: [
       { to: '/crm/website',  icon: '🌐', label: 'Управление сайтом' },
@@ -175,6 +181,7 @@ const routeTitles = {
   '/crm/finance':      'Финансовые транзакции',
   '/crm/monitoring':   'Мониторинг системы',
   '/crm/memory':       'Память проекта',
+  '/crm/knowledge':    'База знаний',
   '/crm/website':      'Сайт VisaBor',
 };
 

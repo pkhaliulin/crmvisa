@@ -147,6 +147,19 @@ Route::middleware(['auth:api', 'role:superadmin'])->prefix('owner')->group(funct
     Route::put('website-settings', [WebsiteSettingsController::class, 'update']);
     Route::post('website-settings/clear-cache', [WebsiteSettingsController::class, 'clearCache']);
 
+    // База знаний (глобальная)
+    Route::prefix('knowledge')->group(function () {
+        Route::get('/',             [\App\Modules\Knowledge\Controllers\OwnerKnowledgeController::class, 'index']);
+        Route::get('/stats',        [\App\Modules\Knowledge\Controllers\OwnerKnowledgeController::class, 'stats']);
+        Route::get('/pending',      [\App\Modules\Knowledge\Controllers\OwnerKnowledgeController::class, 'pendingNotes']);
+        Route::get('/{id}',         [\App\Modules\Knowledge\Controllers\OwnerKnowledgeController::class, 'show']);
+        Route::post('/',            [\App\Modules\Knowledge\Controllers\OwnerKnowledgeController::class, 'store']);
+        Route::patch('/{id}',       [\App\Modules\Knowledge\Controllers\OwnerKnowledgeController::class, 'update']);
+        Route::delete('/{id}',      [\App\Modules\Knowledge\Controllers\OwnerKnowledgeController::class, 'destroy']);
+        Route::post('/{id}/publish', [\App\Modules\Knowledge\Controllers\OwnerKnowledgeController::class, 'publish']);
+        Route::post('/notes/{id}/moderate', [\App\Modules\Knowledge\Controllers\OwnerKnowledgeController::class, 'moderateNote']);
+    });
+
     // Мониторинг системы
     Route::prefix('monitoring')->group(function () {
         Route::get('health',   [MonitoringController::class, 'health']);

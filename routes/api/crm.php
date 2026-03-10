@@ -114,6 +114,23 @@ Route::middleware(['auth:api', 'role:owner,superadmin', 'plan.active'])->group(f
     Route::get('notifications/settings', [\App\Modules\Notification\Controllers\NotificationSettingsController::class, 'index']);
     Route::put('notifications/settings/{eventType}', [\App\Modules\Notification\Controllers\NotificationSettingsController::class, 'update']);
 
+    // Заметки агентства (БЗ)
+    Route::prefix('knowledge/notes')->group(function () {
+        Route::get('/',          [\App\Modules\Knowledge\Controllers\AgencyKnowledgeController::class, 'index']);
+        Route::get('/{id}',      [\App\Modules\Knowledge\Controllers\AgencyKnowledgeController::class, 'show']);
+        Route::post('/',         [\App\Modules\Knowledge\Controllers\AgencyKnowledgeController::class, 'store']);
+        Route::patch('/{id}',    [\App\Modules\Knowledge\Controllers\AgencyKnowledgeController::class, 'update']);
+        Route::delete('/{id}',   [\App\Modules\Knowledge\Controllers\AgencyKnowledgeController::class, 'destroy']);
+        Route::post('/{id}/pin', [\App\Modules\Knowledge\Controllers\AgencyKnowledgeController::class, 'togglePin']);
+        Route::post('/{id}/share', [\App\Modules\Knowledge\Controllers\AgencyKnowledgeController::class, 'share']);
+    });
+
+    // Глобальная БЗ (чтение, Enterprise)
+    Route::get('knowledge/categories',        [\App\Modules\Knowledge\Controllers\PublicKnowledgeController::class, 'categories']);
+    Route::get('knowledge/country/{code}',    [\App\Modules\Knowledge\Controllers\PublicKnowledgeController::class, 'byCountry']);
+    Route::get('knowledge/{id}',              [\App\Modules\Knowledge\Controllers\PublicKnowledgeController::class, 'show']);
+    Route::get('knowledge',                   [\App\Modules\Knowledge\Controllers\PublicKnowledgeController::class, 'index']);
+
     // Аналитика лидов
     Route::get('lead-analytics', [\App\Modules\LeadGen\Controllers\LeadAnalyticsController::class, 'index']);
 

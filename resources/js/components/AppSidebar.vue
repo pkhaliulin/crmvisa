@@ -54,7 +54,7 @@ import {
   HomeIcon, ViewColumnsIcon, ClipboardDocumentListIcon,
   UsersIcon, UserGroupIcon, ArrowRightOnRectangleIcon,
   ChartBarIcon, BriefcaseIcon, ExclamationTriangleIcon, Cog6ToothIcon, CreditCardIcon, GlobeAltIcon,
-  MegaphoneIcon
+  MegaphoneIcon, BookOpenIcon
 } from '@heroicons/vue/24/outline';
 
 defineProps({ collapsed: Boolean });
@@ -79,6 +79,8 @@ const navItems = computed(() => {
   // Страны — для owner и manager
   items.push(
     { to: { name: 'countries' }, icon: GlobeAltIcon, label: t('crm.nav.countries') },
+    { to: { name: 'knowledge.notes' }, icon: BookOpenIcon, label: t('crm.nav.knowledgeNotes') },
+    { to: { name: 'knowledge' }, icon: BookOpenIcon, label: t('crm.nav.knowledge') },
   );
 
   if (isOwner.value) {
