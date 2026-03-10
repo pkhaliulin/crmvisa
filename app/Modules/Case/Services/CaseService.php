@@ -200,7 +200,7 @@ class CaseService extends BaseService
             // Устанавливаем SLA дедлайн для нового этапа
             $this->slaService->applyStageSla($newCaseStage, $case);
 
-            // Авто-маппинг stage -> public_status (только при движении вперёд)
+            // Авто-маппинг stage -> public_status
             $updateData = ['stage' => $newStage];
             $stageOrder = array_flip(array_keys(self::ALLOWED_TRANSITIONS));
             $isForward = ($stageOrder[$newStage] ?? 0) >= ($stageOrder[$case->stage] ?? 0);
@@ -210,6 +210,13 @@ class CaseService extends BaseService
                     $updateData['public_status'] = $mappedStatus;
                 }
             }
+
+            // Возврат в lead: снять менеджера и вернуть public_status
+            if ($newStage === 'lead') {
+                $updateData['assigned_to'] = null;
+                $updateData['public_status'] = 'submitted';
+            }
+
             $case->update($updateData);
 
             return $case->fresh(['client', 'assignee', 'stageHistory']);
@@ -319,7 +326,7 @@ class CaseService extends BaseService
             'translation'   => 'translation',
             'ready'         => 'ready_for_submission',
             'review'        => 'under_review',
-            'result'        => 'under_review', // result stage: public_status обновляется в completeCase()
+            'result'        => null, // public_status устанавливается в completeCase() (completed/rejected)
         ];
 
         return $map[$stage] ?? null;
