@@ -103,12 +103,20 @@ class VisaCaseRule extends BaseModel
             if ($rule) return $rule;
         }
 
-        // 4. Самый общий: без subtype + без applicant_type
-        return static::active()
+        // 4. Без subtype + default applicant_type
+        $rule = static::active()
             ->where('country_code', $countryCode)
             ->where('visa_type', $visaType)
             ->whereNull('visa_subtype')
             ->where('applicant_type', 'adult')
+            ->first();
+
+        if ($rule) return $rule;
+
+        // 5. Любое правило по стране + типу визы (первое активное)
+        return static::active()
+            ->where('country_code', $countryCode)
+            ->where('visa_type', $visaType)
             ->first();
     }
 }
