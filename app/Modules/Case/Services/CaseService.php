@@ -13,6 +13,7 @@ use App\Modules\Document\Services\ChecklistService;
 use App\Modules\Notification\Notifications\CaseStageChangedNotification;
 use App\Modules\Notification\Notifications\TelegramCaseNotification;
 use App\Modules\Notification\Services\NotificationService;
+use App\Modules\Payment\Models\ClientPayment;
 use App\Modules\Workflow\Services\SlaService;
 use App\Support\Abstracts\BaseService;
 use Illuminate\Database\Eloquent\Collection;
@@ -338,6 +339,7 @@ class CaseService extends BaseService
     /**
      * Проверить автопереход после загрузки документа.
      * Все обязательные документы (и клиента, и агентства) загружены → documents → doc_review.
+     * SELECT FOR UPDATE на case для предотвращения race condition при параллельных загрузках.
      */
     public function checkAutoTransitionAfterUpload(VisaCase $case): bool
     {
@@ -345,32 +347,40 @@ class CaseService extends BaseService
             return false;
         }
 
-        $checklist = DB::table('case_checklist')
-            ->where('case_id', $case->id)
-            ->whereNull('deleted_at')
-            ->get(['is_required', 'status', 'responsibility']);
+        return DB::transaction(function () use ($case) {
+            // Блокируем case для предотвращения race condition
+            $lockedCase = VisaCase::where('id', $case->id)->lockForUpdate()->first();
+            if (!$lockedCase || $lockedCase->stage !== 'documents') {
+                return false;
+            }
 
-        // Проверяем ВСЕ обязательные документы (и клиента, и агентства)
-        $allRequired = $checklist->where('is_required', true);
+            $checklist = DB::table('case_checklist')
+                ->where('case_id', $case->id)
+                ->whereNull('deleted_at')
+                ->get(['is_required', 'status', 'responsibility']);
 
-        if ($allRequired->isEmpty()) {
+            $allRequired = $checklist->where('is_required', true);
+
+            if ($allRequired->isEmpty()) {
+                return false;
+            }
+
+            $allUploaded = $allRequired
+                ->every(fn ($item) => in_array($item->status, ['uploaded', 'approved', 'needs_translation']));
+
+            if ($allUploaded) {
+                $this->moveToStageSystem($lockedCase, 'doc_review', 'Все обязательные документы загружены');
+                return true;
+            }
+
             return false;
-        }
-
-        $allUploaded = $allRequired
-            ->every(fn ($item) => in_array($item->status, ['uploaded', 'approved', 'needs_translation']));
-
-        if ($allUploaded) {
-            $this->moveToStageSystem($case, 'doc_review', 'Все обязательные документы загружены');
-            return true;
-        }
-
-        return false;
+        });
     }
 
     /**
      * Проверить автопереход после проверки документа менеджером.
      * Все документы проверены → doc_review → translation (если нужен) или ready.
+     * SELECT FOR UPDATE на case для предотвращения race condition.
      */
     public function checkAutoTransitionAfterReview(VisaCase $case): bool
     {
@@ -378,37 +388,44 @@ class CaseService extends BaseService
             return false;
         }
 
-        $checklist = DB::table('case_checklist')
-            ->where('case_id', $case->id)
-            ->whereNull('deleted_at')
-            ->where('is_required', true)
-            ->get(['status', 'review_status']);
+        return DB::transaction(function () use ($case) {
+            $lockedCase = VisaCase::where('id', $case->id)->lockForUpdate()->first();
+            if (!$lockedCase || $lockedCase->stage !== 'doc_review') {
+                return false;
+            }
 
-        // Есть отклонённые → возвращаем в documents
-        if ($checklist->contains('review_status', 'rejected')) {
-            $this->moveToStageSystem($case, 'documents', 'Есть отклонённые документы — требуется перезагрузка');
+            $checklist = DB::table('case_checklist')
+                ->where('case_id', $lockedCase->id)
+                ->whereNull('deleted_at')
+                ->where('is_required', true)
+                ->get(['status', 'review_status']);
+
+            // Есть отклонённые → возвращаем в documents
+            if ($checklist->contains('review_status', 'rejected')) {
+                $this->moveToStageSystem($lockedCase, 'documents', 'Есть отклонённые документы — требуется перезагрузка');
+                return true;
+            }
+
+            // Все проверены (approved или needs_translation)?
+            $allReviewed = $checklist->every(fn ($item) =>
+                in_array($item->review_status, ['approved', 'needs_translation'])
+            );
+
+            if (! $allReviewed) {
+                return false;
+            }
+
+            // Есть документы на перевод?
+            $needsTranslation = $checklist->contains('review_status', 'needs_translation');
+
+            if ($needsTranslation) {
+                $this->moveToStageSystem($lockedCase, 'translation', 'Документы проверены, требуется перевод');
+            } else {
+                $this->moveToStageSystem($lockedCase, 'ready', 'Все документы одобрены, перевод не требуется');
+            }
+
             return true;
-        }
-
-        // Все проверены (approved или needs_translation)?
-        $allReviewed = $checklist->every(fn ($item) =>
-            in_array($item->review_status, ['approved', 'needs_translation'])
-        );
-
-        if (! $allReviewed) {
-            return false;
-        }
-
-        // Есть документы на перевод?
-        $needsTranslation = $checklist->contains('review_status', 'needs_translation');
-
-        if ($needsTranslation) {
-            $this->moveToStageSystem($case, 'translation', 'Документы проверены, требуется перевод');
-        } else {
-            $this->moveToStageSystem($case, 'ready', 'Все документы одобрены, перевод не требуется');
-        }
-
-        return true;
+        });
     }
 
     /**
@@ -520,9 +537,23 @@ class CaseService extends BaseService
                 ->whereNull('exited_at')
                 ->update(['exited_at' => now()]);
 
+            // Отменить все pending платежи по этой заявке (#8)
+            ClientPayment::where('case_id', $case->id)
+                ->where('status', 'pending')
+                ->each(function (ClientPayment $payment) {
+                    $payment->update([
+                        'status'   => 'cancelled',
+                        'metadata' => array_merge($payment->metadata ?? [], [
+                            'cancelled_reason' => 'case_cancelled',
+                            'cancelled_at'     => now()->toDateTimeString(),
+                        ]),
+                    ]);
+                });
+
             $case->update([
-                'public_status' => 'cancelled',
-                'notes'         => $case->notes
+                'public_status'  => 'cancelled',
+                'payment_status' => $case->payment_status === 'paid' ? 'paid' : 'cancelled',
+                'notes'          => $case->notes
                     ? $case->notes . "\n\nОтмена: " . ($reason ?? 'без причины')
                     : 'Отмена: ' . ($reason ?? 'без причины'),
             ]);

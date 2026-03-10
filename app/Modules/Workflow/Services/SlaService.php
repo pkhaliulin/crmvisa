@@ -4,9 +4,12 @@ namespace App\Modules\Workflow\Services;
 
 use App\Modules\Case\Models\CaseStage;
 use App\Modules\Case\Models\VisaCase;
+use App\Modules\Notification\Notifications\BusinessNotification;
+use App\Modules\Notification\Services\NotificationService;
 use App\Modules\Workflow\Models\SlaRule;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 
 class SlaService
 {
@@ -169,16 +172,56 @@ class SlaService
     }
 
     /**
-     * Пометить просроченные case_stages как overdue.
+     * Пометить просроченные case_stages как overdue и отправить уведомления.
      * Вызывается из scheduler или при переходе этапа.
      */
     public function markOverdueStages(): int
     {
-        return CaseStage::whereNull('exited_at')
+        $overdueStages = CaseStage::whereNull('exited_at')
             ->whereNotNull('sla_due_at')
             ->where('is_overdue', false)
             ->where('sla_due_at', '<', Carbon::now())
-            ->update(['is_overdue' => true]);
+            ->with(['visaCase.client', 'visaCase.assignee', 'visaCase.agency'])
+            ->get();
+
+        if ($overdueStages->isEmpty()) {
+            return 0;
+        }
+
+        $overdueStages->each->update(['is_overdue' => true]);
+
+        // Эскалация: уведомление через NotificationService (#5)
+        $notificationService = app(NotificationService::class);
+
+        foreach ($overdueStages as $stage) {
+            $case = $stage->visaCase;
+            if (!$case || !$case->agency_id) {
+                continue;
+            }
+
+            try {
+                $notificationService->dispatch(
+                    $case->agency_id,
+                    'sla.violation',
+                    new BusinessNotification('sla.violation', [
+                        'case_id'      => $case->id,
+                        'case_number'  => $case->case_number ?? $case->id,
+                        'stage'        => $stage->stage,
+                        'sla_due_at'   => $stage->sla_due_at->toDateTimeString(),
+                        'client_name'  => $case->client?->name ?? 'N/A',
+                        'message'      => "SLA нарушена: заявка #{$case->case_number} на этапе «{$stage->stage}» просрочена (дедлайн: {$stage->sla_due_at->format('d.m.Y H:i')})",
+                    ]),
+                    ['case' => $case, 'assigned_to' => $case->assigned_to],
+                );
+            } catch (\Throwable $e) {
+                Log::warning('SLA violation notification failed', [
+                    'case_id' => $case->id,
+                    'error'   => $e->getMessage(),
+                ]);
+            }
+        }
+
+        return $overdueStages->count();
     }
 
     /**

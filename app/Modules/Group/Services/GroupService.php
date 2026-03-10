@@ -13,6 +13,7 @@ use App\Modules\PublicPortal\Models\PublicUser;
 use App\Modules\PublicPortal\Services\SmsService;
 use App\Support\Traits\NormalizesPhone;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class GroupService
@@ -225,11 +226,30 @@ class GroupService
             ->firstOrFail();
 
         DB::transaction(function () use ($member) {
-            // Мягкое удаление case
+            // Отмена кейса вместо удаления (#16)
             if ($member->case_id) {
-                VisaCase::where('id', $member->case_id)->delete();
+                $case = VisaCase::find($member->case_id);
+                if ($case && !in_array($case->public_status, ['cancelled', 'completed', 'rejected'])) {
+                    $case->update([
+                        'public_status' => 'cancelled',
+                        'notes'         => ($case->notes ? $case->notes . "\n\n" : '') . 'Отмена: участник удалён из группы',
+                    ]);
+
+                    // Отменить pending платежи
+                    ClientPayment::where('case_id', $case->id)
+                        ->where('status', 'pending')
+                        ->each(function (ClientPayment $p) {
+                            $p->update([
+                                'status'   => 'cancelled',
+                                'metadata' => array_merge($p->metadata ?? [], [
+                                    'cancelled_reason' => 'member_removed',
+                                    'cancelled_at'     => now()->toDateTimeString(),
+                                ]),
+                            ]);
+                        });
+                }
             }
-            $member->delete();
+            $member->update(['status' => 'removed']);
         });
     }
 
@@ -375,6 +395,12 @@ class GroupService
                 'currency'       => $currency,
                 'provider'       => $provider,
                 'status'         => 'pending',
+                'expires_at'     => now()->addDays(5),
+                'metadata'       => [
+                    'group_payment'  => true,
+                    'all_case_ids'   => $cases->pluck('id')->values()->toArray(),
+                    'cases_count'    => $cases->count(),
+                ],
             ]);
 
             // Проставляем pending у всех кейсов

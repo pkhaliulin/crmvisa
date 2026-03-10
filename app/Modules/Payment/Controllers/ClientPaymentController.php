@@ -4,6 +4,7 @@ namespace App\Modules\Payment\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Case\Models\VisaCase;
+use App\Modules\Payment\Jobs\ProcessWebhookJob;
 use App\Modules\Payment\Models\ClientPayment;
 use App\Modules\Payment\Services\ClientPaymentService;
 use App\Support\Helpers\ApiResponse;
@@ -109,9 +110,8 @@ class ClientPaymentController extends Controller
             'ip'             => $request->ip(),
         ]);
 
-        // handleCallback возвращает null при ошибке, но мы всегда отвечаем 200
-        // чтобы платёжная система не повторяла запросы бесконечно
-        $this->paymentService->handleCallback($provider, $request->all());
+        // Асинхронная обработка через Job (#23) — контроллер сразу возвращает 200
+        ProcessWebhookJob::dispatch($provider, $request->all());
 
         return response()->json(['ok' => true]);
     }
