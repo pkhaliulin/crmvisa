@@ -152,8 +152,8 @@
             class="bg-white rounded-xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition cursor-pointer">
             <div class="flex items-start justify-between">
               <div class="flex-1 min-w-0">
-                <h3 class="font-medium text-gray-900">{{ a.title }}</h3>
-                <p v-if="a.summary" class="text-sm text-gray-500 mt-1 line-clamp-2">{{ a.summary }}</p>
+                <h3 class="font-medium text-gray-900">{{ loc(a, 'title') }}</h3>
+                <p v-if="a.summary || a.summary_uz" class="text-sm text-gray-500 mt-1 line-clamp-2">{{ loc(a, 'summary') }}</p>
                 <div class="flex items-center gap-3 mt-2 text-xs text-gray-400">
                   <span v-if="a.country_code" class="uppercase font-medium">{{ a.country_code }}</span>
                   <span class="px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded">{{ articleCategoryLabel(a.category) }}</span>
@@ -250,7 +250,7 @@
                 {{ articleCategoryLabel(selectedArticle.category) }}
               </span>
             </div>
-            <h2 class="text-lg font-bold text-gray-900 mt-2">{{ selectedArticle.title }}</h2>
+            <h2 class="text-lg font-bold text-gray-900 mt-2">{{ loc(selectedArticle, 'title') }}</h2>
           </div>
           <button @click="selectedArticle = null" class="text-gray-400 hover:text-gray-600">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -258,12 +258,12 @@
             </svg>
           </button>
         </div>
-        <div v-if="selectedArticle.summary"
+        <div v-if="selectedArticle.summary || selectedArticle.summary_uz"
           class="text-sm text-gray-500 italic bg-gray-50 rounded-lg p-3 mb-4">
-          {{ selectedArticle.summary }}
+          {{ loc(selectedArticle, 'summary') }}
         </div>
         <div class="prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap">
-          {{ selectedArticle.content }}
+          {{ loc(selectedArticle, 'content') }}
         </div>
         <div v-if="selectedArticle.tags && selectedArticle.tags.length > 0"
           class="flex items-center gap-2 mt-5 pt-4 border-t border-gray-100">
@@ -285,6 +285,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { currentLocale } from '@/i18n';
 import api from '@/api/index';
 
 const { t } = useI18n();
@@ -359,6 +360,15 @@ function defaultForm() {
 }
 function formatDate(d) {
   return d ? new Date(d).toLocaleDateString('ru-RU') : '';
+}
+
+// Локализованное поле: если uz и есть _uz версия — вернуть её
+function loc(obj, field) {
+  if (currentLocale() === 'uz') {
+    const uzVal = obj[field + '_uz'];
+    if (uzVal) return uzVal;
+  }
+  return obj[field] || '';
 }
 
 // --- Notes ---
