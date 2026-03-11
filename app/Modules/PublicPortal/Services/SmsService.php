@@ -37,8 +37,8 @@ class SmsService
      */
     public function send(string $phone, string $message): bool
     {
-        if (app()->isLocal() || app()->environment('testing')) {
-            Log::info("[SMS DEV] To: {$phone} | Message: {$message}");
+        if (app()->isLocal() || app()->environment('testing') || config('services.sms_stub.pin')) {
+            Log::info("[SMS STUB] To: {$phone} | Message: {$message}");
             return true;
         }
 

@@ -182,19 +182,11 @@ class PhoneAuthService
     }
 
     /**
-     * Stub PIN работает только в local/testing.
-     * В production игнорируется даже если задан в .env.
-     */
-    /**
-     * Stub PIN работает только в local/testing.
-     * В production — реальная отправка через Eskiz.
+     * Stub PIN — если задан в .env, используется как фиксированный OTP-код.
+     * SMS не отправляется. Работает в любом окружении.
      */
     private function getStubPin(): ?string
     {
-        if (app()->environment('production')) {
-            return null;
-        }
-
         return config('services.sms_stub.pin');
     }
 
