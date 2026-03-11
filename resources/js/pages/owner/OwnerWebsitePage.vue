@@ -10,13 +10,13 @@
       <div class="flex-1">
         <div class="text-sm font-bold"
           :class="settings['site.enabled'] ? 'text-green-800' : 'text-red-800'">
-          {{ settings['site.enabled'] ? 'Сайт включён и доступен' : 'Сайт отключён — только форма входа' }}
+          {{ settings['site.enabled'] ? t('owner.website.siteEnabled') : t('owner.website.siteDisabled') }}
         </div>
         <div class="text-xs mt-0.5"
           :class="settings['site.enabled'] ? 'text-green-600' : 'text-red-600'">
           {{ settings['site.enabled']
-            ? 'Все посетители видят полную версию visabor.uz'
-            : 'Неавторизованные посетители видят только экран входа. Авторизованные работают как обычно.' }}
+            ? t('owner.website.siteEnabledDesc')
+            : t('owner.website.siteDisabledDesc') }}
         </div>
       </div>
       <a href="/" target="_blank"
@@ -24,25 +24,25 @@
         :class="settings['site.enabled']
           ? 'text-green-700 border-green-300 hover:bg-green-100'
           : 'text-red-700 border-red-300 hover:bg-red-100'">
-        Открыть сайт
+        {{ t('owner.website.openSite') }}
       </a>
     </div>
 
     <div class="flex items-center justify-between">
       <div>
-        <h1 class="text-xl font-bold text-gray-800">Сайт VisaBor</h1>
-        <p class="text-sm text-gray-500 mt-1">Управление контентом и настройками visabor.uz</p>
+        <h1 class="text-xl font-bold text-gray-800">{{ t('owner.website.title') }}</h1>
+        <p class="text-sm text-gray-500 mt-1">{{ t('owner.website.subtitle') }}</p>
       </div>
       <div class="flex items-center gap-3">
         <button @click="clearCache" :disabled="clearing"
           class="px-4 py-2 text-sm font-medium text-amber-700 bg-amber-50 border border-amber-200
                  rounded-lg hover:bg-amber-100 transition-colors disabled:opacity-50">
-          {{ clearing ? 'Очистка...' : 'Очистить кэш' }}
+          {{ clearing ? t('owner.website.clearing') : t('owner.website.clearCache') }}
         </button>
         <button @click="save" :disabled="saving"
           class="px-4 py-2 text-sm font-medium text-white bg-[#1BA97F] rounded-lg
                  hover:bg-[#169B72] transition-colors disabled:opacity-50">
-          {{ saving ? 'Сохранение...' : 'Сохранить' }}
+          {{ saving ? t('owner.website.saving') : t('common.save') }}
         </button>
       </div>
     </div>
@@ -56,15 +56,15 @@
       <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-100 bg-gray-50">
           <h2 class="font-semibold text-gray-700 flex items-center gap-2">
-            <span class="text-base">🔴</span> Состояние сайта
+            <span class="text-base">🔴</span> {{ t('owner.website.siteState') }}
           </h2>
         </div>
         <div class="divide-y divide-gray-50">
-          <SettingToggle label="Публичный сайт включён" desc="Если выключить — виден только экран входа"
+          <SettingToggle :label="t('owner.website.publicSiteEnabled')" :desc="t('owner.website.publicSiteEnabledDesc')"
             v-model="settings['site.enabled']" />
-          <SettingToggle label="Баннер технических работ" desc="Показать предупреждение вверху страницы"
+          <SettingToggle :label="t('owner.website.maintenanceBanner')" :desc="t('owner.website.maintenanceBannerDesc')"
             v-model="settings['site.maintenance_banner']" />
-          <SettingInput label="Текст баннера" v-model="settings['site.maintenance_text']"
+          <SettingInput :label="t('owner.website.maintenanceText')" v-model="settings['site.maintenance_text']"
             v-if="settings['site.maintenance_banner']" />
         </div>
       </div>
@@ -73,13 +73,13 @@
       <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-100 bg-gray-50">
           <h2 class="font-semibold text-gray-700 flex items-center gap-2">
-            <span class="text-base">🔍</span> SEO-параметры
+            <span class="text-base">🔍</span> {{ t('owner.website.seoParams') }}
           </h2>
         </div>
         <div class="p-6 space-y-4">
-          <SettingInput label="Title страницы" v-model="settings['seo.title']" />
-          <SettingTextarea label="Meta Description" v-model="settings['seo.description']" />
-          <SettingInput label="Keywords" v-model="settings['seo.keywords']" />
+          <SettingInput :label="t('owner.website.pageTitle')" v-model="settings['seo.title']" />
+          <SettingTextarea :label="t('owner.website.metaDescription')" v-model="settings['seo.description']" />
+          <SettingInput :label="t('owner.website.keywords')" v-model="settings['seo.keywords']" />
         </div>
       </div>
 
@@ -87,13 +87,13 @@
       <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-100 bg-gray-50">
           <h2 class="font-semibold text-gray-700 flex items-center gap-2">
-            <span class="text-base">✏️</span> Контент главной
+            <span class="text-base">✏️</span> {{ t('owner.website.mainContent') }}
           </h2>
         </div>
         <div class="p-6 space-y-4">
-          <SettingInput label="Главный заголовок H1" v-model="settings['hero.title']" />
-          <SettingTextarea label="Подзаголовок Hero" v-model="settings['hero.subtitle']" />
-          <SettingInput label="Текст CTA кнопки" v-model="settings['hero.cta_text']" />
+          <SettingInput :label="t('owner.website.heroTitle')" v-model="settings['hero.title']" />
+          <SettingTextarea :label="t('owner.website.heroSubtitle')" v-model="settings['hero.subtitle']" />
+          <SettingInput :label="t('owner.website.ctaText')" v-model="settings['hero.cta_text']" />
         </div>
       </div>
 
@@ -101,14 +101,14 @@
       <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-100 bg-gray-50">
           <h2 class="font-semibold text-gray-700 flex items-center gap-2">
-            <span class="text-base">📞</span> Контакты
+            <span class="text-base">📞</span> {{ t('owner.website.contacts') }}
           </h2>
         </div>
         <div class="p-6 space-y-4">
-          <SettingInput label="Телефон" v-model="settings['contact.phone']" />
-          <SettingInput label="Email" v-model="settings['contact.email']" />
-          <SettingInput label="Telegram" v-model="settings['contact.telegram']" />
-          <SettingInput label="Адрес" v-model="settings['contact.address']" />
+          <SettingInput :label="t('owner.website.phone')" v-model="settings['contact.phone']" />
+          <SettingInput :label="t('owner.website.email')" v-model="settings['contact.email']" />
+          <SettingInput :label="t('owner.website.telegram')" v-model="settings['contact.telegram']" />
+          <SettingInput :label="t('owner.website.address')" v-model="settings['contact.address']" />
         </div>
       </div>
 
@@ -116,20 +116,20 @@
       <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-100 bg-gray-50">
           <h2 class="font-semibold text-gray-700 flex items-center gap-2">
-            <span class="text-base">👁️</span> Видимость блоков
+            <span class="text-base">👁️</span> {{ t('owner.website.sectionsVisibility') }}
           </h2>
         </div>
         <div class="divide-y divide-gray-50">
-          <SettingToggle label="Hero-секция" v-model="settings['sections.hero']" />
-          <SettingToggle label="AI Scoring / Анкета" v-model="settings['sections.scoring']" />
-          <SettingToggle label="Направления" v-model="settings['sections.destinations']" />
-          <SettingToggle label="Агентства" v-model="settings['sections.agencies']" />
-          <SettingToggle label="Trust / Отзывы" v-model="settings['sections.trust']" />
-          <SettingToggle label="Сравнение" v-model="settings['sections.compare']" />
-          <SettingToggle label="Мобильное приложение" v-model="settings['sections.app']" />
-          <SettingToggle label="Telegram-бот" v-model="settings['sections.telegram']" />
-          <SettingToggle label="Личный кабинет" v-model="settings['sections.cabinet']" />
-          <SettingToggle label="FAQ" v-model="settings['sections.faq']" />
+          <SettingToggle :label="t('owner.website.sectionHero')" v-model="settings['sections.hero']" />
+          <SettingToggle :label="t('owner.website.sectionScoring')" v-model="settings['sections.scoring']" />
+          <SettingToggle :label="t('owner.website.sectionDestinations')" v-model="settings['sections.destinations']" />
+          <SettingToggle :label="t('owner.website.sectionAgencies')" v-model="settings['sections.agencies']" />
+          <SettingToggle :label="t('owner.website.sectionTrust')" v-model="settings['sections.trust']" />
+          <SettingToggle :label="t('owner.website.sectionCompare')" v-model="settings['sections.compare']" />
+          <SettingToggle :label="t('owner.website.sectionApp')" v-model="settings['sections.app']" />
+          <SettingToggle :label="t('owner.website.sectionTelegram')" v-model="settings['sections.telegram']" />
+          <SettingToggle :label="t('owner.website.sectionCabinet')" v-model="settings['sections.cabinet']" />
+          <SettingToggle :label="t('owner.website.sectionFaq')" v-model="settings['sections.faq']" />
         </div>
       </div>
 
@@ -137,43 +137,43 @@
       <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-100 bg-gray-50">
           <h2 class="font-semibold text-gray-700 flex items-center gap-2">
-            <span class="text-base">📄</span> SEO-страницы
+            <span class="text-base">📄</span> {{ t('owner.website.seoPages') }}
           </h2>
         </div>
         <div class="p-6">
-          <p class="text-sm text-gray-500 mb-4">Публичные страницы для поисковых систем и AI-агрегаторов</p>
+          <p class="text-sm text-gray-500 mb-4">{{ t('owner.website.seoPagesDesc') }}</p>
           <div class="space-y-2">
             <a href="/about" target="_blank" class="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
               <div>
-                <div class="font-medium text-sm text-gray-700">О платформе</div>
+                <div class="font-medium text-sm text-gray-700">{{ t('owner.website.aboutPlatform') }}</div>
                 <div class="text-xs text-gray-400">/about</div>
               </div>
-              <span class="text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">Активна</span>
+              <span class="text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">{{ t('owner.website.pageActive') }}</span>
             </a>
             <a href="/privacy" target="_blank" class="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
               <div>
-                <div class="font-medium text-sm text-gray-700">Политика конфиденциальности</div>
+                <div class="font-medium text-sm text-gray-700">{{ t('owner.website.privacyPolicy') }}</div>
                 <div class="text-xs text-gray-400">/privacy</div>
               </div>
-              <span class="text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">Активна</span>
+              <span class="text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">{{ t('owner.website.pageActive') }}</span>
             </a>
             <a href="/terms" target="_blank" class="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
               <div>
-                <div class="font-medium text-sm text-gray-700">Пользовательское соглашение</div>
+                <div class="font-medium text-sm text-gray-700">{{ t('owner.website.termsOfService') }}</div>
                 <div class="text-xs text-gray-400">/terms</div>
               </div>
-              <span class="text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">Активна</span>
+              <span class="text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">{{ t('owner.website.pageActive') }}</span>
             </a>
             <a href="/sitemap.xml" target="_blank" class="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
               <div>
-                <div class="font-medium text-sm text-gray-700">Sitemap XML</div>
+                <div class="font-medium text-sm text-gray-700">{{ t('owner.website.sitemapXml') }}</div>
                 <div class="text-xs text-gray-400">/sitemap.xml</div>
               </div>
-              <span class="text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">Активна</span>
+              <span class="text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">{{ t('owner.website.pageActive') }}</span>
             </a>
           </div>
           <p class="text-xs text-gray-400 mt-4">
-            Страницы стран (/country/de, /country/jp и т.д.) генерируются автоматически для каждой активной страны в разделе "Страны и веса".
+            {{ t('owner.website.countryPagesNote') }}
           </p>
         </div>
       </div>
@@ -191,7 +191,10 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import api from '@/api/index';
+
+const { t } = useI18n();
 
 // Inline sub-components
 const SettingToggle = {
@@ -256,7 +259,7 @@ async function load() {
     const { data } = await api.get('/owner/website-settings');
     Object.assign(settings, data.data.settings);
   } catch (e) {
-    showToast('Ошибка загрузки настроек', 'error');
+    showToast(t('owner.website.loadError'), 'error');
   } finally {
     loading.value = false;
   }
@@ -266,9 +269,9 @@ async function save() {
   saving.value = true;
   try {
     await api.put('/owner/website-settings', { settings });
-    showToast('Настройки сохранены');
+    showToast(t('owner.website.settingsSaved'));
   } catch (e) {
-    showToast('Ошибка сохранения', 'error');
+    showToast(t('owner.website.saveError'), 'error');
   } finally {
     saving.value = false;
   }
@@ -278,9 +281,9 @@ async function clearCache() {
   clearing.value = true;
   try {
     await api.post('/owner/website-settings/clear-cache');
-    showToast('Кэш очищен');
+    showToast(t('owner.website.cacheCleared'));
   } catch (e) {
-    showToast('Ошибка очистки кэша', 'error');
+    showToast(t('owner.website.cacheClearError'), 'error');
   } finally {
     clearing.value = false;
   }

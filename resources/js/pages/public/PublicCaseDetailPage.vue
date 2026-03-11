@@ -1903,10 +1903,10 @@ onMounted(async () => {
         if (caseData.value?.country_code) {
             publicPortalApi.countryDetail(caseData.value.country_code)
                 .then(r => { countryInfo.value = r.data.data ?? null; })
-                .catch(() => {});
+                .catch(e => console.error('[PublicCaseDetail] countryDetail', e));
         }
         // Загружаем семью из профиля (для модала)
-        publicPortalApi.familyMembers().then(r => { profileFamily.value = r.data.data ?? []; }).catch(() => {});
+        publicPortalApi.familyMembers().then(r => { profileFamily.value = r.data.data ?? []; }).catch(e => console.error('[PublicCaseDetail] familyMembers', e));
     } catch {
         caseData.value = null;
     } finally {

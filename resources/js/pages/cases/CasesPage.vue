@@ -235,13 +235,13 @@ import AppInput from '@/components/AppInput.vue';
 import AppSelect from '@/components/AppSelect.vue';
 import AppButton from '@/components/AppButton.vue';
 import CountrySelect from '@/components/CountrySelect.vue';
-import { formatPhone } from '@/utils/format';
+import { formatPhone, formatDate } from '@/utils/format';
 
 const { t } = useI18n();
 const router     = useRouter();
 const auth       = useAuthStore();
 const isOwner    = computed(() => auth.isOwner);
-const { countryName, countryFlag, visaTypeName } = useCountries();
+const { countries: availableCountries, countryName, countryFlag, visaTypeName } = useCountries();
 
 const cases        = ref([]);
 const meta         = ref(null);
@@ -258,17 +258,6 @@ function resetFilters() {
   Object.assign(filters, { q: '', stage: '', priority: '', assigned_to: '', country_code: '', date_from: '', date_to: '', status: '', page: 1 });
   fetchCases();
 }
-
-const COUNTRY_LIST = [
-  { code: 'DE', flag: '🇩🇪', name: 'Германия' }, { code: 'FR', flag: '🇫🇷', name: 'Франция' },
-  { code: 'IT', flag: '🇮🇹', name: 'Италия' }, { code: 'ES', flag: '🇪🇸', name: 'Испания' },
-  { code: 'CZ', flag: '🇨🇿', name: 'Чехия' }, { code: 'PL', flag: '🇵🇱', name: 'Польша' },
-  { code: 'US', flag: '🇺🇸', name: 'США' }, { code: 'GB', flag: '🇬🇧', name: 'Великобритания' },
-  { code: 'AE', flag: '🇦🇪', name: 'ОАЭ' }, { code: 'TR', flag: '🇹🇷', name: 'Турция' },
-  { code: 'KR', flag: '🇰🇷', name: 'Южная Корея' }, { code: 'CN', flag: '🇨🇳', name: 'Китай' },
-  { code: 'JP', flag: '🇯🇵', name: 'Япония' }, { code: 'IN', flag: '🇮🇳', name: 'Индия' },
-];
-const availableCountries = COUNTRY_LIST;
 
 // Счётчик незакреплённых (из текущей страницы — для уведомления)
 const unassignedCount = computed(() => cases.value.filter(c => !c.assignee).length);
@@ -352,9 +341,6 @@ function docsBarColor(c)  { return c.docs_uploaded === c.docs_total ? 'bg-green-
 function docsIconColor(c) { return c.docs_uploaded === c.docs_total ? 'text-green-500' : 'text-gray-400'; }
 function docsTextColor(c) { return c.docs_uploaded === c.docs_total ? 'text-green-600' : 'text-gray-600'; }
 
-function formatDate(d) {
-  return new Date(d).toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric' });
-}
 
 // ── Назначение менеджера ──────────────────────────────────────────────────────
 function startAssign(c) {

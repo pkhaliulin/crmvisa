@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { useToast } from '@/composables/useToast';
 
 const api = axios.create({
     baseURL: '/api/v1',
@@ -17,13 +18,16 @@ api.interceptors.request.use((config) => {
     return config;
 });
 
-// Редиректим на логин при 401
+// Обработка ошибок ответа
 api.interceptors.response.use(
     (res) => res,
     (err) => {
         if (err.response?.status === 401) {
             localStorage.removeItem('token');
             window.location.href = '/login';
+        } else if (err.response?.status >= 500) {
+            const { showToast } = useToast();
+            showToast('Ошибка сервера', 'error');
         }
         return Promise.reject(err);
     }

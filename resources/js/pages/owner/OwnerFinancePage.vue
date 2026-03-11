@@ -4,17 +4,17 @@
         <div class="flex gap-3">
             <select v-model="filterType" @change="load"
                 class="border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-[#1BA97F]">
-                <option value="">Все типы</option>
-                <option value="payment">Оплаты</option>
-                <option value="commission">Комиссии</option>
-                <option value="refund">Возвраты</option>
+                <option value="">{{ t('owner.finance.allTypes') }}</option>
+                <option value="payment">{{ t('owner.finance.payments') }}</option>
+                <option value="commission">{{ t('owner.finance.commissions') }}</option>
+                <option value="refund">{{ t('owner.finance.refunds') }}</option>
             </select>
             <select v-model="filterStatus" @change="load"
                 class="border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-[#1BA97F]">
-                <option value="">Все статусы</option>
-                <option value="paid">Оплачено</option>
-                <option value="pending">Ожидание</option>
-                <option value="failed">Ошибка</option>
+                <option value="">{{ t('owner.finance.allStatuses') }}</option>
+                <option value="paid">{{ t('owner.finance.paid') }}</option>
+                <option value="pending">{{ t('owner.finance.pending') }}</option>
+                <option value="failed">{{ t('owner.finance.failed') }}</option>
             </select>
         </div>
 
@@ -22,11 +22,11 @@
             <table class="w-full text-sm">
                 <thead class="bg-gray-50 text-gray-500 border-b border-gray-100 text-xs">
                     <tr>
-                        <th class="px-5 py-3 text-left">Агентство</th>
-                        <th class="px-4 py-3 text-left">Тип</th>
-                        <th class="px-4 py-3 text-right">Сумма</th>
-                        <th class="px-4 py-3 text-center">Статус</th>
-                        <th class="px-4 py-3 text-left">Дата</th>
+                        <th class="px-5 py-3 text-left">{{ t('owner.finance.thAgency') }}</th>
+                        <th class="px-4 py-3 text-left">{{ t('owner.finance.thType') }}</th>
+                        <th class="px-4 py-3 text-right">{{ t('owner.finance.thAmount') }}</th>
+                        <th class="px-4 py-3 text-center">{{ t('owner.finance.thStatus') }}</th>
+                        <th class="px-4 py-3 text-left">{{ t('owner.finance.thDate') }}</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-50">
@@ -37,35 +37,35 @@
                     </tr>
                     <tr v-else-if="!transactions.length">
                         <td colspan="5" class="px-5 py-10 text-center text-sm text-gray-400">
-                            Транзакций пока нет
+                            {{ t('owner.finance.noTransactions') }}
                         </td>
                     </tr>
-                    <tr v-else v-for="t in transactions" :key="t.id" class="hover:bg-gray-50">
-                        <td class="px-5 py-3 text-gray-800">{{ t.agency_name || '—' }}</td>
+                    <tr v-else v-for="tx in transactions" :key="tx.id" class="hover:bg-gray-50">
+                        <td class="px-5 py-3 text-gray-800">{{ tx.agency_name || '—' }}</td>
                         <td class="px-4 py-3">
                             <span class="text-xs px-2 py-1 rounded-full"
-                                :class="typeClass(t.type)">
-                                {{ typeLabel(t.type) }}
+                                :class="typeClass(tx.type)">
+                                {{ typeLabel(tx.type) }}
                             </span>
                         </td>
                         <td class="px-4 py-3 text-right font-bold text-gray-800">
-                            ${{ Number(t.amount || 0).toFixed(2) }}
+                            ${{ Number(tx.amount || 0).toFixed(2) }}
                         </td>
                         <td class="px-4 py-3 text-center">
                             <span class="text-xs px-2 py-1 rounded-full"
-                                :class="statusClass(t.status)">
-                                {{ statusLabel(t.status) }}
+                                :class="statusClass(tx.status)">
+                                {{ statusLabel(tx.status) }}
                             </span>
                         </td>
                         <td class="px-4 py-3 text-xs text-gray-400">
-                            {{ new Date(t.created_at).toLocaleDateString('ru-RU') }}
+                            {{ new Date(tx.created_at).toLocaleDateString('ru-RU') }}
                         </td>
                     </tr>
                 </tbody>
             </table>
 
             <div class="px-5 py-3 border-t border-gray-50 flex items-center justify-between text-xs text-gray-500">
-                <span>Всего: {{ pagination.total }}</span>
+                <span>{{ t('owner.finance.total', { count: pagination.total }) }}</span>
                 <div class="flex gap-1">
                     <button v-for="p in Math.min(pagination.last_page, 10)" :key="p"
                         @click="page = p; load()"
@@ -80,8 +80,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import api from '@/api/index';
+
+const { t } = useI18n();
 
 const transactions = ref([]);
 const loading      = ref(true);
@@ -90,9 +93,20 @@ const filterStatus = ref('');
 const page         = ref(1);
 const pagination   = ref({ last_page: 1, current_page: 1, total: 0 });
 
-const typeLabel  = (t) => ({ payment: 'Оплата', commission: 'Комиссия', refund: 'Возврат' }[t] ?? t);
-const typeClass  = (t) => ({ payment: 'bg-blue-50 text-blue-700', commission: 'bg-amber-50 text-amber-700', refund: 'bg-gray-100 text-gray-600' }[t]);
-const statusLabel= (s) => ({ paid: 'Оплачено', pending: 'Ожидание', failed: 'Ошибка' }[s] ?? s);
+const typeLabel = computed(() => (tp) => ({
+    payment: t('owner.finance.typePayment'),
+    commission: t('owner.finance.typeCommission'),
+    refund: t('owner.finance.typeRefund'),
+}[tp] ?? tp));
+
+const typeClass  = (tp) => ({ payment: 'bg-blue-50 text-blue-700', commission: 'bg-amber-50 text-amber-700', refund: 'bg-gray-100 text-gray-600' }[tp]);
+
+const statusLabel = computed(() => (s) => ({
+    paid: t('owner.finance.paid'),
+    pending: t('owner.finance.pending'),
+    failed: t('owner.finance.failed'),
+}[s] ?? s));
+
 const statusClass= (s) => ({ paid: 'bg-green-50 text-green-700', pending: 'bg-amber-50 text-amber-600', failed: 'bg-red-50 text-red-600' }[s]);
 
 async function load() {

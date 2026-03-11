@@ -3,12 +3,12 @@
     <!-- Header -->
     <div class="flex items-center justify-between">
       <div>
-        <h1 class="text-lg font-bold text-[#0A1F44]">База знаний</h1>
-        <p class="text-sm text-gray-500">Глобальная база знаний платформы</p>
+        <h1 class="text-lg font-bold text-[#0A1F44]">{{ t('owner.knowledge.title') }}</h1>
+        <p class="text-sm text-gray-500">{{ t('owner.knowledge.subtitle') }}</p>
       </div>
       <button @click="openForm(null)"
         class="px-4 py-2 bg-[#0A1F44] text-white text-sm rounded-lg hover:bg-[#0A1F44]/90 transition">
-        + Новая статья
+        {{ t('owner.knowledge.newArticle') }}
       </button>
     </div>
 
@@ -38,7 +38,7 @@
       <div class="flex items-center gap-3 flex-wrap">
         <div class="relative flex-1 min-w-[200px] max-w-xs">
           <input v-model="search" @input="debouncedLoad"
-            placeholder="Поиск по заголовку..."
+            :placeholder="t('owner.knowledge.searchPlaceholder')"
             class="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
           <svg class="absolute left-3 top-2.5 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
@@ -46,32 +46,32 @@
         </div>
         <select v-model="filterCategory" @change="loadArticles"
           class="text-sm border border-gray-200 rounded-lg px-3 py-2">
-          <option value="">Все категории</option>
+          <option value="">{{ t('owner.knowledge.allCategories') }}</option>
           <option v-for="c in categories" :key="c.value" :value="c.value">{{ c.label }}</option>
         </select>
         <select v-model="filterPublished" @change="loadArticles"
           class="text-sm border border-gray-200 rounded-lg px-3 py-2">
-          <option value="">Все статусы</option>
-          <option value="1">Опубликованные</option>
-          <option value="0">Черновики</option>
+          <option value="">{{ t('owner.knowledge.allStatuses') }}</option>
+          <option value="1">{{ t('owner.knowledge.published') }}</option>
+          <option value="0">{{ t('owner.knowledge.drafts') }}</option>
         </select>
       </div>
 
       <!-- Table -->
-      <div v-if="loading" class="text-center py-10 text-gray-400">Загрузка...</div>
+      <div v-if="loading" class="text-center py-10 text-gray-400">{{ t('common.loading') }}</div>
       <div v-else-if="articles.length === 0" class="text-center py-16 text-gray-400">
-        Статьи не найдены
+        {{ t('owner.knowledge.articlesNotFound') }}
       </div>
       <div v-else class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <table class="w-full text-sm">
           <thead class="bg-gray-50">
             <tr>
-              <th class="px-5 py-3 text-left font-medium text-gray-600">Заголовок</th>
-              <th class="px-5 py-3 text-left font-medium text-gray-600">Категория</th>
-              <th class="px-5 py-3 text-left font-medium text-gray-600">Страна</th>
-              <th class="px-5 py-3 text-left font-medium text-gray-600">Статус</th>
-              <th class="px-5 py-3 text-left font-medium text-gray-600">Просмотры</th>
-              <th class="px-5 py-3 text-right font-medium text-gray-600">Действия</th>
+              <th class="px-5 py-3 text-left font-medium text-gray-600">{{ t('owner.knowledge.tableTitle') }}</th>
+              <th class="px-5 py-3 text-left font-medium text-gray-600">{{ t('owner.knowledge.tableCategory') }}</th>
+              <th class="px-5 py-3 text-left font-medium text-gray-600">{{ t('owner.knowledge.tableCountry') }}</th>
+              <th class="px-5 py-3 text-left font-medium text-gray-600">{{ t('owner.knowledge.tableStatus') }}</th>
+              <th class="px-5 py-3 text-left font-medium text-gray-600">{{ t('owner.knowledge.tableViews') }}</th>
+              <th class="px-5 py-3 text-right font-medium text-gray-600">{{ t('owner.knowledge.tableActions') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -87,16 +87,16 @@
               <td class="px-5 py-3">
                 <span :class="a.is_published ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'"
                   class="px-2 py-0.5 rounded text-xs font-medium">
-                  {{ a.is_published ? 'Опубликовано' : 'Черновик' }}
+                  {{ a.is_published ? t('owner.knowledge.statusPublished') : t('owner.knowledge.statusDraft') }}
                 </span>
               </td>
               <td class="px-5 py-3 text-gray-500">{{ a.view_count }}</td>
               <td class="px-5 py-3 text-right space-x-2">
                 <button @click="togglePublish(a)" class="text-xs text-blue-600 hover:underline">
-                  {{ a.is_published ? 'Снять' : 'Опубл.' }}
+                  {{ a.is_published ? t('owner.knowledge.unpublish') : t('owner.knowledge.publish') }}
                 </button>
-                <button @click="openForm(a)" class="text-xs text-gray-600 hover:underline">Ред.</button>
-                <button @click="deleteArticle(a)" class="text-xs text-red-500 hover:underline">Удалить</button>
+                <button @click="openForm(a)" class="text-xs text-gray-600 hover:underline">{{ t('owner.knowledge.editShort') }}</button>
+                <button @click="deleteArticle(a)" class="text-xs text-red-500 hover:underline">{{ t('common.delete') }}</button>
               </td>
             </tr>
           </tbody>
@@ -118,9 +118,9 @@
 
     <!-- Tab: Pending Notes (moderation) -->
     <template v-if="activeTab === 'pending'">
-      <div v-if="loadingPending" class="text-center py-10 text-gray-400">Загрузка...</div>
+      <div v-if="loadingPending" class="text-center py-10 text-gray-400">{{ t('common.loading') }}</div>
       <div v-else-if="pendingNotes.length === 0" class="text-center py-16 text-gray-400">
-        Нет заметок на модерации
+        {{ t('owner.knowledge.noPendingNotes') }}
       </div>
       <div v-else class="space-y-4">
         <div v-for="note in pendingNotes" :key="note.id"
@@ -138,15 +138,15 @@
             <div class="flex items-center gap-2">
               <button @click="moderateNote(note.id, 'approve')"
                 class="px-3 py-1.5 bg-green-50 text-green-700 text-xs rounded-lg hover:bg-green-100 transition">
-                Одобрить
+                {{ t('owner.knowledge.approve') }}
               </button>
               <button @click="moderateNote(note.id, 'merge')"
                 class="px-3 py-1.5 bg-blue-50 text-blue-700 text-xs rounded-lg hover:bg-blue-100 transition">
-                Слить в БЗ
+                {{ t('owner.knowledge.mergeToKb') }}
               </button>
               <button @click="moderateNote(note.id, 'reject')"
                 class="px-3 py-1.5 bg-red-50 text-red-600 text-xs rounded-lg hover:bg-red-100 transition">
-                Отклонить
+                {{ t('owner.knowledge.reject') }}
               </button>
             </div>
           </div>
@@ -159,12 +159,12 @@
 
     <!-- Tab: Stats -->
     <template v-if="activeTab === 'stats'">
-      <div v-if="loadingStats" class="text-center py-10 text-gray-400">Загрузка...</div>
+      <div v-if="loadingStats" class="text-center py-10 text-gray-400">{{ t('common.loading') }}</div>
       <div v-else class="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div v-for="(value, key) in stats" :key="key"
           class="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
           <div class="text-2xl font-bold text-[#0A1F44]">{{ value }}</div>
-          <div class="text-xs text-gray-400 mt-1">{{ statsLabels[key] || key }}</div>
+          <div class="text-xs text-gray-400 mt-1">{{ statsLabelsComputed[key] || key }}</div>
         </div>
       </div>
     </template>
@@ -173,7 +173,7 @@
     <div v-if="showForm" class="fixed inset-0 z-50 bg-black/40 flex items-start justify-center pt-10 overflow-y-auto">
       <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl p-6 mb-10" @click.stop>
         <div class="flex items-center justify-between mb-5">
-          <h2 class="text-lg font-bold text-[#0A1F44]">{{ editId ? 'Редактировать статью' : 'Новая статья' }}</h2>
+          <h2 class="text-lg font-bold text-[#0A1F44]">{{ editId ? t('owner.knowledge.editArticle') : t('owner.knowledge.newArticleTitle') }}</h2>
           <button @click="showForm = false" class="text-gray-400 hover:text-gray-600">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
@@ -183,53 +183,53 @@
 
         <div class="space-y-4">
           <div>
-            <label class="text-sm font-medium text-gray-700 block mb-1">Заголовок (RU) *</label>
+            <label class="text-sm font-medium text-gray-700 block mb-1">{{ t('owner.knowledge.titleRu') }} *</label>
             <input v-model="form.title" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-100" />
           </div>
           <div>
-            <label class="text-sm font-medium text-gray-700 block mb-1">Заголовок (UZ)</label>
+            <label class="text-sm font-medium text-gray-700 block mb-1">{{ t('owner.knowledge.titleUz') }}</label>
             <input v-model="form.title_uz" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-100" />
           </div>
           <div class="grid grid-cols-3 gap-3">
             <div>
-              <label class="text-sm font-medium text-gray-700 block mb-1">Категория *</label>
+              <label class="text-sm font-medium text-gray-700 block mb-1">{{ t('owner.knowledge.categoryLabel') }} *</label>
               <select v-model="form.category" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg">
                 <option v-for="c in categories" :key="c.value" :value="c.value">{{ c.label }}</option>
               </select>
             </div>
             <div>
-              <label class="text-sm font-medium text-gray-700 block mb-1">Код страны</label>
+              <label class="text-sm font-medium text-gray-700 block mb-1">{{ t('owner.knowledge.countryCode') }}</label>
               <input v-model="form.country_code" maxlength="2" placeholder="UZ, US..."
                 class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg" />
             </div>
             <div>
-              <label class="text-sm font-medium text-gray-700 block mb-1">Тип визы</label>
+              <label class="text-sm font-medium text-gray-700 block mb-1">{{ t('owner.knowledge.visaType') }}</label>
               <input v-model="form.visa_type" placeholder="tourist, work..."
                 class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg" />
             </div>
           </div>
           <div>
-            <label class="text-sm font-medium text-gray-700 block mb-1">Содержание (RU, Markdown) *</label>
+            <label class="text-sm font-medium text-gray-700 block mb-1">{{ t('owner.knowledge.contentRu') }} *</label>
             <textarea v-model="form.content" rows="8"
               class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg font-mono"></textarea>
           </div>
           <div>
-            <label class="text-sm font-medium text-gray-700 block mb-1">Содержание (UZ, Markdown)</label>
+            <label class="text-sm font-medium text-gray-700 block mb-1">{{ t('owner.knowledge.contentUz') }}</label>
             <textarea v-model="form.content_uz" rows="6"
               class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg font-mono"></textarea>
           </div>
           <div>
-            <label class="text-sm font-medium text-gray-700 block mb-1">Краткое описание (RU)</label>
+            <label class="text-sm font-medium text-gray-700 block mb-1">{{ t('owner.knowledge.summaryRu') }}</label>
             <textarea v-model="form.summary" rows="2"
               class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg"></textarea>
           </div>
           <div>
-            <label class="text-sm font-medium text-gray-700 block mb-1">Теги (через запятую)</label>
-            <input v-model="form.tags_input" placeholder="виза, документы, срок"
+            <label class="text-sm font-medium text-gray-700 block mb-1">{{ t('owner.knowledge.tags') }}</label>
+            <input v-model="form.tags_input" placeholder="visa, documents, deadline"
               class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg" />
           </div>
           <div>
-            <label class="text-sm font-medium text-gray-700 block mb-1">Порядок сортировки</label>
+            <label class="text-sm font-medium text-gray-700 block mb-1">{{ t('owner.knowledge.sortOrder') }}</label>
             <input v-model.number="form.sort_order" type="number"
               class="w-32 px-3 py-2 text-sm border border-gray-200 rounded-lg" />
           </div>
@@ -239,11 +239,11 @@
           <div class="flex justify-end gap-3 pt-2">
             <button @click="showForm = false"
               class="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50">
-              Отмена
+              {{ t('common.cancel') }}
             </button>
             <button @click="saveArticle" :disabled="saving"
               class="px-4 py-2 text-sm bg-[#0A1F44] text-white rounded-lg hover:bg-[#0A1F44]/90 disabled:opacity-50">
-              {{ saving ? 'Сохранение...' : (editId ? 'Сохранить' : 'Создать') }}
+              {{ saving ? t('owner.knowledge.saving') : (editId ? t('common.save') : t('owner.knowledge.newArticle')) }}
             </button>
           </div>
         </div>
@@ -254,7 +254,10 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import api from '@/api/index';
+
+const { t } = useI18n();
 
 const activeTab = ref('articles');
 const articles = ref([]);
@@ -277,35 +280,35 @@ const saving = ref(false);
 const formError = ref('');
 const form = ref(defaultForm());
 
-const categories = [
-  { value: 'country_guide', label: 'Гид по стране' },
-  { value: 'visa_process', label: 'Визовый процесс' },
-  { value: 'documents', label: 'Документы' },
-  { value: 'requirements', label: 'Требования' },
-  { value: 'faq', label: 'FAQ' },
-  { value: 'tips', label: 'Советы' },
-  { value: 'common_mistakes', label: 'Ошибки' },
-  { value: 'finance', label: 'Финансы' },
-  { value: 'changes', label: 'Изменения' },
-];
+const categories = computed(() => [
+  { value: 'country_guide', label: t('owner.knowledge.categories.country_guide') },
+  { value: 'visa_process', label: t('owner.knowledge.categories.visa_process') },
+  { value: 'documents', label: t('owner.knowledge.categories.documents') },
+  { value: 'requirements', label: t('owner.knowledge.categories.requirements') },
+  { value: 'faq', label: t('owner.knowledge.categories.faq') },
+  { value: 'tips', label: t('owner.knowledge.categories.tips') },
+  { value: 'common_mistakes', label: t('owner.knowledge.categories.common_mistakes') },
+  { value: 'finance', label: t('owner.knowledge.categories.finance') },
+  { value: 'changes', label: t('owner.knowledge.categories.changes') },
+]);
 
-const statsLabels = {
-  total: 'Всего статей',
-  published: 'Опубликовано',
-  drafts: 'Черновиков',
-  total_views: 'Просмотров',
-  countries: 'Стран',
-  pending_notes: 'Заметок на модерации',
-};
+const statsLabelsComputed = computed(() => ({
+  total: t('owner.knowledge.statsLabels.total'),
+  published: t('owner.knowledge.statsLabels.published'),
+  drafts: t('owner.knowledge.statsLabels.drafts'),
+  total_views: t('owner.knowledge.statsLabels.total_views'),
+  countries: t('owner.knowledge.statsLabels.countries'),
+  pending_notes: t('owner.knowledge.statsLabels.pending_notes'),
+}));
 
 const tabs = computed(() => [
-  { id: 'articles', label: 'Статьи', count: pagination.value.total },
-  { id: 'pending', label: 'На модерации', count: pendingNotes.value.length },
-  { id: 'stats', label: 'Статистика' },
+  { id: 'articles', label: t('owner.knowledge.tabArticles'), count: pagination.value.total },
+  { id: 'pending', label: t('owner.knowledge.tabPending'), count: pendingNotes.value.length },
+  { id: 'stats', label: t('owner.knowledge.tabStats') },
 ]);
 
 function categoryLabel(val) {
-  return categories.find(c => c.value === val)?.label ?? val;
+  return categories.value.find(c => c.value === val)?.label ?? val;
 }
 
 function defaultForm() {
@@ -383,7 +386,7 @@ async function loadStats() {
 
 async function saveArticle() {
   if (!form.value.title || !form.value.content || !form.value.category) {
-    formError.value = 'Заполните обязательные поля';
+    formError.value = t('owner.knowledge.requiredFields');
     return;
   }
   saving.value = true;
@@ -403,7 +406,7 @@ async function saveArticle() {
     showForm.value = false;
     loadArticles();
   } catch (err) {
-    formError.value = err.response?.data?.message ?? 'Ошибка сохранения';
+    formError.value = err.response?.data?.message ?? t('owner.knowledge.saveError');
   } finally {
     saving.value = false;
   }
@@ -417,7 +420,7 @@ async function togglePublish(article) {
 }
 
 async function deleteArticle(article) {
-  if (!confirm('Удалить статью?')) return;
+  if (!confirm(t('owner.knowledge.deleteConfirm'))) return;
   try {
     await api.delete(`/owner/knowledge/${article.id}`);
     loadArticles();

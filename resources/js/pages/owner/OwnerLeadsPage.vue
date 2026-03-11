@@ -5,15 +5,12 @@
         <div class="flex flex-wrap gap-3">
             <select v-model="filterStatus" @change="load"
                 class="border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-[#1BA97F]">
-                <option value="">Все статусы</option>
-                <option value="new">Новые</option>
-                <option value="assigned">Назначены</option>
-                <option value="converted">Конвертированы</option>
-                <option value="rejected">Отклонены</option>
+                <option value="">{{ t('owner.leads.allStatuses') }}</option>
+                <option v-for="s in statusOptions" :key="s.value" :value="s.value">{{ s.label }}</option>
             </select>
             <select v-model="filterCountry" @change="load"
                 class="border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-[#1BA97F]">
-                <option value="">Все страны</option>
+                <option value="">{{ t('owner.leads.allCountries') }}</option>
                 <option v-for="cc in ['DE','ES','FR','IT','PL','CZ','GB','US','CA','KR','AE']" :key="cc" :value="cc">
                     {{ cc }}
                 </option>
@@ -25,12 +22,12 @@
             <table class="w-full text-sm">
                 <thead class="bg-gray-50 text-gray-500 border-b border-gray-100 text-xs">
                     <tr>
-                        <th class="px-5 py-3 text-left">Клиент</th>
-                        <th class="px-4 py-3 text-left">Страна</th>
-                        <th class="px-4 py-3 text-center">Скор</th>
-                        <th class="px-4 py-3 text-left">Агентство</th>
-                        <th class="px-4 py-3 text-center">Статус</th>
-                        <th class="px-4 py-3 text-left">Создан</th>
+                        <th class="px-5 py-3 text-left">{{ t('owner.leads.client') }}</th>
+                        <th class="px-4 py-3 text-left">{{ t('owner.leads.country') }}</th>
+                        <th class="px-4 py-3 text-center">{{ t('owner.leads.score') }}</th>
+                        <th class="px-4 py-3 text-left">{{ t('owner.leads.agency') }}</th>
+                        <th class="px-4 py-3 text-center">{{ t('owner.leads.status') }}</th>
+                        <th class="px-4 py-3 text-left">{{ t('owner.leads.created') }}</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-50">
@@ -45,7 +42,7 @@
                             <div class="text-xs text-gray-400">{{ l.user_phone }}</div>
                         </td>
                         <td class="px-4 py-3">
-                            <span>{{ flagMap[l.country_code] ?? '🌍' }} {{ l.country_code }}</span>
+                            <span>{{ flagMap[l.country_code] ?? '' }} {{ l.country_code }}</span>
                         </td>
                         <td class="px-4 py-3 text-center">
                             <span class="font-bold text-sm"
@@ -69,7 +66,7 @@
 
             <!-- Пагинация -->
             <div class="px-5 py-3 border-t border-gray-50 flex items-center justify-between text-xs text-gray-500">
-                <span>Всего: {{ pagination.total }}</span>
+                <span>{{ t('owner.leads.total', { count: pagination.total }) }}</span>
                 <div class="flex gap-1">
                     <button v-for="p in Math.min(pagination.last_page, 10)" :key="p"
                         @click="page = p; load()"
@@ -86,8 +83,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import api from '@/api/index';
+
+const { t } = useI18n();
 
 const leads        = ref([]);
 const loading      = ref(true);
@@ -101,7 +101,21 @@ const flagMap = {
     CZ: '🇨🇿', GB: '🇬🇧', US: '🇺🇸', CA: '🇨🇦', KR: '🇰🇷', AE: '🇦🇪',
 };
 
-const statusLabel = (s) => ({ new: 'Новый', assigned: 'Назначен', converted: 'Конвертирован', rejected: 'Отклонён' }[s] ?? s);
+const statusOptions = computed(() => [
+    { value: 'new', label: t('owner.leads.new') },
+    { value: 'assigned', label: t('owner.leads.assigned') },
+    { value: 'converted', label: t('owner.leads.converted') },
+    { value: 'rejected', label: t('owner.leads.rejected') },
+]);
+
+const statusLabelMap = computed(() => ({
+    new: t('owner.leads.statusNew'),
+    assigned: t('owner.leads.statusAssigned'),
+    converted: t('owner.leads.statusConverted'),
+    rejected: t('owner.leads.statusRejected'),
+}));
+
+const statusLabel = (s) => statusLabelMap.value[s] ?? s;
 const statusClass = (s) => ({
     new:       'bg-blue-50 text-blue-700',
     assigned:  'bg-amber-50 text-amber-700',

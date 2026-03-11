@@ -485,6 +485,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import api from '@/api/index';
+import { formatDate } from '@/utils/format';
 
 const { t } = useI18n();
 
@@ -654,12 +655,6 @@ function fmtMoney(val) {
   return Number(val).toLocaleString('uz-UZ') + ' ' + t('crm.billing.sum');
 }
 
-function formatDate(dateStr) {
-  if (!dateStr) return '--';
-  try {
-    return new Date(dateStr).toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric' });
-  } catch { return dateStr; }
-}
 
 const managersPct = computed(() => {
   if (!limits.value?.max_managers) return 0;

@@ -12,7 +12,26 @@ class PortalCountry extends Model
     protected $keyType = 'string';
     public $incrementing = false;
 
-    protected $guarded = [];
+    protected $fillable = [
+        'country_code', 'name', 'name_uz', 'continent', 'visa_regime',
+        'is_active', 'is_popular', 'is_high_approval', 'is_high_refusal',
+        'sort_order', 'latitude', 'longitude', 'flag_emoji',
+        'weight_finance', 'weight_ties', 'weight_travel', 'weight_profile',
+        'weight_finances', 'weight_visa_history', 'weight_social_ties',
+        'min_monthly_income_usd', 'min_score', 'commission_rate',
+        'processing_days_standard', 'processing_days_expedited',
+        'appointment_wait_days', 'buffer_days_recommended', 'destination_score_bonus',
+        'visa_free_days', 'visa_on_arrival_days', 'evisa_available', 'evisa_processing_days',
+        'invitation_required', 'hotel_booking_required', 'insurance_required',
+        'bank_statement_required', 'return_ticket_required',
+        'visa_fee_usd', 'evisa_fee_usd', 'avg_flight_cost_usd', 'avg_hotel_per_night_usd',
+        'view_count', 'lead_count', 'case_count',
+        'submission_types', 'appointment_required', 'personal_submission_required',
+        'biometrics_required', 'photo_required',
+        'has_visa_center', 'has_embassy',
+        'min_balance_usd', 'finance_threshold',
+        'visa_types', 'description', 'description_uz',
+    ];
 
     protected $casts = [
         'is_active'               => 'boolean',

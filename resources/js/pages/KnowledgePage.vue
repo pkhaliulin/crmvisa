@@ -297,6 +297,7 @@ import { useI18n } from 'vue-i18n';
 import { currentLocale } from '@/i18n';
 import api from '@/api/index';
 import CountrySelect from '@/components/CountrySelect.vue';
+import { formatDate } from '@/utils/format';
 
 const { t } = useI18n();
 
@@ -367,9 +368,6 @@ function moderationBadge(status) {
 }
 function defaultForm() {
   return { title: '', category: 'process', country_code: '', content: '' };
-}
-function formatDate(d) {
-  return d ? new Date(d).toLocaleDateString('ru-RU') : '';
 }
 
 // Локализованное поле: если uz и есть _uz версия — вернуть её

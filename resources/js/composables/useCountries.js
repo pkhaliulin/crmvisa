@@ -15,7 +15,7 @@ export function useCountries() {
                 countries.value = cRes.data.data ?? [];
                 visaTypes.value  = vtRes.data.data ?? [];
             })
-            .catch(() => {});
+            .catch(e => console.error('[useCountries]', e));
     }
 
     function countryName(code) {

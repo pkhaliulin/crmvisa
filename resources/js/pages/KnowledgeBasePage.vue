@@ -136,6 +136,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import api from '@/api/index';
 import CountrySelect from '@/components/CountrySelect.vue';
+import { formatDate } from '@/utils/format';
 
 const { t } = useI18n();
 
@@ -166,9 +167,6 @@ function articleCategoryLabel(val) {
   return articleCategories.value.find(c => c.value === val)?.label ?? val;
 }
 
-function formatDate(d) {
-  return d ? new Date(d).toLocaleDateString('ru-RU') : '';
-}
 
 let debounceTimer = null;
 function debouncedLoad() {

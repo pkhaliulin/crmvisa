@@ -1,19 +1,19 @@
 <template>
   <div class="space-y-6">
     <div>
-      <h1 class="text-xl font-bold text-gray-900">Биллинг и тарифы</h1>
-      <p class="text-sm text-gray-500 mt-1">Финансы платформы, тарифные планы для агентств и промо-акции</p>
+      <h1 class="text-xl font-bold text-gray-900">{{ t('owner.billing.title') }}</h1>
+      <p class="text-sm text-gray-500 mt-1">{{ t('owner.billing.subtitle') }}</p>
     </div>
 
     <!-- Табы -->
     <div class="flex gap-1 bg-gray-100 rounded-lg p-1">
-      <button v-for="t in tabs" :key="t.key"
-        @click="activeTab = t.key"
+      <button v-for="tab in tabItems" :key="tab.key"
+        @click="activeTab = tab.key"
         :class="['px-4 py-2 text-sm font-medium rounded-md transition-colors',
-          activeTab === t.key
+          activeTab === tab.key
             ? 'bg-white text-gray-900 shadow-sm'
             : 'text-gray-600 hover:text-gray-900']">
-        {{ t.label }}
+        {{ tab.label }}
       </button>
     </div>
 
@@ -32,7 +32,7 @@
                   <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
               </div>
-              <div class="text-xs text-gray-500 leading-tight">Общий доход<br/>за все время</div>
+              <div class="text-xs text-gray-500 leading-tight">{{ t('owner.billing.totalRevenue') }}<br/>{{ t('owner.billing.allTime') }}</div>
             </div>
             <div class="text-2xl font-bold text-gray-900">{{ fmtMoney(dash.revenue?.total_revenue) }}</div>
           </div>
@@ -43,7 +43,7 @@
                   <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
                 </svg>
               </div>
-              <div class="text-xs text-gray-500 leading-tight">Доход<br/>за этот месяц</div>
+              <div class="text-xs text-gray-500 leading-tight">{{ t('owner.billing.revenueThisMonth') }}<br/>{{ t('owner.billing.thisMonth') }}</div>
             </div>
             <div class="text-2xl font-bold text-green-600">{{ fmtMoney(dash.revenue_this_month) }}</div>
           </div>
@@ -54,7 +54,7 @@
                   <path stroke-linecap="round" stroke-linejoin="round" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"/>
                 </svg>
               </div>
-              <div class="text-xs text-gray-500 leading-tight">НДС<br/>к уплате</div>
+              <div class="text-xs text-gray-500 leading-tight">{{ t('owner.billing.vatToPay') }}<br/>{{ t('owner.billing.vatToPaySub') }}</div>
             </div>
             <div class="text-2xl font-bold text-orange-600">{{ fmtMoney(dash.revenue?.total_vat) }}</div>
           </div>
@@ -66,7 +66,7 @@
                   <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                 </svg>
               </div>
-              <div class="text-xs text-gray-500 leading-tight">Просроченные<br/>счета</div>
+              <div class="text-xs text-gray-500 leading-tight">{{ t('owner.billing.overdueInvoices') }}<br/>{{ t('owner.billing.overdueInvoicesSub') }}</div>
             </div>
             <div class="text-2xl font-bold" :class="dash.overdue_invoices > 0 ? 'text-red-600' : 'text-gray-300'">{{ dash.overdue_invoices || 0 }}</div>
           </div>
@@ -75,8 +75,8 @@
         <!-- Подписки и распределение -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div class="bg-white rounded-xl border border-gray-200 p-5">
-            <h3 class="text-sm font-semibold text-gray-900 mb-1">Подписки агентств</h3>
-            <p class="text-xs text-gray-400 mb-4">Статус подписок всех агентств на платформе</p>
+            <h3 class="text-sm font-semibold text-gray-900 mb-1">{{ t('owner.billing.agencySubscriptions') }}</h3>
+            <p class="text-xs text-gray-400 mb-4">{{ t('owner.billing.agencySubscriptionsDesc') }}</p>
             <div v-for="(count, status) in dash.subscriptions" :key="status"
               class="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
               <div class="flex items-center gap-2">
@@ -86,25 +86,25 @@
               <span class="text-sm font-bold text-gray-900 bg-gray-100 px-2.5 py-0.5 rounded-full">{{ count }}</span>
             </div>
             <div v-if="!Object.keys(dash.subscriptions || {}).length"
-              class="text-sm text-gray-400 text-center py-4">Пока нет подписок</div>
+              class="text-sm text-gray-400 text-center py-4">{{ t('owner.billing.noSubscriptions') }}</div>
           </div>
           <div class="bg-white rounded-xl border border-gray-200 p-5">
-            <h3 class="text-sm font-semibold text-gray-900 mb-1">По тарифным планам</h3>
-            <p class="text-xs text-gray-400 mb-4">Сколько агентств на каком тарифе</p>
+            <h3 class="text-sm font-semibold text-gray-900 mb-1">{{ t('owner.billing.byPlans') }}</h3>
+            <p class="text-xs text-gray-400 mb-4">{{ t('owner.billing.byPlansDesc') }}</p>
             <div v-for="(count, plan) in dash.plan_distribution" :key="plan"
               class="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
               <span class="text-sm text-gray-700 capitalize">{{ planDisplayName(plan) }}</span>
               <span class="text-sm font-bold text-gray-900 bg-gray-100 px-2.5 py-0.5 rounded-full">{{ count }}</span>
             </div>
             <div v-if="!Object.keys(dash.plan_distribution || {}).length"
-              class="text-sm text-gray-400 text-center py-4">Нет активных тарифов</div>
+              class="text-sm text-gray-400 text-center py-4">{{ t('owner.billing.noActivePlans') }}</div>
           </div>
         </div>
 
         <!-- Последние события -->
         <div class="bg-white rounded-xl border border-gray-200 p-5">
-          <h3 class="text-sm font-semibold text-gray-900 mb-1">Последние события</h3>
-          <p class="text-xs text-gray-400 mb-4">Оплаты, подписки и списания по агентствам</p>
+          <h3 class="text-sm font-semibold text-gray-900 mb-1">{{ t('owner.billing.recentEvents') }}</h3>
+          <p class="text-xs text-gray-400 mb-4">{{ t('owner.billing.recentEventsDesc') }}</p>
           <div class="space-y-0 max-h-80 overflow-y-auto">
             <div v-for="ev in dash.recent_events" :key="ev.id"
               class="flex items-center gap-3 py-2.5 border-b border-gray-50 last:border-0">
@@ -114,13 +114,13 @@
               </div>
               <div class="flex-1 min-w-0">
                 <div class="text-sm font-medium text-gray-900">{{ eventLabel(ev.event) }}</div>
-                <div class="text-xs text-gray-400">{{ ev.agency_name || 'Система' }}</div>
+                <div class="text-xs text-gray-400">{{ ev.agency_name || t('owner.billing.system') }}</div>
               </div>
               <div v-if="ev.amount" class="text-sm font-bold text-gray-900 shrink-0">{{ fmtMoney(ev.amount) }}</div>
               <div class="text-xs text-gray-400 shrink-0 w-28 text-right">{{ formatDate(ev.created_at) }}</div>
             </div>
             <div v-if="!dash.recent_events?.length"
-              class="text-sm text-gray-400 text-center py-6">Пока нет событий</div>
+              class="text-sm text-gray-400 text-center py-6">{{ t('owner.billing.noEvents') }}</div>
           </div>
         </div>
       </template>
@@ -130,11 +130,11 @@
     <div v-if="activeTab === 'plans'" class="space-y-4">
       <div class="flex items-center justify-between">
         <div>
-          <p class="text-xs text-gray-400">Тарифные планы для агентств. Агентства выбирают план при регистрации.</p>
+          <p class="text-xs text-gray-400">{{ t('owner.billing.plansDesc') }}</p>
         </div>
         <button @click="openPlanModal(null)"
           class="px-4 py-2 bg-[#0A1F44] text-white text-sm font-medium rounded-lg hover:bg-[#0d2a5e] transition-colors">
-          + Новый тариф
+          {{ t('owner.billing.newPlan') }}
         </button>
       </div>
 
@@ -150,15 +150,15 @@
           <!-- Бейдж рекомендуемого -->
           <div v-if="p.is_recommended"
             class="absolute -top-3 left-1/2 -translate-x-1/2 text-[10px] bg-[#1BA97F] text-white px-3 py-0.5 rounded-full font-bold whitespace-nowrap">
-            Рекомендуемый
+            {{ t('owner.billing.recommended') }}
           </div>
 
           <!-- Заголовок -->
           <div class="mb-4">
             <div class="text-lg font-bold text-gray-900">{{ p.name }}</div>
             <div class="text-2xl font-bold text-gray-900 mt-2">
-              {{ p.price_uzs > 0 ? fmtMoney(p.price_uzs) : 'Бесплатно' }}
-              <span v-if="p.price_uzs > 0" class="text-sm font-normal text-gray-400"> / мес</span>
+              {{ p.price_uzs > 0 ? fmtMoney(p.price_uzs) : t('owner.billing.free') }}
+              <span v-if="p.price_uzs > 0" class="text-sm font-normal text-gray-400"> {{ t('owner.billing.perMonth') }}</span>
             </div>
             <div v-if="p.description" class="text-xs text-gray-400 mt-1">{{ p.description }}</div>
           </div>
@@ -169,19 +169,19 @@
               <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
               </svg>
-              <span class="text-gray-600">Менеджеров: <b>{{ p.max_managers === 0 ? 'без лимита' : p.max_managers }}</b></span>
+              <span class="text-gray-600">{{ t('owner.billing.managers') }}: <b>{{ p.max_managers === 0 ? t('owner.billing.noLimit') : p.max_managers }}</b></span>
             </div>
             <div class="flex items-center gap-2">
               <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
               </svg>
-              <span class="text-gray-600">Заявок: <b>{{ p.max_cases === 0 ? 'без лимита' : p.max_cases }}</b></span>
+              <span class="text-gray-600">{{ t('owner.billing.cases') }}: <b>{{ p.max_cases === 0 ? t('owner.billing.noLimit') : p.max_cases }}</b></span>
             </div>
             <div class="flex items-center gap-2">
               <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
               </svg>
-              <span class="text-gray-600">Лидов в месяц: <b>{{ p.max_leads_per_month === 0 ? 'без лимита' : p.max_leads_per_month }}</b></span>
+              <span class="text-gray-600">{{ t('owner.billing.leadsPerMonth') }}: <b>{{ p.max_leads_per_month === 0 ? t('owner.billing.noLimit') : p.max_leads_per_month }}</b></span>
             </div>
           </div>
 
@@ -192,25 +192,25 @@
               <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
               </svg>
-              Бесплатный пробный период {{ p.trial_days }} дней
+              {{ t('owner.billing.trialDays', { days: p.trial_days }) }}
             </div>
             <div v-if="p.activation_fee_uzs > 0" class="flex items-center gap-2 text-gray-600">
               <svg class="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
               </svg>
-              Разовый взнос при подключении: {{ fmtMoney(p.activation_fee_uzs) }}
+              {{ t('owner.billing.activationFee', { amount: fmtMoney(p.activation_fee_uzs) }) }}
             </div>
             <div v-if="p.earn_first_enabled" class="flex items-center gap-2 text-green-700">
               <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
               </svg>
-              Оплата из дохода: {{ p.earn_first_deduction_pct }}% автосписание с каждого заказа
+              {{ t('owner.billing.earnFirst', { pct: p.earn_first_deduction_pct }) }}
             </div>
             <div v-if="p.grace_period_days > 0" class="flex items-center gap-2 text-gray-500">
               <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
               </svg>
-              Льготный период после просрочки: {{ p.grace_period_days }} дн.
+              {{ t('owner.billing.gracePeriod', { days: p.grace_period_days }) }}
             </div>
           </div>
 
@@ -224,22 +224,22 @@
 
           <!-- Подписчики -->
           <div class="text-xs text-gray-400 mt-3 pt-3 border-t border-gray-100">
-            Используют: <b class="text-gray-700">{{ p.subscribers_count || 0 }}</b> агентств
+            {{ t('owner.billing.usedBy', { count: p.subscribers_count || 0 }) }}
           </div>
 
           <!-- Действия -->
           <div class="mt-4 flex gap-2">
             <button @click="openPlanModal(p)"
               class="flex-1 px-3 py-2 text-xs font-medium bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
-              Редактировать
+              {{ t('owner.billing.editPlanBtn') }}
             </button>
             <button v-if="p.is_active" @click="deactivatePlan(p.slug)"
               class="px-3 py-2 text-xs font-medium text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors">
-              Отключить
+              {{ t('owner.billing.deactivate') }}
             </button>
             <button v-else @click="activatePlan(p.slug)"
               class="px-3 py-2 text-xs font-medium text-green-600 border border-green-200 rounded-lg hover:bg-green-50 transition-colors">
-              Включить
+              {{ t('owner.billing.activate') }}
             </button>
           </div>
         </div>
@@ -248,20 +248,20 @@
 
     <!-- =============== НАСТРОЙКИ =============== -->
     <div v-if="activeTab === 'settings'" class="space-y-4">
-      <p class="text-xs text-gray-400">Глобальные настройки финансовой системы платформы</p>
+      <p class="text-xs text-gray-400">{{ t('owner.billing.settingsDesc') }}</p>
       <div v-if="settingsLoading" class="flex justify-center py-16">
         <div class="w-8 h-8 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
       </div>
       <div v-else class="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <!-- Налоги -->
         <div class="bg-white rounded-xl border border-gray-200 p-5">
-          <h3 class="text-sm font-bold text-gray-900 mb-1">Налоги</h3>
-          <p class="text-xs text-gray-400 mb-4">НДС и налоговые параметры. IT Park Узбекистан — НДС 0%.</p>
+          <h3 class="text-sm font-bold text-gray-900 mb-1">{{ t('owner.billing.taxTitle') }}</h3>
+          <p class="text-xs text-gray-400 mb-4">{{ t('owner.billing.taxDesc') }}</p>
           <div class="space-y-4">
             <div class="flex items-center justify-between">
               <div>
-                <div class="text-sm font-medium text-gray-700">Начислять НДС</div>
-                <div class="text-xs text-gray-400">Если выключено — НДС не добавляется к платежам</div>
+                <div class="text-sm font-medium text-gray-700">{{ t('owner.billing.vatEnabled') }}</div>
+                <div class="text-xs text-gray-400">{{ t('owner.billing.vatEnabledDesc') }}</div>
               </div>
               <button @click="toggleSetting('vat_enabled')"
                 :class="['w-12 h-6 rounded-full transition-colors relative',
@@ -271,8 +271,8 @@
               </button>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Ставка НДС, %</label>
-              <p class="text-xs text-gray-400 mb-1">Стандартная для Узбекистана — 12%</p>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('owner.billing.vatRate') }}</label>
+              <p class="text-xs text-gray-400 mb-1">{{ t('owner.billing.vatRateDesc') }}</p>
               <input v-model="settingsMap.vat_rate" type="number"
                 class="w-32 px-3 py-2 text-sm border rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500" />
             </div>
@@ -281,12 +281,12 @@
 
         <!-- Комиссии -->
         <div class="bg-white rounded-xl border border-gray-200 p-5">
-          <h3 class="text-sm font-bold text-gray-900 mb-1">Комиссии</h3>
-          <p class="text-xs text-gray-400 mb-4">Процент платформы с каждого заказа и комиссии платежных систем</p>
+          <h3 class="text-sm font-bold text-gray-900 mb-1">{{ t('owner.billing.commissionsTitle') }}</h3>
+          <p class="text-xs text-gray-400 mb-4">{{ t('owner.billing.commissionsDesc') }}</p>
           <div class="space-y-3">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Комиссия платформы, %</label>
-              <p class="text-xs text-gray-400 mb-1">Удерживается с каждого оплаченного заказа через маркетплейс</p>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('owner.billing.platformCommission') }}</label>
+              <p class="text-xs text-gray-400 mb-1">{{ t('owner.billing.platformCommissionDesc') }}</p>
               <input v-model="settingsMap.platform_commission" type="number" step="0.1"
                 class="w-32 px-3 py-2 text-sm border rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500" />
             </div>
@@ -312,18 +312,18 @@
 
         <!-- Выплаты -->
         <div class="bg-white rounded-xl border border-gray-200 p-5">
-          <h3 class="text-sm font-bold text-gray-900 mb-1">Выплаты агентствам</h3>
-          <p class="text-xs text-gray-400 mb-4">Правила вывода средств агентствами на свой счет</p>
+          <h3 class="text-sm font-bold text-gray-900 mb-1">{{ t('owner.billing.payoutsTitle') }}</h3>
+          <p class="text-xs text-gray-400 mb-4">{{ t('owner.billing.payoutsDesc') }}</p>
           <div class="space-y-3">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Мин. сумма для вывода, UZS</label>
-              <p class="text-xs text-gray-400 mb-1">Агентство не может вывести меньше этой суммы</p>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('owner.billing.payoutMinAmount') }}</label>
+              <p class="text-xs text-gray-400 mb-1">{{ t('owner.billing.payoutMinAmountDesc') }}</p>
               <input v-model="settingsMap.payout_min_amount" type="number"
                 class="w-40 px-3 py-2 text-sm border rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Цикл выплат, дней</label>
-              <p class="text-xs text-gray-400 mb-1">Как часто происходит автовыплата (7 = еженедельно)</p>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('owner.billing.payoutCycleDays') }}</label>
+              <p class="text-xs text-gray-400 mb-1">{{ t('owner.billing.payoutCycleDaysDesc') }}</p>
               <input v-model="settingsMap.payout_cycle_days" type="number"
                 class="w-32 px-3 py-2 text-sm border rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500" />
             </div>
@@ -332,17 +332,17 @@
 
         <!-- Повторные списания -->
         <div class="bg-white rounded-xl border border-gray-200 p-5">
-          <h3 class="text-sm font-bold text-gray-900 mb-1">Повторные попытки оплаты</h3>
-          <p class="text-xs text-gray-400 mb-4">Если автосписание не прошло — система повторит попытку</p>
+          <h3 class="text-sm font-bold text-gray-900 mb-1">{{ t('owner.billing.retryTitle') }}</h3>
+          <p class="text-xs text-gray-400 mb-4">{{ t('owner.billing.retryDesc') }}</p>
           <div class="space-y-3">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Количество попыток</label>
-              <p class="text-xs text-gray-400 mb-1">Сколько раз повторить после неудачного списания</p>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('owner.billing.retryCount') }}</label>
+              <p class="text-xs text-gray-400 mb-1">{{ t('owner.billing.retryCountDesc') }}</p>
               <input v-model="settingsMap.dunning_max_retries" type="number"
                 class="w-32 px-3 py-2 text-sm border rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Интервал между попытками, дней</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('owner.billing.retryInterval') }}</label>
               <input v-model="settingsMap.dunning_retry_days" type="number"
                 class="w-32 px-3 py-2 text-sm border rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500" />
             </div>
@@ -353,9 +353,9 @@
       <div class="flex items-center gap-3">
         <button @click="saveSettings" :disabled="settingsSaving"
           class="px-6 py-2.5 bg-[#0A1F44] text-white text-sm font-medium rounded-lg hover:bg-[#0d2a5e] disabled:opacity-50 transition-colors">
-          {{ settingsSaving ? 'Сохранение...' : 'Сохранить настройки' }}
+          {{ settingsSaving ? t('owner.billing.saving') : t('owner.billing.saveSettings') }}
         </button>
-        <span v-if="settingsSaved" class="text-sm text-green-600 font-medium">Сохранено</span>
+        <span v-if="settingsSaved" class="text-sm text-green-600 font-medium">{{ t('owner.billing.saved') }}</span>
       </div>
     </div>
 
@@ -363,11 +363,11 @@
     <div v-if="activeTab === 'coupons'" class="space-y-4">
       <div class="flex items-center justify-between">
         <div>
-          <p class="text-xs text-gray-400">Скидочные коды для агентств. Агентство вводит код при оформлении подписки — получает скидку.</p>
+          <p class="text-xs text-gray-400">{{ t('owner.billing.couponsDesc') }}</p>
         </div>
         <button @click="openCouponModal(null)"
           class="px-4 py-2 bg-[#0A1F44] text-white text-sm font-medium rounded-lg hover:bg-[#0d2a5e] transition-colors">
-          + Новый промокод
+          {{ t('owner.billing.newCoupon') }}
         </button>
       </div>
 
@@ -380,7 +380,7 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"/>
           </svg>
         </div>
-        <div class="text-sm text-gray-400">Пока нет промокодов</div>
+        <div class="text-sm text-gray-400">{{ t('owner.billing.noCoupons') }}</div>
       </div>
       <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <div v-for="c in coupons" :key="c.id"
@@ -391,7 +391,7 @@
             <span class="font-mono font-bold text-lg text-gray-900 tracking-wide">{{ c.code }}</span>
             <span :class="['text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider',
               c.is_active ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500']">
-              {{ c.is_active ? 'Активен' : 'Отключен' }}
+              {{ c.is_active ? t('owner.billing.couponActive') : t('owner.billing.couponDisabled') }}
             </span>
           </div>
           <!-- Описание -->
@@ -401,23 +401,23 @@
             <div class="text-2xl font-bold" :class="c.is_active ? 'text-[#1BA97F]' : 'text-gray-400'">
               {{ c.discount_type === 'percentage' ? c.discount_value + '%' : fmtMoney(c.discount_value) }}
             </div>
-            <div class="text-xs text-gray-400">скидка</div>
+            <div class="text-xs text-gray-400">{{ t('owner.billing.discount') }}</div>
           </div>
           <!-- Инфо -->
           <div class="space-y-1.5 text-xs text-gray-500 border-t border-gray-100 pt-3">
             <div class="flex justify-between">
-              <span>Использовано</span>
-              <span class="font-medium text-gray-700">{{ c.used_count }}{{ c.max_uses > 0 ? ' из ' + c.max_uses : '' }}</span>
+              <span>{{ t('owner.billing.used') }}</span>
+              <span class="font-medium text-gray-700">{{ c.used_count }}{{ c.max_uses > 0 ? ' ' + t('owner.billing.usedOf') + ' ' + c.max_uses : '' }}</span>
             </div>
             <div class="flex justify-between">
-              <span>Действует до</span>
-              <span class="font-medium text-gray-700">{{ c.valid_until ? formatDateShort(c.valid_until) : 'Бессрочно' }}</span>
+              <span>{{ t('owner.billing.validUntil') }}</span>
+              <span class="font-medium text-gray-700">{{ c.valid_until ? formatDateShort(c.valid_until) : t('owner.billing.unlimited') }}</span>
             </div>
           </div>
           <!-- Действие -->
           <button @click="openCouponModal(c)"
             class="mt-3 w-full px-3 py-2 text-xs font-medium bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
-            Редактировать
+            {{ t('owner.billing.editPlanBtn') }}
           </button>
         </div>
       </div>
@@ -426,51 +426,51 @@
     <!-- =============== МОДАЛКА ТАРИФА =============== -->
     <div v-if="showPlanModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40" @click.self="showPlanModal = false">
       <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6">
-        <h2 class="text-lg font-bold mb-1">{{ editPlan ? 'Редактирование тарифа' : 'Новый тариф' }}</h2>
-        <p class="text-xs text-gray-400 mb-4">Заполните параметры тарифного плана для агентств</p>
+        <h2 class="text-lg font-bold mb-1">{{ editPlan ? t('owner.billing.editPlanTitle') : t('owner.billing.newPlanTitle') }}</h2>
+        <p class="text-xs text-gray-400 mb-4">{{ t('owner.billing.planFormDesc') }}</p>
 
         <!-- Основное -->
         <div class="space-y-4">
           <div class="bg-gray-50 rounded-xl p-4 space-y-3">
-            <div class="text-xs font-bold text-gray-500 uppercase tracking-wider">Основное</div>
+            <div class="text-xs font-bold text-gray-500 uppercase tracking-wider">{{ t('owner.billing.sectionMain') }}</div>
             <div class="grid grid-cols-2 gap-3">
               <div v-if="!editPlan">
-                <label class="block text-xs text-gray-500 mb-1">Системный код (slug)</label>
+                <label class="block text-xs text-gray-500 mb-1">{{ t('owner.billing.slugLabel') }}</label>
                 <input v-model="planForm.slug" class="w-full px-3 py-2 border rounded-lg text-sm" placeholder="my-plan" />
               </div>
               <div>
-                <label class="block text-xs text-gray-500 mb-1">Название</label>
+                <label class="block text-xs text-gray-500 mb-1">{{ t('owner.billing.nameLabel') }}</label>
                 <input v-model="planForm.name" class="w-full px-3 py-2 border rounded-lg text-sm" />
               </div>
               <div>
-                <label class="block text-xs text-gray-500 mb-1">Название (узб.)</label>
+                <label class="block text-xs text-gray-500 mb-1">{{ t('owner.billing.nameUzLabel') }}</label>
                 <input v-model="planForm.name_uz" class="w-full px-3 py-2 border rounded-lg text-sm" />
               </div>
               <div :class="editPlan ? 'col-span-2' : ''">
-                <label class="block text-xs text-gray-500 mb-1">Описание</label>
-                <input v-model="planForm.description" class="w-full px-3 py-2 border rounded-lg text-sm" placeholder="Краткое описание для агентства" />
+                <label class="block text-xs text-gray-500 mb-1">{{ t('owner.billing.descriptionLabel') }}</label>
+                <input v-model="planForm.description" class="w-full px-3 py-2 border rounded-lg text-sm" :placeholder="t('owner.billing.descriptionPlaceholder')" />
               </div>
             </div>
           </div>
 
           <!-- Цена -->
           <div class="bg-gray-50 rounded-xl p-4 space-y-3">
-            <div class="text-xs font-bold text-gray-500 uppercase tracking-wider">Стоимость</div>
+            <div class="text-xs font-bold text-gray-500 uppercase tracking-wider">{{ t('owner.billing.sectionPrice') }}</div>
             <div class="grid grid-cols-2 gap-3">
               <div>
-                <label class="block text-xs text-gray-500 mb-1">Абонплата / мес (UZS)</label>
+                <label class="block text-xs text-gray-500 mb-1">{{ t('owner.billing.monthlyPriceUzs') }}</label>
                 <input v-model.number="planForm.price_uzs" type="number" class="w-full px-3 py-2 border rounded-lg text-sm" />
               </div>
               <div>
-                <label class="block text-xs text-gray-500 mb-1">Разовый взнос при подключении (UZS)</label>
+                <label class="block text-xs text-gray-500 mb-1">{{ t('owner.billing.activationFeeUzs') }}</label>
                 <input v-model.number="planForm.activation_fee_uzs" type="number" class="w-full px-3 py-2 border rounded-lg text-sm" />
               </div>
               <div>
-                <label class="block text-xs text-gray-500 mb-1">Цена / мес (USD, центы)</label>
+                <label class="block text-xs text-gray-500 mb-1">{{ t('owner.billing.monthlyPriceUsd') }}</label>
                 <input v-model.number="planForm.price_monthly" type="number" class="w-full px-3 py-2 border rounded-lg text-sm" />
               </div>
               <div>
-                <label class="block text-xs text-gray-500 mb-1">Цена / год (USD, центы)</label>
+                <label class="block text-xs text-gray-500 mb-1">{{ t('owner.billing.yearlyPriceUsd') }}</label>
                 <input v-model.number="planForm.price_yearly" type="number" class="w-full px-3 py-2 border rounded-lg text-sm" />
               </div>
             </div>
@@ -478,18 +478,18 @@
 
           <!-- Лимиты -->
           <div class="bg-gray-50 rounded-xl p-4 space-y-3">
-            <div class="text-xs font-bold text-gray-500 uppercase tracking-wider">Лимиты (0 = безлимит)</div>
+            <div class="text-xs font-bold text-gray-500 uppercase tracking-wider">{{ t('owner.billing.sectionLimits') }}</div>
             <div class="grid grid-cols-3 gap-3">
               <div>
-                <label class="block text-xs text-gray-500 mb-1">Менеджеров</label>
+                <label class="block text-xs text-gray-500 mb-1">{{ t('owner.billing.managersLabel') }}</label>
                 <input v-model.number="planForm.max_managers" type="number" class="w-full px-3 py-2 border rounded-lg text-sm" />
               </div>
               <div>
-                <label class="block text-xs text-gray-500 mb-1">Заявок</label>
+                <label class="block text-xs text-gray-500 mb-1">{{ t('owner.billing.casesLabel') }}</label>
                 <input v-model.number="planForm.max_cases" type="number" class="w-full px-3 py-2 border rounded-lg text-sm" />
               </div>
               <div>
-                <label class="block text-xs text-gray-500 mb-1">Лидов / мес</label>
+                <label class="block text-xs text-gray-500 mb-1">{{ t('owner.billing.leadsLabel') }}</label>
                 <input v-model.number="planForm.max_leads_per_month" type="number" class="w-full px-3 py-2 border rounded-lg text-sm" />
               </div>
             </div>
@@ -497,18 +497,18 @@
 
           <!-- Условия -->
           <div class="bg-gray-50 rounded-xl p-4 space-y-3">
-            <div class="text-xs font-bold text-gray-500 uppercase tracking-wider">Условия</div>
+            <div class="text-xs font-bold text-gray-500 uppercase tracking-wider">{{ t('owner.billing.sectionConditions') }}</div>
             <div class="grid grid-cols-3 gap-3">
               <div>
-                <label class="block text-xs text-gray-500 mb-1">Пробный период, дн.</label>
+                <label class="block text-xs text-gray-500 mb-1">{{ t('owner.billing.trialDaysLabel') }}</label>
                 <input v-model.number="planForm.trial_days" type="number" class="w-full px-3 py-2 border rounded-lg text-sm" />
               </div>
               <div>
-                <label class="block text-xs text-gray-500 mb-1">Льготный период, дн.</label>
+                <label class="block text-xs text-gray-500 mb-1">{{ t('owner.billing.gracePeriodLabel') }}</label>
                 <input v-model.number="planForm.grace_period_days" type="number" class="w-full px-3 py-2 border rounded-lg text-sm" />
               </div>
               <div>
-                <label class="block text-xs text-gray-500 mb-1">Автосписание, %</label>
+                <label class="block text-xs text-gray-500 mb-1">{{ t('owner.billing.autoDeductLabel') }}</label>
                 <input v-model.number="planForm.earn_first_deduction_pct" type="number" class="w-full px-3 py-2 border rounded-lg text-sm" />
               </div>
             </div>
@@ -516,59 +516,59 @@
 
           <!-- Чекбоксы -->
           <div class="bg-gray-50 rounded-xl p-4 space-y-3">
-            <div class="text-xs font-bold text-gray-500 uppercase tracking-wider">Возможности и статус</div>
+            <div class="text-xs font-bold text-gray-500 uppercase tracking-wider">{{ t('owner.billing.sectionFeatures') }}</div>
             <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
               <label class="flex items-center gap-2 text-sm cursor-pointer hover:bg-white p-2 rounded-lg transition-colors">
                 <input type="checkbox" v-model="planForm.earn_first_enabled" class="rounded text-[#1BA97F] focus:ring-[#1BA97F]" />
-                <span>Оплата из дохода</span>
+                <span>{{ t('owner.billing.earnFirstLabel') }}</span>
               </label>
               <label class="flex items-center gap-2 text-sm cursor-pointer hover:bg-white p-2 rounded-lg transition-colors">
                 <input type="checkbox" v-model="planForm.has_marketplace" class="rounded text-[#1BA97F] focus:ring-[#1BA97F]" />
-                <span>Маркетплейс</span>
+                <span>{{ t('owner.billing.marketplace') }}</span>
               </label>
               <label class="flex items-center gap-2 text-sm cursor-pointer hover:bg-white p-2 rounded-lg transition-colors">
                 <input type="checkbox" v-model="planForm.has_analytics" class="rounded text-[#1BA97F] focus:ring-[#1BA97F]" />
-                <span>Аналитика</span>
+                <span>{{ t('owner.billing.analytics') }}</span>
               </label>
               <label class="flex items-center gap-2 text-sm cursor-pointer hover:bg-white p-2 rounded-lg transition-colors">
                 <input type="checkbox" v-model="planForm.has_api_access" class="rounded text-[#1BA97F] focus:ring-[#1BA97F]" />
-                <span>API доступ</span>
+                <span>{{ t('owner.billing.apiAccess') }}</span>
               </label>
               <label class="flex items-center gap-2 text-sm cursor-pointer hover:bg-white p-2 rounded-lg transition-colors">
                 <input type="checkbox" v-model="planForm.has_white_label" class="rounded text-[#1BA97F] focus:ring-[#1BA97F]" />
-                <span>White-label</span>
+                <span>{{ t('owner.billing.whiteLabel') }}</span>
               </label>
               <label class="flex items-center gap-2 text-sm cursor-pointer hover:bg-white p-2 rounded-lg transition-colors">
                 <input type="checkbox" v-model="planForm.has_custom_domain" class="rounded text-[#1BA97F] focus:ring-[#1BA97F]" />
-                <span>Свой домен</span>
+                <span>{{ t('owner.billing.customDomain') }}</span>
               </label>
               <label class="flex items-center gap-2 text-sm cursor-pointer hover:bg-white p-2 rounded-lg transition-colors">
                 <input type="checkbox" v-model="planForm.has_priority_support" class="rounded text-[#1BA97F] focus:ring-[#1BA97F]" />
-                <span>Приоритетная поддержка</span>
+                <span>{{ t('owner.billing.prioritySupport') }}</span>
               </label>
             </div>
             <div class="flex gap-4 pt-2 border-t border-gray-200">
               <label class="flex items-center gap-2 text-sm cursor-pointer">
                 <input type="checkbox" v-model="planForm.is_active" class="rounded text-[#1BA97F] focus:ring-[#1BA97F]" />
-                <span class="font-medium">Активен</span>
+                <span class="font-medium">{{ t('owner.billing.isActiveLabel') }}</span>
               </label>
               <label class="flex items-center gap-2 text-sm cursor-pointer">
                 <input type="checkbox" v-model="planForm.is_public" class="rounded text-[#1BA97F] focus:ring-[#1BA97F]" />
-                <span class="font-medium">Виден агентствам</span>
+                <span class="font-medium">{{ t('owner.billing.isPublicLabel') }}</span>
               </label>
               <label class="flex items-center gap-2 text-sm cursor-pointer">
                 <input type="checkbox" v-model="planForm.is_recommended" class="rounded text-[#1BA97F] focus:ring-[#1BA97F]" />
-                <span class="font-medium">Рекомендуемый</span>
+                <span class="font-medium">{{ t('owner.billing.isRecommendedLabel') }}</span>
               </label>
             </div>
           </div>
         </div>
 
         <div class="flex justify-end gap-3 mt-6">
-          <button @click="showPlanModal = false" class="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">Отмена</button>
+          <button @click="showPlanModal = false" class="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">{{ t('common.cancel') }}</button>
           <button @click="savePlan" :disabled="planSaving"
             class="px-6 py-2 bg-[#0A1F44] text-white text-sm font-medium rounded-lg hover:bg-[#0d2a5e] disabled:opacity-50 transition-colors">
-            {{ planSaving ? 'Сохранение...' : 'Сохранить' }}
+            {{ planSaving ? t('owner.billing.saving') : t('common.save') }}
           </button>
         </div>
       </div>
@@ -577,54 +577,54 @@
     <!-- =============== МОДАЛКА ПРОМОКОДА =============== -->
     <div v-if="showCouponModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40" @click.self="showCouponModal = false">
       <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
-        <h2 class="text-lg font-bold mb-1">{{ editCoupon ? 'Редактирование промокода' : 'Новый промокод' }}</h2>
-        <p class="text-xs text-gray-400 mb-4">Агентство вводит код при подписке для получения скидки</p>
+        <h2 class="text-lg font-bold mb-1">{{ editCoupon ? t('owner.billing.editCouponTitle') : t('owner.billing.newCouponTitle') }}</h2>
+        <p class="text-xs text-gray-400 mb-4">{{ t('owner.billing.couponFormDesc') }}</p>
         <div class="space-y-3">
           <div>
-            <label class="block text-xs text-gray-500 mb-1">Код (латиница, заглавные)</label>
+            <label class="block text-xs text-gray-500 mb-1">{{ t('owner.billing.codeLabel') }}</label>
             <input v-model="couponForm.code" :disabled="!!editCoupon"
               class="w-full px-3 py-2 border rounded-lg text-sm font-mono uppercase"
               placeholder="WELCOME2026" />
           </div>
           <div>
-            <label class="block text-xs text-gray-500 mb-1">Описание (для себя, агентства не видят)</label>
+            <label class="block text-xs text-gray-500 mb-1">{{ t('owner.billing.couponDescLabel') }}</label>
             <input v-model="couponForm.description" class="w-full px-3 py-2 border rounded-lg text-sm"
-              placeholder="Акция на запуск платформы" />
+              :placeholder="t('owner.billing.couponDescPlaceholder')" />
           </div>
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-xs text-gray-500 mb-1">Тип скидки</label>
+              <label class="block text-xs text-gray-500 mb-1">{{ t('owner.billing.discountType') }}</label>
               <select v-model="couponForm.discount_type" class="w-full px-3 py-2 border rounded-lg text-sm">
-                <option value="percentage">Процент (%)</option>
-                <option value="fixed">Фиксированная (UZS)</option>
+                <option value="percentage">{{ t('owner.billing.discountPercentage') }}</option>
+                <option value="fixed">{{ t('owner.billing.discountFixed') }}</option>
               </select>
             </div>
             <div>
-              <label class="block text-xs text-gray-500 mb-1">{{ couponForm.discount_type === 'percentage' ? 'Процент скидки' : 'Сумма скидки (UZS)' }}</label>
+              <label class="block text-xs text-gray-500 mb-1">{{ couponForm.discount_type === 'percentage' ? t('owner.billing.discountPercentLabel') : t('owner.billing.discountFixedLabel') }}</label>
               <input v-model.number="couponForm.discount_value" type="number" class="w-full px-3 py-2 border rounded-lg text-sm" />
             </div>
           </div>
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-xs text-gray-500 mb-1">Макс. использований</label>
+              <label class="block text-xs text-gray-500 mb-1">{{ t('owner.billing.maxUses') }}</label>
               <input v-model.number="couponForm.max_uses" type="number" class="w-full px-3 py-2 border rounded-lg text-sm"
-                placeholder="0 = без лимита" />
+                :placeholder="t('owner.billing.maxUsesPlaceholder')" />
             </div>
             <div>
-              <label class="block text-xs text-gray-500 mb-1">Действует до</label>
+              <label class="block text-xs text-gray-500 mb-1">{{ t('owner.billing.validUntilLabel') }}</label>
               <input v-model="couponForm.valid_until" type="date" class="w-full px-3 py-2 border rounded-lg text-sm" />
             </div>
           </div>
           <label class="flex items-center gap-2 text-sm cursor-pointer">
             <input type="checkbox" v-model="couponForm.is_active" class="rounded text-[#1BA97F] focus:ring-[#1BA97F]" />
-            <span>Промокод активен</span>
+            <span>{{ t('owner.billing.couponIsActive') }}</span>
           </label>
         </div>
         <div class="flex justify-end gap-3 mt-6">
-          <button @click="showCouponModal = false" class="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">Отмена</button>
+          <button @click="showCouponModal = false" class="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">{{ t('common.cancel') }}</button>
           <button @click="saveCoupon" :disabled="couponSaving"
             class="px-6 py-2 bg-[#0A1F44] text-white text-sm font-medium rounded-lg hover:bg-[#0d2a5e] disabled:opacity-50 transition-colors">
-            {{ couponSaving ? 'Сохранение...' : 'Сохранить' }}
+            {{ couponSaving ? t('owner.billing.saving') : t('common.save') }}
           </button>
         </div>
       </div>
@@ -633,15 +633,18 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import api from '@/api/index';
 
-const tabs = [
-  { key: 'dashboard', label: 'Обзор' },
-  { key: 'plans',     label: 'Тарифы' },
-  { key: 'settings',  label: 'Настройки' },
-  { key: 'coupons',   label: 'Промокоды' },
-];
+const { t } = useI18n();
+
+const tabItems = computed(() => [
+  { key: 'dashboard', label: t('owner.billing.tabDashboard') },
+  { key: 'plans',     label: t('owner.billing.tabPlans') },
+  { key: 'settings',  label: t('owner.billing.tabSettings') },
+  { key: 'coupons',   label: t('owner.billing.tabCoupons') },
+]);
 const activeTab = ref('dashboard');
 
 // ======================== DASHBOARD ========================
@@ -702,7 +705,7 @@ async function savePlan() {
     }
     showPlanModal.value = false;
     await loadPlans();
-  } catch (e) { alert(e.response?.data?.message || 'Ошибка'); }
+  } catch (e) { alert(e.response?.data?.message || t('owner.billing.error')); }
   planSaving.value = false;
 }
 
@@ -710,24 +713,24 @@ async function deactivatePlan(slug) {
   try {
     await api.delete(`/owner/billing/plans/${slug}`);
     await loadPlans();
-  } catch (e) { alert(e.response?.data?.message || 'Ошибка'); }
+  } catch (e) { alert(e.response?.data?.message || t('owner.billing.error')); }
 }
 
 async function activatePlan(slug) {
   try {
     await api.patch(`/owner/billing/plans/${slug}`, { is_active: true });
     await loadPlans();
-  } catch (e) { alert(e.response?.data?.message || 'Ошибка'); }
+  } catch (e) { alert(e.response?.data?.message || t('owner.billing.error')); }
 }
 
 function planFeatures(p) {
   const features = [];
-  if (p.has_marketplace)        features.push({ label: 'Маркетплейс',   class: 'bg-green-50 text-green-700' });
-  if (p.has_analytics)          features.push({ label: 'Аналитика',     class: 'bg-purple-50 text-purple-700' });
-  if (p.has_api_access)         features.push({ label: 'API',           class: 'bg-orange-50 text-orange-700' });
-  if (p.has_white_label)        features.push({ label: 'White-label',   class: 'bg-indigo-50 text-indigo-700' });
-  if (p.has_custom_domain)      features.push({ label: 'Свой домен',    class: 'bg-blue-50 text-blue-700' });
-  if (p.has_priority_support)   features.push({ label: 'VIP-поддержка', class: 'bg-yellow-50 text-yellow-700' });
+  if (p.has_marketplace)        features.push({ label: t('owner.billing.featureMarketplace'),   class: 'bg-green-50 text-green-700' });
+  if (p.has_analytics)          features.push({ label: t('owner.billing.featureAnalytics'),     class: 'bg-purple-50 text-purple-700' });
+  if (p.has_api_access)         features.push({ label: t('owner.billing.featureApi'),           class: 'bg-orange-50 text-orange-700' });
+  if (p.has_white_label)        features.push({ label: t('owner.billing.featureWhiteLabel'),   class: 'bg-indigo-50 text-indigo-700' });
+  if (p.has_custom_domain)      features.push({ label: t('owner.billing.featureCustomDomain'), class: 'bg-blue-50 text-blue-700' });
+  if (p.has_priority_support)   features.push({ label: t('owner.billing.featureVipSupport'),   class: 'bg-yellow-50 text-yellow-700' });
   return features;
 }
 
@@ -777,7 +780,7 @@ async function saveSettings() {
     await api.patch('/owner/billing/settings', { settings: payload });
     settingsSaved.value = true;
     setTimeout(() => { settingsSaved.value = false; }, 3000);
-  } catch (e) { alert('Ошибка сохранения'); }
+  } catch (e) { alert(t('owner.billing.saveError')); }
   settingsSaving.value = false;
 }
 
@@ -817,14 +820,14 @@ async function saveCoupon() {
     }
     showCouponModal.value = false;
     await loadCoupons();
-  } catch (e) { alert(e.response?.data?.message || 'Ошибка'); }
+  } catch (e) { alert(e.response?.data?.message || t('owner.billing.error')); }
   couponSaving.value = false;
 }
 
 // ======================== HELPERS ========================
 function fmtMoney(val) {
-  if (!val && val !== 0) return '0 сум';
-  return Number(val).toLocaleString('ru-RU') + ' сум';
+  if (!val && val !== 0) return '0 ' + t('owner.billing.currency');
+  return Number(val).toLocaleString('ru-RU') + ' ' + t('owner.billing.currency');
 }
 
 function formatDate(d) {
@@ -843,23 +846,29 @@ function statusDotColor(s) {
 }
 
 function statusLabel(s) {
-  const map = { active: 'Активные', trialing: 'Пробный период', past_due: 'Просроченные', cancelled: 'Отмененные', expired: 'Истекшие' };
+  const map = {
+    active: t('owner.billing.statusActive'),
+    trialing: t('owner.billing.statusTrialing'),
+    past_due: t('owner.billing.statusPastDue'),
+    cancelled: t('owner.billing.statusCancelled'),
+    expired: t('owner.billing.statusExpired'),
+  };
   return map[s] || s;
 }
 
 function eventLabel(ev) {
   const map = {
-    'subscription.created': 'Новая подписка',
-    'subscription.renewed': 'Подписка продлена',
-    'subscription.cancelled': 'Подписка отменена',
-    'subscription.expired': 'Подписка истекла',
-    'activation_fee.paid': 'Оплата взноса за подключение',
-    'earn_first.deducted': 'Автосписание из дохода',
-    'payment.succeeded': 'Оплата прошла',
-    'payment.failed': 'Ошибка оплаты',
-    'payout.completed': 'Выплата агентству',
-    'invoice.created': 'Счет создан',
-    'invoice.overdue': 'Счет просрочен',
+    'subscription.created': t('owner.billing.eventSubCreated'),
+    'subscription.renewed': t('owner.billing.eventSubRenewed'),
+    'subscription.cancelled': t('owner.billing.eventSubCancelled'),
+    'subscription.expired': t('owner.billing.eventSubExpired'),
+    'activation_fee.paid': t('owner.billing.eventActivationPaid'),
+    'earn_first.deducted': t('owner.billing.eventEarnDeducted'),
+    'payment.succeeded': t('owner.billing.eventPaymentOk'),
+    'payment.failed': t('owner.billing.eventPaymentFail'),
+    'payout.completed': t('owner.billing.eventPayout'),
+    'invoice.created': t('owner.billing.eventInvoiceCreated'),
+    'invoice.overdue': t('owner.billing.eventInvoiceOverdue'),
   };
   return map[ev] || ev;
 }

@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 
 class SetTenantContext
@@ -20,13 +21,22 @@ class SetTenantContext
                 $role     = $payload['role'] ?? null;
                 $agencyId = $payload['agency_id'] ?? null;
 
+                if ($agencyId && ! preg_match('/^[0-9a-f\-]{36}$/i', $agencyId)) {
+                    Log::channel('security')->warning('Invalid UUID in JWT payload', [
+                        'ip'      => $request->ip(),
+                        'user_id' => $payload['sub'] ?? null,
+                        'route'   => $request->path(),
+                        'reason'  => 'agency_id failed UUID regex: ' . substr((string) $agencyId, 0, 50),
+                    ]);
+                }
+
                 if (DB::connection()->getDriverName() !== 'sqlite') {
                     if ($role === 'superadmin') {
                         DB::statement("SET app.is_superadmin = 'true'");
                     }
 
                     if ($agencyId && preg_match('/^[0-9a-f\-]{36}$/i', $agencyId)) {
-                        DB::statement("SET app.current_tenant_id = '{$agencyId}'");
+                        DB::statement('SET app.current_tenant_id = ?', [$agencyId]);
                     }
                 }
             }

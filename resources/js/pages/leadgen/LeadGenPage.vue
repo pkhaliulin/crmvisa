@@ -234,6 +234,7 @@ import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import api from '@/api/index';
 import { currentLocale } from '@/i18n';
+import { formatDate } from '@/utils/format';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -321,10 +322,6 @@ function goToDetail(channel) {
   router.push({ name: 'leadgen.detail', params: { code: channel.code } });
 }
 
-function formatDate(iso) {
-  if (!iso) return '';
-  return new Date(iso).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
-}
 
 async function generateApiKey() {
   generatingKey.value = true;

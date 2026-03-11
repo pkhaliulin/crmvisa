@@ -50,6 +50,14 @@ export function formatPhone(phone) {
 }
 
 /**
+ * Форматирование даты: 2024-03-15 -> 15.03.2024
+ */
+export function formatDate(d) {
+    if (!d) return '—';
+    return new Date(d).toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+/**
  * Title Case для имён: каждое слово с заглавной буквы.
  * "john DOE" -> "John Doe"
  * Работает с латиницей, кириллицей и дефисами.

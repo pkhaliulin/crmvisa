@@ -13,7 +13,7 @@ export function usePublicReferences() {
                 data.value = res.data.data ?? {};
                 loaded.value = true;
             })
-            .catch(() => {})
+            .catch(e => console.error('[usePublicReferences]', e))
             .finally(() => { loading.value = false; });
     }
 

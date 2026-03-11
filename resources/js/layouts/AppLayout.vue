@@ -11,6 +11,8 @@
         <RouterView />
       </main>
     </div>
+
+    <AppToast />
   </div>
 </template>
 
@@ -19,6 +21,7 @@ import { ref } from 'vue';
 import { RouterView } from 'vue-router';
 import AppSidebar from '@/components/AppSidebar.vue';
 import AppHeader from '@/components/AppHeader.vue';
+import AppToast from '@/components/AppToast.vue';
 
 const sidebarCollapsed = ref(false);
 </script>

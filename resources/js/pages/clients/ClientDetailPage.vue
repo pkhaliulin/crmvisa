@@ -144,7 +144,7 @@ import { useCountries } from '@/composables/useCountries';
 import { useReferences } from '@/composables/useReferences';
 import AppBadge from '@/components/AppBadge.vue';
 import AppButton from '@/components/AppButton.vue';
-import { formatPhone } from '@/utils/format';
+import { formatPhone, formatDate } from '@/utils/format';
 
 const { t } = useI18n();
 const { countryName, countryFlag, visaTypeName } = useCountries();
@@ -220,9 +220,6 @@ const passportClass = computed(() => {
   return days < 0 ? 'text-red-600 font-bold' : days <= 90 ? 'text-yellow-600' : 'text-gray-700';
 });
 
-function formatDate(d) {
-  return new Date(d).toLocaleDateString('uz-UZ');
-}
 function scoreColor(s) {
   if (s >= 80) return 'text-green-600';
   if (s >= 60) return 'text-yellow-600';

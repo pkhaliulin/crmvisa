@@ -109,7 +109,7 @@ import { ref, computed, onMounted } from 'vue';
 import { RouterLink, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { clientsApi } from '@/api/clients';
-import { formatPhone } from '@/utils/format';
+import { formatPhone, formatDate } from '@/utils/format';
 import AppButton from '@/components/AppButton.vue';
 import AppBadge from '@/components/AppBadge.vue';
 
@@ -138,9 +138,6 @@ const SOURCE_COLORS = { direct: 'blue', referral: 'purple', marketplace: 'green'
 const sourceLabel = (s) => SOURCE_LABELS.value[s] ?? s ?? '--';
 const sourceColor = (s) => SOURCE_COLORS[s] ?? 'gray';
 
-function formatDate(d) {
-  return new Date(d).toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric' });
-}
 
 function passportDaysLeft(d) {
   if (!d) return null;

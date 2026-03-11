@@ -14,7 +14,7 @@ export function useReferences() {
                 data.value = res.data.data ?? {};
                 loaded.value = true;
             })
-            .catch(() => {})
+            .catch(e => console.error('[useReferences]', e))
             .finally(() => { loading.value = false; });
     }
 

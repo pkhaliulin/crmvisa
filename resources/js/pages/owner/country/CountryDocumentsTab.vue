@@ -276,7 +276,7 @@ async function saveDoc() {
         requirement_level: form.requirement_level,
         notes: form.notes || null,
         is_active: true,
-      }).catch(() => {}) // Игнорируем дубликаты
+      }).catch(e => console.error('[CountryDocumentsTab]', e))
     );
     await Promise.all(promises);
 

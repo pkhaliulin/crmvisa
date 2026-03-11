@@ -4,12 +4,12 @@
     <!-- Фильтры + кнопка создания -->
     <div class="flex flex-wrap gap-3 items-center">
       <input v-model="search" @input="debouncedLoad"
-        placeholder="Поиск по названию или email..."
+        :placeholder="t('owner.agencies.searchPlaceholder')"
         class="border border-gray-200 rounded-xl px-4 py-2 text-sm outline-none focus:border-[#1BA97F] w-64" />
 
       <select v-model="filterPlan" @change="load"
         class="border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-[#1BA97F]">
-        <option value="">Все тарифы</option>
+        <option value="">{{ t('owner.agencies.allPlans') }}</option>
         <option value="trial">Trial</option>
         <option value="starter">Starter</option>
         <option value="pro">Pro</option>
@@ -18,15 +18,15 @@
 
       <select v-model="filterStatus" @change="load"
         class="border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-[#1BA97F]">
-        <option value="">Все статусы</option>
-        <option value="active">Активные</option>
-        <option value="inactive">Заблокированные</option>
+        <option value="">{{ t('owner.agencies.allStatuses') }}</option>
+        <option value="active">{{ t('owner.agencies.activeStatus') }}</option>
+        <option value="inactive">{{ t('owner.agencies.blockedStatus') }}</option>
       </select>
 
       <button @click="openCreateAgency"
         class="ml-auto px-4 py-2 bg-[#0A1F44] text-white text-sm font-semibold rounded-xl
                hover:bg-[#0d2a5e] transition-colors">
-        + Создать агентство
+        {{ t('owner.agencies.createAgency') }}
       </button>
     </div>
 
@@ -35,13 +35,13 @@
       <table class="w-full text-sm">
         <thead class="bg-gray-50 text-gray-500 border-b border-gray-100">
           <tr>
-            <th class="px-5 py-3 text-left font-medium">Агентство</th>
-            <th class="px-4 py-3 text-left font-medium">Тариф</th>
-            <th class="px-4 py-3 text-right font-medium">Менеджеры</th>
-            <th class="px-4 py-3 text-right font-medium">Лиды</th>
-            <th class="px-4 py-3 text-right font-medium">Комиссия</th>
-            <th class="px-4 py-3 text-center font-medium">Статус</th>
-            <th class="px-4 py-3 text-center font-medium">Действия</th>
+            <th class="px-5 py-3 text-left font-medium">{{ t('owner.agencies.thAgency') }}</th>
+            <th class="px-4 py-3 text-left font-medium">{{ t('owner.agencies.thPlan') }}</th>
+            <th class="px-4 py-3 text-right font-medium">{{ t('owner.agencies.thManagers') }}</th>
+            <th class="px-4 py-3 text-right font-medium">{{ t('owner.agencies.thLeads') }}</th>
+            <th class="px-4 py-3 text-right font-medium">{{ t('owner.agencies.thCommission') }}</th>
+            <th class="px-4 py-3 text-center font-medium">{{ t('owner.agencies.thStatus') }}</th>
+            <th class="px-4 py-3 text-center font-medium">{{ t('owner.agencies.thActions') }}</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-50">
@@ -52,7 +52,7 @@
           </tr>
           <tr v-else-if="!agencies.length">
             <td colspan="7" class="px-5 py-10 text-center text-sm text-gray-400">
-              Агентства не найдены
+              {{ t('owner.agencies.notFound') }}
             </td>
           </tr>
           <tr v-else v-for="a in agencies" :key="a.id" class="hover:bg-gray-50 transition-colors">
@@ -78,7 +78,7 @@
             <td class="px-4 py-3 text-center">
               <span :class="a.is_active ? 'text-green-700 bg-green-50' : 'text-red-600 bg-red-50'"
                 class="text-xs px-2 py-1 rounded-full font-medium">
-                {{ a.is_active ? 'Активно' : 'Заблок.' }}
+                {{ a.is_active ? t('owner.agencies.active') : t('owner.agencies.blocked') }}
               </span>
             </td>
             <td class="px-4 py-3 text-center">
@@ -86,19 +86,19 @@
                 <button @click="openEdit(a)"
                   class="text-xs px-2.5 py-1.5 border border-gray-200 rounded-lg
                          hover:bg-gray-50 text-gray-600 transition-colors">
-                  Изменить
+                  {{ t('common.edit') }}
                 </button>
                 <button @click="toggleBlock(a)"
                   class="text-xs px-2.5 py-1.5 rounded-lg transition-colors"
                   :class="a.is_active
                     ? 'border border-red-200 text-red-500 hover:bg-red-50'
                     : 'border border-green-200 text-green-600 hover:bg-green-50'">
-                  {{ a.is_active ? 'Блок.' : 'Разблок.' }}
+                  {{ a.is_active ? t('owner.agencies.block') : t('owner.agencies.unblock') }}
                 </button>
                 <button @click="confirmDelete(a)"
                   class="text-xs px-2.5 py-1.5 border border-red-200 rounded-lg
                          text-red-500 hover:bg-red-50 transition-colors">
-                  Удалить
+                  {{ t('common.delete') }}
                 </button>
               </div>
             </td>
@@ -109,7 +109,7 @@
       <!-- Пагинация -->
       <div v-if="pagination.last_page > 1"
         class="px-5 py-3 border-t border-gray-50 flex items-center justify-between text-xs text-gray-500">
-        <span>Всего: {{ pagination.total }}</span>
+        <span>{{ t('owner.agencies.total', { count: pagination.total }) }}</span>
         <div class="flex gap-1">
           <button v-for="p in pagination.last_page" :key="p"
             @click="page = p; load()"
@@ -132,17 +132,17 @@
           <!-- Тариф -->
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="text-xs text-gray-500 mb-1 block">Тариф</label>
+              <label class="text-xs text-gray-500 mb-1 block">{{ t('owner.agencies.plan') }}</label>
               <select v-model="editForm.plan"
                 class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]">
-                <option value="trial">Trial (30 дней)</option>
-                <option value="starter">Starter ($19/мес)</option>
-                <option value="pro">Pro ($49/мес)</option>
-                <option value="enterprise">Enterprise ($99/мес)</option>
+                <option value="trial">{{ t('owner.agencies.planTrial') }}</option>
+                <option value="starter">{{ t('owner.agencies.planStarter') }}</option>
+                <option value="pro">{{ t('owner.agencies.planPro') }}</option>
+                <option value="enterprise">{{ t('owner.agencies.planEnterprise') }}</option>
               </select>
             </div>
             <div>
-              <label class="text-xs text-gray-500 mb-1 block">Комиссия (%)</label>
+              <label class="text-xs text-gray-500 mb-1 block">{{ t('owner.agencies.commissionPercent') }}</label>
               <input v-model.number="editForm.commission_rate" type="number" min="0" max="50" step="0.5"
                 class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]" />
             </div>
@@ -150,17 +150,17 @@
 
           <!-- Срок плана -->
           <div>
-            <label class="text-xs text-gray-500 mb-1 block">Срок действия плана (пусто = бессрочно)</label>
+            <label class="text-xs text-gray-500 mb-1 block">{{ t('owner.agencies.planExpiry') }}</label>
             <input v-model="editForm.plan_expires_at" type="date"
               class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]" />
           </div>
 
           <!-- Описание -->
           <div>
-            <label class="text-xs text-gray-500 mb-1 block">Описание</label>
+            <label class="text-xs text-gray-500 mb-1 block">{{ t('owner.agencies.description') }}</label>
             <textarea v-model="editForm.description" rows="3" maxlength="1000"
               class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F] resize-none"
-              placeholder="Описание агентства..."></textarea>
+              :placeholder="t('owner.agencies.descriptionPlaceholder')"></textarea>
             <p class="text-right text-xs text-gray-400 mt-0.5">{{ (editForm.description || '').length }} / 1000</p>
           </div>
 
@@ -169,12 +169,12 @@
             <label class="flex items-center gap-2 text-sm cursor-pointer">
               <input type="checkbox" v-model="editForm.is_verified"
                 class="w-4 h-4 text-blue-600 rounded border-gray-300" />
-              Верифицировано
+              {{ t('owner.agencies.verified') }}
             </label>
             <label class="flex items-center gap-2 text-sm cursor-pointer">
               <input type="checkbox" v-model="editForm.is_active"
                 class="w-4 h-4 text-blue-600 rounded border-gray-300" />
-              Активно
+              {{ t('owner.agencies.activeFlag') }}
             </label>
           </div>
 
@@ -185,11 +185,11 @@
           <button @click="saveEdit" :disabled="saving"
             class="flex-1 py-3 bg-[#0A1F44] text-white font-semibold rounded-xl
                    hover:bg-[#0d2a5e] transition-colors disabled:opacity-60">
-            {{ saving ? 'Сохраняем...' : 'Сохранить' }}
+            {{ saving ? t('owner.agencies.saving') : t('common.save') }}
           </button>
           <button @click="editingAgency = null"
             class="px-5 py-3 border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50">
-            Отмена
+            {{ t('common.cancel') }}
           </button>
         </div>
       </div>
@@ -198,11 +198,11 @@
     <!-- Модал создания агентства -->
     <div v-if="showCreate" class="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
       <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
-        <h3 class="font-bold text-[#0A1F44] text-lg mb-5">Создать агентство</h3>
+        <h3 class="font-bold text-[#0A1F44] text-lg mb-5">{{ t('owner.agencies.createTitle') }}</h3>
 
         <div class="space-y-4">
           <div>
-            <label class="text-xs text-gray-500 mb-1 block">Название агентства *</label>
+            <label class="text-xs text-gray-500 mb-1 block">{{ t('owner.agencies.agencyName') }}</label>
             <input v-model="createForm.agency_name" maxlength="100"
               placeholder="Visa Expert Tashkent"
               class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]"
@@ -210,15 +210,15 @@
             <p v-if="createErrors.agency_name" class="text-xs text-red-600 mt-1">{{ createErrors.agency_name }}</p>
           </div>
           <div>
-            <label class="text-xs text-gray-500 mb-1 block">Имя владельца *</label>
+            <label class="text-xs text-gray-500 mb-1 block">{{ t('owner.agencies.ownerName') }}</label>
             <input v-model="createForm.name" maxlength="80"
-              placeholder="Ислом Каримов"
+              placeholder="Islom Karimov"
               class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]"
               :class="createErrors.name ? 'border-red-400' : ''" />
             <p v-if="createErrors.name" class="text-xs text-red-600 mt-1">{{ createErrors.name }}</p>
           </div>
           <div>
-            <label class="text-xs text-gray-500 mb-1 block">Email *</label>
+            <label class="text-xs text-gray-500 mb-1 block">{{ t('owner.agencies.email') }}</label>
             <input v-model="createForm.email" type="email"
               placeholder="owner@agency.com"
               @blur="validateCreateEmail"
@@ -227,7 +227,7 @@
             <p v-if="createErrors.email" class="text-xs text-red-600 mt-1">{{ createErrors.email }}</p>
           </div>
           <div>
-            <label class="text-xs text-gray-500 mb-1 block">Телефон</label>
+            <label class="text-xs text-gray-500 mb-1 block">{{ t('owner.agencies.phone') }}</label>
             <div class="flex items-center border border-gray-200 rounded-lg overflow-hidden focus-within:border-[#1BA97F]">
               <span class="px-3 py-2 bg-gray-50 text-gray-500 text-sm border-r border-gray-200 font-mono">+998</span>
               <input v-model="createPhoneDigits" @input="formatCreatePhone"
@@ -238,7 +238,7 @@
           </div>
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="text-xs text-gray-500 mb-1 block">Тариф</label>
+              <label class="text-xs text-gray-500 mb-1 block">{{ t('owner.agencies.plan') }}</label>
               <select v-model="createForm.plan"
                 class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]">
                 <option value="trial">Trial</option>
@@ -248,9 +248,9 @@
               </select>
             </div>
             <div>
-              <label class="text-xs text-gray-500 mb-1 block">Пароль *</label>
+              <label class="text-xs text-gray-500 mb-1 block">{{ t('owner.agencies.password') }}</label>
               <input v-model="createForm.password" type="password"
-                placeholder="Мин. 8 символов"
+                :placeholder="t('owner.agencies.passwordHint')"
                 class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]"
                 :class="createErrors.password ? 'border-red-400' : ''" />
               <p v-if="createErrors.password" class="text-xs text-red-600 mt-1">{{ createErrors.password }}</p>
@@ -263,11 +263,11 @@
           <button @click="submitCreate" :disabled="creating"
             class="flex-1 py-3 bg-[#0A1F44] text-white font-semibold rounded-xl
                    hover:bg-[#0d2a5e] transition-colors disabled:opacity-60">
-            {{ creating ? 'Создаём...' : 'Создать' }}
+            {{ creating ? t('owner.agencies.creating') : t('owner.agencies.create') }}
           </button>
           <button @click="showCreate = false"
             class="px-5 py-3 border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50">
-            Отмена
+            {{ t('common.cancel') }}
           </button>
         </div>
       </div>
@@ -278,7 +278,10 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import api from '@/api/index';
+
+const { t } = useI18n();
 
 const agencies    = ref([]);
 const loading     = ref(true);
@@ -323,7 +326,7 @@ function isValidEmail(email) {
 
 function validateCreateEmail() {
   if (createForm.email && !isValidEmail(createForm.email)) {
-    createErrors.value.email = 'Введите корректный email';
+    createErrors.value.email = t('owner.agencies.enterValidEmail');
   } else {
     delete createErrors.value.email;
   }
@@ -374,7 +377,7 @@ async function saveEdit() {
     editingAgency.value = null;
     load();
   } catch (err) {
-    editError.value = err.response?.data?.message || 'Ошибка при сохранении';
+    editError.value = err.response?.data?.message || t('owner.agencies.saveError');
   } finally {
     saving.value = false;
   }
@@ -386,7 +389,7 @@ async function toggleBlock(a) {
 }
 
 async function confirmDelete(a) {
-  if (!confirm(`Удалить агентство "${a.name}"?\n\nВсе данные (пользователи, клиенты, заявки) будут удалены. Это действие нельзя отменить.`)) return;
+  if (!confirm(`${t('owner.agencies.confirmDeleteTitle', { name: a.name })}\n\n${t('owner.agencies.confirmDeleteMessage')}`)) return;
   await api.delete(`/owner/agencies/${a.id}`);
   load();
 }
@@ -403,11 +406,11 @@ async function submitCreate() {
   createErrors.value = {};
   createError.value = '';
 
-  if (!createForm.agency_name.trim()) { createErrors.value.agency_name = 'Введите название агентства'; return; }
-  if (!createForm.name.trim()) { createErrors.value.name = 'Введите имя владельца'; return; }
-  if (!isValidEmail(createForm.email)) { createErrors.value.email = 'Введите корректный email'; return; }
+  if (!createForm.agency_name.trim()) { createErrors.value.agency_name = t('owner.agencies.enterAgencyName'); return; }
+  if (!createForm.name.trim()) { createErrors.value.name = t('owner.agencies.enterOwnerName'); return; }
+  if (!isValidEmail(createForm.email)) { createErrors.value.email = t('owner.agencies.enterValidEmail'); return; }
   if (!createForm.password || createForm.password.length < 8) {
-    createErrors.value.password = 'Минимум 8 символов'; return;
+    createErrors.value.password = t('owner.agencies.minChars'); return;
   }
 
   creating.value = true;
@@ -422,7 +425,7 @@ async function submitCreate() {
         Object.entries(d.errors).map(([k, v]) => [k, Array.isArray(v) ? v[0] : v])
       );
     } else {
-      createError.value = d?.message || 'Ошибка при создании';
+      createError.value = d?.message || t('owner.agencies.createError');
     }
   } finally {
     creating.value = false;

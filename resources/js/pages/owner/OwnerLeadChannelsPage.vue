@@ -2,12 +2,12 @@
   <div class="space-y-6">
     <div class="flex items-center justify-between">
       <div>
-        <h1 class="text-xl font-bold text-gray-900">Каналы лидогенерации</h1>
-        <p class="text-sm text-gray-500 mt-1">Управление каналами привлечения клиентов для агентств</p>
+        <h1 class="text-xl font-bold text-gray-900">{{ t('owner.leadChannels.title') }}</h1>
+        <p class="text-sm text-gray-500 mt-1">{{ t('owner.leadChannels.subtitle') }}</p>
       </div>
       <button @click="openCreate"
         class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
-        + Добавить канал
+        {{ t('owner.leadChannels.addChannel') }}
       </button>
     </div>
 
@@ -15,15 +15,15 @@
     <div class="grid grid-cols-3 gap-4">
       <div class="bg-white rounded-xl border border-gray-200 px-4 py-3 text-center">
         <div class="text-2xl font-bold text-gray-900">{{ stats.total }}</div>
-        <div class="text-xs text-gray-500 mt-0.5">Всего каналов</div>
+        <div class="text-xs text-gray-500 mt-0.5">{{ t('owner.leadChannels.totalChannels') }}</div>
       </div>
       <div class="bg-white rounded-xl border border-gray-200 px-4 py-3 text-center">
         <div class="text-2xl font-bold text-green-600">{{ stats.active }}</div>
-        <div class="text-xs text-gray-500 mt-0.5">Активных</div>
+        <div class="text-xs text-gray-500 mt-0.5">{{ t('owner.leadChannels.activeChannels') }}</div>
       </div>
       <div class="bg-white rounded-xl border border-gray-200 px-4 py-3 text-center">
         <div class="text-2xl font-bold text-amber-600">{{ stats.total - stats.active }}</div>
-        <div class="text-xs text-gray-500 mt-0.5">Отключено (СКОРО)</div>
+        <div class="text-xs text-gray-500 mt-0.5">{{ t('owner.leadChannels.disabledSoon') }}</div>
       </div>
     </div>
 
@@ -34,39 +34,39 @@
           <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
           </svg>
-          <input v-model="search" placeholder="Поиск по названию или коду..."
+          <input v-model="search" :placeholder="t('owner.leadChannels.searchPlaceholder')"
             class="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:border-blue-400" />
         </div>
 
         <select v-model="filterCategory"
           class="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-blue-400">
-          <option value="">Все категории</option>
+          <option value="">{{ t('owner.leadChannels.allCategories') }}</option>
           <option v-for="cat in categoryOptions" :key="cat.key" :value="cat.key">{{ cat.label }}</option>
         </select>
 
         <select v-model="filterActive"
           class="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-blue-400">
-          <option value="">Все статусы</option>
-          <option value="1">Активные</option>
-          <option value="0">Отключённые</option>
+          <option value="">{{ t('owner.leadChannels.allStatuses') }}</option>
+          <option value="1">{{ t('owner.leadChannels.activeStatus') }}</option>
+          <option value="0">{{ t('owner.leadChannels.disabledStatus') }}</option>
         </select>
       </div>
     </div>
 
     <!-- Таблица -->
-    <div v-if="loading" class="text-center py-12 text-gray-400">Загрузка...</div>
+    <div v-if="loading" class="text-center py-12 text-gray-400">{{ t('common.loading') }}</div>
 
     <div v-else class="bg-white rounded-xl border border-gray-200 overflow-hidden">
       <table class="w-full text-sm">
         <thead class="bg-gray-50">
           <tr class="text-left">
             <th class="px-4 py-3 font-medium text-gray-500 w-10">#</th>
-            <th class="px-4 py-3 font-medium text-gray-500">Канал</th>
-            <th class="px-4 py-3 font-medium text-gray-500">Категория</th>
-            <th class="px-4 py-3 font-medium text-gray-500 text-center w-28">Сложность</th>
-            <th class="px-4 py-3 font-medium text-gray-500 text-center w-28">Мин. план</th>
-            <th class="px-4 py-3 font-medium text-gray-500 text-center w-24">Активен</th>
-            <th class="px-4 py-3 font-medium text-gray-500 w-32">Действия</th>
+            <th class="px-4 py-3 font-medium text-gray-500">{{ t('owner.leadChannels.channel') }}</th>
+            <th class="px-4 py-3 font-medium text-gray-500">{{ t('owner.leadChannels.category') }}</th>
+            <th class="px-4 py-3 font-medium text-gray-500 text-center w-28">{{ t('owner.leadChannels.complexity') }}</th>
+            <th class="px-4 py-3 font-medium text-gray-500 text-center w-28">{{ t('owner.leadChannels.minPlan') }}</th>
+            <th class="px-4 py-3 font-medium text-gray-500 text-center w-24">{{ t('owner.leadChannels.isActive') }}</th>
+            <th class="px-4 py-3 font-medium text-gray-500 w-32">{{ t('owner.leadChannels.actions') }}</th>
           </tr>
         </thead>
         <tbody>
@@ -107,11 +107,11 @@
               <div class="flex gap-2">
                 <router-link :to="{ name: 'owner.lead-channels.detail', params: { id: ch.id } }"
                   class="text-xs text-blue-600 hover:text-blue-800 font-medium">
-                  Изменить
+                  {{ t('common.edit') }}
                 </router-link>
                 <button @click="deleteChannel(ch)"
                   class="text-xs text-red-500 hover:text-red-700 font-medium">
-                  Удалить
+                  {{ t('common.delete') }}
                 </button>
               </div>
             </td>
@@ -120,7 +120,7 @@
       </table>
 
       <div v-if="!filteredChannels.length" class="py-12 text-center text-gray-400 text-sm">
-        Каналы не найдены
+        {{ t('owner.leadChannels.notFound') }}
       </div>
     </div>
 
@@ -129,28 +129,28 @@
       @click.self="showCreateModal = false">
       <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <div class="p-6">
-          <h2 class="text-lg font-bold text-gray-900 mb-4">Новый канал</h2>
+          <h2 class="text-lg font-bold text-gray-900 mb-4">{{ t('owner.leadChannels.newChannel') }}</h2>
 
           <div class="space-y-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Код (slug)</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('owner.leadChannels.codeSlug') }}</label>
               <input v-model="createForm.code" maxlength="50"
                 class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:border-blue-400" placeholder="telegram_bot" />
               <span class="text-xs text-gray-400">{{ createForm.code.length }}/50</span>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Название (RU)</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('owner.leadChannels.nameRu') }}</label>
               <input v-model="createForm.name" maxlength="255"
                 class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:border-blue-400" />
               <span class="text-xs text-gray-400">{{ createForm.name.length }}/255</span>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Название (UZ)</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('owner.leadChannels.nameUz') }}</label>
               <input v-model="createForm.name_uz" maxlength="255"
                 class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:border-blue-400" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Категория</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('owner.leadChannels.category') }}</label>
               <select v-model="createForm.category"
                 class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white outline-none focus:border-blue-400">
                 <option v-for="cat in categoryOptions" :key="cat.key" :value="cat.key">{{ cat.label }}</option>
@@ -158,16 +158,16 @@
             </div>
             <div class="grid grid-cols-2 gap-4">
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Сложность</label>
+                <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('owner.leadChannels.complexity') }}</label>
                 <select v-model="createForm.complexity"
                   class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white outline-none focus:border-blue-400">
-                  <option value="easy">Легко</option>
-                  <option value="medium">Средне</option>
-                  <option value="hard">Сложно</option>
+                  <option value="easy">{{ t('owner.leadChannels.complexities.easy') }}</option>
+                  <option value="medium">{{ t('owner.leadChannels.complexities.medium') }}</option>
+                  <option value="hard">{{ t('owner.leadChannels.complexities.hard') }}</option>
                 </select>
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Мин. план</label>
+                <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('owner.leadChannels.minPlan') }}</label>
                 <select v-model="createForm.min_plan"
                   class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white outline-none focus:border-blue-400">
                   <option value="starter">Starter</option>
@@ -177,12 +177,12 @@
               </div>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Иконка (emoji)</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('owner.leadChannels.iconEmoji') }}</label>
               <input v-model="createForm.icon" maxlength="10"
                 class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:border-blue-400" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Краткое описание (RU)</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('owner.leadChannels.shortDescriptionRu') }}</label>
               <textarea v-model="createForm.short_description" rows="2" maxlength="500"
                 class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:border-blue-400 resize-none"></textarea>
               <span class="text-xs text-gray-400">{{ (createForm.short_description || '').length }}/500</span>
@@ -192,11 +192,11 @@
           <div class="flex justify-end gap-3 mt-6">
             <button @click="showCreateModal = false"
               class="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50">
-              Отмена
+              {{ t('common.cancel') }}
             </button>
             <button @click="handleCreate" :disabled="saving"
               class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50">
-              {{ saving ? 'Сохранение...' : 'Создать' }}
+              {{ saving ? t('owner.leadChannels.saving') : t('owner.leadChannels.create') }}
             </button>
           </div>
         </div>
@@ -207,16 +207,16 @@
     <div v-if="deleteTarget" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
       @click.self="deleteTarget = null">
       <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
-        <h3 class="text-lg font-bold text-gray-900 mb-2">Удалить канал?</h3>
+        <h3 class="text-lg font-bold text-gray-900 mb-2">{{ t('owner.leadChannels.deleteTitle') }}</h3>
         <p class="text-sm text-gray-600 mb-4">{{ deleteTarget.name }} ({{ deleteTarget.code }})</p>
         <div class="flex justify-end gap-3">
           <button @click="deleteTarget = null"
             class="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50">
-            Отмена
+            {{ t('common.cancel') }}
           </button>
           <button @click="confirmDelete" :disabled="saving"
             class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50">
-            Удалить
+            {{ t('common.delete') }}
           </button>
         </div>
       </div>
@@ -226,7 +226,10 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import api from '@/api/index';
+
+const { t } = useI18n();
 
 const loading = ref(true);
 const saving = ref(false);
@@ -250,14 +253,14 @@ const createForm = ref({
   short_description: '',
 });
 
-const categoryOptions = [
-  { key: 'messenger', label: 'Мессенджеры' },
-  { key: 'advertising', label: 'Реклама' },
-  { key: 'web', label: 'Веб' },
-  { key: 'content_seo', label: 'Контент и SEO' },
-  { key: 'partnership', label: 'Партнёрства' },
-  { key: 'api_automation', label: 'API и автоматизация' },
-];
+const categoryOptions = computed(() => [
+  { key: 'messenger', label: t('owner.leadChannels.categories.messenger') },
+  { key: 'advertising', label: t('owner.leadChannels.categories.advertising') },
+  { key: 'web', label: t('owner.leadChannels.categories.web') },
+  { key: 'content_seo', label: t('owner.leadChannels.categories.content_seo') },
+  { key: 'partnership', label: t('owner.leadChannels.categories.partnership') },
+  { key: 'api_automation', label: t('owner.leadChannels.categories.api_automation') },
+]);
 
 const filteredChannels = computed(() => {
   let list = [...channels.value];
@@ -284,7 +287,14 @@ const filteredChannels = computed(() => {
 });
 
 function categoryLabel(cat) {
-  const map = { messenger: 'Мессенджеры', advertising: 'Реклама', web: 'Веб', content_seo: 'Контент/SEO', partnership: 'Партнёрства', api_automation: 'API' };
+  const map = {
+    messenger: t('owner.leadChannels.categories.messenger'),
+    advertising: t('owner.leadChannels.categories.advertising'),
+    web: t('owner.leadChannels.categories.web'),
+    content_seo: t('owner.leadChannels.categories.content_seo_short'),
+    partnership: t('owner.leadChannels.categories.partnership'),
+    api_automation: t('owner.leadChannels.categories.api_automation_short'),
+  };
   return map[cat] || cat;
 }
 
@@ -301,7 +311,11 @@ function categoryBadgeClass(cat) {
 }
 
 function complexityLabel(c) {
-  return { easy: 'Легко', medium: 'Средне', hard: 'Сложно' }[c] || c;
+  return {
+    easy: t('owner.leadChannels.complexities.easy'),
+    medium: t('owner.leadChannels.complexities.medium'),
+    hard: t('owner.leadChannels.complexities.hard'),
+  }[c] || c;
 }
 
 function complexityBadgeClass(c) {
@@ -324,7 +338,7 @@ async function fetchChannels() {
     channels.value = payload.channels || [];
     stats.value = { total: payload.total || 0, active: payload.active || 0 };
   } catch (e) {
-    alert(e?.response?.data?.message || 'Ошибка загрузки');
+    alert(e?.response?.data?.message || t('owner.leadChannels.loadError'));
   } finally {
     loading.value = false;
   }
@@ -337,7 +351,7 @@ async function toggleActive(ch) {
     ch.is_active = togglePayload.is_active;
     stats.value.active += togglePayload.is_active ? 1 : -1;
   } catch (e) {
-    alert(e?.response?.data?.message || 'Ошибка');
+    alert(e?.response?.data?.message || t('owner.leadChannels.error'));
   }
 }
 
@@ -356,7 +370,7 @@ async function handleCreate() {
     showCreateModal.value = false;
     await fetchChannels();
   } catch (e) {
-    alert(e?.response?.data?.message || 'Ошибка создания');
+    alert(e?.response?.data?.message || t('owner.leadChannels.createError'));
   } finally {
     saving.value = false;
   }
@@ -373,7 +387,7 @@ async function confirmDelete() {
     deleteTarget.value = null;
     await fetchChannels();
   } catch (e) {
-    alert(e?.response?.data?.message || 'Ошибка удаления');
+    alert(e?.response?.data?.message || t('owner.leadChannels.deleteError'));
   } finally {
     saving.value = false;
   }

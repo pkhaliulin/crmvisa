@@ -2,7 +2,7 @@
     <div class="space-y-5">
 
         <div class="flex gap-3">
-            <input v-model="search" @input="debouncedLoad" placeholder="Поиск по телефону или имени..."
+            <input v-model="search" @input="debouncedLoad" :placeholder="t('owner.users.searchPlaceholder')"
                 class="border border-gray-200 rounded-xl px-4 py-2 text-sm outline-none focus:border-[#1BA97F] w-72"/>
         </div>
 
@@ -10,12 +10,12 @@
             <table class="w-full text-sm">
                 <thead class="bg-gray-50 text-gray-500 border-b border-gray-100 text-xs">
                     <tr>
-                        <th class="px-5 py-3 text-left">Пользователь</th>
-                        <th class="px-4 py-3 text-left">Занятость</th>
-                        <th class="px-4 py-3 text-center">Доход</th>
-                        <th class="px-4 py-3 text-center">Профиль</th>
-                        <th class="px-4 py-3 text-center">Зарегистрирован</th>
-                        <th class="px-4 py-3 text-center">Действия</th>
+                        <th class="px-5 py-3 text-left">{{ t('owner.users.user') }}</th>
+                        <th class="px-4 py-3 text-left">{{ t('owner.users.employment') }}</th>
+                        <th class="px-4 py-3 text-center">{{ t('owner.users.income') }}</th>
+                        <th class="px-4 py-3 text-center">{{ t('owner.users.profile') }}</th>
+                        <th class="px-4 py-3 text-center">{{ t('owner.users.registeredAt') }}</th>
+                        <th class="px-4 py-3 text-center">{{ t('owner.users.actions') }}</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-50">
@@ -49,7 +49,7 @@
                             <button @click="blockUser(u)"
                                 class="text-xs px-3 py-1.5 border border-red-200 text-red-500
                                        rounded-lg hover:bg-red-50 transition-colors">
-                                Сброс токена
+                                {{ t('owner.users.resetToken') }}
                             </button>
                         </td>
                     </tr>
@@ -57,7 +57,7 @@
             </table>
 
             <div class="px-5 py-3 border-t border-gray-50 flex items-center justify-between text-xs text-gray-500">
-                <span>Всего: {{ pagination.total }}</span>
+                <span>{{ t('owner.users.total', { count: pagination.total }) }}</span>
                 <div class="flex gap-1">
                     <button v-for="p in Math.min(pagination.last_page, 10)" :key="p"
                         @click="page = p; load()"
@@ -72,9 +72,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import api from '@/api/index';
 import { formatPhone } from '@/utils/format';
+
+const { t } = useI18n();
 
 const users      = ref([]);
 const loading    = ref(true);
@@ -82,11 +85,15 @@ const search     = ref('');
 const page       = ref(1);
 const pagination = ref({ last_page: 1, current_page: 1, total: 0 });
 
-const empLabels = {
-    employed: 'Наёмный', business_owner: 'Бизнес', self_employed: 'ИП',
-    retired: 'Пенсионер', student: 'Студент', unemployed: 'Безработный',
-};
-const empLabel = (v) => empLabels[v] ?? '—';
+const empLabels = computed(() => ({
+    employed: t('owner.users.empEmployed'),
+    business_owner: t('owner.users.empBusinessOwner'),
+    self_employed: t('owner.users.empSelfEmployed'),
+    retired: t('owner.users.empRetired'),
+    student: t('owner.users.empStudent'),
+    unemployed: t('owner.users.empUnemployed'),
+}));
+const empLabel = (v) => empLabels.value[v] ?? '—';
 
 let timer = null;
 function debouncedLoad() {

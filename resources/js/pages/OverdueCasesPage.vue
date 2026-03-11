@@ -66,6 +66,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import api from '@/api/index';
 import { useCountries } from '@/composables/useCountries';
+import { formatDate } from '@/utils/format';
 
 const { t } = useI18n();
 const { countryName, countryFlag, visaTypeName } = useCountries();
@@ -80,10 +81,6 @@ const stageLabels = computed(() => ({
 
 function stageLabel(s) { return stageLabels.value[s] || s; }
 
-function formatDate(d) {
-  if (!d) return '—';
-  return new Date(d).toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric' });
-}
 
 onMounted(async () => {
   try {
