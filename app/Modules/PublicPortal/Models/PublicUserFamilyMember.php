@@ -2,6 +2,7 @@
 
 namespace App\Modules\PublicPortal\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -24,8 +25,8 @@ class PublicUserFamilyMember extends Model
     ];
 
     protected $casts = [
-        'dob'                => 'encrypted:date',
-        'passport_expires_at' => 'encrypted:date',
+        'dob'                 => 'encrypted',
+        'passport_expires_at' => 'encrypted',
         'passport_number'     => 'encrypted',
     ];
 
@@ -36,6 +37,12 @@ class PublicUserFamilyMember extends Model
 
     public function isMinor(): bool
     {
-        return $this->dob && $this->dob->age < 18;
+        if (! $this->dob) return false;
+
+        try {
+            return Carbon::parse($this->dob)->age < 18;
+        } catch (\Throwable) {
+            return false;
+        }
     }
 }

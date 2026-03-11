@@ -55,8 +55,8 @@ class PublicUser extends Model
     protected $hidden = ['pin_hash', 'api_token', 'ocr_raw_data'];
 
     protected $casts = [
-        'dob'                 => 'encrypted:date',
-        'passport_expires_at' => 'encrypted:date',
+        'dob'                 => 'encrypted',
+        'passport_expires_at' => 'encrypted',
         'passport_number'     => 'encrypted',
         'ocr_raw_data'        => 'encrypted:array',
         'recovery_email'      => 'encrypted',

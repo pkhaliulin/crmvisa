@@ -40,8 +40,8 @@ class Client extends BaseModel
     protected $casts = [
         'phone'               => 'encrypted',
         'passport_number'     => 'encrypted',
-        'date_of_birth'       => 'encrypted:date',
-        'passport_expires_at' => 'encrypted:date',
+        'date_of_birth'       => 'encrypted',
+        'passport_expires_at' => 'encrypted',
     ];
 
     /**
@@ -73,7 +73,8 @@ class Client extends BaseModel
             return false;
         }
 
-        return $this->passport_expires_at->diffInDays(now(), false) >= -$days
-            && $this->passport_expires_at->isFuture();
+        $expires = \Carbon\Carbon::parse($this->passport_expires_at);
+        return $expires->diffInDays(now(), false) >= -$days
+            && $expires->isFuture();
     }
 }

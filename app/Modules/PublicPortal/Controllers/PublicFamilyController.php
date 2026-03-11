@@ -240,7 +240,7 @@ class PublicFamilyController extends Controller
      */
     private function createFamilyMemberChecklist(VisaCase $case, PublicUserFamilyMember $member): void
     {
-        $isMinor = $member->dob && $member->dob->age < 18;
+        $isMinor = $member->isMinor();
 
         $items = [
             [
@@ -322,13 +322,20 @@ class PublicFamilyController extends Controller
             'id'                 => $m->id,
             'name'               => $m->name,
             'relationship'       => $m->relationship,
-            'dob'                => $m->dob?->toDateString(),
+            'dob'                => $this->toDateStr($m->dob),
             'gender'             => $m->gender,
             'citizenship'        => $m->citizenship,
             'passport_number'    => $m->passport_number,
-            'passport_expires_at'=> $m->passport_expires_at?->toDateString(),
+            'passport_expires_at'=> $this->toDateStr($m->passport_expires_at),
             'is_minor'           => $m->isMinor(),
             'created_at'         => $m->created_at?->toDateString(),
         ];
+    }
+
+    private function toDateStr(mixed $val): ?string
+    {
+        if ($val === null) return null;
+        if ($val instanceof \DateTimeInterface) return $val->format('Y-m-d');
+        return is_string($val) ? $val : (string) $val;
     }
 }
