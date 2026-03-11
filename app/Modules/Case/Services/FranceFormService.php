@@ -182,7 +182,9 @@ class FranceFormService
 
         return match ($rule) {
             'uppercase'    => mb_strtoupper((string) $value),
-            'date_dmy'     => $value instanceof \DateTimeInterface ? $value->format('d/m/Y') : $value,
+            'date_dmy'     => $value instanceof \DateTimeInterface
+                ? $value->format('d/m/Y')
+                : (is_string($value) ? (rescue(fn () => \Carbon\Carbon::parse($value)->format('d/m/Y'), $value)) : $value),
             'country_name' => static::countryCodeToName((string) $value),
             default        => $value,
         };

@@ -143,7 +143,7 @@ class HealthCheckCommand extends Command
 
                 foreach ($countryCodes as $cc) {
                     DB::transaction(function () use ($a, $cc) {
-                        DB::statement("SET LOCAL app.current_tenant_id = '{$a->id}'");
+                        DB::statement('SET LOCAL app.current_tenant_id = ?', [$a->id]);
                         DB::table('agency_work_countries')->insertOrIgnore([
                             'id' => \Illuminate\Support\Str::uuid()->toString(),
                             'agency_id' => $a->id,

@@ -38,8 +38,8 @@ class ClientResource extends JsonResource
         // PII-поля только при явном запросе
         if ($this->withPii || ($this->additional['withPii'] ?? false)) {
             $data['passport_number']     = $this->passport_number;
-            $data['date_of_birth']       = $this->date_of_birth?->toDateString();
-            $data['passport_expires_at'] = $this->passport_expires_at?->toDateString();
+            $data['date_of_birth']       = $this->date_of_birth;
+            $data['passport_expires_at'] = $this->passport_expires_at;
         }
 
         // Вложенные связи, если загружены

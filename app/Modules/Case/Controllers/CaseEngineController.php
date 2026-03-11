@@ -273,7 +273,7 @@ class CaseEngineController extends Controller
             'checkpoints'=> $rule->checkpoints,
             'form_steps' => $rule->fieldMappings->groupBy('step_number')->map(fn ($fields, $step) => [
                 'step'   => $step,
-                'title'  => $fields->first()->step_title,
+                'title'  => $fields->first()?->step_title,
                 'fields' => $fields->count(),
             ])->values(),
         ]);

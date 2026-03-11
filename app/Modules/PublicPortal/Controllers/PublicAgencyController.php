@@ -117,7 +117,7 @@ class PublicAgencyController extends Controller
 
         // Статистика (SET LOCAL для обхода RLS)
         $stats = DB::transaction(function () use ($id) {
-            DB::statement("SET LOCAL app.current_tenant_id = '{$id}'");
+            DB::statement('SET LOCAL app.current_tenant_id = ?', [$id]);
 
             // Команда
             $team = DB::table('users')
@@ -276,7 +276,7 @@ class PublicAgencyController extends Controller
 
         return DB::transaction(function () use ($publicUser, $agency, $data, $cc) {
             // Устанавливаем tenant context для RLS (позволяет UPDATE agency_id из NULL в UUID)
-            DB::statement("SET LOCAL app.current_tenant_id = '{$agency->id}'");
+            DB::statement('SET LOCAL app.current_tenant_id = ?', [$agency->id]);
 
             // 1. Найти или создать клиента в агентстве
             $client = Client::where('public_user_id', $publicUser->id)

@@ -13,8 +13,12 @@ class EncryptAllPiiCommand extends Command
 
     private array $tables = [
         'public_users' => [
-            'fields'    => ['recovery_email'],
+            'fields'    => ['recovery_email', 'dob', 'passport_expires_at', 'passport_number'],
             'softDelete' => false,
+        ],
+        'clients' => [
+            'fields'    => ['phone', 'passport_number', 'date_of_birth', 'passport_expires_at'],
+            'softDelete' => true,
         ],
         'public_user_family_members' => [
             'fields'    => ['passport_number', 'passport_expires_at', 'dob'],

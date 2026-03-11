@@ -26,7 +26,7 @@ class PaymentTimeoutCommand extends Command
         foreach ($expired as $payment) {
             DB::transaction(function () use ($payment) {
                 if ($payment->agency_id) {
-                    DB::statement("SET LOCAL app.current_tenant_id = '{$payment->agency_id}'");
+                    DB::statement('SET LOCAL app.current_tenant_id = ?', [$payment->agency_id]);
                 }
                 DB::statement("SET LOCAL app.is_superadmin = 'true'");
 

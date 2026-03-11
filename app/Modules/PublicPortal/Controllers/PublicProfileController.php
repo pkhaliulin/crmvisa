@@ -593,11 +593,11 @@ class PublicProfileController extends Controller
                     'case_family_member_id' => $cm->id,
                     'name'                  => $cm->familyMember->name,
                     'relationship'          => $cm->familyMember->relationship,
-                    'dob'                   => $cm->familyMember->dob?->toDateString(),
+                    'dob'                   => $this->toDateStr($cm->familyMember->dob),
                     'gender'                => $cm->familyMember->gender,
                     'citizenship'           => $cm->familyMember->citizenship,
                     'passport_number'       => $cm->familyMember->passport_number,
-                    'passport_expires_at'   => $cm->familyMember->passport_expires_at?->toDateString(),
+                    'passport_expires_at'   => $this->toDateStr($cm->familyMember->passport_expires_at),
                     'is_minor'              => $cm->familyMember->isMinor(),
                     'checklist'             => CaseChecklist::where('case_id', $case->id)
                         ->where('family_member_id', $cm->familyMember->id)
@@ -771,14 +771,14 @@ class PublicProfileController extends Controller
                 'logo_url'         => $a->logo_url,
                 'is_verified'      => $a->is_verified,
                 'description'      => $locale === 'uz' && $a->description_uz ? $a->description_uz : $a->description,
-                'package'          => $a->packages->first() ? [
-                    'id'              => $a->packages->first()->id,
-                    'name'            => $locale === 'uz' && $a->packages->first()->name_uz
-                        ? $a->packages->first()->name_uz
-                        : $a->packages->first()->name,
-                    'price'           => $a->packages->first()->price,
-                    'currency'        => $a->packages->first()->currency ?? 'USD',
-                    'processing_days' => $a->packages->first()->processing_days,
+                'package'          => ($pkg = $a->packages->first()) ? [
+                    'id'              => $pkg->id,
+                    'name'            => $locale === 'uz' && $pkg->name_uz
+                        ? $pkg->name_uz
+                        : $pkg->name,
+                    'price'           => $pkg->price,
+                    'currency'        => $pkg->currency ?? 'USD',
+                    'processing_days' => $pkg->processing_days,
                 ] : null,
             ])
             ->values();
@@ -804,7 +804,7 @@ class PublicProfileController extends Controller
         DB::transaction(function () use ($case, $publicUser) {
             // Устанавливаем tenant context для RLS (позволяет UPDATE agency_id)
             if ($case->agency_id) {
-                DB::statement("SET LOCAL app.current_tenant_id = '{$case->agency_id}'");
+                DB::statement('SET LOCAL app.current_tenant_id = ?', [$case->agency_id]);
             }
 
             // Архивируем старые лиды
@@ -848,5 +848,12 @@ class PublicProfileController extends Controller
             'ocr_status' => 'pending',
             'message'    => 'Паспорт загружен. Данные распознаются автоматически (обычно до 30 сек).',
         ]);
+    }
+
+    private function toDateStr(mixed $val): ?string
+    {
+        if ($val === null) return null;
+        if ($val instanceof \DateTimeInterface) return $val->format('Y-m-d');
+        return is_string($val) ? $val : (string) $val;
     }
 }

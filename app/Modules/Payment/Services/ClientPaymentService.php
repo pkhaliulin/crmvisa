@@ -23,7 +23,7 @@ class ClientPaymentService
     {
         return DB::transaction(function () use ($case, $publicUser, $provider) {
             if ($case->agency_id && DB::connection()->getDriverName() !== 'sqlite') {
-                DB::statement("SET LOCAL app.current_tenant_id = '{$case->agency_id}'");
+                DB::statement('SET LOCAL app.current_tenant_id = ?', [$case->agency_id]);
             }
 
             $package = $case->agency_id
@@ -35,8 +35,8 @@ class ClientPaymentService
                     ->first()
                 : null;
 
-            $basePrice = (int) ($package->price ?? 0);
-            $currency  = $package->currency ?? 'USD';
+            $basePrice = (int) ($package?->price ?? 0);
+            $currency  = $package?->currency ?? 'USD';
 
             // Разбивка: заявитель (100%) + семья (дети -50%, остальные -25%)
             $breakdown = [];
@@ -242,7 +242,7 @@ class ClientPaymentService
             DB::transaction(function () use ($payment, $provider, $data) {
                 if ($payment->agency_id) {
                     if (DB::connection()->getDriverName() !== 'sqlite') {
-                        DB::statement("SET LOCAL app.current_tenant_id = '{$payment->agency_id}'");
+                        DB::statement('SET LOCAL app.current_tenant_id = ?', [$payment->agency_id]);
                     }
                 }
 
