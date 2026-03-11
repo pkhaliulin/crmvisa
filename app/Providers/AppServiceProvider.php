@@ -8,6 +8,8 @@ use App\Modules\Client\Models\Client;
 use App\Modules\Client\Policies\ClientPolicy;
 use App\Modules\Document\Models\Document;
 use App\Modules\Document\Policies\DocumentPolicy;
+use App\Modules\Task\Models\AgencyTask;
+use App\Modules\Task\Policies\TaskPolicy;
 use App\Modules\User\Models\User;
 use App\Modules\User\Policies\UserPolicy;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -32,6 +34,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Client::class, ClientPolicy::class);
         Gate::policy(Document::class, DocumentPolicy::class);
         Gate::policy(User::class, UserPolicy::class);
+        Gate::policy(AgencyTask::class, TaskPolicy::class);
         // API rate limiter — 120 req/min для авторизованных, 60 для гостей
         RateLimiter::for('api', function (Request $request) {
             $user = $request->user();

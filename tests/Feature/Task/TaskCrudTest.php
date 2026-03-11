@@ -210,6 +210,94 @@ class TaskCrudTest extends TestCase
         $this->assertNotContains('Agency2 task', $titles);
     }
 
+    // -- Role-based access ─────────────────────────────────
+
+    public function test_manager_sees_only_own_tasks(): void
+    {
+        [$agency, $owner] = $this->createAgencyWithOwner();
+        $manager = $this->createManager($agency);
+
+        $this->createTask($agency, $owner, ['title' => 'Owner task', 'assigned_to' => $owner->id]);
+        $this->createTask($agency, $owner, ['title' => 'Assigned to manager', 'assigned_to' => $manager->id]);
+        $this->createTask($agency, $manager, ['title' => 'Created by manager']);
+
+        $headers = $this->authHeaders($manager);
+        $res = $this->getJson($this->taskUrl(), $headers);
+        $res->assertOk();
+
+        $titles = collect($res->json('data.data'))->pluck('title')->all();
+        $this->assertContains('Assigned to manager', $titles);
+        $this->assertContains('Created by manager', $titles);
+        $this->assertNotContains('Owner task', $titles);
+    }
+
+    public function test_owner_sees_all_tasks(): void
+    {
+        [$agency, $owner] = $this->createAgencyWithOwner();
+        $manager = $this->createManager($agency);
+
+        $this->createTask($agency, $owner, ['title' => 'Owner task']);
+        $this->createTask($agency, $manager, ['title' => 'Manager task']);
+
+        $headers = $this->authHeaders($owner);
+        $res = $this->getJson($this->taskUrl(), $headers);
+        $res->assertOk();
+
+        $titles = collect($res->json('data.data'))->pluck('title')->all();
+        $this->assertContains('Owner task', $titles);
+        $this->assertContains('Manager task', $titles);
+    }
+
+    public function test_manager_cannot_update_owner_task(): void
+    {
+        [$agency, $owner] = $this->createAgencyWithOwner();
+        $manager = $this->createManager($agency);
+
+        $task = $this->createTask($agency, $owner, ['title' => 'Owner task', 'assigned_to' => $manager->id]);
+
+        $headers = $this->authHeaders($manager);
+        $res = $this->patchJson($this->taskUrl($task->id), ['title' => 'Changed'], $headers);
+        $res->assertStatus(403);
+    }
+
+    public function test_manager_can_transition_assigned_task(): void
+    {
+        [$agency, $owner] = $this->createAgencyWithOwner();
+        $manager = $this->createManager($agency);
+
+        $task = $this->createTask($agency, $owner, ['status' => 'new', 'assigned_to' => $manager->id]);
+
+        $headers = $this->authHeaders($manager);
+        $res = $this->postJson($this->taskUrl("{$task->id}/transition"), [], $headers);
+        $res->assertOk();
+        $this->assertEquals('accepted', $res->json('data.status'));
+    }
+
+    public function test_manager_cannot_delete_owner_task(): void
+    {
+        [$agency, $owner] = $this->createAgencyWithOwner();
+        $manager = $this->createManager($agency);
+
+        $task = $this->createTask($agency, $owner, ['assigned_to' => $manager->id]);
+
+        $headers = $this->authHeaders($manager);
+        $res = $this->deleteJson($this->taskUrl($task->id), [], $headers);
+        $res->assertStatus(403);
+    }
+
+    public function test_manager_can_update_own_task(): void
+    {
+        [$agency, $owner] = $this->createAgencyWithOwner();
+        $manager = $this->createManager($agency);
+
+        $task = $this->createTask($agency, $manager, ['title' => 'My task']);
+
+        $headers = $this->authHeaders($manager);
+        $res = $this->patchJson($this->taskUrl($task->id), ['title' => 'Updated'], $headers);
+        $res->assertOk();
+        $this->assertEquals('Updated', $res->json('data.title'));
+    }
+
     // -- Counters ───────────────────────────────────────────
 
     public function test_counters(): void

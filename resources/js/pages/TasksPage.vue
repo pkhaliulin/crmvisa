@@ -84,7 +84,7 @@
         }">
         <div class="flex items-start gap-3">
           <!-- Status transition button -->
-          <button @click="transitionTask(task)" class="mt-0.5 shrink-0" :title="nextStatusLabel(task)">
+          <button @click="transitionTask(task)" class="mt-0.5 shrink-0" :disabled="!task.can_transition" :title="nextStatusLabel(task)">
             <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all"
               :class="statusCircleClass(task)">
               <svg v-if="task.status === 'closed'" class="w-3 h-3 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
@@ -103,7 +103,7 @@
           </button>
 
           <!-- Content -->
-          <div class="flex-1 min-w-0 cursor-pointer" @click="openEdit(task)">
+          <div class="flex-1 min-w-0" :class="task.can_edit ? 'cursor-pointer' : ''" @click="task.can_edit && openEdit(task)">
             <p class="text-sm font-medium text-gray-800 leading-snug"
               :class="{ 'line-through text-gray-400': isTerminal(task) }">
               {{ task.title }}
@@ -153,7 +153,7 @@
           <!-- Inline actions -->
           <div class="shrink-0 flex items-center gap-1">
             <!-- Defer -->
-            <button v-if="!isTerminal(task) && task.status !== 'deferred' && task.status !== 'completed'"
+            <button v-if="task.can_set_status && !isTerminal(task) && task.status !== 'deferred' && task.status !== 'completed'"
               @click="setStatus(task, 'deferred')"
               class="p-1 text-gray-300 hover:text-yellow-500 opacity-0 group-hover:opacity-100 transition-all"
               :title="t('crm.tasks.defer')">
@@ -162,7 +162,7 @@
               </svg>
             </button>
             <!-- Reopen from deferred -->
-            <button v-if="task.status === 'deferred'"
+            <button v-if="task.can_set_status && task.status === 'deferred'"
               @click="setStatus(task, 'new')"
               class="p-1 text-yellow-500 hover:text-blue-500"
               :title="t('crm.tasks.reopen')">
@@ -171,14 +171,14 @@
               </svg>
             </button>
             <!-- Edit -->
-            <button @click="openEdit(task)"
+            <button v-if="task.can_edit" @click="openEdit(task)"
               class="p-1 text-gray-300 hover:text-blue-500 opacity-0 group-hover:opacity-100 transition-all">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z"/>
               </svg>
             </button>
             <!-- Delete -->
-            <button @click="deleteTask(task)"
+            <button v-if="task.can_delete" @click="deleteTask(task)"
               class="p-1 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/>

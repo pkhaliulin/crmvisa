@@ -4,6 +4,7 @@ namespace App\Modules\Task\Controllers;
 
 use App\Modules\Task\Models\AgencyTask;
 use App\Support\Helpers\ApiResponse;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -11,8 +12,11 @@ use Illuminate\Validation\Rule;
 
 class TaskController extends Controller
 {
+    use AuthorizesRequests;
+
     /**
      * Список задач с фильтрацией.
+     * Manager видит только свои (assigned_to = me ИЛИ created_by = me).
      */
     public function index(Request $request): JsonResponse
     {
@@ -23,6 +27,15 @@ class TaskController extends Controller
         ]);
 
         $userId = $request->user()->id;
+        $role   = $request->user()->role;
+
+        // Manager видит только свои задачи (назначенные или созданные)
+        if ($role === 'manager') {
+            $query->where(function ($q) use ($userId) {
+                $q->where('assigned_to', $userId)
+                  ->orWhere('created_by', $userId);
+            });
+        }
 
         // Фильтры
         if ($request->filled('status')) {
@@ -73,6 +86,20 @@ class TaskController extends Controller
 
         $tasks = $query->paginate($request->integer('per_page', 50));
 
+        // Добавляем permissions для фронтенда
+        $tasks->getCollection()->transform(function ($task) use ($request) {
+            $user = $request->user();
+            $isOwnerRole = in_array($user->role, ['owner', 'superadmin']);
+            $isCreator   = $task->created_by === $user->id;
+
+            $task->can_edit      = $isOwnerRole || $isCreator;
+            $task->can_delete    = $isOwnerRole || $isCreator;
+            $task->can_transition = $isOwnerRole || $isCreator || $task->assigned_to === $user->id;
+            $task->can_set_status = $isOwnerRole || $isCreator;
+
+            return $task;
+        });
+
         return ApiResponse::success($tasks);
     }
 
@@ -81,6 +108,9 @@ class TaskController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
+        $this->authorize('create', AgencyTask::class);
+
+        $user = $request->user();
         $data = $request->validate([
             'title'           => 'required|string|max:255',
             'description'     => 'nullable|string|max:2000',
@@ -91,6 +121,11 @@ class TaskController extends Controller
             'recurrence_rule' => ['nullable', Rule::in(AgencyTask::RECURRENCE_RULES)],
         ]);
 
+        // Manager не может назначать задачи другим (только себе)
+        if ($user->role === 'manager' && isset($data['assigned_to']) && $data['assigned_to'] !== $user->id) {
+            return ApiResponse::error('Менеджер может назначать задачи только себе', 403);
+        }
+
         $task = AgencyTask::create([
             'title'           => $data['title'],
             'description'     => $data['description'] ?? null,
@@ -99,7 +134,7 @@ class TaskController extends Controller
             'case_id'         => $data['case_id'] ?? null,
             'due_date'        => $data['due_date'] ?? null,
             'recurrence_rule' => $data['recurrence_rule'] ?? null,
-            'created_by'      => $request->user()->id,
+            'created_by'      => $user->id,
             'status'          => 'new',
         ]);
 
@@ -121,6 +156,8 @@ class TaskController extends Controller
             'visaCase:id,case_number,country_code,stage',
         ])->findOrFail($id);
 
+        $this->authorize('view', $task);
+
         return ApiResponse::success($task);
     }
 
@@ -130,6 +167,7 @@ class TaskController extends Controller
     public function update(Request $request, string $id): JsonResponse
     {
         $task = AgencyTask::findOrFail($id);
+        $this->authorize('update', $task);
 
         $data = $request->validate([
             'title'           => 'sometimes|string|max:255',
@@ -156,6 +194,8 @@ class TaskController extends Controller
     public function destroy(string $id): JsonResponse
     {
         $task = AgencyTask::findOrFail($id);
+        $this->authorize('delete', $task);
+
         $task->delete();
 
         return ApiResponse::success(null, message: 'Задача удалена');
@@ -168,6 +208,8 @@ class TaskController extends Controller
     public function transition(Request $request, string $id): JsonResponse
     {
         $task = AgencyTask::findOrFail($id);
+        $this->authorize('transition', $task);
+
         $userId = $request->user()->id;
         $role = $request->user()->role;
 
@@ -205,6 +247,8 @@ class TaskController extends Controller
     public function setStatus(Request $request, string $id): JsonResponse
     {
         $task = AgencyTask::findOrFail($id);
+        $this->authorize('setStatus', $task);
+
         $data = $request->validate([
             'status' => ['required', Rule::in(['deferred', 'cancelled', 'new'])],
         ]);
@@ -227,20 +271,45 @@ class TaskController extends Controller
 
     /**
      * Счётчики для дашборда.
+     * Manager видит только свои счётчики.
      */
     public function counters(Request $request): JsonResponse
     {
         $userId = $request->user()->id;
+        $role   = $request->user()->role;
 
-        $counters = [
-            'total_active'          => AgencyTask::active()->count(),
-            'my_tasks'              => AgencyTask::active()->byAssignee($userId)->count(),
-            'overdue'               => AgencyTask::overdue()->count(),
-            'my_overdue'            => AgencyTask::overdue()->byAssignee($userId)->count(),
-            'due_today'             => AgencyTask::dueToday()->count(),
-            'awaiting_verification' => AgencyTask::awaitingVerification()->count(),
-            'created_by_me'         => AgencyTask::active()->byCreator($userId)->count(),
-        ];
+        // Manager: все счётчики только по его задачам
+        if ($role === 'manager') {
+            $myScope = fn ($q) => $q->where(function ($q2) use ($userId) {
+                $q2->where('assigned_to', $userId)->orWhere('created_by', $userId);
+            });
+
+            $counters = [
+                'total_active'          => AgencyTask::active()->where(function ($q) use ($userId) {
+                    $q->where('assigned_to', $userId)->orWhere('created_by', $userId);
+                })->count(),
+                'my_tasks'              => AgencyTask::active()->byAssignee($userId)->count(),
+                'overdue'               => AgencyTask::overdue()->where(function ($q) use ($userId) {
+                    $q->where('assigned_to', $userId)->orWhere('created_by', $userId);
+                })->count(),
+                'my_overdue'            => AgencyTask::overdue()->byAssignee($userId)->count(),
+                'due_today'             => AgencyTask::dueToday()->where(function ($q) use ($userId) {
+                    $q->where('assigned_to', $userId)->orWhere('created_by', $userId);
+                })->count(),
+                'awaiting_verification' => 0,
+                'created_by_me'         => AgencyTask::active()->byCreator($userId)->count(),
+            ];
+        } else {
+            $counters = [
+                'total_active'          => AgencyTask::active()->count(),
+                'my_tasks'              => AgencyTask::active()->byAssignee($userId)->count(),
+                'overdue'               => AgencyTask::overdue()->count(),
+                'my_overdue'            => AgencyTask::overdue()->byAssignee($userId)->count(),
+                'due_today'             => AgencyTask::dueToday()->count(),
+                'awaiting_verification' => AgencyTask::awaitingVerification()->count(),
+                'created_by_me'         => AgencyTask::active()->byCreator($userId)->count(),
+            ];
+        }
 
         return ApiResponse::success($counters);
     }
