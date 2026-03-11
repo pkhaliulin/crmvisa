@@ -298,6 +298,19 @@ class TaskCrudTest extends TestCase
         $this->assertEquals('Updated', $res->json('data.title'));
     }
 
+    public function test_manager_can_defer_owner_task(): void
+    {
+        [$agency, $owner] = $this->createAgencyWithOwner();
+        $manager = $this->createManager($agency);
+
+        $task = $this->createTask($agency, $owner, ['status' => 'accepted', 'assigned_to' => $manager->id]);
+
+        $headers = $this->authHeaders($manager);
+        $res = $this->postJson($this->taskUrl("{$task->id}/set-status"), ['status' => 'deferred'], $headers);
+        $res->assertOk();
+        $this->assertEquals('deferred', $res->json('data.status'));
+    }
+
     // -- Counters ───────────────────────────────────────────
 
     public function test_counters(): void

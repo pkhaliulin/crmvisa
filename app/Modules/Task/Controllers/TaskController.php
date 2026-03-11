@@ -92,10 +92,12 @@ class TaskController extends Controller
             $isOwnerRole = in_array($user->role, ['owner', 'superadmin']);
             $isCreator   = $task->created_by === $user->id;
 
-            $task->can_edit      = $isOwnerRole || $isCreator;
-            $task->can_delete    = $isOwnerRole || $isCreator;
-            $task->can_transition = $isOwnerRole || $isCreator || $task->assigned_to === $user->id;
-            $task->can_set_status = $isOwnerRole || $isCreator;
+            $isAssignee  = $task->assigned_to === $user->id;
+
+            $task->can_edit       = $isOwnerRole || $isCreator;
+            $task->can_delete     = $isOwnerRole || $isCreator;
+            $task->can_transition = $isOwnerRole || $isCreator || $isAssignee;
+            $task->can_set_status = $isOwnerRole || $isCreator || $isAssignee;
 
             return $task;
         });

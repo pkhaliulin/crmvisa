@@ -77,29 +77,10 @@
       <div v-for="task in tasks" :key="task.id"
         class="group bg-white rounded-xl border border-gray-200 overflow-hidden hover:border-blue-300 hover:shadow-md transition-all border-l-4"
         :class="taskBorderClass(task)">
-        <!-- Upper part: title + description + actions -->
+        <!-- Upper part: title + description + action buttons -->
         <div class="px-5 pt-4 pb-3">
           <div class="flex items-start gap-3">
-            <!-- Status transition button -->
-            <button @click="transitionTask(task)" class="mt-1 shrink-0" :disabled="!task.can_transition" :title="nextStatusLabel(task)">
-              <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all"
-                :class="statusCircleClass(task)">
-                <svg v-if="task.status === 'closed'" class="w-3 h-3 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/>
-                </svg>
-                <svg v-else-if="task.status === 'verified'" class="w-3 h-3 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/>
-                </svg>
-                <svg v-else-if="task.status === 'completed'" class="w-2.5 h-2.5 text-purple-500" fill="currentColor" viewBox="0 0 24 24">
-                  <circle cx="12" cy="12" r="6"/>
-                </svg>
-                <svg v-else-if="task.status === 'accepted'" class="w-2.5 h-2.5 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
-                  <circle cx="12" cy="12" r="4"/>
-                </svg>
-              </div>
-            </button>
-
-            <!-- Content -->
+            <!-- Content (clickable) -->
             <div class="flex-1 min-w-0 cursor-pointer" @click="task.can_edit ? openEdit(task) : openView(task)">
               <p class="font-semibold text-gray-900 text-base leading-tight truncate"
                 :class="{ 'line-through text-gray-400': isTerminal(task) }">
@@ -110,32 +91,51 @@
               </p>
             </div>
 
-            <!-- Inline actions -->
-            <div class="shrink-0 flex items-center gap-1">
+            <!-- Action buttons: always visible -->
+            <div class="shrink-0 flex items-center gap-1.5">
+              <!-- Next step (transition) -->
+              <button v-if="task.can_transition && !isTerminal(task)"
+                @click="transitionTask(task)"
+                class="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg border transition-all"
+                :class="transitionBtnClass(task)"
+                :title="nextStatusLabel(task)">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/>
+                </svg>
+                {{ nextStatusShort(task) }}
+              </button>
+              <!-- Defer -->
               <button v-if="task.can_set_status && !isTerminal(task) && task.status !== 'deferred' && task.status !== 'completed'"
                 @click="setStatus(task, 'deferred')"
-                class="p-1 text-gray-300 hover:text-yellow-500 opacity-0 group-hover:opacity-100 transition-all"
+                class="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg border border-yellow-200 text-yellow-600 hover:bg-yellow-50 transition-all"
                 :title="t('crm.tasks.defer')">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
+                {{ t('crm.tasks.defer') }}
               </button>
+              <!-- Reopen from deferred -->
               <button v-if="task.can_set_status && task.status === 'deferred'"
                 @click="setStatus(task, 'new')"
-                class="p-1 text-yellow-500 hover:text-blue-500"
+                class="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg border border-blue-200 text-blue-600 hover:bg-blue-50 transition-all"
                 :title="t('crm.tasks.reopen')">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3"/>
                 </svg>
+                {{ t('crm.tasks.reopen') }}
               </button>
+              <!-- Edit (hover) -->
               <button v-if="task.can_edit" @click.stop="openEdit(task)"
-                class="p-1 text-gray-300 hover:text-blue-500 opacity-0 group-hover:opacity-100 transition-all">
+                class="p-1.5 text-gray-300 hover:text-blue-500 opacity-0 group-hover:opacity-100 transition-all"
+                :title="t('crm.tasks.editTask')">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z"/>
                 </svg>
               </button>
+              <!-- Delete (hover) -->
               <button v-if="task.can_delete" @click="deleteTask(task)"
-                class="p-1 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all">
+                class="p-1.5 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
+                :title="t('crm.tasks.deleteConfirm')">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/>
                 </svg>
@@ -232,14 +232,7 @@
             </select>
           </div>
         </div>
-        <div v-if="editingTask" class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs font-medium text-gray-600 mb-1">{{ t('crm.tasks.status') }}</label>
-            <select v-model="form.status" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-              <option v-for="(label, key) in statusLabels" :key="key" :value="key">{{ label }}</option>
-            </select>
-          </div>
-        </div>
+        <!-- Статус управляется кнопками на карточке, не здесь -->
         <div class="flex justify-end gap-2 pt-2">
           <button type="button" @click="showModal = false"
             class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">{{ t('crm.tasks.cancel') }}</button>
@@ -557,6 +550,22 @@ function nextStatusLabel(task) {
   const map = { new: 'accepted', accepted: 'completed', completed: 'verified', verified: 'closed', deferred: 'accepted' };
   const next = map[task.status];
   return next ? `${t('crm.tasks.nextStep')}: ${statusLabels.value[next]}` : '';
+}
+
+function nextStatusShort(task) {
+  const map = { new: 'accepted', accepted: 'completed', completed: 'verified', verified: 'closed', deferred: 'accepted' };
+  const next = map[task.status];
+  return next ? statusLabels.value[next] : '';
+}
+
+function transitionBtnClass(task) {
+  return {
+    new: 'border-blue-200 text-blue-600 hover:bg-blue-50',
+    accepted: 'border-green-200 text-green-600 hover:bg-green-50',
+    completed: 'border-purple-200 text-purple-600 hover:bg-purple-50',
+    verified: 'border-green-300 text-green-700 hover:bg-green-50',
+    deferred: 'border-blue-200 text-blue-600 hover:bg-blue-50',
+  }[task.status] || 'border-gray-200 text-gray-600 hover:bg-gray-50';
 }
 
 // Watchers

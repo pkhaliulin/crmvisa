@@ -65,10 +65,15 @@ class TaskPolicy
     }
 
     /**
-     * Defer/cancel/reopen: owner — любую, manager — только свои (созданные).
+     * Defer/reopen: owner — любую, manager — назначенные на него или созданные им.
+     * Менеджер может отложить задачу руководителя, чтобы тот видел что задача не проигнорирована.
      */
     public function setStatus(User $user, AgencyTask $task): bool
     {
-        return $this->update($user, $task);
+        if (in_array($user->role, ['owner', 'superadmin'])) {
+            return true;
+        }
+
+        return $task->assigned_to === $user->id || $task->created_by === $user->id;
     }
 }
