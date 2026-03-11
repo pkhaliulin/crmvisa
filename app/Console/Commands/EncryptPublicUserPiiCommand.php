@@ -11,7 +11,7 @@ class EncryptPublicUserPiiCommand extends Command
     protected $signature = 'public-users:encrypt-pii {--dry-run : Show what would be encrypted without making changes}';
     protected $description = 'Encrypt existing plaintext PII data in public_users and documents tables';
 
-    private array $publicUserFields = ['passport_number', 'passport_expires_at', 'dob', 'ocr_raw_data'];
+    private array $publicUserFields = ['passport_number', 'passport_expires_at', 'dob', 'ocr_raw_data', 'recovery_email'];
 
     public function handle(): int
     {

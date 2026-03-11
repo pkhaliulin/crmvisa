@@ -52,13 +52,14 @@ class PublicUser extends Model
         'last_login_at',
     ];
 
-    protected $hidden = ['pin_hash', 'api_token'];
+    protected $hidden = ['pin_hash', 'api_token', 'ocr_raw_data'];
 
     protected $casts = [
         'dob'                 => 'encrypted:date',
         'passport_expires_at' => 'encrypted:date',
         'passport_number'     => 'encrypted',
         'ocr_raw_data'        => 'encrypted:array',
+        'recovery_email'      => 'encrypted',
         'last_login_at'       => 'datetime',
         'email_verified_at'   => 'datetime',
         'has_children'        => 'boolean',

@@ -65,7 +65,7 @@ class NotificationService
 
         foreach ($recipients as $recipient) {
             try {
-                $recipient->notifyNow($notification);
+                $recipient->notify($notification);
             } catch (\Throwable $e) {
                 Log::warning('Notification dispatch failed', [
                     'event_type' => $eventType,
@@ -126,7 +126,7 @@ class NotificationService
         }
 
         try {
-            $client->notifyNow($notification);
+            $client->notify($notification);
         } catch (\Throwable $e) {
             Log::warning('Client notification failed', [
                 'client_id' => $client->id ?? null,

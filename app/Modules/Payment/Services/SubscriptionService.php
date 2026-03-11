@@ -40,6 +40,8 @@ class SubscriptionService
                 $price    = $billingPeriod === 'yearly' ? $plan->price_yearly : $plan->price_uzs;
                 $discount = $coupon->calculateDiscount($price);
                 $coupon->incrementUsage();
+            } else {
+                $coupon = null; // Невалидный купон не привязывается к подписке
             }
 
             $durationDays = $billingPeriod === 'yearly' ? 365 : 30;

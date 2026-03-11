@@ -39,7 +39,7 @@ class DocumentController extends Controller
         $this->authorize('update', $case);
 
         $data = $request->validate([
-            'file'  => ['required', 'file', 'max:20480', 'mimes:pdf,jpg,jpeg,png,webp,doc,docx,xls,xlsx,tiff,bmp'], // 20 MB
+            'file'  => ['required', 'file', 'max:20480', 'mimes:pdf,jpg,jpeg,png,webp,doc,docx,xls,xlsx,tiff,bmp', new \App\Rules\SafeFileName], // 20 MB
             'type'  => ['required', 'string', 'max:60'],
             'notes' => ['nullable', 'string'],
         ]);

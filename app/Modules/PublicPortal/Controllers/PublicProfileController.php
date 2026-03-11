@@ -650,7 +650,7 @@ class PublicProfileController extends Controller
         $publicUser = $request->get('_public_user');
 
         $request->validate([
-            'file' => 'required|file|max:20480|mimes:pdf,jpg,jpeg,png,doc,docx',
+            'file' => ['required', 'file', 'max:20480', 'mimes:pdf,jpg,jpeg,png,doc,docx', new \App\Rules\SafeFileName],
         ]);
 
         // Проверяем что кейс принадлежит пользователю
@@ -663,7 +663,7 @@ class PublicProfileController extends Controller
             return ApiResponse::error('Документ уже одобрен, замена невозможна.', null, 422);
         }
 
-        $path = $request->file('file')->store("case-docs/{$case->id}", 'public');
+        $path = $request->file('file')->store("agencies/{$case->agency_id}/cases/{$case->id}", 'documents');
 
         // Создаём запись документа
         $doc = \App\Modules\Document\Models\Document::create([
@@ -830,12 +830,12 @@ class PublicProfileController extends Controller
     public function uploadPassport(Request $request): JsonResponse
     {
         $request->validate([
-            'passport' => 'required|image|max:10240',
+            'passport' => ['required', 'image', 'max:10240', new \App\Rules\SafeFileName],
         ]);
 
         $user = $request->get('_public_user');
 
-        $path = $request->file('passport')->store("public-passports/{$user->id}", 'public');
+        $path = $request->file('passport')->store("passports/{$user->id}", 'documents');
 
         $user->update([
             'ocr_status'   => 'pending',

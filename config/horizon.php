@@ -214,10 +214,31 @@ return [
 
     'environments' => [
         'production' => [
-            'supervisor-1' => [
-                'maxProcesses' => 10,
+            'supervisor-default' => [
+                'connection'      => 'redis',
+                'queue'           => ['default', 'notifications'],
+                'balance'         => 'auto',
+                'maxProcesses'    => 5,
                 'balanceMaxShift' => 1,
                 'balanceCooldown' => 3,
+                'tries'           => 3,
+                'timeout'         => 90,
+            ],
+            'supervisor-billing' => [
+                'connection'   => 'redis',
+                'queue'        => ['billing'],
+                'balance'      => 'simple',
+                'maxProcesses' => 2,
+                'tries'        => 3,
+                'timeout'      => 120,
+            ],
+            'supervisor-scoring' => [
+                'connection'   => 'redis',
+                'queue'        => ['scoring'],
+                'balance'      => 'simple',
+                'maxProcesses' => 2,
+                'tries'        => 2,
+                'timeout'      => 60,
             ],
         ],
 

@@ -32,7 +32,20 @@ if [ "$(date +%u)" = "7" ]; then
   echo "[$(date)] Docs backup created: $DOCUMENTS_BACKUP ($(du -h "$DOCUMENTS_BACKUP" | cut -f1))"
 fi
 
-# Cleanup old backups
+# Upload to S3 (offsite copy)
+if [ -n "${BACKUP_S3_BUCKET:-}" ]; then
+  aws s3 cp "$BACKUP_FILE" "s3://${BACKUP_S3_BUCKET}/db/" --quiet \
+    && echo "[$(date)] DB backup uploaded to S3: s3://${BACKUP_S3_BUCKET}/db/$(basename "$BACKUP_FILE")" \
+    || echo "[$(date)] WARNING: S3 upload failed for DB backup"
+
+  if [ -f "$DOCUMENTS_BACKUP" ]; then
+    aws s3 cp "$DOCUMENTS_BACKUP" "s3://${BACKUP_S3_BUCKET}/docs/" --quiet \
+      && echo "[$(date)] Docs backup uploaded to S3" \
+      || echo "[$(date)] WARNING: S3 upload failed for docs backup"
+  fi
+fi
+
+# Cleanup old local backups
 find "$BACKUP_DIR" -name "db_*.sql.gz.enc" -mtime +$RETENTION_DAYS -delete
 find "$BACKUP_DIR" -name "docs_*.tar.gz.enc" -mtime +90 -delete
 

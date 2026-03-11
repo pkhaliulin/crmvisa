@@ -197,6 +197,10 @@ class DashboardController extends Controller
 
     public function saveGoal(SaveGoalRequest $request): JsonResponse
     {
+        if (! in_array($request->user()->role, ['owner', 'superadmin'])) {
+            abort(403, 'Only owner can manage goals.');
+        }
+
         $agencyId = $request->user()->agency_id;
 
         $goal = AgencyGoal::updateOrCreate(
@@ -280,6 +284,10 @@ class DashboardController extends Controller
 
     public function financialSummary(Request $request): JsonResponse
     {
+        if (! in_array($request->user()->role, ['owner', 'superadmin'])) {
+            abort(403, 'Only owner can view financial data.');
+        }
+
         $agencyId = $request->user()->agency_id;
 
         [$dateFrom, $dateTo, $periodKey] = $this->resolvePeriod($request);

@@ -1574,7 +1574,8 @@
       "settings": "Настройки",
       "users": "Сотрудники",
       "knowledgeNotes": "Заметки",
-      "knowledge": "База знаний"
+      "knowledge": "База знаний",
+      "tasks": "Задачи"
     },
     "roles": {
       "owner": "Владелец",
@@ -3033,6 +3034,85 @@
       "mod_approved": "Одобрено",
       "mod_rejected": "Отклонено",
       "mod_merged": "В глобальной БЗ"
+    },
+    "tasks": {
+      "title": "Задачи",
+      "newTask": "Новая задача",
+      "editTask": "Редактировать задачу",
+      "taskTitle": "Название",
+      "taskTitlePlaceholder": "Что нужно сделать?",
+      "description": "Описание",
+      "descriptionPlaceholder": "Подробности задачи...",
+      "assignee": "Ответственный",
+      "unassigned": "Не назначен",
+      "creator": "Автор",
+      "dueDate": "Срок",
+      "noDueDate": "Без срока",
+      "linkedCase": "Привязка к заявке",
+      "noLinkedCase": "Без привязки",
+      "priority": "Приоритет",
+      "priorities": {
+        "low": "Низкий",
+        "medium": "Средний",
+        "high": "Высокий",
+        "urgent": "Срочный"
+      },
+      "status": "Статус",
+      "statuses": {
+        "new": "Новая",
+        "accepted": "В работе",
+        "completed": "Выполнена",
+        "verified": "Проверена",
+        "closed": "Закрыта",
+        "deferred": "Отложена",
+        "cancelled": "Отменена"
+      },
+      "filters": {
+        "all": "Все",
+        "my": "Мои задачи",
+        "created_by_me": "Я поставил",
+        "today": "На сегодня",
+        "overdue": "Просроченные",
+        "active": "Активные",
+        "awaiting_verification": "Ожидают проверки",
+        "completed": "Завершённые",
+        "recurring": "Повторяющиеся"
+      },
+      "empty": "Нет задач",
+      "emptyActive": "Нет активных задач",
+      "emptyFiltered": "Задач по фильтру не найдено",
+      "created": "Задача создана",
+      "updated": "Задача обновлена",
+      "deleted": "Задача удалена",
+      "completed": "Задача выполнена",
+      "reopened": "Задача возобновлена",
+      "overdue": "Просрочено",
+      "dueToday": "Сегодня",
+      "dueTomorrow": "Завтра",
+      "deleteConfirm": "Удалить эту задачу?",
+      "counters": {
+        "active": "Активных",
+        "myTasks": "Моих",
+        "overdueCount": "Просрочено"
+      },
+      "search": "Поиск задач...",
+      "recurrence": {
+        "none": "Без повторения",
+        "daily": "Каждый день",
+        "weekdays": "По будням",
+        "weekly": "Раз в неделю",
+        "monthly": "Раз в месяц",
+        "mon": "Каждый понедельник",
+        "tue": "Каждый вторник",
+        "wed": "Каждую среду",
+        "thu": "Каждый четверг",
+        "fri": "Каждую пятницу"
+      },
+      "verified": "Задача проверена",
+      "nextStep": "Далее",
+      "defer": "Отложить",
+      "cancel": "Отменить",
+      "reopen": "Возобновить"
     }
   }
 }

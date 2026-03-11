@@ -38,6 +38,7 @@ class ClientProfile extends Model
     ];
 
     protected $casts = [
+        'employer_name'          => 'encrypted',
         'bank_balance_stable'    => 'boolean',
         'has_fixed_deposit'      => 'boolean',
         'has_investments'        => 'boolean',

@@ -185,7 +185,7 @@ class OwnerController extends Controller
 
     public function publicUserShow(string $id): JsonResponse
     {
-        $user = DB::table('public_users')->where('id', $id)->first();
+        $user = \App\Modules\PublicPortal\Models\PublicUser::find($id);
         abort_unless($user, 404);
 
         $leads = DB::table('public_leads')

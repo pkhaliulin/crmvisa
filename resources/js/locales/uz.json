@@ -1574,7 +1574,8 @@
       "settings": "Sozlamalar",
       "users": "Xodimlar",
       "knowledgeNotes": "Eslatmalar",
-      "knowledge": "Bilimlar bazasi"
+      "knowledge": "Bilimlar bazasi",
+      "tasks": "Vazifalar"
     },
     "roles": {
       "owner": "Egasi",
@@ -3033,6 +3034,85 @@
       "mod_approved": "Tasdiqlangan",
       "mod_rejected": "Rad etilgan",
       "mod_merged": "Global BBda"
+    },
+    "tasks": {
+      "title": "Vazifalar",
+      "newTask": "Yangi vazifa",
+      "editTask": "Vazifani tahrirlash",
+      "taskTitle": "Nomi",
+      "taskTitlePlaceholder": "Nima qilish kerak?",
+      "description": "Tavsif",
+      "descriptionPlaceholder": "Vazifa tafsilotlari...",
+      "assignee": "Mas'ul",
+      "unassigned": "Belgilanmagan",
+      "creator": "Muallif",
+      "dueDate": "Muddat",
+      "noDueDate": "Muddatsiz",
+      "linkedCase": "Arizaga bog'lash",
+      "noLinkedCase": "Bog'lanmagan",
+      "priority": "Muhimlik",
+      "priorities": {
+        "low": "Past",
+        "medium": "O'rta",
+        "high": "Yuqori",
+        "urgent": "Shoshilinch"
+      },
+      "status": "Holat",
+      "statuses": {
+        "new": "Yangi",
+        "accepted": "Ishda",
+        "completed": "Bajarildi",
+        "verified": "Tekshirildi",
+        "closed": "Yopildi",
+        "deferred": "Keyinga qoldirildi",
+        "cancelled": "Bekor qilindi"
+      },
+      "filters": {
+        "all": "Hammasi",
+        "my": "Mening vazifalarim",
+        "created_by_me": "Men qo'yganlar",
+        "today": "Bugungi",
+        "overdue": "Muddati o'tgan",
+        "active": "Faol",
+        "awaiting_verification": "Tekshirish kutilmoqda",
+        "completed": "Bajarilganlar",
+        "recurring": "Takrorlanuvchi"
+      },
+      "empty": "Vazifalar yo'q",
+      "emptyActive": "Faol vazifalar yo'q",
+      "emptyFiltered": "Filtr bo'yicha vazifalar topilmadi",
+      "created": "Vazifa yaratildi",
+      "updated": "Vazifa yangilandi",
+      "deleted": "Vazifa o'chirildi",
+      "completed": "Vazifa bajarildi",
+      "reopened": "Vazifa qayta ochildi",
+      "overdue": "Muddati o'tgan",
+      "dueToday": "Bugun",
+      "dueTomorrow": "Ertaga",
+      "deleteConfirm": "Bu vazifani o'chirmoqchimisiz?",
+      "counters": {
+        "active": "Faol",
+        "myTasks": "Mening",
+        "overdueCount": "Muddati o'tgan"
+      },
+      "search": "Vazifalarni qidirish...",
+      "recurrence": {
+        "none": "Takrorlanmaydi",
+        "daily": "Har kuni",
+        "weekdays": "Ish kunlari",
+        "weekly": "Haftada bir",
+        "monthly": "Oyda bir",
+        "mon": "Har dushanba",
+        "tue": "Har seshanba",
+        "wed": "Har chorshanba",
+        "thu": "Har payshanba",
+        "fri": "Har juma"
+      },
+      "verified": "Vazifa tekshirildi",
+      "nextStep": "Keyingi",
+      "defer": "Keyinga qoldirish",
+      "cancel": "Bekor qilish",
+      "reopen": "Qayta ochish"
     }
   }
 }

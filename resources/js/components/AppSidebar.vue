@@ -51,7 +51,7 @@ import { useI18n } from 'vue-i18n';
 import { useAuthStore } from '@/stores/auth';
 import SidebarLink from './SidebarLink.vue';
 import {
-  HomeIcon, ViewColumnsIcon, ClipboardDocumentListIcon,
+  HomeIcon, ViewColumnsIcon, ClipboardDocumentListIcon, ClipboardDocumentCheckIcon,
   UsersIcon, UserGroupIcon, ArrowRightOnRectangleIcon,
   ChartBarIcon, BriefcaseIcon, ExclamationTriangleIcon, Cog6ToothIcon, CreditCardIcon, GlobeAltIcon,
   MegaphoneIcon, BookOpenIcon
@@ -73,6 +73,7 @@ const navItems = computed(() => {
     { to: { name: 'kanban' },    icon: ViewColumnsIcon,             label: t('crm.nav.kanban') },
     { to: { name: 'cases' },     icon: ClipboardDocumentListIcon,   label: t('crm.nav.cases') },
     { to: { name: 'clients' },   icon: UsersIcon,                   label: t('crm.nav.clients') },
+    { to: { name: 'tasks' },     icon: ClipboardDocumentCheckIcon,  label: t('crm.nav.tasks') },
     { to: { name: 'overdue' },   icon: ExclamationTriangleIcon,     label: t('crm.nav.overdue') },
   ];
 

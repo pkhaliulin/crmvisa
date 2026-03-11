@@ -22,3 +22,4 @@ Schedule::call(function () {
 Schedule::job(new \App\Modules\Case\Jobs\SendSlaWarningsJob)->everyFifteenMinutes();
 
 Schedule::command('app:verify-backup')->dailyAt('04:00');
+Schedule::command('tasks:generate-recurring')->dailyAt('06:00');

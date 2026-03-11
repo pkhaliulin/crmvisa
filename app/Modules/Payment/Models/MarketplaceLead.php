@@ -27,8 +27,11 @@ class MarketplaceLead extends BaseModel
     ];
 
     protected $casts = [
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
+        'client_name'  => 'encrypted',
+        'client_phone' => 'encrypted',
+        'client_email' => 'encrypted',
+        'created_at'   => 'datetime',
+        'updated_at'   => 'datetime',
     ];
 
     public function agency(): BelongsTo

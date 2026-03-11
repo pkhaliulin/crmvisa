@@ -17,6 +17,7 @@ use App\Modules\Payment\Controllers\BillingController;
 use App\Modules\Payment\Controllers\MarketplaceController;
 use App\Modules\Scoring\Controllers\ScoringController;
 use App\Modules\Service\Controllers\ServiceCatalogController;
+use App\Modules\Task\Controllers\TaskController;
 use App\Modules\User\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -87,6 +88,12 @@ Route::middleware(['auth:api', 'role:owner,manager,superadmin', 'plan.active'])-
     });
     Route::get('engine/rules',                        [CaseEngineController::class, 'rules']);
     Route::get('engine/rules/{countryCode}/{visaType}',[CaseEngineController::class, 'ruleDetail']);
+
+    // Задачи агентства
+    Route::get('tasks/counters',           [TaskController::class, 'counters']);
+    Route::post('tasks/{id}/transition',   [TaskController::class, 'transition']);
+    Route::post('tasks/{id}/set-status',   [TaskController::class, 'setStatus']);
+    Route::apiResource('tasks', TaskController::class);
 
     // Скоринг
     Route::get('scoring/countries',                        [ScoringController::class, 'countries']);

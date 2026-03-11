@@ -24,8 +24,9 @@ class PublicUserFamilyMember extends Model
     ];
 
     protected $casts = [
-        'dob'                => 'date',
-        'passport_expires_at' => 'date',
+        'dob'                => 'encrypted:date',
+        'passport_expires_at' => 'encrypted:date',
+        'passport_number'     => 'encrypted',
     ];
 
     public function publicUser(): BelongsTo

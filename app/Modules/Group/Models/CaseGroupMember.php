@@ -26,6 +26,7 @@ class CaseGroupMember extends BaseModel
 
     protected $casts = [
         'phone'           => 'encrypted',
+        'name'            => 'encrypted',
         'payment_covered' => 'boolean',
     ];
 
