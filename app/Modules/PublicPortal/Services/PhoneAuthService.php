@@ -187,7 +187,10 @@ class PhoneAuthService
      */
     private function getStubPin(): ?string
     {
-        // TODO: убрать после прохождения модерации шаблона Eskiz
+        if (app()->environment('production')) {
+            return null;
+        }
+
         return config('services.sms_stub.pin');
     }
 

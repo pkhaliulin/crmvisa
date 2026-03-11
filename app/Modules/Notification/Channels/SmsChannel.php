@@ -2,14 +2,16 @@
 
 namespace App\Modules\Notification\Channels;
 
+use App\Modules\PublicPortal\Services\SmsService;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\Log;
 
 class SmsChannel
 {
+    public function __construct(private SmsService $sms) {}
+
     /**
-     * SMS channel stub.
-     * SMS всегда уходят от зарегистрированного sender ID (определяется в notification).
+     * Отправить SMS-уведомление через Eskiz.uz.
      * Клиенты получают SMS от VisaBor, агентства — от VisaCRM.
      */
     public function send(mixed $notifiable, Notification $notification): void
@@ -24,16 +26,18 @@ class SmsChannel
         }
 
         $message = $notification->toSms($notifiable);
-        $sender  = $message['sender'] ?? config('notification.brands.visabor.sms_sender', 'VisaBor');
+        $text    = $message['text'] ?? (is_string($message) ? $message : '');
 
-        // STUB: log instead of sending
-        Log::channel('single')->info('SMS Notification (stub)', [
-            'to'      => $phone,
-            'sender'  => $sender,
-            'message' => $message['text'] ?? $message,
-        ]);
+        if (empty($text)) {
+            return;
+        }
 
-        // TODO: Integrate Eskiz.uz
-        // $this->eskiz->send($phone, $message['text'], $sender);
+        $sent = $this->sms->send($phone, $text);
+
+        if (!$sent) {
+            Log::channel('auth')->warning('[SmsChannel] Failed to send SMS', [
+                'phone' => mb_substr($phone, 0, 4) . '***' . mb_substr($phone, -4),
+            ]);
+        }
     }
 }
