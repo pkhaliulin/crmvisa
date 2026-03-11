@@ -185,12 +185,12 @@ class PhoneAuthService
      * Stub PIN работает только в local/testing.
      * В production игнорируется даже если задан в .env.
      */
+    /**
+     * Stub PIN: используется пока шаблоны Eskiz не пройдут модерацию.
+     * После одобрения — убрать SMS_STUB_PIN из .env на сервере.
+     */
     private function getStubPin(): ?string
     {
-        if (app()->environment('production')) {
-            return null;
-        }
-
         return config('services.sms_stub.pin');
     }
 
