@@ -1393,6 +1393,7 @@ async function finishWizard() {
         const { data } = await publicPortalApi.updateProfile(wizardPayload);
         publicAuth.user = data.data.user;
         localStorage.setItem('public_user', JSON.stringify(data.data.user));
+        await publicAuth.fetchMe();
     } catch (e) {
         /* silent */
     } finally {
@@ -1428,6 +1429,11 @@ async function save() {
             publicAuth.user = updatedUser;
             try { localStorage.setItem('public_user', JSON.stringify(updatedUser)); } catch {}
         }
+        if (data?.data?.profile_percent !== undefined) {
+            try { localStorage.setItem('public_profile_percent', JSON.stringify(data.data.profile_percent)); } catch {}
+        }
+        // Обновить серверный процент
+        await publicAuth.fetchMe();
         saveMsg.value = t('profile.profileSaved');
         setTimeout(() => { saveMsg.value = ''; }, 3000);
     } catch (e) {
