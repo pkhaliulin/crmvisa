@@ -22,7 +22,7 @@ class EncryptAllPiiCommand extends Command
         ],
         'marketplace_leads' => [
             'fields'    => ['client_name', 'client_phone', 'client_email'],
-            'softDelete' => true,
+            'softDelete' => false,
         ],
         'client_profiles' => [
             'fields'    => ['employer_name'],
