@@ -59,12 +59,17 @@
       </label>
 
       <!-- Фильтр по менеджеру (только для owner) -->
-      <select v-if="isOwner" v-model="filters.assigned_to"
-        class="border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm outline-none focus:border-blue-400 text-gray-700 bg-white">
-        <option value="">{{ t('crm.kanbanPage.allManagers') }}</option>
-        <option value="unassigned" class="font-medium text-amber-700">{{ t('crm.kanbanPage.noManager') }}</option>
-        <option v-for="m in managers" :key="m.id" :value="m.id">{{ m.name }}</option>
-      </select>
+      <SearchSelect
+        v-if="isOwner"
+        v-model="filters.assigned_to"
+        :items="managerOptions"
+        :placeholder="t('crm.kanbanPage.allManagers')"
+        allow-all
+        :all-label="t('crm.kanbanPage.allManagers')"
+        compact
+        show-initials
+        :no-results-text="t('crm.kanbanPage.noResults')"
+      />
 
       <!-- Сброс фильтров -->
       <button v-if="hasActiveFilters" @click="resetFilters"
@@ -136,6 +141,7 @@ import { useAuthStore } from '@/stores/auth';
 import { useCountries } from '@/composables/useCountries';
 import KanbanColumn from '@/components/KanbanColumn.vue';
 import CountrySelect from '@/components/CountrySelect.vue';
+import SearchSelect from '@/components/SearchSelect.vue';
 import AppButton from '@/components/AppButton.vue';
 import AppModal from '@/components/AppModal.vue';
 import AppSelect from '@/components/AppSelect.vue';
@@ -158,17 +164,6 @@ const STAGES = computed(() => STAGE_KEYS.map(key => ({
   result: t(`crm.kanbanStageInfo.${key}_done`),
 })));
 
-const ALLOWED_TRANSITIONS = {
-  lead:          ['qualification'],
-  qualification: ['lead', 'documents'],
-  documents:     ['qualification', 'doc_review'],
-  doc_review:    ['documents', 'translation', 'ready'],
-  translation:   ['doc_review', 'ready'],
-  ready:         ['translation', 'review'],
-  review:        ['ready', 'result'],
-  result:        [],
-};
-
 const casesStore = useCasesStore();
 const router     = useRouter();
 const auth       = useAuthStore();
@@ -176,6 +171,8 @@ const isOwner    = computed(() => auth.isOwner);
 const { countries: availableCountries } = useCountries();
 const moveError  = ref('');
 
+// Единый источник правды — правила переходов приходят с бэкенда
+const ALLOWED_TRANSITIONS = computed(() => casesStore.allowedTransitions);
 provide('allowedTransitions', ALLOWED_TRANSITIONS);
 
 const searchQuery = ref('');
@@ -186,6 +183,16 @@ const filters = reactive({
 });
 const managers = ref([]);
 provide('kanbanManagers', managers);
+
+const managerOptions = computed(() => {
+  const opts = [
+    { value: 'unassigned', label: t('crm.kanbanPage.noManager'), badge: String(unassignedCount.value || ''), badgeClass: 'bg-amber-100 text-amber-700' },
+  ];
+  for (const m of managers.value) {
+    opts.push({ value: m.id, label: m.name, avatar: m.avatar_url ?? null });
+  }
+  return opts;
+});
 
 const hasActiveFilters = computed(() =>
   filters.country_code || filters.overdue_only || filters.assigned_to
@@ -285,10 +292,28 @@ onMounted(() => {
   loadManagers();
 });
 
+function findCaseById(caseId) {
+  if (!casesStore.board) return null;
+  for (const col of casesStore.board) {
+    const found = col.cases.find(c => c.id === caseId);
+    if (found) return found;
+  }
+  return null;
+}
+
 function handleMove({ caseId, stage, fromStage }) {
   // Определяем текущий stage карточки
   const currentStage = fromStage || findCaseStage(caseId);
   if (!currentStage) return;
+
+  // Проверяем назначен ли менеджер — без него нельзя двигать заявку
+  const caseItem = findCaseById(caseId);
+  if (caseItem && !caseItem.assignee) {
+    moveError.value = t('crm.kanbanPage.noManagerError');
+    setTimeout(() => { moveError.value = ''; }, 5000);
+    casesStore.fetchKanban();
+    return;
+  }
 
   // Если stage указан и он недопустим — показать ошибку и обновить канбан
   const allowed = ALLOWED_TRANSITIONS[currentStage] || [];
@@ -324,7 +349,7 @@ async function confirmMove() {
     moveModal.show = false;
     moveError.value = '';
   } catch (err) {
-    const msg = err.response?.data?.message || err.response?.data?.errors?.stage?.[0] || t('crm.kanbanPage.moveError');
+    const msg = err.response?.data?.errors?.assigned_to?.[0] || err.response?.data?.errors?.stage?.[0] || err.response?.data?.message || t('crm.kanbanPage.moveError');
     moveError.value = msg;
     setTimeout(() => { moveError.value = ''; }, 4000);
     moveModal.show = false;

@@ -497,13 +497,9 @@
                 <!-- Страна -->
                 <div class="mb-3">
                     <label class="block text-sm font-medium text-[#0A1F44] mb-1.5">{{ t('agencyDetail.selectCountry') }}</label>
-                    <select v-model="confirmCountry"
-                        class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-[#0A1F44] bg-white focus:outline-none focus:ring-2 focus:ring-[#1BA97F]/30 focus:border-[#1BA97F]">
-                        <option value="" disabled>{{ t('agencyDetail.chooseCountry') }}</option>
-                        <option v-for="code in agency.countries" :key="code" :value="code">
-                            {{ codeToFlag(code) }}  {{ countryName(code) }}
-                        </option>
-                    </select>
+                    <SearchSelect v-model="confirmCountry"
+                        :items="confirmCountryItems"
+                        :placeholder="t('agencyDetail.chooseCountry')" />
                 </div>
 
                 <!-- Тип визы -->
@@ -569,6 +565,7 @@ import { publicPortalApi } from '@/api/public';
 import { countryName as getCountryName, codeToFlag } from '@/utils/countries';
 import i18n from '@/i18n';
 import { formatPhone } from '@/utils/format';
+import SearchSelect from '@/components/SearchSelect.vue';
 
 const { t } = useI18n();
 const route  = useRoute();
@@ -599,6 +596,13 @@ const reviewTabs = computed(() => [
     { value: 'positive', label: t('agencies.positive') },
     { value: 'negative', label: t('agencies.negative') },
 ]);
+
+const confirmCountryItems = computed(() =>
+    (agency.value?.countries ?? []).map(code => ({
+        value: code,
+        label: `${codeToFlag(code)}  ${getCountryName(code) ?? code}`,
+    }))
+);
 
 function countryName(code) { return getCountryName(code) ?? code; }
 

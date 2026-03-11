@@ -78,14 +78,13 @@
           <!-- Тип визы + статус -->
           <div class="grid grid-cols-2 gap-4">
             <div v-if="!editingSetting">
-              <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.visaTypeSlug') }}</label>
-              <select v-model="formData.visa_type" required
-                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]">
-                <option value="" disabled>{{ $t('countryDetail.selectVisaType') }}</option>
-                <option v-for="vt in availableVisaTypes" :key="vt.slug" :value="vt.slug">
-                  {{ vt.name_ru }} ({{ vt.slug }})
-                </option>
-              </select>
+              <SearchSelect
+                v-model="formData.visa_type"
+                :items="visaTypeItems"
+                :label="$t('countryDetail.visaTypeSlug')"
+                :placeholder="$t('countryDetail.selectVisaType')"
+                required
+              />
             </div>
             <div v-else>
               <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.visaTypeSlug') }}</label>
@@ -173,15 +172,13 @@
             </div>
             <div class="grid grid-cols-2 gap-3 mt-3">
               <div>
-                <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.appointmentPattern') }}</label>
-                <select v-model="formData.appointment_pattern"
-                  class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]">
-                  <option value="">---</option>
-                  <option value="fixed_schedule">{{ $t('countryDetail.patternFixed') }}</option>
-                  <option value="random_wave">{{ $t('countryDetail.patternRandom') }}</option>
-                  <option value="daily_slots">{{ $t('countryDetail.patternDaily') }}</option>
-                  <option value="no_appointment">{{ $t('countryDetail.patternNoAppt') }}</option>
-                </select>
+                <SearchSelect
+                  v-model="formData.appointment_pattern"
+                  :items="appointmentPatternItems"
+                  :label="$t('countryDetail.appointmentPattern')"
+                  allow-all
+                  all-label="---"
+                />
                 <p class="text-[10px] text-gray-400 mt-0.5">{{ $t('countryDetail.appointmentPatternHint') }}</p>
               </div>
               <div>
@@ -281,6 +278,7 @@ import { ref, reactive, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { ownerCountriesApi } from '@/api/countries';
 import api from '@/api/index';
+import SearchSelect from '@/components/SearchSelect.vue';
 
 const { t } = useI18n();
 const props = defineProps({ countryCode: String, visaSettings: Array });
@@ -293,6 +291,17 @@ const showModal      = ref(false);
 const editingSetting = ref(null);
 const deleteTarget   = ref(null);
 const allVisaTypes   = ref([]);
+
+const visaTypeItems = computed(() =>
+  availableVisaTypes.value.map(vt => ({ value: vt.slug, label: `${vt.name_ru} (${vt.slug})` }))
+);
+
+const appointmentPatternItems = computed(() => [
+  { value: 'fixed_schedule', label: t('countryDetail.patternFixed') },
+  { value: 'random_wave', label: t('countryDetail.patternRandom') },
+  { value: 'daily_slots', label: t('countryDetail.patternDaily') },
+  { value: 'no_appointment', label: t('countryDetail.patternNoAppt') },
+]);
 
 const availableVisaTypes = computed(() => {
   const usedSlugs = settings.value.map(s => s.visa_type);

@@ -111,21 +111,14 @@
                         />
                         <div>
                             <label class="block text-xs font-medium text-gray-500 mb-1">{{ $t('portal.visaTypeLabel') }}</label>
-                            <select v-model="form.visa_type"
-                                class="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-[#0A1F44] focus:outline-none focus:border-[#1BA97F] transition-colors bg-white">
-                                <option value="">{{ form.country_code ? $t('portal.selectType') : $t('selectCountryFirst') }}</option>
-                                <option v-for="vt in availableVisaTypes" :key="vt" :value="vt">
-                                    {{ $t(VISA_TYPE_LABELS[vt] || vt) }}
-                                </option>
-                            </select>
+                            <SearchSelect v-model="form.visa_type"
+                                :items="visaTypeSelectItems"
+                                :placeholder="form.country_code ? $t('portal.selectType') : $t('selectCountryFirst')" />
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-gray-500 mb-1">{{ $t('group.paymentStrategy') }}</label>
-                            <select v-model="form.payment_strategy"
-                                class="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-[#0A1F44] focus:outline-none focus:border-[#1BA97F] transition-colors bg-white">
-                                <option value="individual">{{ $t('group.paymentIndividual') }}</option>
-                                <option value="initiator_pays">{{ $t('group.paymentInitiator') }}</option>
-                            </select>
+                            <SearchSelect v-model="form.payment_strategy"
+                                :items="paymentStrategyItems" />
                         </div>
                         <div v-if="createError" class="text-xs text-red-500">{{ createError }}</div>
                         <button @click="createGroup"
@@ -153,6 +146,7 @@ import { useI18n } from 'vue-i18n';
 import { publicPortalApi } from '@/api/public';
 import { codeToFlag } from '@/utils/countries';
 import CountrySelect from '@/components/CountrySelect.vue';
+import SearchSelect from '@/components/SearchSelect.vue';
 
 const VISA_TYPE_LABELS = {
     tourist: 'portal.tourist',
@@ -189,6 +183,18 @@ const servedCountriesForSelect = computed(() => servedCountries.value.map(c => (
     name: countryName(c.country_code),
     flag: codeToFlag(c.country_code),
 })));
+
+const visaTypeSelectItems = computed(() => {
+    return availableVisaTypes.value.map(vt => ({
+        value: vt,
+        label: t(VISA_TYPE_LABELS[vt] || vt),
+    }));
+});
+
+const paymentStrategyItems = computed(() => [
+    { value: 'individual',     label: t('group.paymentIndividual') },
+    { value: 'initiator_pays', label: t('group.paymentInitiator') },
+]);
 
 const availableVisaTypes = computed(() => {
     if (!form.value.country_code) return [];

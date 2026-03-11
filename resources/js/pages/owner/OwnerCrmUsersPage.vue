@@ -7,20 +7,11 @@
         :placeholder="t('owner.crmUsers.searchPlaceholder')"
         class="border border-gray-200 rounded-xl px-4 py-2 text-sm outline-none focus:border-[#1BA97F] w-72" />
 
-      <select v-model="filterRole" @change="load"
-        class="border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-[#1BA97F]">
-        <option value="">{{ t('owner.crmUsers.allRoles') }}</option>
-        <option value="owner">{{ t('owner.crmUsers.owners') }}</option>
-        <option value="manager">{{ t('owner.crmUsers.managers') }}</option>
-        <option value="partner">{{ t('owner.crmUsers.partners') }}</option>
-      </select>
+      <SearchSelect v-model="filterRole" @change="load" compact
+        :items="filterRoleOptions" allow-all :all-label="t('owner.crmUsers.allRoles')" />
 
-      <select v-model="filterStatus" @change="load"
-        class="border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-[#1BA97F]">
-        <option value="">{{ t('owner.crmUsers.allStatuses') }}</option>
-        <option value="active">{{ t('owner.crmUsers.activeStatus') }}</option>
-        <option value="inactive">{{ t('owner.crmUsers.blockedStatus') }}</option>
-      </select>
+      <SearchSelect v-model="filterStatus" @change="load" compact
+        :items="filterStatusOptions" allow-all :all-label="t('owner.crmUsers.allStatuses')" />
 
       <button @click="openCreate"
         class="ml-auto px-4 py-2 bg-[#0A1F44] text-white text-sm font-semibold rounded-xl
@@ -154,10 +145,7 @@
           </div>
           <div>
             <label class="text-xs text-gray-500 mb-1 block">{{ t('owner.crmUsers.roleLabel') }} *</label>
-            <select v-model="createForm.role"
-              class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]">
-              <option v-for="r in roleOptions" :key="r.value" :value="r.value">{{ r.label }}</option>
-            </select>
+            <SearchSelect v-model="createForm.role" :items="roleOptions" />
           </div>
           <div v-if="createForm.role !== 'superadmin'">
             <label class="text-xs text-gray-500 mb-1 block">{{ t('owner.crmUsers.agencyId') }}</label>
@@ -219,6 +207,7 @@ import { ref, reactive, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import api from '@/api/index';
 import { titleCase } from '@/utils/format';
+import SearchSelect from '@/components/SearchSelect.vue';
 
 const { t } = useI18n();
 
@@ -245,6 +234,17 @@ const resetTarget  = ref(null);
 const newPassword  = ref('');
 const resetting    = ref(false);
 const resetError   = ref('');
+
+const filterRoleOptions = computed(() => [
+  { value: 'owner', label: t('owner.crmUsers.owners') },
+  { value: 'manager', label: t('owner.crmUsers.managers') },
+  { value: 'partner', label: t('owner.crmUsers.partners') },
+]);
+
+const filterStatusOptions = computed(() => [
+  { value: 'active', label: t('owner.crmUsers.activeStatus') },
+  { value: 'inactive', label: t('owner.crmUsers.blockedStatus') },
+]);
 
 const roleOptions = computed(() => [
   { value: 'manager', label: t('owner.crmUsers.manager') },

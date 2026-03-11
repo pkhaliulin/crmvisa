@@ -86,22 +86,28 @@
           :all-label="t('crm.services.allCountries')"
           compact
         />
-        <select v-model="filter.visa_type" class="border border-gray-200 rounded-lg px-3 py-1.5 text-sm bg-white focus:outline-none focus:border-blue-400">
-          <option value="">{{ t('crm.services.allVisaTypes') }}</option>
-          <option v-for="vt in uniqueVisaTypes" :key="vt" :value="vt">{{ visaTypeName(vt) }}</option>
-        </select>
-        <select v-model="filter.status" class="border border-gray-200 rounded-lg px-3 py-1.5 text-sm bg-white focus:outline-none focus:border-blue-400">
-          <option value="">{{ t('crm.services.allStatuses') }}</option>
-          <option value="active">{{ t('crm.services.activeOnly') }}</option>
-          <option value="inactive">{{ t('crm.services.inactiveOnly') }}</option>
-        </select>
-        <select v-model="filter.sort" class="border border-gray-200 rounded-lg px-3 py-1.5 text-sm bg-white focus:outline-none focus:border-blue-400">
-          <option value="name">{{ t('crm.services.sortName') }}</option>
-          <option value="price_asc">{{ t('crm.services.sortPriceAsc') }}</option>
-          <option value="price_desc">{{ t('crm.services.sortPriceDesc') }}</option>
-          <option value="days_asc">{{ t('crm.services.sortDaysAsc') }}</option>
-          <option value="days_desc">{{ t('crm.services.sortDaysDesc') }}</option>
-        </select>
+        <SearchSelect
+          v-model="filter.visa_type"
+          :items="visaTypeFilterItems"
+          :placeholder="t('crm.services.allVisaTypes')"
+          allow-all
+          :all-label="t('crm.services.allVisaTypes')"
+          compact
+        />
+        <SearchSelect
+          v-model="filter.status"
+          :items="statusFilterItems"
+          :placeholder="t('crm.services.allStatuses')"
+          allow-all
+          :all-label="t('crm.services.allStatuses')"
+          compact
+        />
+        <SearchSelect
+          v-model="filter.sort"
+          :items="sortFilterItems"
+          :placeholder="t('crm.services.sortName')"
+          compact
+        />
         <button v-if="hasActiveFilters" @click="resetFilters"
           class="text-xs text-red-500 hover:text-red-700 px-2 py-1 border border-red-200 rounded-lg hover:bg-red-50 transition-colors">
           {{ t('crm.services.reset') }}
@@ -232,13 +238,13 @@
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('crm.services.visaTypeLabel') }}</label>
-              <select v-model="modalForm.visa_type" :disabled="!modalForm.country_code"
+              <SearchSelect
+                v-model="modalForm.visa_type"
+                :items="modalVisaTypeItems"
+                :disabled="!modalForm.country_code"
+                :placeholder="modalForm.country_code ? t('crm.services.selectDefault') : t('crm.services.selectCountryFirst')"
                 @change="onVisaTypeChange"
-                :class="['w-full border rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400 disabled:bg-gray-50 disabled:text-gray-400',
-                  fieldError('visa_type') ? 'border-red-300 bg-red-50' : 'border-gray-200']">
-                <option value="">{{ modalForm.country_code ? t('crm.services.selectDefault') : t('crm.services.selectCountryFirst') }}</option>
-                <option v-for="slug in selectedCountryVisaTypes" :key="slug" :value="slug">{{ visaTypeName(slug) }}</option>
-              </select>
+              />
               <p v-if="fieldError('visa_type')" class="text-xs text-red-500 mt-0.5">{{ fieldError('visa_type') }}</p>
             </div>
             <div>
@@ -363,6 +369,7 @@ import { countriesApi } from '@/api/countries';
 import { codeToFlag } from '@/utils/countries';
 import { currentLocale } from '@/i18n';
 import CountrySelect from '@/components/CountrySelect.vue';
+import SearchSelect from '@/components/SearchSelect.vue';
 
 const { t } = useI18n();
 
@@ -440,6 +447,24 @@ const uniqueCountries = computed(() => uniqueCountryCodes.value.map(cc => ({
   code: cc, name: countryName(cc), flag: codeToFlag(cc),
 })));
 const uniqueVisaTypes = computed(() => [...new Set(packages.value.map(p => p.visa_type).filter(Boolean))].sort());
+
+const visaTypeFilterItems = computed(() =>
+  uniqueVisaTypes.value.map(vt => ({ value: vt, label: visaTypeName(vt) }))
+);
+const statusFilterItems = computed(() => [
+  { value: 'active', label: t('crm.services.activeOnly') },
+  { value: 'inactive', label: t('crm.services.inactiveOnly') },
+]);
+const sortFilterItems = computed(() => [
+  { value: 'name', label: t('crm.services.sortName') },
+  { value: 'price_asc', label: t('crm.services.sortPriceAsc') },
+  { value: 'price_desc', label: t('crm.services.sortPriceDesc') },
+  { value: 'days_asc', label: t('crm.services.sortDaysAsc') },
+  { value: 'days_desc', label: t('crm.services.sortDaysDesc') },
+]);
+const modalVisaTypeItems = computed(() =>
+  selectedCountryVisaTypes.value.map(slug => ({ value: slug, label: visaTypeName(slug) }))
+);
 
 const hasActiveFilters = computed(() => filter.country || filter.visa_type || filter.status);
 

@@ -52,32 +52,11 @@
                 <input v-model="search" type="text" :placeholder="t('common.search')"
                     class="w-full rounded-xl border border-gray-200 pl-9 pr-3 py-2 text-sm outline-none focus:border-[#1BA97F] transition-colors" />
             </div>
-            <select v-model="filterRegime"
-                class="rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-[#1BA97F] transition-colors bg-white">
-                <option value="">{{ t('visaRegime.label') }}</option>
-                <option value="visa_required">{{ t('visaRegime.visa_required') }}</option>
-                <option value="evisa">{{ t('visaRegime.evisa') }}</option>
-                <option value="visa_on_arrival">{{ t('visaRegime.visa_on_arrival') }}</option>
-                <option value="visa_free">{{ t('visaRegime.visa_free') }}</option>
-            </select>
-            <select v-model="filterVisaType"
-                class="rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-[#1BA97F] transition-colors bg-white">
-                <option value="">{{ t('countriesList.visaTypeAll') }}</option>
-                <option value="tourist">{{ t('countriesList.visaTypeTourist') }}</option>
-                <option value="work">{{ t('countriesList.visaTypeWork') }}</option>
-                <option value="study">{{ t('countriesList.visaTypeStudy') }}</option>
-                <option value="business">{{ t('countriesList.visaTypeBusiness') }}</option>
-            </select>
-            <select v-model="sortBy"
-                class="rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-[#1BA97F] transition-colors bg-white">
-                <option value="name">{{ t('countriesList.sortName') }}</option>
-                <option value="score_desc">{{ t('countriesList.sortScoreDesc') }}</option>
-                <option value="score_asc">{{ t('countriesList.sortScoreAsc') }}</option>
-                <option value="fee_asc">{{ t('countriesList.sortFeeAsc') }}</option>
-                <option value="fee_desc">{{ t('countriesList.sortFeeDesc') }}</option>
-                <option value="processing">{{ t('countriesList.sortProcessing') }}</option>
-                <option value="flight_asc">{{ t('countriesList.sortFlightAsc') }}</option>
-            </select>
+            <SearchSelect v-model="filterRegime" :items="regimeItems" compact
+                allow-all :all-label="t('visaRegime.label')" />
+            <SearchSelect v-model="filterVisaType" :items="visaTypeItems" compact
+                allow-all :all-label="t('countriesList.visaTypeAll')" />
+            <SearchSelect v-model="sortBy" :items="sortItems" compact />
         </div>
 
         <!-- Count -->
@@ -239,6 +218,7 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { publicPortalApi } from '@/api/public';
 import { codeToFlag } from '@/utils/countries';
+import SearchSelect from '@/components/SearchSelect.vue';
 import i18n from '@/i18n';
 
 const { t } = useI18n();
@@ -265,6 +245,30 @@ const continentOptions = computed(() => [
     { value: 'South America', label: t('continent.South America') },
     { value: 'Africa',    label: t('continent.Africa') },
     { value: 'Oceania',   label: t('continent.Oceania') },
+]);
+
+const regimeItems = computed(() => [
+    { value: 'visa_required', label: t('visaRegime.visa_required') },
+    { value: 'evisa',         label: t('visaRegime.evisa') },
+    { value: 'visa_on_arrival', label: t('visaRegime.visa_on_arrival') },
+    { value: 'visa_free',     label: t('visaRegime.visa_free') },
+]);
+
+const visaTypeItems = computed(() => [
+    { value: 'tourist',  label: t('countriesList.visaTypeTourist') },
+    { value: 'work',     label: t('countriesList.visaTypeWork') },
+    { value: 'study',    label: t('countriesList.visaTypeStudy') },
+    { value: 'business', label: t('countriesList.visaTypeBusiness') },
+]);
+
+const sortItems = computed(() => [
+    { value: 'name',       label: t('countriesList.sortName') },
+    { value: 'score_desc', label: t('countriesList.sortScoreDesc') },
+    { value: 'score_asc',  label: t('countriesList.sortScoreAsc') },
+    { value: 'fee_asc',    label: t('countriesList.sortFeeAsc') },
+    { value: 'fee_desc',   label: t('countriesList.sortFeeDesc') },
+    { value: 'processing', label: t('countriesList.sortProcessing') },
+    { value: 'flight_asc', label: t('countriesList.sortFlightAsc') },
 ]);
 
 function localName(c) {

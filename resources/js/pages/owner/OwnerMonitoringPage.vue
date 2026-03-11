@@ -3,14 +3,8 @@
     <!-- Period filter -->
     <div class="flex items-center justify-between">
       <h2 class="text-lg font-semibold text-gray-800">{{ t('monitoring.title') }}</h2>
-      <select v-model="period" @change="loadAll"
-              class="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#1BA97F]/30">
-        <option value="1h">{{ t('monitoring.period1h') }}</option>
-        <option value="6h">{{ t('monitoring.period6h') }}</option>
-        <option value="24h">{{ t('monitoring.period24h') }}</option>
-        <option value="7d">{{ t('monitoring.period7d') }}</option>
-        <option value="30d">{{ t('monitoring.period30d') }}</option>
-      </select>
+      <SearchSelect v-model="period" @change="loadAll" compact
+        :items="periodOptions" />
     </div>
 
     <!-- Alerts Panel -->
@@ -319,11 +313,20 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { monitoringApi } from '@/api/monitoring';
+import SearchSelect from '@/components/SearchSelect.vue';
 
 const { t } = useI18n();
 
 const period = ref('24h');
 const loading = ref(true);
+
+const periodOptions = computed(() => [
+  { value: '1h', label: t('monitoring.period1h') },
+  { value: '6h', label: t('monitoring.period6h') },
+  { value: '24h', label: t('monitoring.period24h') },
+  { value: '7d', label: t('monitoring.period7d') },
+  { value: '30d', label: t('monitoring.period30d') },
+]);
 
 const health = ref({});
 const alerts = ref({ count: 0, level: 'ok', items: [] });

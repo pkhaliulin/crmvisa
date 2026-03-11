@@ -35,11 +35,9 @@
       </button>
 
       <div class="ml-auto flex items-center gap-2">
-        <select v-if="isOwner && users.length" v-model="filterAssignee"
-          class="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white">
-          <option value="">{{ t('crm.tasks.assignee') }}</option>
-          <option v-for="u in users" :key="u.id" :value="u.id">{{ u.name }}</option>
-        </select>
+        <SearchSelect v-if="isOwner && users.length" v-model="filterAssignee"
+          :items="userItems" allow-all :all-label="t('crm.tasks.assignee')"
+          :placeholder="t('crm.tasks.assignee')" compact />
         <input v-model="searchQuery"
           :placeholder="t('crm.tasks.search')"
           class="text-xs border border-gray-200 rounded-lg px-3 py-1.5 w-48 focus:outline-none focus:border-blue-300" />
@@ -56,9 +54,8 @@
           :placeholder="t('crm.tasks.taskTitlePlaceholder')"
           class="flex-1 text-sm text-gray-700 bg-transparent outline-none"
           @keydown.enter="quickAdd" />
-        <select v-model="quickPriority" class="text-xs border-0 bg-transparent text-gray-500 outline-none cursor-pointer">
-          <option v-for="(label, key) in priorityLabels" :key="key" :value="key">{{ label }}</option>
-        </select>
+        <SearchSelect v-model="quickPriority" :items="priorityItems" compact
+          :placeholder="t('crm.tasks.priority')" />
         <button v-if="quickTitle.trim()" @click="quickAdd"
           class="text-xs px-3 py-1 bg-[#0A1F44] text-white rounded-lg hover:bg-[#0e2a5c] transition-colors">
           Enter
@@ -205,9 +202,8 @@
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-xs font-medium text-gray-600 mb-1">{{ t('crm.tasks.priority') }}</label>
-            <select v-model="form.priority" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-              <option v-for="(label, key) in priorityLabels" :key="key" :value="key">{{ label }}</option>
-            </select>
+            <SearchSelect v-model="form.priority" :items="priorityItems"
+              :placeholder="t('crm.tasks.priority')" />
           </div>
           <div>
             <label class="block text-xs font-medium text-gray-600 mb-1">{{ t('crm.tasks.dueDate') }}</label>
@@ -219,17 +215,15 @@
           <!-- Ответственный — только для owner/superadmin -->
           <div v-if="isOwner">
             <label class="block text-xs font-medium text-gray-600 mb-1">{{ t('crm.tasks.assignee') }}</label>
-            <select v-model="form.assigned_to" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-              <option value="">{{ t('crm.tasks.unassigned') }}</option>
-              <option v-for="u in users" :key="u.id" :value="u.id">{{ u.name }}</option>
-            </select>
+            <SearchSelect v-model="form.assigned_to" :items="userItems"
+              allow-all :all-label="t('crm.tasks.unassigned')"
+              :placeholder="t('crm.tasks.assignee')" />
           </div>
           <div>
             <label class="block text-xs font-medium text-gray-600 mb-1">{{ t('crm.tasks.recurrence.none').split(' ')[0] }}</label>
-            <select v-model="form.recurrence_rule" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-              <option value="">{{ t('crm.tasks.recurrence.none') }}</option>
-              <option v-for="(label, key) in recurrenceLabels" :key="key" :value="key">{{ label }}</option>
-            </select>
+            <SearchSelect v-model="form.recurrence_rule" :items="recurrenceItems"
+              allow-all :all-label="t('crm.tasks.recurrence.none')"
+              :placeholder="t('crm.tasks.recurrence.none').split(' ')[0]" />
           </div>
         </div>
         <!-- Статус управляется кнопками на карточке, не здесь -->
@@ -298,6 +292,7 @@ import { tasksApi } from '@/api/tasks';
 import { usersApi } from '@/api/users';
 import AppButton from '@/components/AppButton.vue';
 import AppModal from '@/components/AppModal.vue';
+import SearchSelect from '@/components/SearchSelect.vue';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -352,6 +347,18 @@ const recurrenceLabels = computed(() => ({
   thu: t('crm.tasks.recurrence.thu'),
   fri: t('crm.tasks.recurrence.fri'),
 }));
+
+const priorityItems = computed(() =>
+  Object.entries(priorityLabels.value).map(([value, label]) => ({ value, label }))
+);
+
+const recurrenceItems = computed(() =>
+  Object.entries(recurrenceLabels.value).map(([value, label]) => ({ value, label }))
+);
+
+const userItems = computed(() =>
+  users.value.map(u => ({ value: u.id, label: u.name }))
+);
 
 const filterOptions = computed(() => [
   { key: 'active', label: t('crm.tasks.filters.active') },

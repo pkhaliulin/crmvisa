@@ -12,13 +12,11 @@
               class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]" />
           </div>
           <div>
-            <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.currency') }}</label>
-            <select v-model="form.min_income_currency"
-              class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]">
-              <option value="USD">USD</option>
-              <option value="UZS">UZS</option>
-              <option value="EUR">EUR</option>
-            </select>
+            <SearchSelect
+              v-model="form.min_income_currency"
+              :items="currencyItems"
+              :label="$t('countryDetail.currency')"
+            />
           </div>
         </div>
 
@@ -30,13 +28,11 @@
               class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]" />
           </div>
           <div>
-            <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.currency') }}</label>
-            <select v-model="form.min_balance_currency"
-              class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]">
-              <option value="USD">USD</option>
-              <option value="UZS">UZS</option>
-              <option value="EUR">EUR</option>
-            </select>
+            <SearchSelect
+              v-model="form.min_balance_currency"
+              :items="currencyItems"
+              :label="$t('countryDetail.currency')"
+            />
           </div>
         </div>
 
@@ -74,12 +70,19 @@
 import { ref, reactive, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { ownerCountriesApi } from '@/api/countries';
+import SearchSelect from '@/components/SearchSelect.vue';
 
 const { t } = useI18n();
 const props = defineProps({ country: Object });
 const emit  = defineEmits(['updated']);
 
 const saving = ref(false);
+
+const currencyItems = [
+  { value: 'USD', label: 'USD' },
+  { value: 'UZS', label: 'UZS' },
+  { value: 'EUR', label: 'EUR' },
+];
 
 const form = reactive({
   min_monthly_income_usd: null,

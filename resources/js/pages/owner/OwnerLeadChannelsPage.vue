@@ -38,18 +38,11 @@
             class="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:border-blue-400" />
         </div>
 
-        <select v-model="filterCategory"
-          class="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-blue-400">
-          <option value="">{{ t('owner.leadChannels.allCategories') }}</option>
-          <option v-for="cat in categoryOptions" :key="cat.key" :value="cat.key">{{ cat.label }}</option>
-        </select>
+        <SearchSelect v-model="filterCategory" compact
+          :items="categoryFilterItems" allow-all :all-label="t('owner.leadChannels.allCategories')" />
 
-        <select v-model="filterActive"
-          class="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-blue-400">
-          <option value="">{{ t('owner.leadChannels.allStatuses') }}</option>
-          <option value="1">{{ t('owner.leadChannels.activeStatus') }}</option>
-          <option value="0">{{ t('owner.leadChannels.disabledStatus') }}</option>
-        </select>
+        <SearchSelect v-model="filterActive" compact
+          :items="filterActiveOptions" allow-all :all-label="t('owner.leadChannels.allStatuses')" />
       </div>
     </div>
 
@@ -151,29 +144,16 @@
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('owner.leadChannels.category') }}</label>
-              <select v-model="createForm.category"
-                class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white outline-none focus:border-blue-400">
-                <option v-for="cat in categoryOptions" :key="cat.key" :value="cat.key">{{ cat.label }}</option>
-              </select>
+              <SearchSelect v-model="createForm.category" :items="categoryFilterItems" />
             </div>
             <div class="grid grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('owner.leadChannels.complexity') }}</label>
-                <select v-model="createForm.complexity"
-                  class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white outline-none focus:border-blue-400">
-                  <option value="easy">{{ t('owner.leadChannels.complexities.easy') }}</option>
-                  <option value="medium">{{ t('owner.leadChannels.complexities.medium') }}</option>
-                  <option value="hard">{{ t('owner.leadChannels.complexities.hard') }}</option>
-                </select>
+                <SearchSelect v-model="createForm.complexity" :items="complexityItems" />
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('owner.leadChannels.minPlan') }}</label>
-                <select v-model="createForm.min_plan"
-                  class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white outline-none focus:border-blue-400">
-                  <option value="starter">Starter</option>
-                  <option value="pro">Pro</option>
-                  <option value="enterprise">Enterprise</option>
-                </select>
+                <SearchSelect v-model="createForm.min_plan" :items="minPlanItems" />
               </div>
             </div>
             <div>
@@ -228,6 +208,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import api from '@/api/index';
+import SearchSelect from '@/components/SearchSelect.vue';
 
 const { t } = useI18n();
 
@@ -252,6 +233,25 @@ const createForm = ref({
   icon: '',
   short_description: '',
 });
+
+const filterActiveOptions = computed(() => [
+  { value: '1', label: t('owner.leadChannels.activeStatus') },
+  { value: '0', label: t('owner.leadChannels.disabledStatus') },
+]);
+
+const complexityItems = computed(() => [
+  { value: 'easy', label: t('owner.leadChannels.complexities.easy') },
+  { value: 'medium', label: t('owner.leadChannels.complexities.medium') },
+  { value: 'hard', label: t('owner.leadChannels.complexities.hard') },
+]);
+
+const minPlanItems = [
+  { value: 'starter', label: 'Starter' },
+  { value: 'pro', label: 'Pro' },
+  { value: 'enterprise', label: 'Enterprise' },
+];
+
+const categoryFilterItems = computed(() => categoryOptions.value.map(c => ({ value: c.key, label: c.label })));
 
 const categoryOptions = computed(() => [
   { key: 'messenger', label: t('owner.leadChannels.categories.messenger') },

@@ -24,12 +24,12 @@
           </div>
           <div class="flex items-center gap-2">
             <span class="text-xs text-gray-500">{{ t('crm.leadgen.analytics.period') }}:</span>
-            <select v-model="period" @change="fetchData"
-              class="border border-gray-200 rounded-lg px-3 py-1.5 text-sm bg-white">
-              <option value="7">{{ t('crm.leadgen.analytics.days7') }}</option>
-              <option value="30">{{ t('crm.leadgen.analytics.days30') }}</option>
-              <option value="90">{{ t('crm.leadgen.analytics.days90') }}</option>
-            </select>
+            <SearchSelect
+              v-model="period"
+              :items="periodItems"
+              @change="fetchData"
+              compact
+            />
           </div>
         </div>
       </div>
@@ -118,12 +118,19 @@ import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import api from '@/api/index';
+import SearchSelect from '@/components/SearchSelect.vue';
 
 const { t } = useI18n();
 const router = useRouter();
 
 const loading = ref(true);
 const period = ref('30');
+
+const periodItems = computed(() => [
+  { value: '7', label: t('crm.leadgen.analytics.days7') },
+  { value: '30', label: t('crm.leadgen.analytics.days30') },
+  { value: '90', label: t('crm.leadgen.analytics.days90') },
+]);
 const data = ref({ total_leads: 0, by_source: [], by_channel: [], by_stage: [], daily_trend: [] });
 
 const maxSourceCount = computed(() => Math.max(...(data.value.by_source || []).map(s => s.count), 1));

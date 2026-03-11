@@ -33,6 +33,16 @@
    - Публичный эндпоинт без `auth.public` → нужен `SET app.is_public_user = 'true'`
    - Запрос к мультитенантной таблице → проверить что tenant_id или is_public_user/is_superadmin установлен
 
+## UI-компоненты (обязательно)
+
+- **ЗАПРЕЩЕНО использовать нативный `<select>` HTML-элемент.** Везде на платформе использовать только:
+  - `SearchSelect` (`@/components/SearchSelect.vue`) — универсальный searchable dropdown с поиском, клавиатурной навигацией, зелёной рамкой при выборе, крестиком сброса
+  - `CountrySelect` (`@/components/CountrySelect.vue`) — для выбора стран (с флагами)
+  - `AppSelect` (`@/components/AppSelect.vue`) — обёртка над SearchSelect для простых форм
+- Props: `compact` для фильтров в тулбарах, `allow-all` + `all-label` для опции "Все", `disabled`, `show-initials`
+- Items формат: `[{ value, label, avatar?, badge?, badgeClass? }]`
+- Списки опций с `t()` делать через `computed()`
+
 ## Типичные баги этого проекта (не повторять)
 
 - **RLS блокирует данные** — эндпоинт возвращает пустой массив вместо ошибки. ВСЕГДА проверять что данные реально возвращаются.

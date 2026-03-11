@@ -85,12 +85,15 @@
                 <span v-if="field.required" class="text-red-400 text-xs">*</span>
               </label>
               <div class="flex gap-2">
-                <select v-model="formValues[field.key]" @change="saveField(field.key)"
-                  :class="['flex-1 text-sm border rounded-lg px-3 py-2 outline-none transition-colors',
-                    formValues[field.key] ? 'border-green-200 bg-green-50/30' : 'border-gray-200 focus:border-blue-400']">
-                  <option value="">--</option>
-                  <option v-for="(label, val) in (field.options || {})" :key="val" :value="val">{{ label }}</option>
-                </select>
+                <div class="flex-1">
+                  <SearchSelect
+                    v-model="formValues[field.key]"
+                    :items="fieldSelectItems(field)"
+                    @change="saveField(field.key)"
+                    allow-all
+                    all-label="--"
+                  />
+                </div>
                 <button @click="copyField(field.key)"
                   :class="['shrink-0 w-8 h-8 flex items-center justify-center rounded-lg border transition-all duration-200',
                     copiedKey === field.key
@@ -154,6 +157,7 @@
 import { ref, computed, onMounted, reactive, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { caseEngineApi } from '../../api/caseEngine'
+import SearchSelect from '../SearchSelect.vue'
 
 const { t } = useI18n()
 
@@ -174,6 +178,11 @@ const copiedKey = ref(null)
 const copyAllDone = ref(false)
 
 const currentStepData = computed(() => steps.value.find(s => s.step === currentStep.value))
+
+function fieldSelectItems(field) {
+  const opts = field.options || {}
+  return Object.entries(opts).map(([val, label]) => ({ value: val, label }))
+}
 
 let saveTimer = null
 

@@ -253,15 +253,13 @@
                                 :placeholder="$t('profile.selectCountry')"
                             />
                             <div>
-                                <label class="block text-xs font-medium text-gray-500 mb-1">{{ $t('portal.visaTypeLabel') }}</label>
-                                <select v-model="newCaseForm.visa_type"
+                                <SearchSelect
+                                    v-model="newCaseForm.visa_type"
+                                    :items="visaTypeItems"
+                                    :label="$t('portal.visaTypeLabel')"
+                                    :placeholder="newCaseForm.country_code ? $t('portal.selectType') : $t('portal.selectCountryFirst')"
                                     :disabled="!newCaseForm.country_code"
-                                    class="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-[#0A1F44] focus:outline-none focus:border-[#1BA97F] transition-colors bg-white disabled:bg-gray-50 disabled:text-gray-400">
-                                    <option value="">{{ newCaseForm.country_code ? $t('portal.selectType') : $t('portal.selectCountryFirst') }}</option>
-                                    <option v-for="vt in availableVisaTypes" :key="vt" :value="vt">
-                                        {{ VISA_TYPE_LABELS[vt] || vt }}
-                                    </option>
-                                </select>
+                                />
                             </div>
                             <div v-if="newCaseError" class="text-xs text-red-500">{{ newCaseError }}</div>
                             <button @click="createDraftCase"
@@ -293,6 +291,7 @@ import { usePublicAuthStore } from '@/stores/publicAuth';
 import { publicPortalApi } from '@/api/public';
 import { formatPhone } from '@/utils/format';
 import CountrySelect from '@/components/CountrySelect.vue';
+import SearchSelect from '@/components/SearchSelect.vue';
 import { codeToFlag } from '@/utils/countries';
 
 const { t } = useI18n();
@@ -317,6 +316,10 @@ const VISA_TYPE_LABELS = {
     medical: t('portal.medical') || 'Медицинская',
     family: t('portal.family') || 'Семейная',
 };
+
+const visaTypeItems = computed(() =>
+  availableVisaTypes.value.map(vt => ({ value: vt, label: VISA_TYPE_LABELS[vt] || vt }))
+);
 
 // Типы виз доступные для выбранной страны
 const availableVisaTypes = computed(() => {

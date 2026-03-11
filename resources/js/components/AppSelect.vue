@@ -1,28 +1,46 @@
 <template>
   <div class="flex flex-col gap-1">
-    <label v-if="label" :for="id" class="text-sm font-medium text-gray-700">{{ label }}</label>
-    <select
-      :id="id"
-      :value="modelValue"
-      @change="$emit('update:modelValue', $event.target.value)"
-      :class="[
-        'w-full border rounded-lg px-3 py-2 text-sm outline-none transition-colors bg-white',
-        'border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500',
-      ]"
-    >
-      <option v-if="placeholder" value="">{{ placeholder }}</option>
-      <option v-for="opt in options" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-    </select>
+    <label v-if="label" class="text-sm font-medium text-gray-700">
+      {{ label }} <span v-if="required" class="text-red-500">*</span>
+    </label>
+    <SearchSelect
+      :modelValue="modelValue"
+      @update:modelValue="$emit('update:modelValue', $event)"
+      @change="$emit('change', $event)"
+      :items="normalizedOptions"
+      :placeholder="placeholder"
+      :required="required"
+      :compact="compact"
+      :allow-all="!!placeholder"
+      :all-label="placeholder"
+      :disabled="disabled"
+      :no-results-text="noResultsText"
+    />
   </div>
 </template>
 
 <script setup>
-defineProps({
-  modelValue:  { default: '' },
-  options:     { type: Array, default: () => [] },
-  label:       { type: String, default: '' },
-  placeholder: { type: String, default: '' },
-  id:          { type: String, default: () => `sel-${Math.random().toString(36).slice(2)}` },
+import { computed } from 'vue';
+import SearchSelect from './SearchSelect.vue';
+
+const props = defineProps({
+  modelValue:    { default: '' },
+  options:       { type: Array, default: () => [] },
+  label:         { type: String, default: '' },
+  placeholder:   { type: String, default: '' },
+  required:      { type: Boolean, default: false },
+  compact:       { type: Boolean, default: false },
+  disabled:      { type: Boolean, default: false },
+  noResultsText: { type: String, default: '' },
+  id:            { type: String, default: '' },
 });
-defineEmits(['update:modelValue']);
+
+defineEmits(['update:modelValue', 'change']);
+
+const normalizedOptions = computed(() =>
+  props.options.map(opt => ({
+    value: opt.value ?? opt,
+    label: opt.label ?? opt.text ?? String(opt.value ?? opt),
+  }))
+);
 </script>

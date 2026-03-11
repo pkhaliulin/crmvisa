@@ -3,11 +3,8 @@
 
         <!-- Toolbar -->
         <div class="flex items-center gap-3">
-            <select v-model="filterCat" @change="load"
-                class="border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-[#1BA97F]">
-                <option value="">{{ t('owner.documents.allCategories') }}</option>
-                <option v-for="c in categories" :key="c.value" :value="c.value">{{ c.label }}</option>
-            </select>
+            <SearchSelect v-model="filterCat" @change="load" compact
+                :items="categories" allow-all :all-label="t('owner.documents.allCategories')" />
             <span class="text-sm text-gray-400">{{ t('owner.documents.templatesCount', { count: docs.length }) }}</span>
             <button @click="openCreate"
                 class="ml-auto flex items-center gap-2 bg-[#1BA97F] text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-[#169B72] transition-colors">
@@ -130,20 +127,13 @@
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="block text-xs font-medium text-gray-600 mb-1">{{ t('owner.documents.categoryLabel') }} <span class="text-red-500">*</span></label>
-                            <select v-model="form.category" required
-                                class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F]">
-                                <option value="">{{ t('owner.documents.select') }}</option>
-                                <option v-for="c in categories" :key="c.value" :value="c.value">{{ c.label }}</option>
-                                <option value="other">{{ t('owner.documents.other') }}</option>
-                            </select>
+                            <SearchSelect v-model="form.category" required
+                                :items="formCategoryOptions" allow-all :all-label="t('owner.documents.select')" />
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-gray-600 mb-1">{{ t('owner.documents.typeLabel') }} <span class="text-red-500">*</span></label>
-                            <select v-model="form.type" required
-                                class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F]">
-                                <option value="upload">{{ t('owner.documents.fileUpload') }}</option>
-                                <option value="checkbox">{{ t('owner.documents.checkbox') }}</option>
-                            </select>
+                            <SearchSelect v-model="form.type" required
+                                :items="typeOptions" />
                         </div>
                     </div>
 
@@ -230,6 +220,7 @@
 import { ref, reactive, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import api from '@/api/index';
+import SearchSelect from '@/components/SearchSelect.vue';
 
 const { t } = useI18n();
 
@@ -268,6 +259,16 @@ const categories = computed(() => [
     { value: 'employment',   label: t('owner.documents.catEmployment') },
     { value: 'confirmation', label: t('owner.documents.catConfirmation') },
     { value: 'other',        label: t('owner.documents.catOther') },
+]);
+
+const formCategoryOptions = computed(() => [
+    ...categories.value,
+    { value: 'other', label: t('owner.documents.other') },
+]);
+
+const typeOptions = computed(() => [
+    { value: 'upload', label: t('owner.documents.fileUpload') },
+    { value: 'checkbox', label: t('owner.documents.checkbox') },
 ]);
 
 const catLabelsMap = computed(() => Object.fromEntries(categories.value.map(c => [c.value, c.label])));

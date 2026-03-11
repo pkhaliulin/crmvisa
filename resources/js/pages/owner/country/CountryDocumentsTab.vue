@@ -63,13 +63,12 @@
               </div>
 
               <div class="flex items-center gap-2 flex-shrink-0">
-                <select :value="doc.requirement_level"
-                  @change="updateLevel(doc.id, $event.target.value)"
-                  class="text-xs border border-gray-200 rounded px-1.5 py-1 outline-none focus:border-blue-400">
-                  <option value="required">{{ $t('countryDetail.levelRequired') }}</option>
-                  <option value="recommended">{{ $t('countryDetail.levelRecommended') }}</option>
-                  <option value="confirmation_only">{{ $t('countryDetail.levelConfirmation') }}</option>
-                </select>
+                <SearchSelect
+                  :modelValue="doc.requirement_level"
+                  @update:modelValue="updateLevel(doc.id, $event)"
+                  :items="requirementLevelItems"
+                  compact
+                />
                 <button @click="removeDoc(doc.id)"
                   class="text-red-400 hover:text-red-600 p-1 rounded hover:bg-red-50 transition-colors">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -110,25 +109,21 @@
 
           <!-- Шаблон документа -->
           <div>
-            <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.docTemplate') }}</label>
-            <select v-model="form.document_template_id"
-              class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]">
-              <option value="">{{ $t('countryDetail.selectDoc') }}</option>
-              <option v-for="t in filteredTemplates" :key="t.id" :value="t.id">
-                {{ t.name }} ({{ t.category }})
-              </option>
-            </select>
+            <SearchSelect
+              v-model="form.document_template_id"
+              :items="templateItems"
+              :label="$t('countryDetail.docTemplate')"
+              :placeholder="$t('countryDetail.selectDoc')"
+            />
           </div>
 
           <!-- Уровень -->
           <div>
-            <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.requirementLevel') }}</label>
-            <select v-model="form.requirement_level"
-              class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]">
-              <option value="required">{{ $t('countryDetail.levelRequired') }}</option>
-              <option value="recommended">{{ $t('countryDetail.levelRecommended') }}</option>
-              <option value="confirmation_only">{{ $t('countryDetail.levelConfirmation') }}</option>
-            </select>
+            <SearchSelect
+              v-model="form.requirement_level"
+              :items="requirementLevelItems"
+              :label="$t('countryDetail.requirementLevel')"
+            />
           </div>
 
           <!-- Примечание -->
@@ -176,6 +171,7 @@
 import { ref, reactive, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { ownerCountriesApi } from '@/api/countries';
+import SearchSelect from '@/components/SearchSelect.vue';
 
 const { t } = useI18n();
 const props = defineProps({ countryCode: String });
@@ -195,6 +191,16 @@ const form = reactive({
   requirement_level: 'required',
   notes: '',
 });
+
+const requirementLevelItems = computed(() => [
+  { value: 'required', label: t('countryDetail.levelRequired') },
+  { value: 'recommended', label: t('countryDetail.levelRecommended') },
+  { value: 'confirmation_only', label: t('countryDetail.levelConfirmation') },
+]);
+
+const templateItems = computed(() =>
+  filteredTemplates.value.map(tpl => ({ value: tpl.id, label: `${tpl.name} (${tpl.category})` }))
+);
 
 function onAllTypesToggle() {
   if (form.allTypes) {

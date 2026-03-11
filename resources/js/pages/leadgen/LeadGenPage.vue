@@ -130,18 +130,20 @@
             <input v-model="search" :placeholder="t('crm.leadgen.catalog.searchPlaceholder')"
               class="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:border-blue-400" />
           </div>
-          <select v-model="filterCategory"
-            class="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-blue-400">
-            <option value="">{{ t('crm.leadgen.catalog.filterByCategory') }}</option>
-            <option v-for="cat in categoryList" :key="cat.key" :value="cat.key">{{ cat.label }}</option>
-          </select>
-          <select v-model="filterComplexity"
-            class="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-blue-400">
-            <option value="">{{ t('crm.leadgen.catalog.filterByComplexity') }}</option>
-            <option value="easy">{{ t('crm.leadgen.catalog.complexity.easy') }}</option>
-            <option value="medium">{{ t('crm.leadgen.catalog.complexity.medium') }}</option>
-            <option value="hard">{{ t('crm.leadgen.catalog.complexity.hard') }}</option>
-          </select>
+          <SearchSelect
+            v-model="filterCategory"
+            :items="categorySelectItems"
+            allow-all
+            :all-label="t('crm.leadgen.catalog.filterByCategory')"
+            compact
+          />
+          <SearchSelect
+            v-model="filterComplexity"
+            :items="complexityItems"
+            allow-all
+            :all-label="t('crm.leadgen.catalog.filterByComplexity')"
+            compact
+          />
           <label class="flex items-center gap-2 cursor-pointer select-none">
             <input type="checkbox" v-model="onlyAvailable" class="w-4 h-4 text-blue-600 rounded border-gray-300" />
             <span class="text-sm text-gray-700">{{ t('crm.leadgen.catalog.onlyAvailable') }}</span>
@@ -235,6 +237,7 @@ import { useRouter } from 'vue-router';
 import api from '@/api/index';
 import { currentLocale } from '@/i18n';
 import { formatDate } from '@/utils/format';
+import SearchSelect from '@/components/SearchSelect.vue';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -276,6 +279,16 @@ const categoryList = computed(() => [
   { key: 'content_seo', label: t('crm.leadgen.catalog.categories.content_seo') },
   { key: 'partnership', label: t('crm.leadgen.catalog.categories.partnership') },
   { key: 'api_automation', label: t('crm.leadgen.catalog.categories.api_automation') },
+]);
+
+const categorySelectItems = computed(() =>
+  categoryList.value.map(cat => ({ value: cat.key, label: cat.label }))
+);
+
+const complexityItems = computed(() => [
+  { value: 'easy', label: t('crm.leadgen.catalog.complexity.easy') },
+  { value: 'medium', label: t('crm.leadgen.catalog.complexity.medium') },
+  { value: 'hard', label: t('crm.leadgen.catalog.complexity.hard') },
 ]);
 
 const filteredChannels = computed(() => {

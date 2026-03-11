@@ -2096,7 +2096,9 @@
       "overdueOnly": "Kechikkanlar",
       "allManagers": "Barcha menejerlar",
       "noManager": "Menejersiz",
-      "resetFilters": "Tozalash"
+      "resetFilters": "Tozalash",
+      "noResults": "Topilmadi",
+      "noManagerError": "Avval menejerni tayinlang. Ijrochisiz arizani keyingi bosqichga ko'chirib bo'lmaydi."
     },
     "kanbanStageInfo": {
       "lead_desc": "Yangi ariza. 1 soat ichida: mijozga qo'ng'iroq qiling, sayohat maqsadi, muddatlari, guruh tarkibini aniqlang.",

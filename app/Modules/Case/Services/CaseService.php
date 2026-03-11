@@ -184,6 +184,13 @@ class CaseService extends BaseService
     {
         $previousStage = $case->stage;
 
+        // Валидация: назначен ли менеджер
+        if (! $case->assigned_to) {
+            throw ValidationException::withMessages([
+                'assigned_to' => ['Невозможно переместить заявку без назначенного менеджера. Сначала назначьте ответственного.'],
+            ]);
+        }
+
         // Валидация: разрешён ли переход
         $allowed = self::ALLOWED_TRANSITIONS[$previousStage] ?? [];
         if (! in_array($newStage, $allowed)) {

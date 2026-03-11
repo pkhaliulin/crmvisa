@@ -102,15 +102,12 @@
             <div class="space-y-3">
               <div>
                 <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.procedureType') }}</label>
-                <select v-model="form.submission_procedure"
-                  class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]">
-                  <option value="">{{ $t('common.notSpecified') }}</option>
-                  <option value="visa_center_local">{{ $t('countryDetail.procedureVcLocal') }}</option>
-                  <option value="embassy_abroad">{{ $t('countryDetail.procedureEmbassyAbroad') }}</option>
-                  <option value="visa_center_and_embassy">{{ $t('countryDetail.procedureVcAndEmbassy') }}</option>
-                  <option value="mail_submission">{{ $t('countryDetail.procedureMail') }}</option>
-                  <option value="online_only">{{ $t('countryDetail.procedureOnline') }}</option>
-                </select>
+                <SearchSelect
+                  v-model="form.submission_procedure"
+                  :items="procedureItems"
+                  allow-all
+                  :all-label="$t('common.notSpecified')"
+                />
                 <p class="text-[10px] text-gray-400 mt-0.5">{{ $t('countryDetail.procedureTypeHint') }}</p>
               </div>
             </div>
@@ -171,15 +168,24 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { ownerCountriesApi } from '@/api/countries';
+import SearchSelect from '@/components/SearchSelect.vue';
 
 const { t } = useI18n();
 const props = defineProps({ country: Object });
 const emit  = defineEmits(['updated']);
 
 const saving = ref(false);
+
+const procedureItems = computed(() => [
+  { value: 'visa_center_local', label: t('countryDetail.procedureVcLocal') },
+  { value: 'embassy_abroad', label: t('countryDetail.procedureEmbassyAbroad') },
+  { value: 'visa_center_and_embassy', label: t('countryDetail.procedureVcAndEmbassy') },
+  { value: 'mail_submission', label: t('countryDetail.procedureMail') },
+  { value: 'online_only', label: t('countryDetail.procedureOnline') },
+]);
 
 const form = reactive({
   has_embassy: false,

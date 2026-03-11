@@ -107,12 +107,11 @@
                 class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F]"/>
             </div>
             <div v-if="user.role !== 'owner'">
-              <label class="block text-xs font-medium text-gray-600 mb-1">{{ t('crm.userDetail.role') }}</label>
-              <select v-model="editForm.role"
-                class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F]">
-                <option value="manager">{{ t('crm.userDetail.manager') }}</option>
-                <option value="partner">{{ t('crm.userDetail.partner') }}</option>
-              </select>
+              <SearchSelect
+                v-model="editForm.role"
+                :items="roleItems"
+                :label="t('crm.userDetail.role')"
+              />
             </div>
           </div>
           <div class="flex items-center gap-3">
@@ -189,6 +188,7 @@ import AppButton from '@/components/AppButton.vue';
 import AppBadge from '@/components/AppBadge.vue';
 import AppModal from '@/components/AppModal.vue';
 import { formatPhone } from '@/utils/format';
+import SearchSelect from '@/components/SearchSelect.vue';
 
 const { t } = useI18n();
 
@@ -218,6 +218,11 @@ const roleLabels = computed(() => ({
   superadmin: t('crm.roles.superadmin'),
 }));
 const roleColors = { owner: 'purple', manager: 'blue', partner: 'gray', superadmin: 'red' };
+
+const roleItems = computed(() => [
+  { value: 'manager', label: t('crm.userDetail.manager') },
+  { value: 'partner', label: t('crm.userDetail.partner') },
+]);
 const roleLabel  = (r) => roleLabels.value[r] ?? r;
 const roleColor  = (r) => roleColors[r] ?? 'gray';
 

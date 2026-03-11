@@ -776,15 +776,9 @@
                                 <div class="grid grid-cols-2 gap-3">
                                     <div>
                                         <label class="text-xs text-gray-500 mb-1 block">{{ $t('family.relationship') }} *</label>
-                                        <select v-model="newFamilyForm.relationship"
-                                            class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] bg-white transition-colors">
-                                            <option value="">--</option>
-                                            <option value="spouse">{{ $t('family.rel.spouse') }}</option>
-                                            <option value="child">{{ $t('family.rel.child') }}</option>
-                                            <option value="parent">{{ $t('family.rel.parent') }}</option>
-                                            <option value="sibling">{{ $t('family.rel.sibling') }}</option>
-                                            <option value="other">{{ $t('family.rel.other') }}</option>
-                                        </select>
+                                        <SearchSelect v-model="newFamilyForm.relationship"
+                                            :items="relationshipItems"
+                                            placeholder="--" />
                                     </div>
                                     <div>
                                         <label class="text-xs text-gray-500 mb-1 block">{{ $t('family.dob') }} <span class="text-red-500">*</span></label>
@@ -796,12 +790,9 @@
                                 <div class="grid grid-cols-2 gap-3">
                                     <div>
                                         <label class="text-xs text-gray-500 mb-1 block">{{ $t('family.gender') }} <span class="text-red-500">*</span></label>
-                                        <select v-model="newFamilyForm.gender"
-                                            class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] bg-white transition-colors">
-                                            <option value="">--</option>
-                                            <option value="M">{{ $t('family.male') }}</option>
-                                            <option value="F">{{ $t('family.female') }}</option>
-                                        </select>
+                                        <SearchSelect v-model="newFamilyForm.gender"
+                                            :items="genderItems"
+                                            placeholder="--" />
                                     </div>
                                     <div class="relative">
                                         <label class="text-xs text-gray-500 mb-1 block">{{ $t('family.citizenship') }} <span class="text-red-500">*</span></label>
@@ -1175,6 +1166,7 @@ import { codeToFlag, ALL_COUNTRIES } from '@/utils/countries';
 import AgencyCard from '@/components/AgencyCard.vue';
 import i18n from '@/i18n';
 import { formatPhone } from '@/utils/format';
+import SearchSelect from '@/components/SearchSelect.vue';
 import { usePublicAuthStore } from '@/stores/publicAuth';
 
 const { t } = useI18n();
@@ -1349,6 +1341,19 @@ const newFamilyForm = ref({
     first_name: '', last_name: '', relationship: '', dob: '', gender: '', citizenship: '',
     passport_number: '', passport_expires_at: '',
 });
+
+const relationshipItems = computed(() => [
+    { value: 'spouse',  label: t('family.rel.spouse') },
+    { value: 'child',   label: t('family.rel.child') },
+    { value: 'parent',  label: t('family.rel.parent') },
+    { value: 'sibling', label: t('family.rel.sibling') },
+    { value: 'other',   label: t('family.rel.other') },
+]);
+
+const genderItems = computed(() => [
+    { value: 'M', label: t('family.male') },
+    { value: 'F', label: t('family.female') },
+]);
 
 // --- Citizenship search ---
 const citizenshipSearch = ref('');

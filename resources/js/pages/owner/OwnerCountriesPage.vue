@@ -25,35 +25,20 @@
             </div>
 
             <!-- Фильтр по континенту -->
-            <select v-model="filterContinent"
-                class="border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]">
-                <option value="">{{ $t('countriesPage.allContinents') }}</option>
-                <option v-for="c in continentOptions" :key="c.value" :value="c.value">{{ c.label }}</option>
-            </select>
+            <SearchSelect v-model="filterContinent" compact
+                :items="continentOptions" allow-all :all-label="$t('countriesPage.allContinents')" />
 
             <!-- Фильтр по визовому режиму -->
-            <select v-model="filterRegime"
-                class="border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]">
-                <option value="">{{ $t('countriesPage.allRegimes') }}</option>
-                <option v-for="r in regimeFilterOptions" :key="r.value" :value="r.value">{{ r.label }}</option>
-            </select>
+            <SearchSelect v-model="filterRegime" compact
+                :items="regimeFilterOptions" allow-all :all-label="$t('countriesPage.allRegimes')" />
 
             <!-- Фильтр по статусу -->
-            <select v-model="filterStatus"
-                class="border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]">
-                <option value="">{{ $t('countriesPage.allStatuses') }}</option>
-                <option value="active">{{ $t('countryDetail.active') }}</option>
-                <option value="inactive">{{ $t('countryDetail.inactive') }}</option>
-            </select>
+            <SearchSelect v-model="filterStatus" compact
+                :items="filterStatusOptions" allow-all :all-label="$t('countriesPage.allStatuses')" />
 
             <!-- Сортировка -->
-            <select v-model="sortBy"
-                class="border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]">
-                <option value="name">{{ $t('countriesPage.sortName') }}</option>
-                <option value="views">{{ $t('countriesPage.sortViews') }}</option>
-                <option value="cases">{{ $t('countriesPage.sortCases') }}</option>
-                <option value="leads">{{ $t('countriesPage.sortLeads') }}</option>
-            </select>
+            <SearchSelect v-model="sortBy" compact
+                :items="sortOptions" />
         </div>
 
         <!-- Таблица стран -->
@@ -174,6 +159,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import api from '@/api/index';
+import SearchSelect from '@/components/SearchSelect.vue';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -191,6 +177,18 @@ const filterContinent = ref('');
 const filterRegime    = ref('');
 const filterStatus    = ref('');
 const sortBy          = ref('name');
+
+const filterStatusOptions = computed(() => [
+    { value: 'active', label: t('countryDetail.active') },
+    { value: 'inactive', label: t('countryDetail.inactive') },
+]);
+
+const sortOptions = computed(() => [
+    { value: 'name', label: t('countriesPage.sortName') },
+    { value: 'views', label: t('countriesPage.sortViews') },
+    { value: 'cases', label: t('countriesPage.sortCases') },
+    { value: 'leads', label: t('countriesPage.sortLeads') },
+]);
 
 const regimeFilterOptions = computed(() => [
     { value: 'visa_required',   label: t('countriesPage.visaRequired') },

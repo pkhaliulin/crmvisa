@@ -83,12 +83,14 @@
 
             <div class="flex items-end gap-3">
               <div class="flex-1 max-w-xs">
-                <label class="text-xs text-gray-500 font-medium mb-1 block">{{ t('crm.caseDetail.managerLabel') }}</label>
-                <select v-model="assignForm.manager_id"
-                  class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
-                  <option value="">{{ t('crm.caseDetail.selectManager') }}</option>
-                  <option v-for="m in managers" :key="m.id" :value="m.id">{{ m.name }}</option>
-                </select>
+                <SearchSelect
+                  v-model="assignForm.manager_id"
+                  :items="managerItems"
+                  :label="t('crm.caseDetail.managerLabel')"
+                  :placeholder="t('crm.caseDetail.selectManager')"
+                  allow-all
+                  :all-label="t('crm.caseDetail.selectManager')"
+                />
               </div>
               <button @click="doAssign" :disabled="!assignForm.manager_id || assignForm.loading"
                 class="px-5 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white text-sm font-semibold shadow-md shadow-blue-200 hover:shadow-lg active:scale-[0.98] transition-all duration-200 disabled:opacity-50">
@@ -552,12 +554,14 @@
   <AppModal v-model="showAssignModal" :title="t('crm.caseDetail.assignModalTitle')">
     <div class="space-y-4">
       <div>
-        <label class="text-sm text-gray-600 font-medium mb-1 block">{{ t('crm.caseDetail.managerLabel') }}</label>
-        <select v-model="assignForm.manager_id"
-          class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
-          <option value="">{{ t('crm.caseDetail.selectManager') }}</option>
-          <option v-for="m in managers" :key="m.id" :value="m.id">{{ m.name }} ({{ m.email }})</option>
-        </select>
+        <SearchSelect
+          v-model="assignForm.manager_id"
+          :items="managerItemsWithEmail"
+          :label="t('crm.caseDetail.managerLabel')"
+          :placeholder="t('crm.caseDetail.selectManager')"
+          allow-all
+          :all-label="t('crm.caseDetail.selectManager')"
+        />
       </div>
       <div class="flex gap-2 justify-end">
         <AppButton variant="outline" @click="showAssignModal = false">{{ t('common.cancel') }}</AppButton>
@@ -607,6 +611,7 @@ import CaseGuidancePanel from '@/components/engine/CaseGuidancePanel.vue';
 import { useAuthStore } from '@/stores/auth';
 import { usersApi } from '@/api/users';
 import { formatPhone } from '@/utils/format';
+import SearchSelect from '@/components/SearchSelect.vue';
 
 const { t } = useI18n();
 
@@ -649,6 +654,12 @@ function onEngineUpdate() {
 }
 
 const managers = ref([]);
+const managerItems = computed(() =>
+  managers.value.map(m => ({ value: m.id, label: m.name }))
+);
+const managerItemsWithEmail = computed(() =>
+  managers.value.map(m => ({ value: m.id, label: `${m.name} (${m.email})` }))
+);
 const showAssignModal = ref(false);
 const assignForm = reactive({ manager_id: '', loading: false });
 const moveForm = reactive({ stage: '', notes: '', loading: false });

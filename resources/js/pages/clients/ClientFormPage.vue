@@ -53,24 +53,13 @@
 
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('crm.clientForm.nationality') }}</label>
-            <select v-model="form.nationality"
-              :class="[
-                'w-full border rounded-lg px-3 py-2 text-sm outline-none transition-colors',
-                errors.nationality ? 'border-red-300 focus:border-red-500' : 'border-gray-300 focus:border-blue-500',
-              ]">
-              <option value="">{{ t('crm.clientForm.nationalityDefault') }}</option>
-              <option value="UZB">{{ t('crm.nationalities.UZB') }}</option>
-              <option value="KAZ">{{ t('crm.nationalities.KAZ') }}</option>
-              <option value="KGZ">{{ t('crm.nationalities.KGZ') }}</option>
-              <option value="TJK">{{ t('crm.nationalities.TJK') }}</option>
-              <option value="TKM">{{ t('crm.nationalities.TKM') }}</option>
-              <option value="RUS">{{ t('crm.nationalities.RUS') }}</option>
-              <option value="UKR">{{ t('crm.nationalities.UKR') }}</option>
-              <option value="AZE">{{ t('crm.nationalities.AZE') }}</option>
-              <option value="GEO">{{ t('crm.nationalities.GEO') }}</option>
-              <option value="ARM">{{ t('crm.nationalities.ARM') }}</option>
-            </select>
+            <SearchSelect
+              v-model="form.nationality"
+              :items="nationalityItems"
+              :label="t('crm.clientForm.nationality')"
+              allow-all
+              :all-label="t('crm.clientForm.nationalityDefault')"
+            />
             <p v-if="errors.nationality" class="text-xs text-red-600 mt-1">{{ errors.nationality }}</p>
           </div>
           <AppInput
@@ -131,6 +120,7 @@ import AppPhoneInput from '@/components/AppPhoneInput.vue';
 import AppTextarea from '@/components/AppTextarea.vue';
 import AppSelect from '@/components/AppSelect.vue';
 import AppButton from '@/components/AppButton.vue';
+import SearchSelect from '@/components/SearchSelect.vue';
 import { titleCase } from '@/utils/format';
 
 const { t } = useI18n();
@@ -146,6 +136,19 @@ const form = reactive({
 const errors   = ref({});
 const errorMsg = ref('');
 const loading  = ref(false);
+
+const nationalityItems = computed(() => [
+  { value: 'UZB', label: t('crm.nationalities.UZB') },
+  { value: 'KAZ', label: t('crm.nationalities.KAZ') },
+  { value: 'KGZ', label: t('crm.nationalities.KGZ') },
+  { value: 'TJK', label: t('crm.nationalities.TJK') },
+  { value: 'TKM', label: t('crm.nationalities.TKM') },
+  { value: 'RUS', label: t('crm.nationalities.RUS') },
+  { value: 'UKR', label: t('crm.nationalities.UKR') },
+  { value: 'AZE', label: t('crm.nationalities.AZE') },
+  { value: 'GEO', label: t('crm.nationalities.GEO') },
+  { value: 'ARM', label: t('crm.nationalities.ARM') },
+]);
 
 // ── Sources (из справочника) ─────────────────────────────────────────────────
 const { activeItems } = useReferences();

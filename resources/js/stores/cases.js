@@ -3,17 +3,19 @@ import { ref } from 'vue';
 import { casesApi } from '@/api/cases';
 
 export const useCasesStore = defineStore('cases', () => {
-    const board    = ref([]);
-    const cases    = ref([]);
-    const meta     = ref(null);
-    const stats    = ref({ total: 0, overdue: 0, critical: 0 });
-    const loading  = ref(false);
+    const board              = ref([]);
+    const cases              = ref([]);
+    const meta               = ref(null);
+    const stats              = ref({ total: 0, overdue: 0, critical: 0 });
+    const allowedTransitions = ref({});
+    const loading            = ref(false);
 
     async function fetchKanban() {
         loading.value = true;
         try {
             const { data } = await casesApi.kanban();
             board.value = data.data.board;
+            allowedTransitions.value = data.data.allowed_transitions ?? {};
             stats.value = {
                 total:    data.data.total,
                 overdue:  data.data.overdue,
@@ -41,5 +43,5 @@ export const useCasesStore = defineStore('cases', () => {
         await fetchKanban();
     }
 
-    return { board, cases, meta, stats, loading, fetchKanban, fetchList, moveStage };
+    return { board, cases, meta, stats, allowedTransitions, loading, fetchKanban, fetchList, moveStage };
 });

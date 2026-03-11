@@ -24,19 +24,22 @@
         <input v-model="search" type="text" :placeholder="t('crm.agencyCountries.searchPlaceholder')"
           class="w-full pl-8 pr-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400" />
       </div>
-      <select v-model="filterRegime"
-        class="rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-blue-400 bg-white">
-        <option value="">{{ t('crm.agencyCountries.allRegimes') }}</option>
-        <option value="visa_free">{{ t('crm.agencyCountries.visaFree') }}</option>
-        <option value="visa_on_arrival">{{ t('crm.agencyCountries.visaOnArrival') }}</option>
-        <option value="evisa">{{ t('crm.agencyCountries.evisa') }}</option>
-        <option value="visa_required">{{ t('crm.agencyCountries.visaRequired') }}</option>
-      </select>
-      <select v-model="filterContinent"
-        class="rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-blue-400 bg-white">
-        <option value="">{{ t('crm.agencyCountries.allContinents') }}</option>
-        <option v-for="c in continents" :key="c" :value="c">{{ c }}</option>
-      </select>
+      <SearchSelect
+        v-model="filterRegime"
+        :items="regimeFilterItems"
+        :placeholder="t('crm.agencyCountries.allRegimes')"
+        allow-all
+        :all-label="t('crm.agencyCountries.allRegimes')"
+        compact
+      />
+      <SearchSelect
+        v-model="filterContinent"
+        :items="continentFilterItems"
+        :placeholder="t('crm.agencyCountries.allContinents')"
+        allow-all
+        :all-label="t('crm.agencyCountries.allContinents')"
+        compact
+      />
     </div>
 
     <!-- Загрузка -->
@@ -115,6 +118,7 @@ import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import api from '@/api/index';
 import { codeToFlag, countryName } from '@/utils/countries';
+import SearchSelect from '@/components/SearchSelect.vue';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -129,6 +133,14 @@ const filterContinent = ref('');
 const onlyOurs = ref(false);
 
 const continents = ['Asia', 'Europe', 'Africa', 'North America', 'South America', 'Oceania'];
+
+const regimeFilterItems = computed(() => [
+  { value: 'visa_free', label: t('crm.agencyCountries.visaFree') },
+  { value: 'visa_on_arrival', label: t('crm.agencyCountries.visaOnArrival') },
+  { value: 'evisa', label: t('crm.agencyCountries.evisa') },
+  { value: 'visa_required', label: t('crm.agencyCountries.visaRequired') },
+]);
+const continentFilterItems = continents.map(c => ({ value: c, label: c }));
 
 function localName(c) {
   return countryName(c.country_code) || c.name || c.country_code;

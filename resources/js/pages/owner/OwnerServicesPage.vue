@@ -109,10 +109,7 @@
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('owner.services.category') }} *</label>
-            <select v-model="form.category"
-              class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-              <option v-for="cat in categories" :key="cat" :value="cat">{{ categoryLabel(cat) }}</option>
-            </select>
+            <SearchSelect v-model="form.category" :items="categoryItems" />
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('owner.services.descriptionLabel') }}</label>
@@ -173,6 +170,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import api from '@/api/index';
+import SearchSelect from '@/components/SearchSelect.vue';
 
 const { t } = useI18n();
 
@@ -196,6 +194,8 @@ const categoryLabels = computed(() => ({
 }));
 
 function categoryLabel(cat) { return categoryLabels.value[cat] || cat; }
+
+const categoryItems = computed(() => categories.map(cat => ({ value: cat, label: categoryLabel(cat) })));
 
 const filteredServices = computed(() => {
   if (filterCat.value === 'all') return services.value;

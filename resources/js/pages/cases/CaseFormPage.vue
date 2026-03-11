@@ -105,21 +105,16 @@
 
           <!-- Тип визы -->
           <div class="flex flex-col gap-1">
-            <label class="text-sm font-medium text-gray-700">
-              {{ t('crm.caseForm.visaType') }} <span class="text-red-500">*</span>
-            </label>
-            <select v-model="form.visa_type"
+            <SearchSelect
+              v-model="form.visa_type"
+              :items="visaTypeItems"
+              :label="t('crm.caseForm.visaType')"
+              :placeholder="form.country_code ? t('crm.caseForm.selectVisa') : t('crm.caseForm.selectCountryFirst')"
               :disabled="!form.country_code"
-              :class="[
-                'w-full border rounded-lg px-3 py-2 text-sm outline-none transition-colors',
-                errors.visa_type ? 'border-red-400' : 'border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500',
-                !form.country_code ? 'bg-gray-50 text-gray-400' : '',
-              ]">
-              <option value="">{{ form.country_code ? t('crm.caseForm.selectVisa') : t('crm.caseForm.selectCountryFirst') }}</option>
-              <option v-for="slug in selectedCountryVisaTypes" :key="slug" :value="slug">
-                {{ visaTypeName(slug) }}
-              </option>
-            </select>
+              required
+              allow-all
+              :all-label="form.country_code ? t('crm.caseForm.selectVisa') : t('crm.caseForm.selectCountryFirst')"
+            />
             <p v-if="errors.visa_type" class="text-xs text-red-600">{{ errors.visa_type }}</p>
           </div>
         </div>
@@ -130,10 +125,13 @@
         <div>
           <label class="text-sm font-medium text-gray-700 block mb-1">{{ t('crm.caseForm.manager') }}</label>
           <template v-if="assignmentMode === 'manual'">
-            <select v-model="form.assigned_to"
-              class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
-              <option v-for="o in managerOptions" :key="o.value" :value="o.value">{{ o.label }}</option>
-            </select>
+            <SearchSelect
+              v-model="form.assigned_to"
+              :items="managerItems"
+              :placeholder="t('crm.caseForm.notAssigned')"
+              allow-all
+              :all-label="t('crm.caseForm.notAssigned')"
+            />
           </template>
           <template v-else>
             <div class="flex items-center gap-3 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg">
@@ -143,11 +141,13 @@
               <span class="text-sm text-blue-700">{{ t('crm.caseForm.autoAssign', { mode: autoModeLabels[assignmentMode] }) }}</span>
             </div>
             <div class="mt-2">
-              <select v-model="form.assigned_to"
-                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none text-gray-600 focus:border-blue-500">
-                <option value="">{{ t('crm.caseForm.keepAuto') }}</option>
-                <option v-for="u in managers" :key="u.id" :value="u.id">{{ u.name }} {{ t('crm.caseForm.manualSuffix') }}</option>
-              </select>
+              <SearchSelect
+                v-model="form.assigned_to"
+                :items="managerItemsManual"
+                :placeholder="t('crm.caseForm.keepAuto')"
+                allow-all
+                :all-label="t('crm.caseForm.keepAuto')"
+              />
             </div>
           </template>
         </div>
@@ -227,6 +227,7 @@ import AppInput from '@/components/AppInput.vue';
 import AppTextarea from '@/components/AppTextarea.vue';
 import AppSelect from '@/components/AppSelect.vue';
 import AppButton from '@/components/AppButton.vue';
+import SearchSelect from '@/components/SearchSelect.vue';
 import { formatPhone, titleCase } from '@/utils/format';
 
 const { t } = useI18n();
@@ -249,6 +250,15 @@ const managerOptions    = computed(() => [
   { value: '', label: t('crm.caseForm.notAssigned') },
   ...managers.value.map(u => ({ value: u.id, label: u.name })),
 ]);
+const managerItems = computed(() =>
+  managers.value.map(u => ({ value: u.id, label: u.name }))
+);
+const managerItemsManual = computed(() =>
+  managers.value.map(u => ({ value: u.id, label: `${u.name} ${t('crm.caseForm.manualSuffix')}` }))
+);
+const visaTypeItems = computed(() =>
+  selectedCountryVisaTypes.value.map(slug => ({ value: slug, label: visaTypeName(slug) }))
+);
 const autoModeLabels = computed(() => ({
   round_robin: t('crm.caseForm.autoModes.round_robin'),
   by_workload: t('crm.caseForm.autoModes.least_busy'),

@@ -81,23 +81,9 @@
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.citizenship') }} <span class="text-red-500">*</span></label>
-                        <select v-model="form.citizenship"
-                            class="w-full border rounded-xl px-3 py-2.5 text-sm outline-none transition-colors"
-                            :class="form.citizenship ? 'border-[#1BA97F]' : 'border-gray-200 focus:border-[#1BA97F]'">
-                            <option value="">{{ $t('profile.selectCountry') }}</option>
-                            <option value="UZ">🇺🇿 {{ $t('countries.UZ') }}</option>
-                            <option value="KZ">🇰🇿 {{ $t('countries.KZ') }}</option>
-                            <option value="KG">🇰🇬 {{ $t('countries.KG') }}</option>
-                            <option value="TJ">🇹🇯 {{ $t('countries.TJ') }}</option>
-                            <option value="TM">🇹🇲 {{ $t('countries.TM') }}</option>
-                            <option value="RU">🇷🇺 {{ $t('countries.RU') }}</option>
-                            <option value="UA">🇺🇦 {{ $t('countries.UA') }}</option>
-                            <option value="GE">🇬🇪 {{ $t('countries.GE') }}</option>
-                            <option value="AZ">🇦🇿 {{ $t('countries.AZ') }}</option>
-                            <option value="AM">🇦🇲 {{ $t('countries.AM') }}</option>
-                            <option value="MD">🇲🇩 {{ $t('countries.MD') }}</option>
-                            <option value="BY">🇧🇾 {{ $t('countries.BY') }}</option>
-                        </select>
+                        <SearchSelect v-model="form.citizenship"
+                            :items="citizenshipItems"
+                            :placeholder="$t('profile.selectCountry')" />
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.gender') }}</label>
@@ -307,45 +293,28 @@
             <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.employmentStatus') }} <span class="text-red-500">*</span></label>
-                    <select v-model="form.employment_type"
-                        class="w-full border rounded-xl px-3 py-2.5 text-sm outline-none transition-colors"
-                        :class="form.employment_type ? 'border-[#1BA97F]' : 'border-gray-200 focus:border-[#1BA97F]'">
-                        <option value="">{{ $t('common.notSpecified') }}</option>
-                        <option v-for="et in employmentTypes" :key="et.code" :value="et.code">{{ refLabel(et) }}</option>
-                    </select>
+                    <SearchSelect v-model="form.employment_type"
+                        :items="employmentTypeItems"
+                        allow-all :all-label="$t('common.notSpecified')" />
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-gray-600 mb-1">
                         {{ $t('profile.tenure') }}
                         <span class="text-gray-400 font-normal">({{ $t('profile.tenureBoost') }})</span>
                     </label>
-                    <select v-model="form.employed_years"
-                        class="w-full border rounded-xl px-3 py-2.5 text-sm outline-none transition-colors"
-                        :class="form.employed_years !== '' ? 'border-[#1BA97F]' : 'border-gray-200 focus:border-[#1BA97F]'"
-                        :disabled="form.employment_type === 'unemployed' || form.employment_type === 'student'">
-                        <option value="">{{ $t('common.notSpecified') }}</option>
-                        <option :value="0">{{ $t('profile.lessThan1') }}</option>
-                        <option :value="1">{{ $t('profile.years12') }}</option>
-                        <option :value="3">{{ $t('profile.years25') }}</option>
-                        <option :value="5">{{ $t('profile.years510') }}</option>
-                        <option :value="10">{{ $t('profile.yearsOver10') }}</option>
-                    </select>
+                    <SearchSelect v-model="form.employed_years"
+                        :items="tenureItems"
+                        :disabled="form.employment_type === 'unemployed' || form.employment_type === 'student'"
+                        allow-all :all-label="$t('common.notSpecified')" />
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-gray-600 mb-1">
                         {{ $t('profile.income') }} <span class="text-red-500">*</span>
                         <span class="text-gray-400 font-normal">({{ $t('profile.incomeImportant') }})</span>
                     </label>
-                    <select v-model="form.monthly_income_usd"
-                        class="w-full border rounded-xl px-3 py-2.5 text-sm outline-none transition-colors"
-                        :class="form.monthly_income_usd ? 'border-[#1BA97F]' : 'border-gray-200 focus:border-[#1BA97F]'">
-                        <option value="">{{ $t('common.notSpecified') }}</option>
-                        <option :value="300">{{ $t('profile.incomeTo500') }}</option>
-                        <option :value="800">{{ $t('profile.income5001000') }}</option>
-                        <option :value="1500">{{ $t('profile.income10002000') }}</option>
-                        <option :value="3000">{{ $t('profile.income20004000') }}</option>
-                        <option :value="5000">{{ $t('profile.incomeOver4000') }}</option>
-                    </select>
+                    <SearchSelect v-model="form.monthly_income_usd"
+                        :items="incomeItems"
+                        allow-all :all-label="$t('common.notSpecified')" />
                     <p class="text-[11px] text-gray-400 mt-1">{{ $t('profile.incomeHint') }}</p>
                 </div>
                 <div class="sm:col-span-2">
@@ -353,12 +322,9 @@
                         {{ $t('profile.educationLevel') }}
                         <span class="text-gray-400 font-normal">({{ $t('profile.educationBoost') }})</span>
                     </label>
-                    <select v-model="form.education_level"
-                        class="w-full border rounded-xl px-3 py-2.5 text-sm outline-none transition-colors"
-                        :class="form.education_level ? 'border-[#1BA97F]' : 'border-gray-200 focus:border-[#1BA97F]'">
-                        <option value="">{{ $t('common.notSpecified') }}</option>
-                        <option v-for="el in educationLevels" :key="el.code" :value="el.code">{{ refLabel(el) }}</option>
-                    </select>
+                    <SearchSelect v-model="form.education_level"
+                        :items="educationLevelItems"
+                        allow-all :all-label="$t('common.notSpecified')" />
                     <p class="text-[11px] text-gray-400 mt-1">{{ $t('profile.educationHint') }}</p>
                 </div>
                 <!-- Чат-пузырь: оценка занятости -->
@@ -390,12 +356,9 @@
             <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.maritalStatus') }} <span class="text-red-500">*</span></label>
-                    <select v-model="form.marital_status"
-                        class="w-full border rounded-xl px-3 py-2.5 text-sm outline-none transition-colors"
-                        :class="form.marital_status ? 'border-[#1BA97F]' : 'border-gray-200 focus:border-[#1BA97F]'">
-                        <option value="">{{ $t('common.notSpecified') }}</option>
-                        <option v-for="ms in maritalStatuses" :key="ms.code" :value="ms.code">{{ refLabel(ms) }}</option>
-                    </select>
+                    <SearchSelect v-model="form.marital_status"
+                        :items="maritalStatusItems"
+                        allow-all :all-label="$t('common.notSpecified')" />
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.children') }}</label>
@@ -414,13 +377,8 @@
                 </div>
                 <div v-if="form.has_children">
                     <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.childrenCount') }}</label>
-                    <select v-model="form.children_count"
-                        class="w-full border rounded-xl px-3 py-2.5 text-sm outline-none transition-colors border-[#1BA97F]">
-                        <option :value="1">{{ $t('profile.child1') }}</option>
-                        <option :value="2">{{ $t('profile.children2') }}</option>
-                        <option :value="3">{{ $t('profile.children3') }}</option>
-                        <option :value="4">{{ $t('profile.children4plus') }}</option>
-                    </select>
+                    <SearchSelect v-model="form.children_count"
+                        :items="childrenCountItems" />
                 </div>
                 <div class="sm:col-span-2">
                     <label class="block text-xs font-medium text-gray-600 mb-2">{{ $t('profile.propertyTitle') }}</label>
@@ -553,11 +511,9 @@
                 <!-- Год последнего отказа (показывается если есть отказы) -->
                 <div v-if="form.refusals_count > 0">
                     <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.lastRefusalYear') }}</label>
-                    <select v-model="form.last_refusal_year"
-                        class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-red-400 transition-colors">
-                        <option :value="null">{{ $t('common.notSpecified') }}</option>
-                        <option v-for="y in recentYears" :key="y" :value="y">{{ y }}</option>
-                    </select>
+                    <SearchSelect v-model="form.last_refusal_year"
+                        :items="refusalYearItems"
+                        allow-all :all-label="$t('common.notSpecified')" />
                     <p class="text-[11px] text-amber-600 mt-1">{{ $t('profile.refusalYearHint') }}</p>
                 </div>
 
@@ -785,16 +741,9 @@
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.memberCitizenship') }}</label>
-                    <select v-model="familyForm.citizenship"
-                        class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#1BA97F] transition-colors">
-                        <option value="">{{ $t('profile.selectCountry') }}</option>
-                        <option value="UZ">{{ $t('countries.UZ') }}</option>
-                        <option value="KZ">{{ $t('countries.KZ') }}</option>
-                        <option value="KG">{{ $t('countries.KG') }}</option>
-                        <option value="TJ">{{ $t('countries.TJ') }}</option>
-                        <option value="TM">{{ $t('countries.TM') }}</option>
-                        <option value="RU">{{ $t('countries.RU') }}</option>
-                    </select>
+                    <SearchSelect v-model="familyForm.citizenship"
+                        :items="familyCitizenshipItems"
+                        :placeholder="$t('profile.selectCountry')" />
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
@@ -899,6 +848,7 @@ import { usePublicAuthStore } from '@/stores/publicAuth';
 import { usePublicReferences } from '@/composables/usePublicReferences';
 import { ageMessages } from '@/data/ageMessages';
 import { formatPhone } from '@/utils/format';
+import SearchSelect from '@/components/SearchSelect.vue';
 
 const { t, locale } = useI18n();
 const router     = useRouter();
@@ -1294,6 +1244,67 @@ const refusalsOptions = computed(() => [
 ]);
 
 const recentYears = Array.from({ length: 8 }, (_, i) => new Date().getFullYear() - i);
+
+const citizenshipItems = computed(() => [
+    { value: 'UZ', label: `🇺🇿 ${t('countries.UZ')}` },
+    { value: 'KZ', label: `🇰🇿 ${t('countries.KZ')}` },
+    { value: 'KG', label: `🇰🇬 ${t('countries.KG')}` },
+    { value: 'TJ', label: `🇹🇯 ${t('countries.TJ')}` },
+    { value: 'TM', label: `🇹🇲 ${t('countries.TM')}` },
+    { value: 'RU', label: `🇷🇺 ${t('countries.RU')}` },
+    { value: 'UA', label: `🇺🇦 ${t('countries.UA')}` },
+    { value: 'GE', label: `🇬🇪 ${t('countries.GE')}` },
+    { value: 'AZ', label: `🇦🇿 ${t('countries.AZ')}` },
+    { value: 'AM', label: `🇦🇲 ${t('countries.AM')}` },
+    { value: 'MD', label: `🇲🇩 ${t('countries.MD')}` },
+    { value: 'BY', label: `🇧🇾 ${t('countries.BY')}` },
+]);
+
+const employmentTypeItems = computed(() =>
+    employmentTypes.value.map(et => ({ value: et.code, label: refLabel(et) }))
+);
+
+const tenureItems = computed(() => [
+    { value: 0,  label: t('profile.lessThan1') },
+    { value: 1,  label: t('profile.years12') },
+    { value: 3,  label: t('profile.years25') },
+    { value: 5,  label: t('profile.years510') },
+    { value: 10, label: t('profile.yearsOver10') },
+]);
+
+const incomeItems = computed(() => [
+    { value: 300,  label: t('profile.incomeTo500') },
+    { value: 800,  label: t('profile.income5001000') },
+    { value: 1500, label: t('profile.income10002000') },
+    { value: 3000, label: t('profile.income20004000') },
+    { value: 5000, label: t('profile.incomeOver4000') },
+]);
+
+const educationLevelItems = computed(() =>
+    educationLevels.value.map(el => ({ value: el.code, label: refLabel(el) }))
+);
+
+const maritalStatusItems = computed(() =>
+    maritalStatuses.value.map(ms => ({ value: ms.code, label: refLabel(ms) }))
+);
+
+const childrenCountItems = computed(() => [
+    { value: 1, label: t('profile.child1') },
+    { value: 2, label: t('profile.children2') },
+    { value: 3, label: t('profile.children3') },
+    { value: 4, label: t('profile.children4plus') },
+]);
+
+const refusalYearItems = recentYears.map(y => ({ value: y, label: String(y) }));
+
+const familyCitizenshipItems = computed(() => [
+    { value: 'UZ', label: t('countries.UZ') },
+    { value: 'KZ', label: t('countries.KZ') },
+    { value: 'KG', label: t('countries.KG') },
+    { value: 'TJ', label: t('countries.TJ') },
+    { value: 'TM', label: t('countries.TM') },
+    { value: 'RU', label: t('countries.RU') },
+]);
 
 // Быстрый мастер — 5 шагов
 const wizardSteps = computed(() => [

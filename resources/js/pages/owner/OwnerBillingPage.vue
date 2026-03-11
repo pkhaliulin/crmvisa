@@ -594,10 +594,7 @@
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="block text-xs text-gray-500 mb-1">{{ t('owner.billing.discountType') }}</label>
-              <select v-model="couponForm.discount_type" class="w-full px-3 py-2 border rounded-lg text-sm">
-                <option value="percentage">{{ t('owner.billing.discountPercentage') }}</option>
-                <option value="fixed">{{ t('owner.billing.discountFixed') }}</option>
-              </select>
+              <SearchSelect v-model="couponForm.discount_type" :items="discountTypeOptions" />
             </div>
             <div>
               <label class="block text-xs text-gray-500 mb-1">{{ couponForm.discount_type === 'percentage' ? t('owner.billing.discountPercentLabel') : t('owner.billing.discountFixedLabel') }}</label>
@@ -636,8 +633,14 @@
 import { ref, reactive, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import api from '@/api/index';
+import SearchSelect from '@/components/SearchSelect.vue';
 
 const { t } = useI18n();
+
+const discountTypeOptions = computed(() => [
+  { value: 'percentage', label: t('owner.billing.discountPercentage') },
+  { value: 'fixed', label: t('owner.billing.discountFixed') },
+]);
 
 const tabItems = computed(() => [
   { key: 'dashboard', label: t('owner.billing.tabDashboard') },

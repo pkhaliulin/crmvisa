@@ -44,17 +44,10 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
           </svg>
         </div>
-        <select v-model="filterCategory" @change="loadArticles"
-          class="text-sm border border-gray-200 rounded-lg px-3 py-2">
-          <option value="">{{ t('owner.knowledge.allCategories') }}</option>
-          <option v-for="c in categories" :key="c.value" :value="c.value">{{ c.label }}</option>
-        </select>
-        <select v-model="filterPublished" @change="loadArticles"
-          class="text-sm border border-gray-200 rounded-lg px-3 py-2">
-          <option value="">{{ t('owner.knowledge.allStatuses') }}</option>
-          <option value="1">{{ t('owner.knowledge.published') }}</option>
-          <option value="0">{{ t('owner.knowledge.drafts') }}</option>
-        </select>
+        <SearchSelect v-model="filterCategory" @change="loadArticles" compact
+          :items="categories" allow-all :all-label="t('owner.knowledge.allCategories')" />
+        <SearchSelect v-model="filterPublished" @change="loadArticles" compact
+          :items="publishedOptions" allow-all :all-label="t('owner.knowledge.allStatuses')" />
       </div>
 
       <!-- Table -->
@@ -193,9 +186,7 @@
           <div class="grid grid-cols-3 gap-3">
             <div>
               <label class="text-sm font-medium text-gray-700 block mb-1">{{ t('owner.knowledge.categoryLabel') }} *</label>
-              <select v-model="form.category" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg">
-                <option v-for="c in categories" :key="c.value" :value="c.value">{{ c.label }}</option>
-              </select>
+              <SearchSelect v-model="form.category" :items="categories" />
             </div>
             <div>
               <label class="text-sm font-medium text-gray-700 block mb-1">{{ t('owner.knowledge.countryCode') }}</label>
@@ -256,6 +247,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import api from '@/api/index';
+import SearchSelect from '@/components/SearchSelect.vue';
 
 const { t } = useI18n();
 
@@ -279,6 +271,11 @@ const editId = ref(null);
 const saving = ref(false);
 const formError = ref('');
 const form = ref(defaultForm());
+
+const publishedOptions = computed(() => [
+  { value: '1', label: t('owner.knowledge.published') },
+  { value: '0', label: t('owner.knowledge.drafts') },
+]);
 
 const categories = computed(() => [
   { value: 'country_guide', label: t('owner.knowledge.categories.country_guide') },

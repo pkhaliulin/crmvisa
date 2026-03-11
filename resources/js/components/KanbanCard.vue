@@ -90,15 +90,15 @@
     <div class="mt-2 flex items-center gap-1.5" @click.stop>
       <!-- Режим выбора менеджера (inline select) -->
       <template v-if="showAssignDropdown">
-        <select
-          class="text-xs border border-blue-300 rounded-lg px-2 py-0.5 outline-none focus:border-blue-500 bg-white w-full"
-          autofocus
-          @change="onSelectManager($event.target.value)"
-          @blur="showAssignDropdown = false">
-          <option value="">{{ t('crm.card.selectManager') }}</option>
-          <option v-for="m in managers" :key="m.id" :value="m.id"
-            :selected="item.assigned_to === m.id">{{ m.name }}</option>
-        </select>
+        <SearchSelect
+          :model-value="item.assigned_to ? String(item.assigned_to) : ''"
+          :items="managerItems"
+          :placeholder="t('crm.card.selectManager')"
+          compact
+          show-initials
+          @change="onSelectManager"
+          class="flex-1"
+        />
         <button class="text-gray-300 hover:text-gray-500 text-xs shrink-0" @click.stop="showAssignDropdown = false">✕</button>
       </template>
 
@@ -133,6 +133,7 @@
 import { ref, computed, inject } from 'vue';
 import { useI18n } from 'vue-i18n';
 import AppBadge from './AppBadge.vue';
+import SearchSelect from './SearchSelect.vue';
 import { formatPhone } from '@/utils/format';
 
 const { t } = useI18n();
@@ -142,6 +143,10 @@ const emit = defineEmits(['click', 'move', 'assign']);
 
 const managers = inject('kanbanManagers', ref([]));
 const showAssignDropdown = ref(false);
+
+const managerItems = computed(() =>
+  (managers.value || []).map(m => ({ value: String(m.id), label: m.name }))
+);
 
 function onSelectManager(managerId) {
   showAssignDropdown.value = false;

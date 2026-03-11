@@ -257,6 +257,7 @@ import { useI18n } from 'vue-i18n';
 import { publicPortalApi } from '@/api/public';
 import { usePublicAuthStore } from '@/stores/publicAuth';
 import { usePublicReferences } from '@/composables/usePublicReferences';
+import SearchSelect from '@/components/SearchSelect.vue';
 
 const { t, locale } = useI18n();
 const { activeItems: refItems } = usePublicReferences();
@@ -411,6 +412,7 @@ async function saveAndRecalculate() {
 // Инлайн компонент формы профиля
 const ProfileFormInline = {
     name: 'ProfileFormInline',
+    components: { SearchSelect },
     props: ['profile', 'loading', 'employmentTypes', 'maritalStatuses', 'currentLocale'],
     emits: ['update:profile', 'update', 'recalculate'],
     setup(props, { emit }) {
@@ -428,77 +430,49 @@ const ProfileFormInline = {
         <div class="space-y-3">
             <div>
                 <label class="text-xs text-gray-400 mb-1 block">{{ $t('scoring.employmentLabel') }}</label>
-                <select :value="profile.employment_type"
-                    @change="set('employment_type', $event.target.value)"
-                    class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm text-[#0A1F44] outline-none focus:border-[#1BA97F]">
-                    <option value="">{{ $t('common.notSpecified') }}</option>
-                    <option v-for="et in employmentTypes" :key="et.code" :value="et.code">{{ rl(et) }}</option>
-                </select>
+                <SearchSelect :modelValue="profile.employment_type"
+                    @update:modelValue="set('employment_type', $event)"
+                    :items="employmentItems"
+                    allow-all :all-label="$t('common.notSpecified')" />
             </div>
             <div>
                 <label class="text-xs text-gray-400 mb-1 block">{{ $t('scoring.tenureLabel') }}</label>
-                <select :value="profile.employed_years"
-                    @change="set('employed_years', Number($event.target.value) || 0)"
-                    class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm text-[#0A1F44] outline-none focus:border-[#1BA97F]">
-                    <option :value="0">{{ $t('scoring.lessThan1Year') }}</option>
-                    <option :value="1">{{ $t('scoring.tenure1to2') }}</option>
-                    <option :value="2">{{ $t('scoring.tenure2to5') }}</option>
-                    <option :value="5">{{ $t('scoring.tenure5to10') }}</option>
-                    <option :value="10">{{ $t('scoring.tenureOver10') }}</option>
-                </select>
+                <SearchSelect :modelValue="profile.employed_years"
+                    @update:modelValue="set('employed_years', Number($event) || 0)"
+                    :items="tenureItems" />
             </div>
             <div>
                 <label class="text-xs text-gray-400 mb-1 block">{{ $t('scoring.incomeLabel') }}</label>
-                <select :value="profile.monthly_income_usd"
-                    @change="set('monthly_income_usd', Number($event.target.value) || '')"
-                    class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm text-[#0A1F44] outline-none focus:border-[#1BA97F]">
-                    <option value="">{{ $t('common.notSpecified') }}</option>
-                    <option :value="300">{{ $t('scoring.incomeTo500') }}</option>
-                    <option :value="800">{{ $t('scoring.income500to1000') }}</option>
-                    <option :value="1500">{{ $t('scoring.income1000to2000') }}</option>
-                    <option :value="3000">{{ $t('scoring.income2000to4000') }}</option>
-                    <option :value="5000">{{ $t('scoring.incomeOver4000') }}</option>
-                </select>
+                <SearchSelect :modelValue="profile.monthly_income_usd"
+                    @update:modelValue="set('monthly_income_usd', Number($event) || '')"
+                    :items="incomeItems"
+                    allow-all :all-label="$t('common.notSpecified')" />
             </div>
             <div>
                 <label class="text-xs text-gray-400 mb-1 block">{{ $t('scoring.familyLabel') }}</label>
-                <select :value="profile.marital_status"
-                    @change="set('marital_status', $event.target.value)"
-                    class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm text-[#0A1F44] outline-none focus:border-[#1BA97F]">
-                    <option value="">{{ $t('common.notSpecified') }}</option>
-                    <option v-for="ms in maritalStatuses" :key="ms.code" :value="ms.code">{{ rl(ms) }}</option>
-                </select>
+                <SearchSelect :modelValue="profile.marital_status"
+                    @update:modelValue="set('marital_status', $event)"
+                    :items="maritalItems"
+                    allow-all :all-label="$t('common.notSpecified')" />
             </div>
             <div>
                 <label class="text-xs text-gray-400 mb-1 block">{{ $t('scoring.visasLabel') }}</label>
-                <select :value="profile.visas_obtained_count"
-                    @change="set('visas_obtained_count', Number($event.target.value))"
-                    class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm text-[#0A1F44] outline-none focus:border-[#1BA97F]">
-                    <option :value="0">{{ $t('scoring.noVisas') }}</option>
-                    <option :value="1">{{ $t('scoring.oneVisa') }}</option>
-                    <option :value="2">{{ $t('scoring.twoFourVisas') }}</option>
-                    <option :value="5">{{ $t('scoring.fivePlusVisas') }}</option>
-                </select>
+                <SearchSelect :modelValue="profile.visas_obtained_count"
+                    @update:modelValue="set('visas_obtained_count', Number($event))"
+                    :items="visasItems" />
             </div>
             <div>
                 <label class="text-xs text-gray-400 mb-1 block">{{ $t('scoring.refusalsLabel') }} <span class="text-red-500 font-medium">({{ $t('scoring.reducesScoring') }})</span></label>
-                <select :value="profile.refusals_count"
-                    @change="set('refusals_count', Number($event.target.value))"
-                    class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm text-[#0A1F44] outline-none focus:border-[#1BA97F]">
-                    <option :value="0">{{ $t('scoring.noRefusals') }}</option>
-                    <option :value="1">{{ $t('scoring.oneRefusal') }}</option>
-                    <option :value="2">{{ $t('scoring.twoRefusals') }}</option>
-                    <option :value="3">{{ $t('scoring.threePlusRefusals') }}</option>
-                </select>
+                <SearchSelect :modelValue="profile.refusals_count"
+                    @update:modelValue="set('refusals_count', Number($event))"
+                    :items="refusalsItems" />
             </div>
             <div v-if="profile.refusals_count > 0">
                 <label class="text-xs text-gray-400 mb-1 block">{{ $t('scoring.refusalYearLabel') }}</label>
-                <select :value="profile.last_refusal_year"
-                    @change="set('last_refusal_year', $event.target.value ? Number($event.target.value) : null)"
-                    class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm text-[#0A1F44] outline-none focus:border-[#1BA97F]">
-                    <option value="">{{ $t('scoring.dontRemember') }}</option>
-                    <option v-for="y in refusalYears" :key="y" :value="y">{{ y }}</option>
-                </select>
+                <SearchSelect :modelValue="profile.last_refusal_year"
+                    @update:modelValue="set('last_refusal_year', $event ? Number($event) : null)"
+                    :items="refusalYearItems"
+                    allow-all :all-label="$t('scoring.dontRemember')" />
             </div>
             <div class="pt-2 space-y-2">
                 <label v-for="cb in checkboxes" :key="cb.key"
@@ -524,6 +498,50 @@ const ProfileFormInline = {
         </div>
     `,
     computed: {
+        employmentItems() {
+            return this.employmentTypes.map(et => ({ value: et.code, label: this.rl(et) }));
+        },
+        tenureItems() {
+            return [
+                { value: 0,  label: this.$t('scoring.lessThan1Year') },
+                { value: 1,  label: this.$t('scoring.tenure1to2') },
+                { value: 2,  label: this.$t('scoring.tenure2to5') },
+                { value: 5,  label: this.$t('scoring.tenure5to10') },
+                { value: 10, label: this.$t('scoring.tenureOver10') },
+            ];
+        },
+        incomeItems() {
+            return [
+                { value: 300,  label: this.$t('scoring.incomeTo500') },
+                { value: 800,  label: this.$t('scoring.income500to1000') },
+                { value: 1500, label: this.$t('scoring.income1000to2000') },
+                { value: 3000, label: this.$t('scoring.income2000to4000') },
+                { value: 5000, label: this.$t('scoring.incomeOver4000') },
+            ];
+        },
+        maritalItems() {
+            return this.maritalStatuses.map(ms => ({ value: ms.code, label: this.rl(ms) }));
+        },
+        visasItems() {
+            return [
+                { value: 0, label: this.$t('scoring.noVisas') },
+                { value: 1, label: this.$t('scoring.oneVisa') },
+                { value: 2, label: this.$t('scoring.twoFourVisas') },
+                { value: 5, label: this.$t('scoring.fivePlusVisas') },
+            ];
+        },
+        refusalsItems() {
+            return [
+                { value: 0, label: this.$t('scoring.noRefusals') },
+                { value: 1, label: this.$t('scoring.oneRefusal') },
+                { value: 2, label: this.$t('scoring.twoRefusals') },
+                { value: 3, label: this.$t('scoring.threePlusRefusals') },
+            ];
+        },
+        refusalYearItems() {
+            const year = new Date().getFullYear();
+            return Array.from({ length: 10 }, (_, i) => ({ value: year - i, label: String(year - i) }));
+        },
         checkboxes() {
             return [
                 { key: 'has_children',      label: this.$t('scoring.hasChildrenLabel') },
@@ -534,10 +552,6 @@ const ProfileFormInline = {
                 { key: 'had_overstay',      label: this.$t('scoring.hadOverstayLabel'), danger: true },
                 { key: 'had_deportation',   label: this.$t('scoring.hadDeportationLabel'), danger: true },
             ];
-        },
-        refusalYears() {
-            const year = new Date().getFullYear();
-            return Array.from({ length: 10 }, (_, i) => year - i);
         },
     },
 };

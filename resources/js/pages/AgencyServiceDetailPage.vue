@@ -164,11 +164,12 @@
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('crm.serviceDetail.visaType') }}</label>
-              <select v-model="form.visa_type" :disabled="!form.country_code"
-                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400 disabled:bg-gray-50 disabled:text-gray-400">
-                <option value="">{{ form.country_code ? t('crm.services.selectDefault') : t('crm.services.selectCountryFirst') }}</option>
-                <option v-for="slug in selectedCountryVisaTypes" :key="slug" :value="slug">{{ visaTypeName(slug) }}</option>
-              </select>
+              <SearchSelect
+                v-model="form.visa_type"
+                :items="visaTypeItems"
+                :disabled="!form.country_code"
+                :placeholder="form.country_code ? t('crm.services.selectDefault') : t('crm.services.selectCountryFirst')"
+              />
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('crm.services.priceLabel') }}</label>
@@ -270,6 +271,7 @@ import { useI18n } from 'vue-i18n';
 import api from '@/api/index';
 import { countriesApi } from '@/api/countries';
 import { codeToFlag } from '@/utils/countries';
+import SearchSelect from '@/components/SearchSelect.vue';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -375,6 +377,10 @@ const selectedCountryVisaTypes = computed(() => {
   const c = allCountries.value.find(c => c.country_code === form.value.country_code);
   return c?.visa_types ?? ['tourist', 'business'];
 });
+
+const visaTypeItems = computed(() =>
+  selectedCountryVisaTypes.value.map(slug => ({ value: slug, label: visaTypeName(slug) }))
+);
 
 function onCountryInput() {
   if (form.value.country_code) {

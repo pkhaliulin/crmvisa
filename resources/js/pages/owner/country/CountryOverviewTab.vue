@@ -63,19 +63,20 @@
         <!-- Ряд 2 -->
         <div class="grid grid-cols-4 gap-4">
           <div>
-            <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.continent') }}</label>
-            <select v-model="form.continent" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]">
-              <option value="">---</option>
-              <option v-for="c in continents" :key="c" :value="c">{{ c }}</option>
-            </select>
+            <SearchSelect
+              v-model="form.continent"
+              :items="continentItems"
+              :label="$t('countryDetail.continent')"
+              allow-all
+              all-label="---"
+            />
           </div>
           <div>
-            <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.riskLevel') }}</label>
-            <select v-model="form.risk_level" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]">
-              <option value="low">{{ $t('countryDetail.riskLow') }}</option>
-              <option value="medium">{{ $t('countryDetail.riskMedium') }}</option>
-              <option value="high">{{ $t('countryDetail.riskHigh') }}</option>
-            </select>
+            <SearchSelect
+              v-model="form.risk_level"
+              :items="riskLevelItems"
+              :label="$t('countryDetail.riskLevel')"
+            />
             <p class="text-[10px] text-gray-400 mt-0.5">{{ $t('countryDetail.riskLevelHint') }}</p>
           </div>
           <div>
@@ -327,6 +328,7 @@
 import { ref, reactive, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { ownerCountriesApi } from '@/api/countries';
+import SearchSelect from '@/components/SearchSelect.vue';
 
 const { t } = useI18n();
 const props = defineProps({ country: Object, visaSettings: Array });
@@ -337,6 +339,13 @@ const saving  = ref(false);
 const form    = reactive({});
 
 const continents = ['Europe', 'Asia', 'North America', 'South America', 'Africa', 'Oceania'];
+const continentItems = continents.map(c => ({ value: c, label: c }));
+
+const riskLevelItems = computed(() => [
+  { value: 'low', label: t('countryDetail.riskLow') },
+  { value: 'medium', label: t('countryDetail.riskMedium') },
+  { value: 'high', label: t('countryDetail.riskHigh') },
+]);
 
 const regimeLabel = computed(() => {
   const map = {

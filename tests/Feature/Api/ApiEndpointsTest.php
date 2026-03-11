@@ -173,7 +173,7 @@ class ApiEndpointsTest extends TestCase
     {
         $this->mockCaseDependencies();
 
-        $case = $this->createCase(['stage' => 'lead', 'public_status' => 'submitted']);
+        $case = $this->createCase(['stage' => 'lead', 'public_status' => 'submitted', 'assigned_to' => $this->owner->id]);
 
         $response = $this->postJson(
             "/api/v1/cases/{$case->id}/move-stage",

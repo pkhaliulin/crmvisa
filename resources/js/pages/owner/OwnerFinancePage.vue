@@ -2,20 +2,10 @@
     <div class="space-y-5">
 
         <div class="flex gap-3">
-            <select v-model="filterType" @change="load"
-                class="border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-[#1BA97F]">
-                <option value="">{{ t('owner.finance.allTypes') }}</option>
-                <option value="payment">{{ t('owner.finance.payments') }}</option>
-                <option value="commission">{{ t('owner.finance.commissions') }}</option>
-                <option value="refund">{{ t('owner.finance.refunds') }}</option>
-            </select>
-            <select v-model="filterStatus" @change="load"
-                class="border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-[#1BA97F]">
-                <option value="">{{ t('owner.finance.allStatuses') }}</option>
-                <option value="paid">{{ t('owner.finance.paid') }}</option>
-                <option value="pending">{{ t('owner.finance.pending') }}</option>
-                <option value="failed">{{ t('owner.finance.failed') }}</option>
-            </select>
+            <SearchSelect v-model="filterType" @change="load" compact
+                :items="filterTypeOptions" allow-all :all-label="t('owner.finance.allTypes')" />
+            <SearchSelect v-model="filterStatus" @change="load" compact
+                :items="filterStatusOptions" allow-all :all-label="t('owner.finance.allStatuses')" />
         </div>
 
         <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
@@ -83,6 +73,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import api from '@/api/index';
+import SearchSelect from '@/components/SearchSelect.vue';
 
 const { t } = useI18n();
 
@@ -92,6 +83,18 @@ const filterType   = ref('');
 const filterStatus = ref('');
 const page         = ref(1);
 const pagination   = ref({ last_page: 1, current_page: 1, total: 0 });
+
+const filterTypeOptions = computed(() => [
+    { value: 'payment', label: t('owner.finance.payments') },
+    { value: 'commission', label: t('owner.finance.commissions') },
+    { value: 'refund', label: t('owner.finance.refunds') },
+]);
+
+const filterStatusOptions = computed(() => [
+    { value: 'paid', label: t('owner.finance.paid') },
+    { value: 'pending', label: t('owner.finance.pending') },
+    { value: 'failed', label: t('owner.finance.failed') },
+]);
 
 const typeLabel = computed(() => (tp) => ({
     payment: t('owner.finance.typePayment'),

@@ -7,21 +7,11 @@
         :placeholder="t('owner.agencies.searchPlaceholder')"
         class="border border-gray-200 rounded-xl px-4 py-2 text-sm outline-none focus:border-[#1BA97F] w-64" />
 
-      <select v-model="filterPlan" @change="load"
-        class="border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-[#1BA97F]">
-        <option value="">{{ t('owner.agencies.allPlans') }}</option>
-        <option value="trial">Trial</option>
-        <option value="starter">Starter</option>
-        <option value="pro">Pro</option>
-        <option value="enterprise">Enterprise</option>
-      </select>
+      <SearchSelect v-model="filterPlan" @change="load" compact
+        :items="planOptions" allow-all :all-label="t('owner.agencies.allPlans')" />
 
-      <select v-model="filterStatus" @change="load"
-        class="border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-[#1BA97F]">
-        <option value="">{{ t('owner.agencies.allStatuses') }}</option>
-        <option value="active">{{ t('owner.agencies.activeStatus') }}</option>
-        <option value="inactive">{{ t('owner.agencies.blockedStatus') }}</option>
-      </select>
+      <SearchSelect v-model="filterStatus" @change="load" compact
+        :items="filterStatusOptions" allow-all :all-label="t('owner.agencies.allStatuses')" />
 
       <button @click="openCreateAgency"
         class="ml-auto px-4 py-2 bg-[#0A1F44] text-white text-sm font-semibold rounded-xl
@@ -133,13 +123,7 @@
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="text-xs text-gray-500 mb-1 block">{{ t('owner.agencies.plan') }}</label>
-              <select v-model="editForm.plan"
-                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]">
-                <option value="trial">{{ t('owner.agencies.planTrial') }}</option>
-                <option value="starter">{{ t('owner.agencies.planStarter') }}</option>
-                <option value="pro">{{ t('owner.agencies.planPro') }}</option>
-                <option value="enterprise">{{ t('owner.agencies.planEnterprise') }}</option>
-              </select>
+              <SearchSelect v-model="editForm.plan" :items="editPlanOptions" />
             </div>
             <div>
               <label class="text-xs text-gray-500 mb-1 block">{{ t('owner.agencies.commissionPercent') }}</label>
@@ -239,13 +223,7 @@
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="text-xs text-gray-500 mb-1 block">{{ t('owner.agencies.plan') }}</label>
-              <select v-model="createForm.plan"
-                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]">
-                <option value="trial">Trial</option>
-                <option value="starter">Starter</option>
-                <option value="pro">Pro</option>
-                <option value="enterprise">Enterprise</option>
-              </select>
+              <SearchSelect v-model="createForm.plan" :items="planOptions" />
             </div>
             <div>
               <label class="text-xs text-gray-500 mb-1 block">{{ t('owner.agencies.password') }}</label>
@@ -277,9 +255,10 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import api from '@/api/index';
+import SearchSelect from '@/components/SearchSelect.vue';
 
 const { t } = useI18n();
 
@@ -304,6 +283,25 @@ const createPhoneDigits = ref('');
 const createForm = reactive({
   agency_name: '', name: '', email: '', phone: '', plan: 'trial', password: '',
 });
+
+const planOptions = [
+  { value: 'trial', label: 'Trial' },
+  { value: 'starter', label: 'Starter' },
+  { value: 'pro', label: 'Pro' },
+  { value: 'enterprise', label: 'Enterprise' },
+];
+
+const editPlanOptions = computed(() => [
+  { value: 'trial', label: t('owner.agencies.planTrial') },
+  { value: 'starter', label: t('owner.agencies.planStarter') },
+  { value: 'pro', label: t('owner.agencies.planPro') },
+  { value: 'enterprise', label: t('owner.agencies.planEnterprise') },
+]);
+
+const filterStatusOptions = computed(() => [
+  { value: 'active', label: t('owner.agencies.activeStatus') },
+  { value: 'inactive', label: t('owner.agencies.blockedStatus') },
+]);
 
 let debounceTimer = null;
 function debouncedLoad() {

@@ -38,6 +38,14 @@ class MoveCaseStageRequest extends FormRequest
                     "Переход из «{$currentStage}» в «{$newStage}» невозможен."
                 );
             }
+
+            // Нельзя двигать заявку без назначенного менеджера
+            if (! $case->assigned_to) {
+                $validator->errors()->add(
+                    'assigned_to',
+                    'Невозможно переместить заявку без назначенного менеджера. Сначала назначьте ответственного.'
+                );
+            }
         });
     }
 }

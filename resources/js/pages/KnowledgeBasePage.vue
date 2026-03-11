@@ -24,11 +24,15 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
           </svg>
         </div>
-        <select v-model="filterCategory" @change="loadArticles"
-          class="text-sm border border-gray-200 rounded-lg px-3 py-2">
-          <option value="">{{ t('crm.knowledge.allCategories') }}</option>
-          <option v-for="c in articleCategories" :key="c.value" :value="c.value">{{ c.label }}</option>
-        </select>
+        <SearchSelect
+          v-model="filterCategory"
+          :items="articleCategories"
+          :placeholder="t('crm.knowledge.allCategories')"
+          allow-all
+          :all-label="t('crm.knowledge.allCategories')"
+          compact
+          @change="loadArticles"
+        />
         <CountrySelect
           v-model="filterCountry"
           :countries="countries"
@@ -136,6 +140,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import api from '@/api/index';
 import CountrySelect from '@/components/CountrySelect.vue';
+import SearchSelect from '@/components/SearchSelect.vue';
 import { formatDate } from '@/utils/format';
 
 const { t } = useI18n();

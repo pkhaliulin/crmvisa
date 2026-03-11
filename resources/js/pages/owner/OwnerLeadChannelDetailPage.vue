@@ -68,48 +68,27 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('owner.leadChannelDetail.category') }}</label>
-            <select v-model="form.category"
-              class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white outline-none focus:border-blue-400">
-              <option v-for="cat in categoryOptions" :key="cat.key" :value="cat.key">{{ cat.label }}</option>
-            </select>
+            <SearchSelect v-model="form.category" :items="categoryItems" />
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('owner.leadChannelDetail.effectiveness') }}</label>
-            <select v-model="form.effectiveness"
-              class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white outline-none focus:border-blue-400">
-              <option v-for="opt in effectivenessOptions" :key="opt.key" :value="opt.key">{{ opt.label }}</option>
-            </select>
+            <SearchSelect v-model="form.effectiveness" :items="effectivenessItems" />
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('owner.leadChannelDetail.complexity') }}</label>
-            <select v-model="form.complexity"
-              class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white outline-none focus:border-blue-400">
-              <option v-for="opt in complexityOptions" :key="opt.key" :value="opt.key">{{ opt.label }}</option>
-            </select>
+            <SearchSelect v-model="form.complexity" :items="complexityItems" />
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('owner.leadChannelDetail.launchSpeed') }}</label>
-            <select v-model="form.launch_speed"
-              class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white outline-none focus:border-blue-400">
-              <option v-for="opt in launchSpeedOptions" :key="opt.key" :value="opt.key">{{ opt.label }}</option>
-            </select>
+            <SearchSelect v-model="form.launch_speed" :items="launchSpeedItems" />
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('owner.leadChannelDetail.minPlan') }}</label>
-            <select v-model="form.min_plan"
-              class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white outline-none focus:border-blue-400">
-              <option value="trial">Trial</option>
-              <option value="starter">Starter</option>
-              <option value="pro">Pro</option>
-              <option value="enterprise">Enterprise</option>
-            </select>
+            <SearchSelect v-model="form.min_plan" :items="minPlanItems" />
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('owner.leadChannelDetail.api') }}</label>
-            <select v-model="form.requires_api"
-              class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white outline-none focus:border-blue-400">
-              <option v-for="opt in apiOptions" :key="opt.key" :value="opt.key">{{ opt.label }}</option>
-            </select>
+            <SearchSelect v-model="form.requires_api" :items="apiItems" />
           </div>
         </div>
 
@@ -261,6 +240,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import api from '@/api/index';
+import SearchSelect from '@/components/SearchSelect.vue';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -304,6 +284,19 @@ const apiOptions = computed(() => [
   { key: 'optional', label: t('owner.leadChannelDetail.apiOptions.optional') },
   { key: 'required', label: t('owner.leadChannelDetail.apiOptions.required') },
 ]);
+
+const categoryItems = computed(() => categoryOptions.value.map(o => ({ value: o.key, label: o.label })));
+const effectivenessItems = computed(() => effectivenessOptions.value.map(o => ({ value: o.key, label: o.label })));
+const complexityItems = computed(() => complexityOptions.value.map(o => ({ value: o.key, label: o.label })));
+const launchSpeedItems = computed(() => launchSpeedOptions.value.map(o => ({ value: o.key, label: o.label })));
+const apiItems = computed(() => apiOptions.value.map(o => ({ value: o.key, label: o.label })));
+
+const minPlanItems = [
+  { value: 'trial', label: 'Trial' },
+  { value: 'starter', label: 'Starter' },
+  { value: 'pro', label: 'Pro' },
+  { value: 'enterprise', label: 'Enterprise' },
+];
 
 async function fetchChannel() {
   try {

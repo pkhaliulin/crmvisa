@@ -5,6 +5,7 @@ namespace App\Modules\Case\Controllers;
 use App\Http\Controllers\Controller;
 use App\Modules\Case\Models\CaseStage;
 use App\Modules\Case\Models\VisaCase;
+use App\Modules\Case\Services\CaseService;
 use App\Support\Helpers\ApiResponse;
 use App\Support\Services\AgencyCacheService;
 use Illuminate\Http\JsonResponse;
@@ -70,11 +71,12 @@ class KanbanController extends Controller
         })->values();
 
         return [
-            'board'      => $board,
-            'role'       => $user->role,
-            'total'      => $cases->count(),
-            'overdue'    => $cases->filter(fn ($c) => $this->isOverdue($c))->count(),
-            'critical'   => $cases->filter(fn ($c) => $this->isCritical($c))->count(),
+            'board'               => $board,
+            'role'                => $user->role,
+            'total'               => $cases->count(),
+            'overdue'             => $cases->filter(fn ($c) => $this->isOverdue($c))->count(),
+            'critical'            => $cases->filter(fn ($c) => $this->isCritical($c))->count(),
+            'allowed_transitions' => CaseService::ALLOWED_TRANSITIONS,
         ];
     }
 

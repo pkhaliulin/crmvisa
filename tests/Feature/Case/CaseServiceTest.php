@@ -153,13 +153,15 @@ class CaseServiceTest extends TestCase
     public function test_valid_transition_lead_to_qualification(): void
     {
         [$agency, $owner] = $this->createAgencyWithOwner();
+        $manager = $this->createManager($agency);
         $client = $this->createClient($agency);
         $this->actingAsUser($owner);
 
         $case = VisaCase::factory()->create([
-            'agency_id'  => $agency->id,
-            'client_id'  => $client->id,
-            'stage'      => 'lead',
+            'agency_id'   => $agency->id,
+            'client_id'   => $client->id,
+            'stage'       => 'lead',
+            'assigned_to' => $manager->id,
         ]);
 
         $result = $this->service->moveToStage($case, 'qualification');
@@ -171,13 +173,15 @@ class CaseServiceTest extends TestCase
     public function test_valid_transition_qualification_to_documents(): void
     {
         [$agency, $owner] = $this->createAgencyWithOwner();
+        $manager = $this->createManager($agency);
         $client = $this->createClient($agency);
         $this->actingAsUser($owner);
 
         $case = VisaCase::factory()->create([
-            'agency_id'  => $agency->id,
-            'client_id'  => $client->id,
-            'stage'      => 'qualification',
+            'agency_id'   => $agency->id,
+            'client_id'   => $client->id,
+            'stage'       => 'qualification',
+            'assigned_to' => $manager->id,
         ]);
 
         $result = $this->service->moveToStage($case, 'documents');
@@ -237,6 +241,7 @@ class CaseServiceTest extends TestCase
     public function test_backward_transition_does_not_update_public_status(): void
     {
         [$agency, $owner] = $this->createAgencyWithOwner();
+        $manager = $this->createManager($agency);
         $client = $this->createClient($agency);
         $this->actingAsUser($owner);
 
@@ -245,6 +250,7 @@ class CaseServiceTest extends TestCase
             'client_id'     => $client->id,
             'stage'         => 'documents',
             'public_status' => 'document_collection',
+            'assigned_to'   => $manager->id,
         ]);
 
         $result = $this->service->moveToStage($case, 'qualification');
@@ -257,13 +263,15 @@ class CaseServiceTest extends TestCase
     public function test_stage_history_recorded_on_transition(): void
     {
         [$agency, $owner] = $this->createAgencyWithOwner();
+        $manager = $this->createManager($agency);
         $client = $this->createClient($agency);
         $this->actingAsUser($owner);
 
         $case = VisaCase::factory()->create([
-            'agency_id'  => $agency->id,
-            'client_id'  => $client->id,
-            'stage'      => 'lead',
+            'agency_id'   => $agency->id,
+            'client_id'   => $client->id,
+            'stage'       => 'lead',
+            'assigned_to' => $manager->id,
         ]);
 
         $this->service->moveToStage($case, 'qualification');
@@ -368,13 +376,15 @@ class CaseServiceTest extends TestCase
     public function test_complete_case_approved(): void
     {
         [$agency, $owner] = $this->createAgencyWithOwner();
+        $manager = $this->createManager($agency);
         $client = $this->createClient($agency);
         $this->actingAsUser($owner);
 
         $case = VisaCase::factory()->create([
-            'agency_id'  => $agency->id,
-            'client_id'  => $client->id,
-            'stage'      => 'review',
+            'agency_id'   => $agency->id,
+            'client_id'   => $client->id,
+            'stage'       => 'review',
+            'assigned_to' => $manager->id,
         ]);
 
         $result = $this->service->completeCase($case, 'approved', [
@@ -389,13 +399,15 @@ class CaseServiceTest extends TestCase
     public function test_complete_case_rejected(): void
     {
         [$agency, $owner] = $this->createAgencyWithOwner();
+        $manager = $this->createManager($agency);
         $client = $this->createClient($agency);
         $this->actingAsUser($owner);
 
         $case = VisaCase::factory()->create([
-            'agency_id'  => $agency->id,
-            'client_id'  => $client->id,
-            'stage'      => 'review',
+            'agency_id'   => $agency->id,
+            'client_id'   => $client->id,
+            'stage'       => 'review',
+            'assigned_to' => $manager->id,
         ]);
 
         $result = $this->service->completeCase($case, 'rejected', [

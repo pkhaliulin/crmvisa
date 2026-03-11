@@ -3,18 +3,10 @@
 
         <!-- Фильтры -->
         <div class="flex flex-wrap gap-3">
-            <select v-model="filterStatus" @change="load"
-                class="border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-[#1BA97F]">
-                <option value="">{{ t('owner.leads.allStatuses') }}</option>
-                <option v-for="s in statusOptions" :key="s.value" :value="s.value">{{ s.label }}</option>
-            </select>
-            <select v-model="filterCountry" @change="load"
-                class="border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-[#1BA97F]">
-                <option value="">{{ t('owner.leads.allCountries') }}</option>
-                <option v-for="cc in ['DE','ES','FR','IT','PL','CZ','GB','US','CA','KR','AE']" :key="cc" :value="cc">
-                    {{ cc }}
-                </option>
-            </select>
+            <SearchSelect v-model="filterStatus" @change="load" compact
+                :items="statusOptions" allow-all :all-label="t('owner.leads.allStatuses')" />
+            <SearchSelect v-model="filterCountry" @change="load" compact
+                :items="countryOptions" allow-all :all-label="t('owner.leads.allCountries')" />
         </div>
 
         <!-- Таблица -->
@@ -86,6 +78,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import api from '@/api/index';
+import SearchSelect from '@/components/SearchSelect.vue';
 
 const { t } = useI18n();
 
@@ -100,6 +93,10 @@ const flagMap = {
     DE: '🇩🇪', ES: '🇪🇸', FR: '🇫🇷', IT: '🇮🇹', PL: '🇵🇱',
     CZ: '🇨🇿', GB: '🇬🇧', US: '🇺🇸', CA: '🇨🇦', KR: '🇰🇷', AE: '🇦🇪',
 };
+
+const countryOptions = ['DE','ES','FR','IT','PL','CZ','GB','US','CA','KR','AE'].map(cc => ({
+    value: cc, label: `${flagMap[cc] ?? ''} ${cc}`,
+}));
 
 const statusOptions = computed(() => [
     { value: 'new', label: t('owner.leads.new') },

@@ -22,11 +22,15 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
         </svg>
       </div>
-      <select v-model="filterCategory" @change="loadNotes"
-        class="text-sm border border-gray-200 rounded-lg px-3 py-2">
-        <option value="">{{ t('crm.knowledge.allCategories') }}</option>
-        <option v-for="c in noteCategories" :key="c.value" :value="c.value">{{ c.label }}</option>
-      </select>
+      <SearchSelect
+        v-model="filterCategory"
+        :items="noteCategories"
+        :placeholder="t('crm.knowledge.allCategories')"
+        allow-all
+        :all-label="t('crm.knowledge.allCategories')"
+        compact
+        @change="loadNotes"
+      />
       <CountrySelect
         v-model="filterCountry"
         :countries="countries"
@@ -118,9 +122,11 @@
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="text-sm font-medium text-gray-700 block mb-1">{{ t('crm.knowledge.category') }} *</label>
-              <select v-model="form.category" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg">
-                <option v-for="c in noteCategories" :key="c.value" :value="c.value">{{ c.label }}</option>
-              </select>
+              <SearchSelect
+                v-model="form.category"
+                :items="noteCategories"
+                :placeholder="t('crm.knowledge.category')"
+              />
             </div>
             <div>
               <CountrySelect
@@ -160,6 +166,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import api from '@/api/index';
 import CountrySelect from '@/components/CountrySelect.vue';
+import SearchSelect from '@/components/SearchSelect.vue';
 import { formatDate } from '@/utils/format';
 
 const { t } = useI18n();

@@ -35,12 +35,15 @@
       />
 
       <!-- Менеджер -->
-      <select v-model="filters.assigned_to" @change="fetchCases"
-        class="border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400 text-gray-700 bg-white">
-        <option value="">{{ t('crm.casesPage.allManagers') }}</option>
-        <option value="unassigned" class="font-medium text-amber-700">{{ t('crm.casesPage.noManager') }}</option>
-        <option v-for="m in managers" :key="m.id" :value="m.id">{{ m.name }}</option>
-      </select>
+      <SearchSelect
+        v-model="filters.assigned_to"
+        :items="managerFilterItems"
+        :placeholder="t('crm.casesPage.allManagers')"
+        allow-all
+        :all-label="t('crm.casesPage.allManagers')"
+        compact
+        @change="fetchCases"
+      />
 
       <!-- Дата -->
       <div class="flex items-center gap-1.5">
@@ -142,15 +145,13 @@
 
               <!-- Режим выбора менеджера -->
               <template v-if="assigningId === c.id">
-                <select
-                  class="text-xs border border-blue-300 rounded-lg px-2 py-0.5 outline-none focus:border-blue-500 bg-white min-w-0"
-                  autofocus
-                  @change="assignManager(c, $event.target.value)"
-                  @blur="assigningId = null"
-                  @click.stop>
-                  <option value="">{{ t('crm.casesPage.selectManager') }}</option>
-                  <option v-for="m in managers" :key="m.id" :value="m.id">{{ m.name }}</option>
-                </select>
+                <SearchSelect
+                  model-value=""
+                  :items="managerItems"
+                  :placeholder="t('crm.casesPage.selectManager')"
+                  compact
+                  @change="(val) => assignManager(c, val)"
+                />
                 <button class="text-gray-300 hover:text-gray-500 text-xs" @click.stop="assigningId = null">✕</button>
               </template>
 
@@ -235,6 +236,7 @@ import AppInput from '@/components/AppInput.vue';
 import AppSelect from '@/components/AppSelect.vue';
 import AppButton from '@/components/AppButton.vue';
 import CountrySelect from '@/components/CountrySelect.vue';
+import SearchSelect from '@/components/SearchSelect.vue';
 import { formatPhone, formatDate } from '@/utils/format';
 
 const { t } = useI18n();
@@ -258,6 +260,15 @@ function resetFilters() {
   Object.assign(filters, { q: '', stage: '', priority: '', assigned_to: '', country_code: '', date_from: '', date_to: '', status: '', page: 1 });
   fetchCases();
 }
+
+const managerItems = computed(() =>
+  managers.value.map(m => ({ value: m.id, label: m.name }))
+);
+
+const managerFilterItems = computed(() => [
+  { value: 'unassigned', label: t('crm.casesPage.noManager') },
+  ...managers.value.map(m => ({ value: m.id, label: m.name })),
+]);
 
 // Счётчик незакреплённых (из текущей страницы — для уведомления)
 const unassignedCount = computed(() => cases.value.filter(c => !c.assignee).length);
