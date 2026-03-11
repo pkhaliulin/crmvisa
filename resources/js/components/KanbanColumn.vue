@@ -120,6 +120,9 @@ function onMove(evt) {
   const fromStage = evt.from.closest('[data-stage]')?.dataset.stage;
   const toStage   = evt.to.closest('[data-stage]')?.dataset.stage;
   if (!fromStage || !toStage || fromStage === toStage) return true;
+  // Блокировать перемещение карточки без назначенного менеджера
+  const caseItem = evt.draggedContext?.element;
+  if (caseItem && !caseItem.assignee) return false;
   const allowed = allowedTransitions[fromStage] || [];
   return allowed.includes(toStage);
 }
