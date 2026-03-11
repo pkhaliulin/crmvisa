@@ -43,11 +43,15 @@
           <option value="">{{ t('crm.knowledge.allCategories') }}</option>
           <option v-for="c in noteCategories" :key="c.value" :value="c.value">{{ c.label }}</option>
         </select>
-        <select v-model="notesFilterCountry" @change="loadNotes"
-          class="text-sm border border-gray-200 rounded-lg px-3 py-2">
-          <option value="">{{ t('crm.knowledge.allCountries') }}</option>
-          <option v-for="c in countries" :key="c.code" :value="c.code">{{ c.name }}</option>
-        </select>
+        <CountrySelect
+          v-model="notesFilterCountry"
+          :countries="countries"
+          :placeholder="t('crm.knowledge.allCountries')"
+          allow-all
+          :all-label="t('crm.knowledge.allCountries')"
+          compact
+          @change="loadNotes"
+        />
       </div>
 
       <!-- Notes List -->
@@ -133,11 +137,15 @@
             <option value="">{{ t('crm.knowledge.allCategories') }}</option>
             <option v-for="c in articleCategories" :key="c.value" :value="c.value">{{ c.label }}</option>
           </select>
-          <select v-model="articlesFilterCountry" @change="loadArticles"
-            class="text-sm border border-gray-200 rounded-lg px-3 py-2">
-            <option value="">{{ t('crm.knowledge.allCountries') }}</option>
-            <option v-for="c in countries" :key="c.code" :value="c.code">{{ c.name }}</option>
-          </select>
+          <CountrySelect
+            v-model="articlesFilterCountry"
+            :countries="countries"
+            :placeholder="t('crm.knowledge.allCountries')"
+            allow-all
+            :all-label="t('crm.knowledge.allCountries')"
+            compact
+            @change="loadArticles"
+          />
         </div>
 
         <!-- Articles -->
@@ -209,11 +217,12 @@
               </select>
             </div>
             <div>
-              <label class="text-sm font-medium text-gray-700 block mb-1">{{ t('crm.knowledge.country') }}</label>
-              <select v-model="form.country_code" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg">
-                <option value="">---</option>
-                <option v-for="c in countries" :key="c.code" :value="c.code">{{ c.name }}</option>
-              </select>
+              <CountrySelect
+                v-model="form.country_code"
+                :countries="countries"
+                :label="t('crm.knowledge.country')"
+                :placeholder="t('crm.knowledge.allCountries')"
+              />
             </div>
           </div>
           <div>
@@ -287,6 +296,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { currentLocale } from '@/i18n';
 import api from '@/api/index';
+import CountrySelect from '@/components/CountrySelect.vue';
 
 const { t } = useI18n();
 

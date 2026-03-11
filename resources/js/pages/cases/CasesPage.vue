@@ -24,13 +24,15 @@
       <AppSelect v-model="filters.priority" :options="priorityOptions" :placeholder="t('crm.casesPage.priorityFilter')" @change="fetchCases" />
 
       <!-- Страна -->
-      <select v-model="filters.country_code" @change="fetchCases"
-        class="border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400 text-gray-700 bg-white">
-        <option value="">{{ t('crm.casesPage.allCountries') }}</option>
-        <option v-for="cc in availableCountries" :key="cc.code" :value="cc.code">
-          {{ cc.flag }} {{ cc.name }}
-        </option>
-      </select>
+      <CountrySelect
+        v-model="filters.country_code"
+        :countries="availableCountries"
+        :placeholder="t('crm.casesPage.allCountries')"
+        allow-all
+        :all-label="t('crm.casesPage.allCountries')"
+        compact
+        @change="fetchCases"
+      />
 
       <!-- Менеджер -->
       <select v-model="filters.assigned_to" @change="fetchCases"
@@ -232,6 +234,7 @@ import { useCountries } from '@/composables/useCountries';
 import AppInput from '@/components/AppInput.vue';
 import AppSelect from '@/components/AppSelect.vue';
 import AppButton from '@/components/AppButton.vue';
+import CountrySelect from '@/components/CountrySelect.vue';
 import { formatPhone } from '@/utils/format';
 
 const { t } = useI18n();

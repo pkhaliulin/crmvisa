@@ -103,16 +103,12 @@
                                 :placeholder="$t('group.groupNamePlaceholder')"
                                 class="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-[#0A1F44] focus:outline-none focus:border-[#1BA97F] transition-colors">
                         </div>
-                        <div>
-                            <label class="block text-xs font-medium text-gray-500 mb-1">{{ $t('portal.destinationCountry') }}</label>
-                            <select v-model="form.country_code"
-                                class="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-[#0A1F44] focus:outline-none focus:border-[#1BA97F] transition-colors bg-white">
-                                <option value="">{{ $t('profile.selectCountry') }}</option>
-                                <option v-for="c in servedCountries" :key="c.country_code" :value="c.country_code">
-                                    {{ countryName(c.country_code) }}
-                                </option>
-                            </select>
-                        </div>
+                        <CountrySelect
+                            v-model="form.country_code"
+                            :countries="servedCountriesForSelect"
+                            :label="$t('portal.destinationCountry')"
+                            :placeholder="$t('profile.selectCountry')"
+                        />
                         <div>
                             <label class="block text-xs font-medium text-gray-500 mb-1">{{ $t('portal.visaTypeLabel') }}</label>
                             <select v-model="form.visa_type"
@@ -156,6 +152,7 @@ import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { publicPortalApi } from '@/api/public';
 import { codeToFlag } from '@/utils/countries';
+import CountrySelect from '@/components/CountrySelect.vue';
 
 const VISA_TYPE_LABELS = {
     tourist: 'portal.tourist',
@@ -186,6 +183,12 @@ const form = ref({
 function countryName(code) {
     return t(`countries.${code}`) !== `countries.${code}` ? t(`countries.${code}`) : code;
 }
+
+const servedCountriesForSelect = computed(() => servedCountries.value.map(c => ({
+    code: c.country_code,
+    name: countryName(c.country_code),
+    flag: codeToFlag(c.country_code),
+})));
 
 const availableVisaTypes = computed(() => {
     if (!form.value.country_code) return [];

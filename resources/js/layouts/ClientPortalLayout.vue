@@ -246,16 +246,12 @@
                             <p class="text-sm text-gray-500">{{ $t('portal.noServedCountries') }}</p>
                         </div>
                         <template v-else>
-                            <div>
-                                <label class="block text-xs font-medium text-gray-500 mb-1">{{ $t('portal.destinationCountry') }}</label>
-                                <select v-model="newCaseForm.country_code"
-                                    class="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-[#0A1F44] focus:outline-none focus:border-[#1BA97F] transition-colors bg-white">
-                                    <option value="">{{ $t('profile.selectCountry') }}</option>
-                                    <option v-for="c in servedCountries" :key="c.country_code" :value="c.country_code">
-                                        {{ $t('countries.' + c.country_code) }} ({{ c.agencies_count }})
-                                    </option>
-                                </select>
-                            </div>
+                            <CountrySelect
+                                v-model="newCaseForm.country_code"
+                                :countries="servedCountriesForSelect"
+                                :label="$t('portal.destinationCountry')"
+                                :placeholder="$t('profile.selectCountry')"
+                            />
                             <div>
                                 <label class="block text-xs font-medium text-gray-500 mb-1">{{ $t('portal.visaTypeLabel') }}</label>
                                 <select v-model="newCaseForm.visa_type"
@@ -296,6 +292,8 @@ import LogoBrand from '@/components/LogoBrand.vue';
 import { usePublicAuthStore } from '@/stores/publicAuth';
 import { publicPortalApi } from '@/api/public';
 import { formatPhone } from '@/utils/format';
+import CountrySelect from '@/components/CountrySelect.vue';
+import { codeToFlag } from '@/utils/countries';
 
 const { t } = useI18n();
 function toggleLocale() {
@@ -335,6 +333,12 @@ watch(() => newCaseForm.value.country_code, () => {
 // Страны, по которым работает хотя бы одно агентство
 const servedCountries = ref([]);
 const loadingServed = ref(false);
+const servedCountriesForSelect = computed(() => servedCountries.value.map(c => ({
+    code: c.country_code,
+    name: t('countries.' + c.country_code),
+    flag: codeToFlag(c.country_code),
+    extra: c.agencies_count,
+})));
 
 async function loadServedCountries() {
     if (servedCountries.value.length > 0) return;

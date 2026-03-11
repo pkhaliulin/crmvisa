@@ -78,10 +78,14 @@
 
       <!-- Фильтры -->
       <div v-if="packages.length" class="flex flex-wrap gap-2 mb-3">
-        <select v-model="filter.country" class="border border-gray-200 rounded-lg px-3 py-1.5 text-sm bg-white focus:outline-none focus:border-blue-400">
-          <option value="">{{ t('crm.services.allCountries') }}</option>
-          <option v-for="cc in uniqueCountries" :key="cc" :value="cc">{{ codeToFlag(cc) }} {{ countryName(cc) }}</option>
-        </select>
+        <CountrySelect
+          v-model="filter.country"
+          :countries="uniqueCountries"
+          :placeholder="t('crm.services.allCountries')"
+          allow-all
+          :all-label="t('crm.services.allCountries')"
+          compact
+        />
         <select v-model="filter.visa_type" class="border border-gray-200 rounded-lg px-3 py-1.5 text-sm bg-white focus:outline-none focus:border-blue-400">
           <option value="">{{ t('crm.services.allVisaTypes') }}</option>
           <option v-for="vt in uniqueVisaTypes" :key="vt" :value="vt">{{ visaTypeName(vt) }}</option>
@@ -358,6 +362,7 @@ import api from '@/api/index';
 import { countriesApi } from '@/api/countries';
 import { codeToFlag } from '@/utils/countries';
 import { currentLocale } from '@/i18n';
+import CountrySelect from '@/components/CountrySelect.vue';
 
 const { t } = useI18n();
 
@@ -430,7 +435,10 @@ const optionalServices = computed(() =>
 );
 
 // Фильтрация и сортировка пакетов
-const uniqueCountries = computed(() => [...new Set(packages.value.map(p => p.country_code).filter(Boolean))].sort());
+const uniqueCountryCodes = computed(() => [...new Set(packages.value.map(p => p.country_code).filter(Boolean))].sort());
+const uniqueCountries = computed(() => uniqueCountryCodes.value.map(cc => ({
+  code: cc, name: countryName(cc), flag: codeToFlag(cc),
+})));
 const uniqueVisaTypes = computed(() => [...new Set(packages.value.map(p => p.visa_type).filter(Boolean))].sort());
 
 const hasActiveFilters = computed(() => filter.country || filter.visa_type || filter.status);

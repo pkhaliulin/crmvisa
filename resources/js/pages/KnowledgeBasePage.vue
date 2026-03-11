@@ -29,11 +29,15 @@
           <option value="">{{ t('crm.knowledge.allCategories') }}</option>
           <option v-for="c in articleCategories" :key="c.value" :value="c.value">{{ c.label }}</option>
         </select>
-        <select v-model="filterCountry" @change="loadArticles"
-          class="text-sm border border-gray-200 rounded-lg px-3 py-2">
-          <option value="">{{ t('crm.knowledge.allCountries') }}</option>
-          <option v-for="c in countries" :key="c.code" :value="c.code">{{ c.name }}</option>
-        </select>
+        <CountrySelect
+          v-model="filterCountry"
+          :countries="countries"
+          :placeholder="t('crm.knowledge.allCountries')"
+          allow-all
+          :all-label="t('crm.knowledge.allCountries')"
+          compact
+          @change="loadArticles"
+        />
       </div>
 
       <!-- Articles -->
@@ -131,6 +135,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import api from '@/api/index';
+import CountrySelect from '@/components/CountrySelect.vue';
 
 const { t } = useI18n();
 
