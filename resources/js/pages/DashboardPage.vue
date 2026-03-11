@@ -34,13 +34,6 @@
             </button>
           </div>
         </div>
-        <button @click="exportPdf"
-          class="flex items-center gap-2 px-3 py-1.5 bg-gray-100 text-gray-600 text-xs font-medium rounded-lg hover:bg-gray-200 transition-colors print:hidden">
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-          </svg>
-          PDF
-        </button>
       </div>
 
       <!-- Подсказки -->
@@ -87,16 +80,16 @@
             'bg-white rounded-xl border border-gray-200 px-4 py-3 transition-all group relative',
             m.to ? 'hover:border-blue-300 hover:shadow-md cursor-pointer' : ''
           ]">
-          <p class="text-[11px] font-medium text-gray-400 uppercase tracking-wide">{{ m.label }}</p>
+          <p class="text-xs font-medium text-gray-400 uppercase tracking-wide">{{ m.label }}</p>
           <div class="flex items-end gap-2">
             <p class="text-2xl font-bold mt-0.5" :class="m.color">{{ m.value }}</p>
             <span v-if="m.growth !== undefined && m.growth !== 0"
-              class="text-[10px] font-semibold mb-1 px-1.5 py-0.5 rounded-full"
+              class="text-xs font-semibold mb-1 px-1.5 py-0.5 rounded-full"
               :class="m.growth > 0 ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'">
               {{ m.growth > 0 ? '+' : '' }}{{ m.growth }}%
             </span>
           </div>
-          <p v-if="m.sub" class="text-[10px] text-gray-400 mt-0.5">{{ m.sub }}</p>
+          <p v-if="m.sub" class="text-xs text-gray-400 mt-0.5">{{ m.sub }}</p>
           <div v-if="m.tooltip" class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-48 text-center z-10">
             {{ m.tooltip }}
             <div class="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
@@ -107,12 +100,36 @@
       <!-- Сравнение с предыдущим периодом -->
       <div v-if="hasGrowthData" class="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div v-for="item in comparisonItems" :key="item.key" class="bg-white rounded-xl border border-gray-200 px-4 py-3 text-center">
-          <p class="text-[11px] font-medium text-gray-400 uppercase tracking-wide">{{ item.label }}</p>
+          <p class="text-xs font-medium text-gray-400 uppercase tracking-wide">{{ item.label }}</p>
           <p class="text-xl font-bold mt-1" :class="item.growth > 0 ? 'text-green-600' : item.growth < 0 ? 'text-red-600' : 'text-gray-400'">
             {{ item.growth > 0 ? '+' : '' }}{{ item.growth }}%
           </p>
-          <p class="text-[10px] text-gray-400">{{ t('crm.dashboard.vsPrevPeriod') }}</p>
+          <p class="text-xs text-gray-400">{{ t('crm.dashboard.vsPrevPeriod') }}</p>
         </div>
+      </div>
+
+      <!-- Блок задач -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <router-link :to="{ path: '/app/tasks', query: { status: 'active' } }"
+          class="bg-white rounded-xl border border-gray-200 px-4 py-3 hover:border-blue-300 hover:shadow-md cursor-pointer transition-all">
+          <p class="text-xs font-medium text-gray-400 uppercase tracking-wide">{{ t('crm.dashboard.tasksActive') }}</p>
+          <p class="text-2xl font-bold mt-0.5 text-blue-600">{{ taskCounters.active }}</p>
+        </router-link>
+        <router-link :to="{ path: '/app/tasks', query: { due: 'today' } }"
+          class="bg-white rounded-xl border border-gray-200 px-4 py-3 hover:border-amber-300 hover:shadow-md cursor-pointer transition-all">
+          <p class="text-xs font-medium text-gray-400 uppercase tracking-wide">{{ t('crm.dashboard.tasksToday') }}</p>
+          <p class="text-2xl font-bold mt-0.5 text-amber-600">{{ taskCounters.today }}</p>
+        </router-link>
+        <router-link :to="{ path: '/app/tasks', query: { due: 'overdue' } }"
+          class="bg-white rounded-xl border border-gray-200 px-4 py-3 hover:border-red-300 hover:shadow-md cursor-pointer transition-all">
+          <p class="text-xs font-medium text-gray-400 uppercase tracking-wide">{{ t('crm.dashboard.tasksOverdue') }}</p>
+          <p class="text-2xl font-bold mt-0.5 text-red-600">{{ taskCounters.overdue }}</p>
+        </router-link>
+        <router-link :to="{ path: '/app/tasks', query: { status: 'pending_review' } }"
+          class="bg-white rounded-xl border border-gray-200 px-4 py-3 hover:border-purple-300 hover:shadow-md cursor-pointer transition-all">
+          <p class="text-xs font-medium text-gray-400 uppercase tracking-wide">{{ t('crm.dashboard.tasksPendingReview') }}</p>
+          <p class="text-2xl font-bold mt-0.5 text-purple-600">{{ taskCounters.pending_review }}</p>
+        </router-link>
       </div>
 
       <!-- ============================================ -->
@@ -123,7 +140,18 @@
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <!-- Воронка продаж -->
         <div class="bg-white rounded-xl border border-gray-200 p-5">
-          <h3 class="font-semibold text-gray-800 text-sm mb-4">{{ t('crm.dashboard.funnelTitle') }}</h3>
+          <div class="flex items-center gap-2 mb-4">
+            <h3 class="font-semibold text-gray-800 text-sm">{{ t('crm.dashboard.funnelTitle') }}</h3>
+            <span class="group relative cursor-help">
+              <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827m0 4h.01"/>
+              </svg>
+              <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-64 text-center z-10">
+                {{ t('crm.dashboard.funnelTooltip') }}
+                <div class="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
+              </div>
+            </span>
+          </div>
           <div v-if="funnelData.length" class="space-y-2">
             <div v-for="(step, i) in funnelData" :key="step.key">
               <div class="flex items-center gap-3">
@@ -131,11 +159,11 @@
                 <div class="flex-1 relative">
                   <div class="h-7 rounded-md transition-all duration-700 flex items-center px-2.5"
                     :style="{ width: step.percent + '%', minWidth: '32px', background: stageColor(step.key) + '20', borderLeft: `3px solid ${stageColor(step.key)}` }">
-                    <span class="text-[11px] font-bold" :style="{ color: stageColor(step.key) }">{{ step.count }}</span>
+                    <span class="text-xs font-bold" :style="{ color: stageColor(step.key) }">{{ step.count }}</span>
                   </div>
                 </div>
-                <span class="text-[10px] text-gray-400 w-10 text-right shrink-0">{{ step.percent }}%</span>
-                <span v-if="i > 0 && step.dropoff != null" class="text-[10px] w-12 text-right shrink-0"
+                <span class="text-xs text-gray-400 w-10 text-right shrink-0">{{ step.percent }}%</span>
+                <span v-if="i > 0 && step.dropoff != null" class="text-xs w-12 text-right shrink-0"
                   :class="step.dropoff > 50 ? 'text-red-500 font-semibold' : step.dropoff > 30 ? 'text-amber-500' : 'text-gray-400'">
                   -{{ step.dropoff }}%
                 </span>
@@ -148,7 +176,18 @@
 
         <!-- Заявки по этапам -->
         <div class="bg-white rounded-xl border border-gray-200 p-5">
-          <h3 class="font-semibold text-gray-800 text-sm mb-4">{{ t('crm.dashboard.stagesTitle') }}</h3>
+          <div class="flex items-center gap-2 mb-4">
+            <h3 class="font-semibold text-gray-800 text-sm">{{ t('crm.dashboard.stagesTitle') }}</h3>
+            <span class="group relative cursor-help">
+              <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827m0 4h.01"/>
+              </svg>
+              <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-64 text-center z-10">
+                {{ t('crm.dashboard.stagesTooltip') }}
+                <div class="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
+              </div>
+            </span>
+          </div>
           <div class="space-y-2.5">
             <router-link v-for="stage in stageRows" :key="stage.key"
               :to="{ name: 'cases', query: { stage: stage.key } }"
@@ -179,7 +218,7 @@
         </div>
         <div class="overflow-x-auto">
           <table class="w-full text-sm">
-            <thead class="bg-gray-50 border-b text-gray-500 text-[11px] uppercase tracking-wide">
+            <thead class="bg-gray-50 border-b text-gray-500 text-xs uppercase tracking-wide">
               <tr>
                 <th class="text-left px-4 py-2.5 font-medium">{{ t('crm.dashboard.stageCol') }}</th>
                 <th class="text-right px-4 py-2.5 font-medium">{{ t('crm.dashboard.slaNorm') }}</th>
@@ -253,7 +292,7 @@
               <div v-for="(s, i) in leadSources" :key="i" class="flex items-center gap-2 text-xs">
                 <span class="w-2.5 h-2.5 rounded-full shrink-0" :style="{background: sourceColors[i % sourceColors.length]}"></span>
                 <span class="flex-1 text-gray-600 truncate">{{ sourceLabels[s.source] || s.source }}</span>
-                <span class="text-gray-400 text-[10px]">{{ totalLeads > 0 ? Math.round(s.count / totalLeads * 100) : 0 }}%</span>
+                <span class="text-gray-400 text-xs">{{ totalLeads > 0 ? Math.round(s.count / totalLeads * 100) : 0 }}%</span>
                 <span class="font-bold text-gray-800">{{ s.count }}</span>
               </div>
             </div>
@@ -277,18 +316,42 @@
         <!-- Рейтинг топ-3 (если больше 1 менеджера) -->
         <div v-if="managerRanking.length > 1" class="grid grid-cols-3 gap-3 mb-5">
           <div v-for="(rank, i) in managerRanking" :key="rank.id"
-            class="p-3 rounded-lg border text-center"
+            class="p-3 rounded-lg border"
             :class="i === 0 ? 'border-yellow-300 bg-yellow-50' : i === 1 ? 'border-gray-300 bg-gray-50' : 'border-orange-200 bg-orange-50'">
-            <div class="text-lg font-bold mb-0.5" :class="i === 0 ? 'text-yellow-600' : i === 1 ? 'text-gray-500' : 'text-orange-500'">{{ i + 1 }}</div>
-            <p class="font-semibold text-sm text-gray-800 truncate">{{ rank.name }}</p>
-            <p class="text-[10px] text-gray-500 mt-1">{{ rank.score }} {{ t('crm.dashboard.rankingPts') }} | {{ rank.conversion }}%</p>
+            <div class="flex items-center gap-2.5 mb-2">
+              <div class="relative flex-shrink-0">
+                <img v-if="rank.avatar_url" :src="rank.avatar_url" :alt="rank.name"
+                  class="w-10 h-10 rounded-full object-cover border-2"
+                  :class="i === 0 ? 'border-yellow-400' : i === 1 ? 'border-gray-400' : 'border-orange-400'" />
+                <div v-else class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white border-2"
+                  :class="i === 0 ? 'border-yellow-400' : i === 1 ? 'border-gray-400' : 'border-orange-400'"
+                  :style="{ backgroundColor: managerInitialsColor(rank.name) }">
+                  {{ managerInitials(rank.name) }}
+                </div>
+                <span class="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold text-white"
+                  :class="i === 0 ? 'bg-yellow-500' : i === 1 ? 'bg-gray-500' : 'bg-orange-500'">{{ i + 1 }}</span>
+              </div>
+              <div class="min-w-0 flex-1">
+                <p class="font-semibold text-sm text-gray-800 truncate">{{ rank.name }}</p>
+                <p class="text-xs text-gray-500">{{ rank.score }} {{ t('crm.dashboard.rankingPts') }} | {{ rank.conversion }}%</p>
+              </div>
+            </div>
+            <p class="text-xs text-gray-600 italic leading-tight">{{ rank.explanation }}</p>
+            <div v-if="rank.awards.length" class="flex items-center gap-1.5 mt-1.5">
+              <span v-for="award in rank.awards" :key="award.key"
+                class="inline-flex items-center gap-0.5 text-[9px] font-medium px-1.5 py-0.5 rounded-full"
+                :class="award.cls">
+                <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path :d="award.icon" /></svg>
+                {{ award.label }}
+              </span>
+            </div>
           </div>
         </div>
 
         <!-- Таблица менеджеров -->
         <div class="overflow-x-auto">
           <table class="w-full text-sm">
-            <thead class="bg-gray-50 border-b text-gray-500 text-[11px] uppercase tracking-wide">
+            <thead class="bg-gray-50 border-b text-gray-500 text-xs uppercase tracking-wide">
               <tr>
                 <th class="text-left px-4 py-2.5 font-medium">{{ t('crm.dashboard.managerCol') }}</th>
                 <th class="text-right px-4 py-2.5 font-medium">{{ t('crm.dashboard.activeCol') }}</th>
@@ -327,37 +390,53 @@
 
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="bg-white rounded-xl border border-gray-200 p-5 group relative">
-          <p class="text-[11px] font-medium text-gray-400 uppercase tracking-wide">{{ t('crm.dashboard.conversionLeadCase') }}</p>
+          <p class="text-xs font-medium text-gray-400 uppercase tracking-wide">{{ t('crm.dashboard.conversionLeadCase') }}</p>
           <div class="flex items-end gap-2 mt-2">
             <p class="text-3xl font-bold text-blue-600">{{ metrics.conversion_lead_case }}%</p>
           </div>
           <div class="mt-3 bg-gray-100 rounded-full h-2 overflow-hidden">
             <div class="h-full bg-blue-500 rounded-full transition-all" :style="{ width: metrics.conversion_lead_case + '%' }"/>
           </div>
+          <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-64 text-center z-10">
+            {{ t('crm.dashboard.conversionLeadCaseTip') }}
+            <div class="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
+          </div>
         </div>
         <div class="bg-white rounded-xl border border-gray-200 p-5 group relative">
-          <p class="text-[11px] font-medium text-gray-400 uppercase tracking-wide">{{ t('crm.dashboard.conversionCaseVisa') }}</p>
+          <p class="text-xs font-medium text-gray-400 uppercase tracking-wide">{{ t('crm.dashboard.conversionCaseVisa') }}</p>
           <div class="flex items-end gap-2 mt-2">
             <p class="text-3xl font-bold text-green-600">{{ metrics.conversion_case_visa }}%</p>
           </div>
           <div class="mt-3 bg-gray-100 rounded-full h-2 overflow-hidden">
             <div class="h-full bg-green-500 rounded-full transition-all" :style="{ width: metrics.conversion_case_visa + '%' }"/>
           </div>
+          <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-64 text-center z-10">
+            {{ t('crm.dashboard.conversionCaseVisaTip') }}
+            <div class="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
+          </div>
         </div>
         <div class="bg-white rounded-xl border border-gray-200 p-5 group relative">
-          <p class="text-[11px] font-medium text-gray-400 uppercase tracking-wide">{{ t('crm.dashboard.avgProcessing') }}</p>
+          <p class="text-xs font-medium text-gray-400 uppercase tracking-wide">{{ t('crm.dashboard.avgProcessing') }}</p>
           <div class="flex items-end gap-2 mt-2">
             <p class="text-3xl font-bold text-indigo-600">{{ formatHours(metrics.avg_processing_hours) }}</p>
           </div>
-          <p class="text-[10px] text-gray-400 mt-1">{{ t('crm.dashboard.avgProcessingSub') }}</p>
+          <p class="text-xs text-gray-400 mt-1">{{ t('crm.dashboard.avgProcessingSub') }}</p>
+          <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-64 text-center z-10">
+            {{ t('crm.dashboard.avgProcessingTip') }}
+            <div class="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
+          </div>
         </div>
-        <router-link :to="{ name: 'clients' }" class="bg-white rounded-xl border border-gray-200 p-5 hover:border-blue-300 hover:shadow-md transition-all">
-          <p class="text-[11px] font-medium text-gray-400 uppercase tracking-wide">{{ t('crm.dashboard.repeatClients') }}</p>
+        <router-link :to="{ name: 'clients' }" class="bg-white rounded-xl border border-gray-200 p-5 hover:border-blue-300 hover:shadow-md transition-all group relative">
+          <p class="text-xs font-medium text-gray-400 uppercase tracking-wide">{{ t('crm.dashboard.repeatClients') }}</p>
           <div class="flex items-end gap-2 mt-2">
             <p class="text-3xl font-bold text-purple-600">{{ stats?.repeat_clients ?? 0 }}</p>
             <span v-if="stats?.clients_total" class="text-xs text-gray-400 mb-1">/ {{ stats.clients_total }}</span>
           </div>
-          <p class="text-[10px] text-gray-400 mt-1">{{ t('crm.dashboard.repeatClientsSub') }}</p>
+          <p class="text-xs text-gray-400 mt-1">{{ t('crm.dashboard.repeatClientsSub') }}</p>
+          <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-64 text-center z-10">
+            {{ t('crm.dashboard.repeatClientsTip') }}
+            <div class="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45 -mt-1"></div>
+          </div>
         </router-link>
       </div>
 
@@ -378,7 +457,7 @@
         </div>
         <div v-else-if="financialData" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           <div v-for="f in financialCards" :key="f.key" class="text-center p-3 rounded-lg bg-gray-50 border border-gray-100">
-            <p class="text-[10px] font-medium text-gray-400 uppercase tracking-wide">{{ f.label }}</p>
+            <p class="text-xs font-medium text-gray-400 uppercase tracking-wide">{{ f.label }}</p>
             <p class="text-lg font-bold mt-1" :class="f.color">{{ f.value }}</p>
           </div>
         </div>
@@ -390,42 +469,61 @@
 
       <div class="bg-white rounded-xl border border-gray-200 p-5">
         <h3 class="font-semibold text-gray-800 text-sm mb-1">{{ t('crm.dashboard.popularCountriesTitle') }}</h3>
-        <p class="text-[10px] text-gray-400 mb-3">{{ t('crm.dashboard.popularCountriesSub') }}</p>
+        <p class="text-xs text-gray-400 mb-3">{{ t('crm.dashboard.popularCountriesSub') }}</p>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <!-- Топ 5 -->
           <div>
-            <p class="text-[10px] font-medium text-gray-400 uppercase tracking-wide mb-2">{{ t('crm.dashboard.topCountries') }}</p>
-            <div v-if="topPopular.length" class="space-y-2">
-              <router-link v-for="(c, i) in topPopular" :key="c.country_code"
+            <p class="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2">{{ t('crm.dashboard.topCountries') }}</p>
+            <div v-if="topPopularFiltered.length" class="space-y-2">
+              <router-link v-for="(c, i) in topPopularFiltered" :key="c.country_code"
                 :to="{ name: 'countries.show', params: { code: c.country_code } }"
                 class="flex items-center gap-2 text-xs group hover:bg-gray-50 rounded-lg px-1 -mx-1 py-1 transition-colors">
                 <span class="font-bold text-gray-400 w-4">{{ i + 1 }}</span>
                 <span class="text-sm">{{ c.flag_emoji }}</span>
                 <span class="flex-1 text-gray-700 group-hover:text-blue-600 transition-colors truncate">{{ c.name }}</span>
-                <span v-if="c.agency_works" class="text-[10px] font-medium px-1.5 py-0.5 bg-green-50 text-green-600 rounded-full">{{ t('crm.dashboard.works') }}</span>
-                <span v-else class="text-[10px] font-medium px-1.5 py-0.5 bg-red-50 text-red-500 rounded-full">{{ t('crm.dashboard.notWorks') }}</span>
+                <span v-if="c.agency_works" class="text-xs font-medium px-1.5 py-0.5 bg-green-50 text-green-600 rounded-full">{{ t('crm.dashboard.works') }}</span>
+                <span v-else class="text-xs font-medium px-1.5 py-0.5 bg-red-50 text-red-500 rounded-full">{{ t('crm.dashboard.notWorks') }}</span>
               </router-link>
             </div>
+            <p v-else class="text-xs text-gray-400">{{ t('crm.dashboard.noData') }}</p>
           </div>
 
           <!-- Высокий интерес -->
-          <div v-if="trendingPopular.length">
-            <p class="text-[10px] font-medium text-gray-400 uppercase tracking-wide mb-2">{{ t('crm.dashboard.highInterest') }}</p>
-            <div class="space-y-1.5">
-              <router-link v-for="c in trendingPopular" :key="c.country_code"
+          <div>
+            <p class="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2">{{ t('crm.dashboard.highInterest') }}</p>
+            <div v-if="trendingPopularFiltered.length" class="space-y-1.5">
+              <router-link v-for="(c, i) in trendingPopularFiltered" :key="c.country_code"
                 :to="{ name: 'countries.show', params: { code: c.country_code } }"
                 class="flex items-center gap-2 text-xs group hover:bg-gray-50 rounded-lg px-1 -mx-1 py-0.5 transition-colors">
+                <span class="font-bold text-gray-400 w-4">{{ i + 1 }}</span>
                 <span class="text-sm">{{ c.flag_emoji }}</span>
                 <span class="flex-1 text-gray-600 group-hover:text-blue-600 transition-colors truncate">{{ c.name }}</span>
                 <span v-if="c.agency_works" class="text-[9px] font-medium px-1.5 py-0.5 bg-green-50 text-green-600 rounded-full">{{ t('crm.dashboard.works') }}</span>
                 <span v-else class="text-[9px] font-medium px-1.5 py-0.5 bg-red-50 text-red-500 rounded-full">{{ t('crm.dashboard.notWorks') }}</span>
               </router-link>
             </div>
+            <p v-else class="text-xs text-gray-400">{{ t('crm.dashboard.noData') }}</p>
+          </div>
+
+          <!-- Новые возможности -->
+          <div>
+            <p class="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2">{{ t('crm.dashboard.newOpportunities') }}</p>
+            <div v-if="newOpportunities.length" class="space-y-1.5">
+              <router-link v-for="(c, i) in newOpportunities" :key="c.country_code"
+                :to="{ name: 'countries.show', params: { code: c.country_code } }"
+                class="flex items-center gap-2 text-xs group hover:bg-gray-50 rounded-lg px-1 -mx-1 py-0.5 transition-colors">
+                <span class="font-bold text-gray-400 w-4">{{ i + 1 }}</span>
+                <span class="text-sm">{{ c.flag_emoji }}</span>
+                <span class="flex-1 text-gray-600 group-hover:text-blue-600 transition-colors truncate">{{ c.name }}</span>
+                <span class="text-[9px] font-medium px-1.5 py-0.5 bg-purple-50 text-purple-600 rounded-full">{{ t('crm.dashboard.opportunity') }}</span>
+              </router-link>
+            </div>
+            <p v-else class="text-xs text-gray-400">{{ t('crm.dashboard.noData') }}</p>
           </div>
         </div>
 
-        <div v-if="!topPopular.length && !trendingPopular.length" class="text-sm text-gray-400 text-center py-8">{{ t('crm.dashboard.noData') }}</div>
+        <div v-if="!topPopularFiltered.length && !trendingPopularFiltered.length && !newOpportunities.length" class="text-sm text-gray-400 text-center py-8">{{ t('crm.dashboard.noData') }}</div>
       </div>
 
       <!-- ============================================ -->
@@ -444,17 +542,17 @@
         <div v-if="showGoalForm" class="mb-4 p-4 bg-gray-50 rounded-lg border space-y-3">
           <div class="grid grid-cols-3 gap-3">
             <div>
-              <label class="text-[10px] font-medium text-gray-500 uppercase">{{ t('crm.dashboard.goalClients') }}</label>
+              <label class="text-xs font-medium text-gray-500 uppercase">{{ t('crm.dashboard.goalClients') }}</label>
               <input v-model.number="goalForm.target_clients" type="number" min="0"
                 class="mt-1 w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-300 outline-none">
             </div>
             <div>
-              <label class="text-[10px] font-medium text-gray-500 uppercase">{{ t('crm.dashboard.goalCases') }}</label>
+              <label class="text-xs font-medium text-gray-500 uppercase">{{ t('crm.dashboard.goalCases') }}</label>
               <input v-model.number="goalForm.target_cases" type="number" min="0"
                 class="mt-1 w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-300 outline-none">
             </div>
             <div>
-              <label class="text-[10px] font-medium text-gray-500 uppercase">{{ t('crm.dashboard.goalRevenue') }}</label>
+              <label class="text-xs font-medium text-gray-500 uppercase">{{ t('crm.dashboard.goalRevenue') }}</label>
               <input v-model.number="goalForm.target_revenue" type="number" min="0"
                 class="mt-1 w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-300 outline-none">
             </div>
@@ -487,7 +585,7 @@
         <div class="flex items-center justify-between mb-4">
           <div>
             <h3 class="font-semibold text-indigo-900 text-sm">{{ t('crm.forecast.title') }}</h3>
-            <p class="text-[10px] text-indigo-600 mt-0.5">{{ t('crm.forecast.subtitle') }}</p>
+            <p class="text-xs text-indigo-600 mt-0.5">{{ t('crm.forecast.subtitle') }}</p>
           </div>
           <button @click="showForecast = !showForecast"
             class="text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
@@ -499,54 +597,54 @@
         <div v-if="showForecast" class="space-y-4">
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div>
-              <label class="text-[10px] font-medium text-indigo-700 uppercase tracking-wide">{{ t('crm.forecast.clientsPerMonth') }}</label>
+              <label class="text-xs font-medium text-indigo-700 uppercase tracking-wide">{{ t('crm.forecast.clientsPerMonth') }}</label>
               <input v-model.number="forecast.clientsPerMonth" type="number" min="1" max="10000"
                 class="mt-1 w-full px-3 py-2 text-sm border border-indigo-200 rounded-lg bg-white focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 outline-none">
             </div>
             <div>
-              <label class="text-[10px] font-medium text-indigo-700 uppercase tracking-wide">{{ t('crm.forecast.avgCheck') }}</label>
+              <label class="text-xs font-medium text-indigo-700 uppercase tracking-wide">{{ t('crm.forecast.avgCheck') }}</label>
               <input v-model.number="forecast.avgCheck" type="number" min="10" max="100000"
                 class="mt-1 w-full px-3 py-2 text-sm border border-indigo-200 rounded-lg bg-white focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 outline-none">
             </div>
             <div>
-              <label class="text-[10px] font-medium text-indigo-700 uppercase tracking-wide">{{ t('crm.forecast.managers') }}</label>
+              <label class="text-xs font-medium text-indigo-700 uppercase tracking-wide">{{ t('crm.forecast.managers') }}</label>
               <input v-model.number="forecast.managers" type="number" min="1" max="100"
                 class="mt-1 w-full px-3 py-2 text-sm border border-indigo-200 rounded-lg bg-white focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 outline-none">
             </div>
             <div>
-              <label class="text-[10px] font-medium text-indigo-700 uppercase tracking-wide">{{ t('crm.forecast.growthPct') }}</label>
+              <label class="text-xs font-medium text-indigo-700 uppercase tracking-wide">{{ t('crm.forecast.growthPct') }}</label>
               <input v-model.number="forecast.growthPct" type="number" min="0" max="300"
                 class="mt-1 w-full px-3 py-2 text-sm border border-indigo-200 rounded-lg bg-white focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 outline-none">
             </div>
           </div>
 
           <div class="bg-white/60 rounded-lg p-4 border border-indigo-100">
-            <p class="text-[10px] font-medium text-indigo-700 uppercase tracking-wide mb-3">{{ t('crm.forecast.managerCapacity') }}</p>
+            <p class="text-xs font-medium text-indigo-700 uppercase tracking-wide mb-3">{{ t('crm.forecast.managerCapacity') }}</p>
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
               <div>
                 <p class="text-lg font-bold text-gray-900">{{ stats?.managers_count ?? 0 }}</p>
-                <p class="text-[10px] text-gray-500">{{ t('crm.forecast.currentManagers') }}</p>
+                <p class="text-xs text-gray-500">{{ t('crm.forecast.currentManagers') }}</p>
               </div>
               <div>
                 <p class="text-lg font-bold" :class="realAvgHours > 0 ? 'text-gray-900' : 'text-gray-400'">{{ realAvgHours > 0 ? formatHours(realAvgHours) : '--' }}</p>
-                <p class="text-[10px] text-gray-500">{{ t('crm.forecast.realAvgTime') }}</p>
+                <p class="text-xs text-gray-500">{{ t('crm.forecast.realAvgTime') }}</p>
               </div>
               <div>
                 <p class="text-lg font-bold text-blue-600">{{ managerCapacity.withoutCrm }}</p>
-                <p class="text-[10px] text-gray-500">{{ t('crm.forecast.capacityWithout') }}</p>
+                <p class="text-xs text-gray-500">{{ t('crm.forecast.capacityWithout') }}</p>
               </div>
               <div>
                 <p class="text-lg font-bold text-green-600">{{ managerCapacity.withCrm }}</p>
-                <p class="text-[10px] text-gray-500">{{ t('crm.forecast.capacityWith') }}</p>
+                <p class="text-xs text-gray-500">{{ t('crm.forecast.capacityWith') }}</p>
               </div>
             </div>
             <div class="mt-3 grid grid-cols-2 gap-3">
               <div class="bg-gray-50 rounded-lg p-2.5 text-center">
-                <p class="text-[10px] text-gray-500">{{ t('crm.forecast.totalCapacityWithout') }}</p>
+                <p class="text-xs text-gray-500">{{ t('crm.forecast.totalCapacityWithout') }}</p>
                 <p class="text-sm font-bold text-gray-700">{{ teamCapacity.without }} {{ t('crm.forecast.clientsMonth') }}</p>
               </div>
               <div class="bg-green-50 rounded-lg p-2.5 text-center">
-                <p class="text-[10px] text-green-600">{{ t('crm.forecast.totalCapacityWith') }}</p>
+                <p class="text-xs text-green-600">{{ t('crm.forecast.totalCapacityWith') }}</p>
                 <p class="text-sm font-bold text-green-700">{{ teamCapacity.with }} {{ t('crm.forecast.clientsMonth') }}</p>
               </div>
             </div>
@@ -554,7 +652,7 @@
 
           <div class="overflow-x-auto">
             <table class="w-full text-sm">
-              <thead class="bg-white/60 border-b text-indigo-700 text-[10px] uppercase tracking-wide">
+              <thead class="bg-white/60 border-b text-indigo-700 text-xs uppercase tracking-wide">
                 <tr>
                   <th class="text-left px-3 py-2 font-medium">{{ t('crm.forecast.yearCol') }}</th>
                   <th class="text-right px-3 py-2 font-medium">{{ t('crm.forecast.clientsCol') }}</th>
@@ -600,7 +698,7 @@
               <p class="text-xs font-semibold text-green-800">
                 {{ t('crm.forecast.automationSaving', { saved: totalSaved, salaryTotal: (totalSaved * 500).toLocaleString() }) }}
               </p>
-              <p class="text-[10px] text-green-600 mt-1">{{ t('crm.forecast.automationSavingSub') }}</p>
+              <p class="text-xs text-green-600 mt-1">{{ t('crm.forecast.automationSavingSub') }}</p>
             </div>
             <p class="text-xs text-indigo-600 mt-3 text-center">{{ t('crm.forecast.motivationSub') }}</p>
           </div>
@@ -622,19 +720,48 @@
         <div v-if="activityLoading" class="flex justify-center py-6">
           <div class="animate-spin w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full"></div>
         </div>
-        <div v-else-if="activityFeed.length" class="space-y-2 max-h-64 overflow-y-auto">
-          <div v-for="(ev, i) in activityFeed" :key="i" class="flex items-start gap-3 text-xs py-2 border-b border-gray-50 last:border-0">
-            <div class="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0"
-              :class="ev.type === 'stage_change' ? 'bg-blue-500' : 'bg-green-500'"></div>
+        <div v-else-if="activityFeed.length" class="space-y-1 max-h-64 overflow-y-auto">
+          <router-link v-for="(ev, i) in activityFeed" :key="i"
+            :to="ev.case_id ? { name: 'cases.show', params: { id: ev.case_id } } : ''"
+            :class="[
+              'flex items-start gap-3 text-xs py-2 px-2 rounded-lg border-b border-gray-50 last:border-0 transition-colors',
+              ev.case_id ? 'hover:bg-gray-50 cursor-pointer' : ''
+            ]">
+            <div class="w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5"
+              :class="activityDotClass(ev.type)">
+              <svg v-if="ev.type === 'stage_change'" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+              </svg>
+              <svg v-else-if="ev.type === 'case_created'" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
+              </svg>
+              <svg v-else-if="ev.type === 'document_uploaded'" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/>
+              </svg>
+              <svg v-else-if="ev.type === 'payment'" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              <svg v-else-if="ev.type === 'comment'" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.076-4.076a1.526 1.526 0 011.037-.443 48.282 48.282 0 005.68-.494c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z"/>
+              </svg>
+              <svg v-else class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+            </div>
             <div class="flex-1 min-w-0">
-              <p class="text-gray-700">{{ ev.description }}</p>
-              <p class="text-[10px] text-gray-400 mt-0.5">
+              <p class="text-gray-700">
+                <template v-if="ev.type === 'stage_change' && ev.old_value && ev.new_value">
+                  {{ t('crm.dashboard.activityStageChange', { old: stageLabel(ev.old_value), new: stageLabel(ev.new_value) }) }}
+                </template>
+                <template v-else>{{ ev.description }}</template>
+              </p>
+              <p class="text-xs text-gray-400 mt-0.5">
                 <span v-if="ev.user_name">{{ ev.user_name }} -- </span>
                 <span v-if="ev.case_number">{{ ev.case_number }} -- </span>
                 {{ formatDate(ev.created_at) }}
               </p>
             </div>
-          </div>
+          </router-link>
         </div>
         <p v-else-if="activityLoaded" class="text-xs text-gray-400 text-center py-6">{{ t('crm.dashboard.noData') }}</p>
       </div>
@@ -647,6 +774,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { dashboardApi } from '@/api/dashboard';
+import { tasksApi } from '@/api/tasks';
 
 const { t } = useI18n();
 
@@ -654,6 +782,7 @@ const loading = ref(true);
 const stats = ref(null);
 const hints = ref([]);
 const period = ref('30d');
+const taskCounters = ref({ active: 0, today: 0, overdue: 0, pending_review: 0 });
 const showForecast = ref(false);
 const forecast = ref({
   clientsPerMonth: 20,
@@ -846,6 +975,23 @@ const totalLeads = computed(() => leadSources.value.reduce((s, v) => s + v.count
 const topPopular = computed(() => stats.value?.popular_countries?.top ?? []);
 const trendingPopular = computed(() => stats.value?.popular_countries?.trending ?? []);
 
+// Фильтрованные списки: без безвизовых, ограничение 5
+const topPopularFiltered = computed(() =>
+  topPopular.value.filter(c => c.visa_regime !== 'visa_free').slice(0, 5)
+);
+const trendingPopularFiltered = computed(() =>
+  trendingPopular.value.filter(c => c.visa_regime !== 'visa_free').slice(0, 5)
+);
+// Новые возможности: страны с высоким спросом, где агентство НЕ работает
+const newOpportunities = computed(() => {
+  const all = [...topPopular.value, ...trendingPopular.value];
+  const seen = new Set();
+  return all
+    .filter(c => c.visa_regime !== 'visa_free' && !c.agency_works)
+    .filter(c => { if (seen.has(c.country_code)) return false; seen.add(c.country_code); return true; })
+    .slice(0, 5);
+});
+
 // Pie chart slices
 const pieSlices = computed(() => {
   const total = leadSources.value.reduce((s, v) => s + v.count, 0);
@@ -1018,6 +1164,18 @@ async function loadGoals() {
 }
 
 // === Лента активности ===
+const ACTIVITY_DOT_CLASSES = {
+  stage_change:      'bg-blue-100 text-blue-600',
+  case_created:      'bg-green-100 text-green-600',
+  document_uploaded: 'bg-amber-100 text-amber-600',
+  payment:           'bg-purple-100 text-purple-600',
+  comment:           'bg-gray-100 text-gray-600',
+};
+
+function activityDotClass(type) {
+  return ACTIVITY_DOT_CLASSES[type] || 'bg-gray-100 text-gray-500';
+}
+
 async function loadActivity() {
   activityLoading.value = true;
   try {
@@ -1041,15 +1199,62 @@ function formatDate(dt) {
 }
 
 // === Рейтинг менеджеров ===
+function managerInitials(name) {
+  if (!name) return '?';
+  const parts = name.trim().split(/\s+/);
+  return parts.length >= 2
+    ? (parts[0][0] + parts[1][0]).toUpperCase()
+    : name.substring(0, 2).toUpperCase();
+}
+
+function managerInitialsColor(name) {
+  const colors = ['#6366f1','#8b5cf6','#ec4899','#f43f5e','#f97316','#eab308','#22c55e','#14b8a6','#3b82f6','#64748b'];
+  let hash = 0;
+  for (let i = 0; i < (name || '').length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  return colors[Math.abs(hash) % colors.length];
+}
+
 const managerRanking = computed(() => {
   if (!stats.value?.managers?.length) return [];
-  return [...stats.value.managers]
-    .map(m => ({
-      ...m,
-      score: (m.completed_cases * 10) + (m.conversion * 2) + (m.active_cases * 3) - (m.overdue_cases * 15),
-    }))
+  const all = [...stats.value.managers].map(m => ({
+    ...m,
+    score: (m.completed_cases * 10) + (m.conversion * 2) + (m.active_cases * 3) - (m.overdue_cases * 15),
+  }));
+
+  const maxCompleted = Math.max(...all.map(m => m.completed_cases), 0);
+  const maxConversion = Math.max(...all.map(m => m.conversion), 0);
+  const minAvgHours = Math.min(...all.filter(m => m.avg_hours > 0).map(m => m.avg_hours), Infinity);
+
+  return all
     .sort((a, b) => b.score - a.score)
-    .slice(0, 3);
+    .slice(0, 3)
+    .map(m => {
+      // Объяснение места
+      const parts = [];
+      if (maxCompleted > 0 && m.completed_cases === maxCompleted) parts.push(t('crm.dashboard.rankBestCompleted'));
+      if (maxConversion > 0 && m.conversion === maxConversion) parts.push(t('crm.dashboard.rankHighConversion'));
+      if (minAvgHours < Infinity && m.avg_hours > 0 && m.avg_hours === minAvgHours) parts.push(t('crm.dashboard.rankFastProcessing'));
+      if (m.overdue_cases === 0 && m.active_cases > 0) parts.push(t('crm.dashboard.rankNoOverdue'));
+      if (!parts.length) {
+        if (m.completed_cases * 10 > m.conversion * 2) parts.push(t('crm.dashboard.rankGoodVolume'));
+        else parts.push(t('crm.dashboard.rankStableWork'));
+      }
+      const explanation = parts.slice(0, 2).join(', ');
+
+      // Награды
+      const awards = [];
+      if (minAvgHours < Infinity && m.avg_hours > 0 && m.avg_hours === minAvgHours) {
+        awards.push({ key: 'speed', label: t('crm.dashboard.awardSpeed'), cls: 'bg-blue-50 text-blue-600', icon: 'M13 10V3L4 14h7v7l9-11h-7z' });
+      }
+      if (maxConversion > 0 && m.conversion === maxConversion) {
+        awards.push({ key: 'quality', label: t('crm.dashboard.awardQuality'), cls: 'bg-green-50 text-green-600', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' });
+      }
+      if (maxCompleted > 0 && m.completed_cases === maxCompleted) {
+        awards.push({ key: 'volume', label: t('crm.dashboard.awardVolume'), cls: 'bg-amber-50 text-amber-600', icon: 'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6' });
+      }
+
+      return { ...m, explanation, awards };
+    });
 });
 
 // === Финансовый блок ===
@@ -1067,7 +1272,7 @@ async function loadFinancial() {
 const financialCards = computed(() => {
   if (!financialData.value) return [];
   const f = financialData.value;
-  const fmt = (v) => v != null ? '$' + Number(v).toLocaleString() : '--';
+  const fmt = (v) => v != null ? Number(v).toLocaleString('ru-RU').replace(/,/g, ' ') + ' ' + t('crm.dashboard.currencySuffix') : '--';
   return [
     { key: 'total', label: t('crm.dashboard.finTotal'), value: fmt(f.total_revenue), color: 'text-green-600' },
     { key: 'period', label: t('crm.dashboard.finPeriod'), value: fmt(f.period_revenue), color: 'text-blue-600' },
@@ -1078,8 +1283,11 @@ const financialCards = computed(() => {
   ];
 });
 
-function exportPdf() {
-  window.print();
+async function fetchTaskCounters() {
+  try {
+    const { data } = await tasksApi.counters();
+    taskCounters.value = data.data ?? data;
+  } catch (e) { /* ignore */ }
 }
 
 async function fetchDashboard() {
@@ -1104,5 +1312,6 @@ function changePeriod(p) {
 onMounted(() => {
   fetchDashboard();
   loadGoals();
+  fetchTaskCounters();
 });
 </script>
