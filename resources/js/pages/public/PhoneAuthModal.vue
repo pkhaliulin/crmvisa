@@ -12,7 +12,7 @@
 
                 <div class="flex items-center justify-between mb-5">
                     <div class="flex items-center gap-2">
-                        <LogoBrand size="1.1rem" />
+                        <LogoBrand size="1.4rem" />
                     </div>
                     <button @click="$emit('close')"
                         class="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100

@@ -4,7 +4,7 @@
         <!-- Header -->
         <header class="fixed top-0 inset-x-0 z-50 h-14 bg-white border-b border-gray-100 flex items-center gap-3 px-4 sm:px-6">
             <a href="/" class="flex items-center shrink-0">
-                <LogoBrand size="1.1rem" />
+                <LogoBrand size="1.4rem" />
             </a>
 
             <!-- Mobile page title -->

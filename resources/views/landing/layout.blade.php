@@ -159,9 +159,9 @@ h3 { font-size: clamp(1.2rem, 2vw, 1.6rem); letter-spacing: -0.01em; }
 .logo {
   font-family: var(--font-display); font-weight: 800; font-size: 1.4rem;
   color: var(--text-primary); text-decoration: none; letter-spacing: -0.03em;
-  display: flex; align-items: center; gap: 8px;
+  display: flex; align-items: center; gap: 0;
 }
-.logo-dot { width: 8px; height: 8px; background: var(--blue-bright); border-radius: 50%; margin-top: 2px; }
+.logo-dot { width: 8px; height: 8px; background: var(--blue-bright); border-radius: 50%; margin-top: 2px; margin-left: 6px; }
 .logo span { color: var(--blue-bright); }
 .nav-links { display: flex; align-items: center; gap: 8px; }
 .nav-link {
