@@ -61,7 +61,7 @@
                     <p class="text-sm text-gray-600 mb-4">{{ $t('recovery.enterOtp') }}</p>
                     <div class="flex justify-center gap-2 mb-4">
                         <input v-for="i in 4" :key="i" :ref="el => { if (el) otpInputs[i-1] = el }"
-                            type="text" inputmode="numeric" maxlength="1"
+                            type="text" inputmode="numeric" maxlength="1" :autocomplete="i === 1 ? 'one-time-code' : 'off'"
                             class="w-12 h-12 text-center text-xl font-bold border-2 rounded-xl outline-none transition-colors"
                             :class="otpCode[i-1] ? 'border-[#1BA97F]' : 'border-gray-300'"
                             :value="otpCode[i-1] || ''"
@@ -138,6 +138,12 @@ async function sendOtp() {
 
 function onOtpInput(e, idx) {
     const val = e.target.value.replace(/\D/g, '');
+    if (val.length >= 4) {
+        val.slice(0, 4).split('').forEach((d, i) => { otpCode.value[i] = d; });
+        e.target.value = otpCode.value[idx];
+        nextTick(() => { if (otpInputs.value[3]) otpInputs.value[3].focus(); confirmRecovery(); });
+        return;
+    }
     otpCode.value[idx] = val.charAt(0) || '';
     e.target.value = otpCode.value[idx];
     if (val && idx < 3 && otpInputs.value[idx + 1]) otpInputs.value[idx + 1].focus();

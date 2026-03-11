@@ -718,7 +718,7 @@
                 <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.enterCode') }}</label>
                 <div class="flex gap-2 justify-center mb-3">
                     <input v-for="i in 4" :key="i" :ref="el => { if (el) otpInputs[i-1] = el }"
-                        type="text" maxlength="1" inputmode="numeric"
+                        type="text" maxlength="1" inputmode="numeric" :autocomplete="i === 1 ? 'one-time-code' : 'off'"
                         class="w-12 h-12 text-center text-lg font-bold border-2 rounded-xl outline-none transition-colors"
                         :class="otpCode[i-1] ? 'border-[#1BA97F] bg-[#1BA97F]/5' : 'border-gray-200 focus:border-[#1BA97F]'"
                         :value="otpCode[i-1] || ''"
@@ -1497,6 +1497,12 @@ async function sendPhoneOtp() {
 
 function handleOtpInput(idx, e) {
     const val = e.target.value.replace(/\D/g, '');
+    if (val.length >= 4) {
+        val.slice(0, 4).split('').forEach((d, i) => { otpCode.value[i] = d; });
+        e.target.value = otpCode.value[idx];
+        nextTick(() => { otpInputs.value[3]?.focus(); verifyPhoneOtp(); });
+        return;
+    }
     otpCode.value[idx] = val.slice(0, 1);
     e.target.value = otpCode.value[idx];
     if (val && idx < 3) nextTick(() => otpInputs.value[idx + 1]?.focus());

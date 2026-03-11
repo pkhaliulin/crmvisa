@@ -230,7 +230,7 @@ body {
         {{ __('landing.maint_code_sent') }} <strong id="otpPhone" style="color:white;"></strong>
       </p>
       <div class="otp-row">
-        <input class="otp-box" type="tel" inputmode="numeric" maxlength="1" oninput="otpInput(this,0)" onkeydown="otpKeydown(event,0)">
+        <input class="otp-box" type="tel" inputmode="numeric" maxlength="1" autocomplete="one-time-code" oninput="otpInput(this,0)" onkeydown="otpKeydown(event,0)">
         <input class="otp-box" type="tel" inputmode="numeric" maxlength="1" oninput="otpInput(this,1)" onkeydown="otpKeydown(event,1)">
         <input class="otp-box" type="tel" inputmode="numeric" maxlength="1" oninput="otpInput(this,2)" onkeydown="otpKeydown(event,2)">
         <input class="otp-box" type="tel" inputmode="numeric" maxlength="1" oninput="otpInput(this,3)" onkeydown="otpKeydown(event,3)">
@@ -340,9 +340,17 @@ function hideError(id) {
 }
 
 function otpInput(el, i) {
-  el.value = el.value.replace(/\D/g, '').slice(-1);
-  if (el.value) el.style.borderColor = 'var(--cyan)';
+  const raw = el.value.replace(/\D/g, '');
   const boxes = document.querySelectorAll('.otp-box');
+  if (raw.length >= 4) {
+    raw.slice(0, 4).split('').forEach((d, idx) => { boxes[idx].value = d; boxes[idx].style.borderColor = 'var(--cyan)'; });
+    boxes[3].focus();
+    document.getElementById('btnVerifyOtp').disabled = false;
+    verifyOtp();
+    return;
+  }
+  el.value = raw.slice(-1);
+  if (el.value) el.style.borderColor = 'var(--cyan)';
   if (el.value && i < 3) boxes[i+1].focus();
   const code = Array.from(boxes).map(b => b.value).join('');
   document.getElementById('btnVerifyOtp').disabled = code.length < 4;

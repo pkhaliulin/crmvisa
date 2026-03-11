@@ -103,6 +103,7 @@
                             type="tel"
                             maxlength="1"
                             inputmode="numeric"
+                            :autocomplete="i === 0 ? 'one-time-code' : 'off'"
                             :class="[
                                 'w-16 h-18 text-center text-2xl font-bold text-[#0A1F44]',
                                 'border-2 rounded-xl outline-none transition-colors',
@@ -290,8 +291,15 @@ const otpRefs = ref([]);
 const otpCode = computed(() => otp.value.join(''));
 
 function onOtpInput(i) {
-    // Оставляем только цифру
-    otp.value[i] = otp.value[i].replace(/\D/g, '').slice(-1);
+    const raw = otp.value[i].replace(/\D/g, '');
+    // Автоподстановка iOS: все 4 цифры вставлены в одно поле
+    if (raw.length >= 4) {
+        const digits = raw.slice(0, 4).split('');
+        digits.forEach((d, idx) => { otp.value[idx] = d; });
+        nextTick(() => { otpRefs.value[3]?.focus(); verifyOtp(); });
+        return;
+    }
+    otp.value[i] = raw.slice(-1);
     if (otp.value[i] && i < 3) {
         nextTick(() => otpRefs.value[i + 1]?.focus());
     }
