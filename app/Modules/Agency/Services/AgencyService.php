@@ -7,8 +7,8 @@ use App\Modules\Agency\Enums\Plan;
 use App\Modules\Agency\Models\Agency;
 use App\Modules\Agency\Repositories\AgencyRepository;
 use App\Modules\Case\Models\VisaCase;
-use App\Modules\Payment\Models\MarketplaceLead;
 use App\Modules\User\Models\User;
+use Illuminate\Database\Eloquent\Model;
 use App\Support\Abstracts\BaseService;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -50,9 +50,10 @@ class AgencyService extends BaseService
 
     /**
      * Назначить лид менеджеру по стратегии агентства.
+     * Принимает любую модель с country_code (MarketplaceLead, PublicLead, VisaCase).
      * Возвращает User или null (если manual или нет менеджеров).
      */
-    public function assignLead(MarketplaceLead $lead, Agency $agency): ?User
+    public function assignLead(Model $lead, Agency $agency): ?User
     {
         return match ($agency->lead_assignment_mode) {
             'round_robin'  => $this->assignRoundRobin($agency),

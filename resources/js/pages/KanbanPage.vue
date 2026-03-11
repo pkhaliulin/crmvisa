@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-col h-full -m-6">
     <!-- Toolbar -->
-    <div class="px-6 py-4 bg-white border-b flex items-center gap-4">
+    <div class="px-6 py-4 bg-white border-b flex flex-wrap items-center gap-4">
       <div class="flex gap-4 text-sm">
         <span class="flex items-center gap-1.5">
           <span class="w-2.5 h-2.5 rounded-full bg-red-500"></span>
@@ -40,6 +40,41 @@
           </svg>
         </button>
       </div>
+
+      <!-- Фильтр по стране -->
+      <CountrySelect
+        v-model="filters.country_code"
+        :countries="availableCountries"
+        :placeholder="t('crm.kanbanPage.allCountries')"
+        allow-all
+        :all-label="t('crm.kanbanPage.allCountries')"
+        compact
+      />
+
+      <!-- Фильтр: только просроченные -->
+      <label class="flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer select-none">
+        <input v-model="filters.overdue_only" type="checkbox"
+          class="rounded border-gray-300 text-red-500 focus:ring-red-400" />
+        {{ t('crm.kanbanPage.overdueOnly') }}
+      </label>
+
+      <!-- Фильтр по менеджеру (только для owner) -->
+      <select v-if="isOwner" v-model="filters.assigned_to"
+        class="border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm outline-none focus:border-blue-400 text-gray-700 bg-white">
+        <option value="">{{ t('crm.kanbanPage.allManagers') }}</option>
+        <option value="unassigned" class="font-medium text-amber-700">{{ t('crm.kanbanPage.noManager') }}</option>
+        <option v-for="m in managers" :key="m.id" :value="m.id">{{ m.name }}</option>
+      </select>
+
+      <!-- Сброс фильтров -->
+      <button v-if="hasActiveFilters" @click="resetFilters"
+        class="text-xs text-gray-400 hover:text-red-500 transition-colors flex items-center gap-1">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+        {{ t('crm.kanbanPage.resetFilters') }}
+      </button>
+
       <div class="ml-auto">
         <RouterLink :to="{ name: 'cases.create' }">
           <AppButton size="sm">{{ t('crm.kanbanPage.newCase') }}</AppButton>
@@ -97,7 +132,10 @@ import { ref, reactive, computed, onMounted, provide } from 'vue';
 import { useRouter, RouterLink } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useCasesStore } from '@/stores/cases';
+import { useAuthStore } from '@/stores/auth';
+import { useCountries } from '@/composables/useCountries';
 import KanbanColumn from '@/components/KanbanColumn.vue';
+import CountrySelect from '@/components/CountrySelect.vue';
 import AppButton from '@/components/AppButton.vue';
 import AppModal from '@/components/AppModal.vue';
 import AppSelect from '@/components/AppSelect.vue';
@@ -133,13 +171,31 @@ const ALLOWED_TRANSITIONS = {
 
 const casesStore = useCasesStore();
 const router     = useRouter();
+const auth       = useAuthStore();
+const isOwner    = computed(() => auth.isOwner);
+const { countries: availableCountries } = useCountries();
 const moveError  = ref('');
 
 provide('allowedTransitions', ALLOWED_TRANSITIONS);
 
 const searchQuery = ref('');
+const filters = reactive({
+  country_code: '',
+  overdue_only: false,
+  assigned_to: '',
+});
 const managers = ref([]);
 provide('kanbanManagers', managers);
+
+const hasActiveFilters = computed(() =>
+  filters.country_code || filters.overdue_only || filters.assigned_to
+);
+
+function resetFilters() {
+  filters.country_code = '';
+  filters.overdue_only = false;
+  filters.assigned_to = '';
+}
 
 async function loadManagers() {
   try {
@@ -155,25 +211,48 @@ async function handleAssign({ caseId, managerId }) {
   } catch { /* ignore */ }
 }
 
-// Обогащаем колонки метаданными + фильтрация по поисковому запросу
+// Обогащаем колонки метаданными + фильтрация по поисковому запросу и фильтрам
 const boardWithMeta = computed(() => {
   if (!casesStore.board) return [];
   const q = searchQuery.value.trim().toLowerCase();
   return casesStore.board.map(col => {
     const meta = STAGES.value.find(s => s.value === col.key) ?? {};
-    const filtered = q
-      ? col.cases.filter(c =>
-          (c.case_number && c.case_number.toLowerCase().includes(q)) ||
-          (c.client?.name && c.client.name.toLowerCase().includes(q)) ||
-          (c.client?.phone && c.client.phone.includes(q))
-        )
-      : col.cases;
+    let filtered = col.cases;
+
+    // Текстовый поиск
+    if (q) {
+      filtered = filtered.filter(c =>
+        (c.case_number && c.case_number.toLowerCase().includes(q)) ||
+        (c.client?.name && c.client.name.toLowerCase().includes(q)) ||
+        (c.client?.phone && c.client.phone.includes(q))
+      );
+    }
+
+    // Фильтр по стране
+    if (filters.country_code) {
+      filtered = filtered.filter(c => c.country_code === filters.country_code);
+    }
+
+    // Фильтр по просроченным (SLA или дедлайн)
+    if (filters.overdue_only) {
+      filtered = filtered.filter(c => c.stage_sla_overdue || c.urgency === 'overdue');
+    }
+
+    // Фильтр по менеджеру
+    if (filters.assigned_to) {
+      if (filters.assigned_to === 'unassigned') {
+        filtered = filtered.filter(c => !c.assignee);
+      } else {
+        filtered = filtered.filter(c => c.assignee?.id === filters.assigned_to);
+      }
+    }
+
     return {
       ...col,
       cases: filtered,
       count: filtered.length,
       label: meta.label ?? col.label ?? col.key,
-      icon: meta.icon ?? '📌',
+      icon: meta.icon ?? '',
       tooltip: col.tooltip || meta.tooltip || '',
       sla_hours: col.sla_hours ?? meta.sla_hours ?? null,
     };

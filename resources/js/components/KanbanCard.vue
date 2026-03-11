@@ -26,6 +26,20 @@
       <AppBadge :color="priorityColor">{{ priorityLabel }}</AppBadge>
     </div>
 
+    <!-- Source & payment badges -->
+    <div v-if="item.source === 'marketplace' || item.payment_status !== 'paid'"
+      class="flex flex-wrap gap-1 mb-1.5">
+      <span v-if="item.source === 'marketplace'"
+        class="inline-flex items-center text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-green-50 border border-green-200 text-green-700">
+        {{ t('crm.card.sourceMarketplace') }}
+      </span>
+      <span v-if="item.payment_status !== 'paid'"
+        class="inline-flex items-center text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 cursor-help"
+        :title="t('crm.card.notPaidTooltip')">
+        {{ t('crm.card.notPaid') }}
+      </span>
+    </div>
+
     <!-- Case number -->
     <div v-if="item.case_number" class="text-[10px] font-mono text-gray-500 mb-1">
       № {{ item.case_number }}
@@ -194,12 +208,34 @@ const slaIcon = computed(() => {
   if (props.item.stage_sla_hours_left <= 2) return '🟠';
   return '⏱️';
 });
+function formatSlaDuration(totalHours, totalMinutes) {
+  const abs = Math.abs(totalHours);
+  const absMin = totalMinutes !== null && totalMinutes !== undefined ? Math.abs(totalMinutes) : abs * 60;
+  if (abs >= 24) {
+    const days = Math.floor(abs / 24);
+    const hours = abs % 24;
+    return hours > 0
+      ? t('crm.card.durationDaysHours', { d: days, h: hours })
+      : t('crm.card.durationDays', { d: days });
+  }
+  if (abs >= 1) {
+    return t('crm.card.durationHours', { h: abs });
+  }
+  // < 1 hour — show minutes
+  if (absMin > 0) {
+    return t('crm.card.durationMinutesN', { m: absMin });
+  }
+  return t('crm.card.durationMinutes');
+}
+
 const slaLabel = computed(() => {
   const h = props.item.stage_sla_hours_left;
+  const m = props.item.stage_sla_minutes_left;
   if (h === null || h === undefined) return '';
-  if (h < 0) return t('crm.card.slaOverdueBy', { n: Math.abs(h) });
-  if (h === 0) return t('crm.card.slaExpiresNow');
-  return t('crm.card.slaLeft', { n: h });
+  if (h < 0) return t('crm.card.slaOverdueByFormatted', { duration: formatSlaDuration(h, m) });
+  if (h === 0 && (m === null || m === undefined || m <= 0)) return t('crm.card.slaExpiresNow');
+  if (h === 0) return t('crm.card.slaLeftFormatted', { duration: formatSlaDuration(h, m) });
+  return t('crm.card.slaLeftFormatted', { duration: formatSlaDuration(h, m) });
 });
 
 // Payment badge

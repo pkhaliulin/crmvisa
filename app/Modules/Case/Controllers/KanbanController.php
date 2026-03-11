@@ -94,10 +94,12 @@ class KanbanController extends Controller
         $currentStage    = $case->stageHistory->first();
         $stageSlaOverdue = false;
         $stageSlaHoursLeft = null;
+        $stageSlaMinutesLeft = null;
 
         if ($currentStage && $currentStage->sla_due_at) {
-            $stageSlaOverdue   = $currentStage->is_overdue || $currentStage->sla_due_at->isPast();
-            $stageSlaHoursLeft = (int) Carbon::now()->diffInHours($currentStage->sla_due_at, false);
+            $stageSlaOverdue     = $currentStage->is_overdue || $currentStage->sla_due_at->isPast();
+            $stageSlaHoursLeft   = (int) Carbon::now()->diffInHours($currentStage->sla_due_at, false);
+            $stageSlaMinutesLeft = (int) Carbon::now()->diffInMinutes($currentStage->sla_due_at, false);
         }
 
         return [
@@ -114,6 +116,7 @@ class KanbanController extends Controller
             'urgency'             => $isOverdue ? 'overdue' : ($isCritical ? 'critical' : 'normal'),
             'stage_sla_overdue'   => $stageSlaOverdue,
             'stage_sla_hours_left'=> $stageSlaHoursLeft,
+            'stage_sla_minutes_left' => $stageSlaMinutesLeft,
             'public_status'       => $case->public_status,
             'payment_status'      => $case->payment_status,
             'appointment_date'    => $case->appointment_date?->toDateString(),

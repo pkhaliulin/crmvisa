@@ -6,7 +6,7 @@
 
     <!-- Breadcrumb / Page title -->
     <div class="flex-1">
-      <h2 class="text-sm font-semibold text-gray-700">{{ pageTitle }}</h2>
+      <h1 class="text-xl font-bold text-gray-800">{{ pageTitle }}</h1>
     </div>
 
     <!-- Actions -->
@@ -20,6 +20,9 @@
         {{ t('crm.header.overdueCount', { n: overdueCount }) }}
       </RouterLink>
 
+      <!-- User name -->
+      <span class="text-sm text-gray-600">{{ userName }}</span>
+
       <!-- Language switcher -->
       <div class="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
         <button v-for="loc in ['ru', 'uz']" :key="loc" @click="switchLocale(loc)"
@@ -27,29 +30,44 @@
           {{ loc.toUpperCase() }}
         </button>
       </div>
+
+      <!-- Logout -->
+      <button @click="handleLogout" class="text-sm text-gray-500 hover:text-red-500 transition-colors flex items-center gap-1">
+        <ArrowRightOnRectangleIcon class="w-4 h-4" />
+        <span class="hidden sm:inline">{{ t('logout') }}</span>
+      </button>
     </div>
   </header>
 </template>
 
 <script setup>
 import { computed } from 'vue';
-import { RouterLink, useRoute } from 'vue-router';
+import { RouterLink, useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { Bars3Icon, ExclamationTriangleIcon } from '@heroicons/vue/24/outline';
+import { Bars3Icon, ExclamationTriangleIcon, ArrowRightOnRectangleIcon } from '@heroicons/vue/24/outline';
 import { useCasesStore } from '@/stores/cases';
+import { useAuthStore } from '@/stores/auth';
 import { setLocale, currentLocale } from '@/i18n';
 
 defineEmits(['toggle-sidebar']);
 
 const { t } = useI18n();
 const route       = useRoute();
+const router      = useRouter();
 const casesStore  = useCasesStore();
+const auth        = useAuthStore();
 const overdueCount = computed(() => casesStore.stats.overdue ?? 0);
+const userName = computed(() => auth.user?.name ?? '');
 
 const currentLoc = computed(() => currentLocale());
 
 function switchLocale(loc) {
   setLocale(loc);
+}
+
+async function handleLogout() {
+  await auth.logout();
+  router.push({ name: 'login' });
 }
 
 const titles = computed(() => ({
@@ -66,10 +84,17 @@ const titles = computed(() => ({
   'countries.show': t('crm.nav.countries'),
   reports:        t('crm.nav.reports'),
   services:       t('crm.nav.services'),
-  'services.show': t('crm.nav.services'),
+  'service.detail': t('crm.nav.services'),
   billing:        t('crm.nav.billing'),
   settings:       t('crm.nav.settings'),
   users:          t('crm.nav.users'),
+  'users.show':   t('crm.nav.users'),
+  tasks:          t('crm.nav.tasks'),
+  knowledge:      t('crm.nav.knowledge'),
+  leadgen:        t('crm.nav.leadgen'),
+  'leadgen.detail':        t('crm.nav.leadgen'),
+  'leadgen.analytics':     t('crm.nav.leadgen'),
+  'leadgen.notifications': t('crm.nav.leadgen'),
 }));
 const pageTitle = computed(() => titles.value[route.name] ?? 'VisaCRM');
 </script>

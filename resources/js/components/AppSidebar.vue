@@ -35,10 +35,6 @@
           <p class="text-sm font-medium truncate">{{ user?.name }}</p>
           <p class="text-xs text-gray-400 capitalize">{{ user?.role }}</p>
         </div>
-        <button v-if="!collapsed" @click="handleLogout"
-          class="ml-auto text-gray-400 hover:text-red-400 transition-colors">
-          <ArrowRightOnRectangleIcon class="w-4 h-4" />
-        </button>
       </div>
     </div>
   </aside>
@@ -46,13 +42,12 @@
 
 <script setup>
 import { computed } from 'vue';
-import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useAuthStore } from '@/stores/auth';
 import SidebarLink from './SidebarLink.vue';
 import {
   HomeIcon, ViewColumnsIcon, ClipboardDocumentListIcon, ClipboardDocumentCheckIcon,
-  UsersIcon, UserGroupIcon, ArrowRightOnRectangleIcon,
+  UsersIcon, UserGroupIcon,
   ChartBarIcon, BriefcaseIcon, ExclamationTriangleIcon, Cog6ToothIcon, CreditCardIcon, GlobeAltIcon,
   MegaphoneIcon, BookOpenIcon
 } from '@heroicons/vue/24/outline';
@@ -62,7 +57,6 @@ defineEmits(['toggle']);
 
 const { t }  = useI18n();
 const auth   = useAuthStore();
-const router = useRouter();
 const user   = computed(() => auth.user);
 const isOwner = computed(() => auth.isOwner);
 const userInitial = computed(() => user.value?.name?.[0]?.toUpperCase() ?? 'U');
@@ -96,8 +90,4 @@ const navItems = computed(() => {
   return items;
 });
 
-async function handleLogout() {
-  await auth.logout();
-  router.push({ name: 'login' });
-}
 </script>

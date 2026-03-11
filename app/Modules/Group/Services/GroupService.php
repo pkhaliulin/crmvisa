@@ -442,12 +442,12 @@ class GroupService
                     app(\App\Modules\Workflow\Services\SlaService::class)->applyStageSla($stageEntry, $case);
                 }
 
-                // Авто-назначение менеджера (by_workload для групповых)
+                // Авто-назначение менеджера по стратегии агентства (round_robin, by_workload, by_country)
                 if ($case->agency_id) {
                     $agency = \App\Modules\Agency\Models\Agency::find($case->agency_id);
                     if ($agency && $agency->lead_assignment_mode !== 'manual') {
                         $agencyService = app(\App\Modules\Agency\Services\AgencyService::class);
-                        $manager = $agencyService->assignByWorkloadPublic($agency);
+                        $manager = $agencyService->assignLead($case, $agency);
                         if ($manager) {
                             $case->update([
                                 'assigned_to'   => $manager->id,
