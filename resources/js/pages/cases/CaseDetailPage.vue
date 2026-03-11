@@ -625,6 +625,7 @@ const id     = route.params.id;
 // State
 const caseData  = ref(null);
 const checklist = ref({ items: [], progress: null });
+const allowedTransitions = ref({});
 const loading   = ref(true);
 const timelineOpen = ref(false);
 const showMoveModal = ref(false);
@@ -691,19 +692,9 @@ const STAGE_COLORS = {
   lead: 'gray', qualification: 'blue', documents: 'purple',
   doc_review: 'orange', translation: 'yellow', ready: 'blue', review: 'blue', result: 'green',
 };
-const ALLOWED_TRANSITIONS = {
-  lead:          ['qualification'],
-  qualification: ['lead', 'documents'],
-  documents:     ['qualification', 'doc_review'],
-  doc_review:    ['documents', 'translation', 'ready'],
-  translation:   ['doc_review', 'ready'],
-  ready:         ['translation', 'review'],
-  review:        ['ready', 'result'],
-  result:        [],
-};
 const stageOptions = computed(() => {
   const current = caseData.value?.stage;
-  const allowed = ALLOWED_TRANSITIONS[current] || [];
+  const allowed = allowedTransitions.value[current] || [];
   return STAGES.value.filter(s => allowed.includes(s.key)).map(s => ({ value: s.key, label: s.label }));
 });
 
@@ -741,7 +732,7 @@ const currentStageConfig = computed(() => STAGE_CONFIG.value[caseData.value?.sta
 function canMoveTo(stageKey) {
   const current = caseData.value?.stage;
   if (!current || current === stageKey) return false;
-  return (ALLOWED_TRANSITIONS[current] || []).includes(stageKey);
+  return (allowedTransitions.value[current] || []).includes(stageKey);
 }
 
 const priorityColorMap = { low: 'gray', normal: 'blue', high: 'orange', urgent: 'red' };
@@ -844,7 +835,9 @@ async function load() {
   loadError.value = null;
   try {
     const [c, cl] = await Promise.all([casesApi.get(id), casesApi.getChecklist(id)]);
-    caseData.value = c.data.data;
+    const resp = c.data.data;
+    caseData.value = resp.case ?? resp;
+    if (resp.allowed_transitions) allowedTransitions.value = resp.allowed_transitions;
     checklist.value = cl.data.data;
   } catch (e) {
     loadError.value = e.response?.data?.message || t('crm.caseDetail.loadError');
@@ -853,7 +846,9 @@ async function load() {
 async function reloadChecklist() { checklist.value = (await casesApi.getChecklist(id)).data.data; }
 async function reloadAll() {
   const [c, cl] = await Promise.all([casesApi.get(id), casesApi.getChecklist(id)]);
-  caseData.value = c.data.data;
+  const resp = c.data.data;
+  caseData.value = resp.case ?? resp;
+  if (resp.allowed_transitions) allowedTransitions.value = resp.allowed_transitions;
   checklist.value = cl.data.data;
 }
 

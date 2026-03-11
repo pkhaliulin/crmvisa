@@ -139,9 +139,10 @@ class CaseController extends Controller
         $case = $this->service->findOrFail($id);
         $this->authorize('view', $case);
 
-        return ApiResponse::success(
-            new CaseResource($case->load(['client', 'assignee', 'stageHistory']))
-        );
+        return ApiResponse::success([
+            'case' => new CaseResource($case->load(['client', 'assignee', 'stageHistory'])),
+            'allowed_transitions' => CaseService::ALLOWED_TRANSITIONS,
+        ]);
     }
 
     public function update(UpdateCaseRequest $request, string $id): JsonResponse
