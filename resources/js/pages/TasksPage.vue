@@ -190,7 +190,7 @@
     </div>
 
     <!-- Task modal -->
-    <AppModal :show="showModal" @close="showModal = false" :title="editingTask ? t('crm.tasks.editTask') : t('crm.tasks.newTask')">
+    <AppModal v-model="showModal" :title="editingTask ? t('crm.tasks.editTask') : t('crm.tasks.newTask')">
       <form @submit.prevent="saveTask" class="space-y-4">
         <div>
           <label class="block text-xs font-medium text-gray-600 mb-1">{{ t('crm.tasks.taskTitle') }} *</label>
@@ -340,7 +340,7 @@ async function fetchTasks() {
       recurring: () => { params.recurring = 1; },
     };
     (map[activeFilter.value] || map.active)();
-    if (activeFilter.value === 'active') params.status = 'new';
+    if (activeFilter.value === 'active') params.active = 1;
 
     if (filterAssignee.value) params.assigned_to = filterAssignee.value;
     if (searchQuery.value) params.search = searchQuery.value;

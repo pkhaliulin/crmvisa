@@ -54,6 +54,9 @@ class TaskController extends Controller
         if ($request->boolean('recurring')) {
             $query->recurring();
         }
+        if ($request->boolean('active')) {
+            $query->active();
+        }
 
         // Поиск
         if ($request->filled('search')) {
