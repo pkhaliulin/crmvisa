@@ -311,6 +311,21 @@ class TaskCrudTest extends TestCase
         $this->assertEquals('deferred', $res->json('data.status'));
     }
 
+    public function test_manager_cannot_assign_to_another_user(): void
+    {
+        [$agency, $owner] = $this->createAgencyWithOwner();
+        $manager = $this->createManager($agency);
+        $other   = $this->createManager($agency);
+
+        $headers = $this->authHeaders($manager);
+        $res = $this->postJson($this->taskUrl(), [
+            'title'       => 'Assign to other',
+            'assigned_to' => $other->id,
+        ], $headers);
+
+        $res->assertStatus(403);
+    }
+
     // -- Counters ───────────────────────────────────────────
 
     public function test_counters(): void

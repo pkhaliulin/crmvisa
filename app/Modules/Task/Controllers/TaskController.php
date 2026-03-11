@@ -125,7 +125,7 @@ class TaskController extends Controller
 
         // Manager не может назначать задачи другим (только себе)
         if ($user->role === 'manager' && isset($data['assigned_to']) && $data['assigned_to'] !== $user->id) {
-            return ApiResponse::error('Менеджер может назначать задачи только себе', 403);
+            return ApiResponse::error('Менеджер может назначать задачи только себе', statusCode: 403);
         }
 
         $task = AgencyTask::create([
