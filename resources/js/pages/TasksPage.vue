@@ -553,9 +553,15 @@ function nextStatusLabel(task) {
 }
 
 function nextStatusShort(task) {
-  const map = { new: 'accepted', accepted: 'completed', completed: 'verified', verified: 'closed', deferred: 'accepted' };
-  const next = map[task.status];
-  return next ? statusLabels.value[next] : '';
+  const actionMap = {
+    new: 'accept',
+    accepted: 'complete',
+    completed: 'verify',
+    verified: 'close',
+    deferred: 'resume',
+  };
+  const action = actionMap[task.status];
+  return action ? t(`crm.tasks.actions.${action}`) : '';
 }
 
 function transitionBtnClass(task) {

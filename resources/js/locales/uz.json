@@ -3112,7 +3112,14 @@
       "nextStep": "Keyingi",
       "defer": "Keyinga qoldirish",
       "cancel": "Bekor qilish",
-      "reopen": "Qayta ochish"
+      "reopen": "Qayta ochish",
+      "actions": {
+        "accept": "Ishga olish",
+        "complete": "Bajarildi",
+        "verify": "Tasdiqlash",
+        "close": "Yopish",
+        "resume": "Ishga olish"
+      }
     }
   }
 }
