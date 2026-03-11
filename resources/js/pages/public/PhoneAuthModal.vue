@@ -94,6 +94,16 @@
                     <p class="mt-3 text-sm text-gray-500 text-center">
                         {{ $t('auth.smsSentConfirm') }}
                     </p>
+                    <!-- Скрытый input для iOS/Android автоподстановки OTP -->
+                    <input
+                        ref="hiddenOtpRef"
+                        type="text"
+                        inputmode="numeric"
+                        autocomplete="one-time-code"
+                        class="absolute opacity-0 w-0 h-0"
+                        tabindex="-1"
+                        @input="onHiddenOtpInput"
+                    />
                     <div class="mt-5 flex gap-3 justify-center">
                         <input
                             v-for="(_, i) in otp"
@@ -103,7 +113,7 @@
                             type="tel"
                             maxlength="1"
                             inputmode="numeric"
-                            :autocomplete="i === 0 ? 'one-time-code' : 'off'"
+                            autocomplete="off"
                             :class="[
                                 'w-16 h-18 text-center text-2xl font-bold text-[#0A1F44]',
                                 'border-2 rounded-xl outline-none transition-colors',
@@ -286,9 +296,19 @@ function onLoginPhoneInput(e) {
 }
 
 // ── OTP (4 бокса) ─────────────────────────────────────────────────────────────
-const otp     = ref(['', '', '', '']);
-const otpRefs = ref([]);
-const otpCode = computed(() => otp.value.join(''));
+const otp          = ref(['', '', '', '']);
+const otpRefs      = ref([]);
+const hiddenOtpRef = ref(null);
+const otpCode      = computed(() => otp.value.join(''));
+
+function onHiddenOtpInput(e) {
+    const digits = (e.target.value || '').replace(/\D/g, '').slice(0, 4);
+    if (digits.length >= 4) {
+        digits.split('').forEach((d, i) => { otp.value[i] = d; });
+        e.target.value = '';
+        nextTick(() => { otpRefs.value[3]?.focus(); verifyOtp(); });
+    }
+}
 
 function onOtpInput(i) {
     const raw = otp.value[i].replace(/\D/g, '');
@@ -355,7 +375,11 @@ async function sendOtp() {
         step.value = 'otp';
         otp.value  = ['', '', '', ''];
         startResendTimer();
-        nextTick(() => otpRefs.value[0]?.focus());
+        nextTick(() => {
+            // Фокус на скрытый input для iOS автоподстановки, затем на первый бокс
+            hiddenOtpRef.value?.focus();
+            setTimeout(() => otpRefs.value[0]?.focus(), 300);
+        });
     } catch (e) {
         error.value = e.response?.data?.message || t('auth.smsError');
     } finally {

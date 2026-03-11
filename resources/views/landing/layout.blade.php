@@ -1231,8 +1231,9 @@ window.addEventListener('scroll', () => {
       <!-- Step: OTP -->
       <div id="stepOtp" style="display:none;">
         <p style="margin-bottom:16px; font-size:0.9rem; color:var(--text-secondary); text-align:center;">{{ __('landing.auth_code_sent') }} <strong id="otpPhone"></strong></p>
+        <input id="hiddenOtpInput" type="text" inputmode="numeric" autocomplete="one-time-code" style="position:absolute;opacity:0;width:0;height:0;" tabindex="-1" oninput="onHiddenOtpFill(this)">
         <div style="display:flex; gap:10px; justify-content:center;">
-          <input class="otp-box" type="tel" inputmode="numeric" maxlength="1" autocomplete="one-time-code" oninput="otpInput(this,0)" onkeydown="otpKeydown(event,0)" style="width:60px; height:68px; text-align:center; font-size:1.6rem; font-weight:700; border:2px solid var(--border); border-radius:12px; outline:none; color:var(--navy); transition:border-color 0.2s;" onfocus="this.style.borderColor='var(--green)'" onblur="this.style.borderColor=this.value?'var(--green)':'var(--border)'">
+          <input class="otp-box" type="tel" inputmode="numeric" maxlength="1" autocomplete="off" oninput="otpInput(this,0)" onkeydown="otpKeydown(event,0)" style="width:60px; height:68px; text-align:center; font-size:1.6rem; font-weight:700; border:2px solid var(--border); border-radius:12px; outline:none; color:var(--navy); transition:border-color 0.2s;" onfocus="this.style.borderColor='var(--green)'" onblur="this.style.borderColor=this.value?'var(--green)':'var(--border)'">
           <input class="otp-box" type="tel" inputmode="numeric" maxlength="1" oninput="otpInput(this,1)" onkeydown="otpKeydown(event,1)" style="width:60px; height:68px; text-align:center; font-size:1.6rem; font-weight:700; border:2px solid var(--border); border-radius:12px; outline:none; color:var(--navy); transition:border-color 0.2s;" onfocus="this.style.borderColor='var(--green)'" onblur="this.style.borderColor=this.value?'var(--green)':'var(--border)'">
           <input class="otp-box" type="tel" inputmode="numeric" maxlength="1" oninput="otpInput(this,2)" onkeydown="otpKeydown(event,2)" style="width:60px; height:68px; text-align:center; font-size:1.6rem; font-weight:700; border:2px solid var(--border); border-radius:12px; outline:none; color:var(--navy); transition:border-color 0.2s;" onfocus="this.style.borderColor='var(--green)'" onblur="this.style.borderColor=this.value?'var(--green)':'var(--border)'">
           <input class="otp-box" type="tel" inputmode="numeric" maxlength="1" oninput="otpInput(this,3)" onkeydown="otpKeydown(event,3)" style="width:60px; height:68px; text-align:center; font-size:1.6rem; font-weight:700; border:2px solid var(--border); border-radius:12px; outline:none; color:var(--navy); transition:border-color 0.2s;" onfocus="this.style.borderColor='var(--green)'" onblur="this.style.borderColor=this.value?'var(--green)':'var(--border)'">
@@ -1323,7 +1324,7 @@ function showStep(step) {
   const map = { phone:'stepPhone', otp:'stepOtp', pin:'stepPin', loginPin:'stepLoginPin' };
   document.getElementById(map[step]).style.display = 'block';
   if (step === 'phone') setTimeout(() => document.getElementById('phoneInput').focus(), 100);
-  if (step === 'otp') setTimeout(() => document.querySelectorAll('.otp-box')[0].focus(), 100);
+  if (step === 'otp') setTimeout(() => { document.getElementById('hiddenOtpInput').focus(); setTimeout(() => document.querySelectorAll('.otp-box')[0].focus(), 300); }, 100);
   if (step === 'loginPin') setTimeout(() => document.getElementById('loginPhoneInput').focus(), 100);
 }
 
@@ -1374,6 +1375,19 @@ function otpInput(el, i) {
   document.getElementById('btnVerifyOtp').disabled = code.length < 4;
   document.getElementById('btnVerifyOtp').style.opacity = code.length < 4 ? '0.4' : '1';
   if (code.length === 4) verifyOtp();
+}
+
+function onHiddenOtpFill(el) {
+  const digits = (el.value || '').replace(/\D/g, '').slice(0, 4);
+  if (digits.length >= 4) {
+    const boxes = document.querySelectorAll('.otp-box');
+    digits.split('').forEach((d, idx) => { boxes[idx].value = d; boxes[idx].style.borderColor = 'var(--green)'; });
+    el.value = '';
+    boxes[3].focus();
+    document.getElementById('btnVerifyOtp').disabled = false;
+    document.getElementById('btnVerifyOtp').style.opacity = '1';
+    verifyOtp();
+  }
 }
 
 function otpKeydown(e, i) {
