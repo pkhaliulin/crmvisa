@@ -64,4 +64,13 @@ return [
         'secret_key'  => env('CLICK_SECRET_KEY'),
     ],
 
+    // OCR — распознавание паспортов (мульти-провайдер)
+    'ocr' => [
+        'provider'                => env('OCR_PROVIDER', 'claude'), // claude, openai, google, mindee
+        'anthropic_key'           => env('ANTHROPIC_API_KEY', ''),
+        'openai_key'              => env('OPENAI_API_KEY', ''),
+        'google_credentials_path' => env('GOOGLE_APPLICATION_CREDENTIALS', ''),
+        'mindee_key'              => env('MINDEE_API_KEY', ''),
+    ],
+
 ];

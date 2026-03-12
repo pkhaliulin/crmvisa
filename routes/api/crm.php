@@ -12,6 +12,7 @@ use App\Modules\Client\Controllers\ClientController;
 use App\Modules\Client\Controllers\ClientPortalController;
 use App\Modules\Document\Controllers\ChecklistController;
 use App\Modules\Document\Controllers\DocumentController;
+use App\Modules\Document\Controllers\OcrController;
 use App\Modules\Owner\Controllers\CountryDetailController;
 use App\Modules\Owner\Controllers\OwnerController;
 use App\Modules\Payment\Controllers\BillingController;
@@ -24,6 +25,9 @@ use Illuminate\Support\Facades\Route;
 
 // Защищённые роуты (JWT + роли + активный план + контроль сессий)
 Route::middleware(['auth:api', 'role:owner,manager,superadmin', 'plan.active', 'session.limit'])->group(function () {
+
+    // OCR — распознавание паспортов
+    Route::post('ocr/passport', [OcrController::class, 'passport']);
 
     // Клиенты
     Route::post('clients/parse-passport', [ClientController::class, 'parsePassport']);
