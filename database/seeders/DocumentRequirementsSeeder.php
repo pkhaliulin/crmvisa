@@ -118,15 +118,14 @@ class DocumentRequirementsSeeder extends Seeder
         ];
 
         foreach ($requirements as $req) {
-            DB::table('document_requirements')->upsert(
+            DB::table('document_requirements')->updateOrInsert(
+                ['country_code' => $req['country_code'], 'visa_type' => $req['visa_type'], 'name' => $req['name']],
                 array_merge($req, [
                     'id'         => (string) Str::uuid(),
                     'is_active'  => true,
                     'created_at' => now(),
                     'updated_at' => now(),
-                ]),
-                ['country_code', 'visa_type', 'name'],
-                ['type', 'description', 'is_required', 'is_repeatable', 'sort_order', 'updated_at']
+                ])
             );
         }
     }
