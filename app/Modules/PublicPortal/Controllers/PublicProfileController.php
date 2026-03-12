@@ -690,6 +690,41 @@ class PublicProfileController extends Controller
     }
 
     /**
+     * PATCH /public/me/cases/{caseId}/checklist/{itemId}/check
+     * Отметить / снять отметку checkbox-слота (Фото 3x4 и т.п.)
+     */
+    public function checkChecklistItem(Request $request, string $caseId, string $itemId): JsonResponse
+    {
+        $publicUser = $request->get('_public_user');
+
+        $request->validate([
+            'checked' => ['required', 'boolean'],
+        ]);
+
+        $case = VisaCase::whereHas('client', fn ($q) => $q->where('public_user_id', $publicUser->id))
+            ->findOrFail($caseId);
+
+        $item = CaseChecklist::where('case_id', $case->id)->findOrFail($itemId);
+
+        if ($item->type !== 'checkbox') {
+            return ApiResponse::error('Этот документ требует загрузки файла', null, 422);
+        }
+
+        $checked = $request->boolean('checked');
+        $item->update([
+            'is_checked' => $checked,
+            'status'     => $checked ? 'uploaded' : 'pending',
+        ]);
+
+        app(CaseService::class)->checkAutoTransitionAfterUpload($case->fresh());
+
+        return ApiResponse::success([
+            'status'     => $item->fresh()->status,
+            'is_checked' => $checked,
+        ]);
+    }
+
+    /**
      * POST /public/me/cases/{id}/cancel
      * Отмена заявки клиентом (только draft и awaiting_payment).
      */

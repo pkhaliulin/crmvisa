@@ -57,6 +57,8 @@ export const publicPortalApi = {
         publicApi.post(`/me/cases/${caseId}/checklist/${itemId}/upload`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
         }),
+    checkChecklistItem: (caseId, itemId, checked) =>
+        publicApi.patch(`/me/cases/${caseId}/checklist/${itemId}/check`, { checked }),
 
     // Family
     familyMembers:      ()            => publicApi.get('/me/family'),

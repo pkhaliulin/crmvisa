@@ -496,6 +496,8 @@
     "uploadError": "Fayl yuklashda xatolik",
     "fileTooLarge": "Fayl juda katta. Maksimum {max} MB",
     "allowedFormats": "Formatlar: PDF, JPG, PNG, DOC",
+    "checkboxMark": "Tayyor deb belgilash",
+    "checkboxChecked": "Tayyor",
     "reviewError": "Sharh yuborishda xatolik"
   },
   "caseStatus": {

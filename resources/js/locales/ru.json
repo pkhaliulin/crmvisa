@@ -496,6 +496,8 @@
     "uploadError": "Ошибка загрузки файла",
     "fileTooLarge": "Файл слишком большой. Максимум {max} МБ",
     "allowedFormats": "Форматы: PDF, JPG, PNG, DOC",
+    "checkboxMark": "Отметить как готово",
+    "checkboxChecked": "Готово",
     "reviewError": "Ошибка отправки отзыва"
   },
   "caseStatus": {

@@ -592,10 +592,10 @@
                         class="px-5 py-3.5 flex items-start gap-3">
                         <div class="mt-0.5 shrink-0 w-5 h-5 rounded-full flex items-center justify-center"
                             :class="{
-                                'bg-[#1BA97F]':   item.status === 'approved' || item.status === 'uploaded',
-                                'bg-gray-200':    item.status === 'pending',
+                                'bg-[#1BA97F]':   item.status === 'approved' || item.status === 'uploaded' || item.is_checked,
+                                'bg-gray-200':    item.status === 'pending' && !item.is_checked,
                             }">
-                            <svg v-if="item.status === 'approved' || item.status === 'uploaded'" class="w-3 h-3 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+                            <svg v-if="item.status === 'approved' || item.status === 'uploaded' || item.is_checked" class="w-3 h-3 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
                             </svg>
                             <svg v-else class="w-3 h-3 text-gray-400"
@@ -613,13 +613,33 @@
 
                             <div class="mt-1 text-xs font-medium"
                                 :class="{
-                                    'text-[#1BA97F]': item.status === 'approved' || item.status === 'uploaded',
-                                    'text-gray-500':  item.status === 'pending',
+                                    'text-[#1BA97F]': item.status === 'approved' || item.status === 'uploaded' || item.is_checked,
+                                    'text-gray-500':  item.status === 'pending' && !item.is_checked,
                                 }">
-                                {{ statusLabel(item.status) }}
+                                {{ statusLabel(item.status, item) }}
                             </div>
 
-                            <label v-if="item.responsibility !== 'agency' && item.status !== 'approved' && !isTerminal"
+                            <!-- Checkbox type: кнопка отметки -->
+                            <button v-if="item.type === 'checkbox' && item.responsibility !== 'agency' && !isTerminal"
+                                @click="toggleCheckbox(item)"
+                                :disabled="checkboxLoading[item.id]"
+                                class="inline-flex items-center gap-1.5 text-xs font-medium mt-1.5 select-none transition-colors"
+                                :class="item.is_checked
+                                    ? 'text-[#1BA97F] hover:text-red-500 cursor-pointer'
+                                    : 'text-blue-600 hover:text-blue-800 cursor-pointer'">
+                                <svg v-if="!checkboxLoading[item.id]" class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path v-if="item.is_checked" stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                                    <path v-else stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                <svg v-else class="w-3.5 h-3.5 shrink-0 animate-spin" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                                </svg>
+                                <span>{{ item.is_checked ? $t('cases.checkboxChecked') : $t('cases.checkboxMark') }}</span>
+                            </button>
+
+                            <!-- Upload type: кнопка загрузки файла -->
+                            <label v-else-if="item.type !== 'checkbox' && item.responsibility !== 'agency' && item.status !== 'approved' && !isTerminal"
                                 class="inline-flex items-center gap-1.5 text-xs font-medium
                                        cursor-pointer mt-1.5 select-none"
                                 :class="[
@@ -640,7 +660,7 @@
                                     accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
                                     @change="(e) => uploadDoc(item.id, e)"/>
                             </label>
-                            <span v-if="item.responsibility !== 'agency' && !item.document_id && item.status !== 'approved' && !isTerminal"
+                            <span v-if="item.type !== 'checkbox' && item.responsibility !== 'agency' && !item.document_id && item.status !== 'approved' && !isTerminal"
                                 class="text-[10px] text-gray-400 mt-1 block">
                                 {{ $t('cases.allowedFormats') }} &middot; max 20 MB
                             </span>
@@ -1188,6 +1208,7 @@ const caseData    = ref(null);
 const uploading   = ref({});
 const uploadToast = ref('');
 const uploadToastError = ref(false);
+const checkboxLoading = ref({});
 
 // --- Отмена заявки ---
 const showCancelConfirm = ref(false);
@@ -1806,6 +1827,25 @@ async function uploadDoc(itemId, event) {
     }
 }
 
+async function toggleCheckbox(item) {
+    checkboxLoading.value[item.id] = true;
+    try {
+        const newChecked = !item.is_checked;
+        await publicPortalApi.checkChecklistItem(route.params.id, item.id, newChecked);
+        item.is_checked = newChecked;
+        item.status = newChecked ? 'uploaded' : 'pending';
+        uploadToastError.value = false;
+        uploadToast.value = newChecked ? t('cases.checkboxChecked') : '';
+        if (uploadToast.value) setTimeout(() => { uploadToast.value = ''; }, 3000);
+    } catch (e) {
+        uploadToastError.value = true;
+        uploadToast.value = e?.response?.data?.message ?? t('cases.uploadError');
+        setTimeout(() => { uploadToast.value = ''; uploadToastError.value = false; }, 4000);
+    } finally {
+        checkboxLoading.value[item.id] = false;
+    }
+}
+
 const PUBLIC_STATUSES = [
     { key: 'draft',                order: 0 },
     { key: 'awaiting_payment',     order: 1 },
@@ -1884,10 +1924,10 @@ function getProgressColor(index, status, order) {
     return index < order ? 'bg-[#1BA97F]' : index === order ? 'bg-[#1BA97F]/50' : 'bg-gray-100';
 }
 
-function statusLabel(status) {
+function statusLabel(status, item) {
     if (status === 'approved') return t('cases.approved');
-    if (status === 'uploaded') return t('cases.uploadedReview');
-    return t('cases.needUpload');
+    if (status === 'uploaded') return item?.type === 'checkbox' ? t('cases.checkboxChecked') : t('cases.uploadedReview');
+    return item?.type === 'checkbox' ? t('cases.checkboxMark') : t('cases.needUpload');
 }
 
 function deadlineClass(dateStr) {
