@@ -761,8 +761,9 @@ class HealthCheckCommand extends Command
                 SELECT count(*) as cnt FROM agencies
                 WHERE deleted_at IS NULL
                 AND is_active = true
-                AND trial_ends_at IS NOT NULL
-                AND trial_ends_at < NOW()
+                AND plan_expires_at IS NOT NULL
+                AND plan_expires_at < NOW()
+                AND plan = 'trial'
             ");
             $expiredCount = $expiredTrials[0]->cnt ?? 0;
             if ($expiredCount > 0) {
