@@ -304,6 +304,11 @@ const routes = [
                 meta: { roles: ['owner', 'superadmin'] },
             },
             {
+                path: 'notifications',
+                name: 'notifications',
+                component: () => import('@/pages/NotificationsPage.vue'),
+            },
+            {
                 path: 'tasks',
                 name: 'tasks',
                 component: () => import('@/pages/TasksPage.vue'),

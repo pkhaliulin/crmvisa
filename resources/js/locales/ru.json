@@ -3163,6 +3163,23 @@
         "close": "Закрыть",
         "resume": "Взять в работу"
       }
+    },
+    "notifications": {
+      "title": "Уведомления",
+      "markAllRead": "Отметить все прочитанными",
+      "viewAll": "Все уведомления",
+      "noNew": "Нет новых уведомлений",
+      "justNow": "Только что",
+      "minutesAgo": "{n} мин назад",
+      "hoursAgo": "{n} ч назад",
+      "daysAgo": "{n} дн назад"
+    },
+    "bulk": {
+      "selected": "Выбрано: {n}",
+      "selectAll": "Выбрать все",
+      "assignManager": "Назначить менеджера",
+      "changePriority": "Изменить приоритет",
+      "export": "Экспорт"
     }
   },
   "owner": {
@@ -3813,6 +3830,19 @@
         "countries": "Стран",
         "pending_notes": "Заметок на модерации"
       }
+    }
+  },
+  "me": {
+    "case": {
+      "timeline": "История заявки",
+      "stageChanged": "Статус изменён",
+      "documentUploaded": "Документ загружен",
+      "documentApproved": "Документ одобрен",
+      "paymentReceived": "Оплата получена",
+      "managerAssigned": "Менеджер назначен",
+      "message": "Сообщение",
+      "note": "Заметка",
+      "noActivities": "Нет событий"
     }
   }
 }

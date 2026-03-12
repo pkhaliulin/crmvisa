@@ -59,6 +59,7 @@ Route::prefix('public')->middleware(['locale', 'auth.public'])->group(function (
     Route::get('me/cases/{id}',                               [PublicProfileController::class, 'caseDetail']);
     Route::patch('me/cases/{id}',                             [PublicProfileController::class, 'updateCase']);
     Route::post('me/cases/{id}/cancel',                      [PublicProfileController::class, 'cancelCase']);
+    Route::get('me/cases/{id}/activities',                    [\App\Modules\Case\Controllers\CaseActivityController::class, 'publicIndex']);
     Route::post('me/cases/{caseId}/checklist/{itemId}/upload',[PublicProfileController::class, 'uploadChecklistItem'])->middleware('throttle:20,1');
 
     // Семья -- профиль

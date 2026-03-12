@@ -1001,6 +1001,12 @@
 
             <!-- Менеджер уже отображается в header блоке -->
 
+            <!-- === История заявки (Timeline) === -->
+            <CaseTimeline v-if="caseData.id && caseData.public_status !== 'draft'"
+              :case-id="caseData.id"
+              :fetch-fn="publicPortalApi.caseActivities"
+            />
+
             <!-- === Отзыв об агентстве === -->
             <div v-if="caseData.agency?.id && reviewState.loaded && !isTerminal"
                 class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
@@ -1164,6 +1170,7 @@ import { useI18n } from 'vue-i18n';
 import { publicPortalApi } from '@/api/public';
 import { codeToFlag, ALL_COUNTRIES } from '@/utils/countries';
 import AgencyCard from '@/components/AgencyCard.vue';
+import CaseTimeline from '@/components/CaseTimeline.vue';
 import i18n from '@/i18n';
 import { formatPhone } from '@/utils/format';
 import SearchSelect from '@/components/SearchSelect.vue';

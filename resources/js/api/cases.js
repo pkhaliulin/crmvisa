@@ -34,4 +34,20 @@ export const casesApi = {
     // Translation
     uploadTranslation:  (caseId, itemId, form) => api.post(`/cases/${caseId}/checklist/${itemId}/upload-translation`, form, { headers: { 'Content-Type': 'multipart/form-data' } }),
     approveTranslation: (caseId, itemId)       => api.patch(`/cases/${caseId}/checklist/${itemId}/approve-translation`),
+
+    // Bulk actions
+    bulkAssign:   (data) => api.post('/cases/bulk/assign', data),
+    bulkPriority: (data) => api.post('/cases/bulk/priority', data),
+    bulkExport:   (data) => api.post('/cases/bulk/export', data, { responseType: 'blob' }),
+
+    // Activities (timeline)
+    activities:   (caseId, params) => api.get(`/cases/${caseId}/activities`, { params }),
+};
+
+// Notifications API
+export const notificationsApi = {
+    list:         (params) => api.get('/notifications', { params }),
+    unreadCount:  ()       => api.get('/notifications/unread-count'),
+    markAsRead:   (id)     => api.post(`/notifications/${id}/read`),
+    markAllRead:  ()       => api.post('/notifications/read-all'),
 };

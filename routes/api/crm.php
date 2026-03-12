@@ -3,10 +3,13 @@
 use App\Modules\Agency\Controllers\AgencySettingsController;
 use App\Modules\LeadGen\Controllers\LeadChannelController;
 use App\Modules\Agency\Controllers\ReportController;
+use App\Modules\Case\Controllers\CaseActivityController;
+use App\Modules\Case\Controllers\CaseBulkController;
 use App\Modules\Case\Controllers\CaseController;
 use App\Modules\Case\Controllers\CaseEngineController;
 use App\Modules\Case\Controllers\DashboardController;
 use App\Modules\Case\Controllers\KanbanController;
+use App\Modules\Notification\Controllers\NotificationController;
 use App\Modules\Client\Controllers\ClientController;
 use App\Modules\Client\Controllers\ClientPortalController;
 use App\Modules\Document\Controllers\ChecklistController;
@@ -42,6 +45,17 @@ Route::middleware(['auth:api', 'role:owner,manager,superadmin', 'plan.active', '
     Route::get('dashboard/activity',               [DashboardController::class, 'activityFeed']);
     Route::get('dashboard/financial',              [DashboardController::class, 'financialSummary']);
 
+    // Массовые операции с заявками
+    Route::post('cases/bulk/assign',   [CaseBulkController::class, 'assign']);
+    Route::post('cases/bulk/priority', [CaseBulkController::class, 'priority']);
+    Route::post('cases/bulk/export',   [CaseBulkController::class, 'export']);
+
+    // Уведомления
+    Route::get('notifications',                [NotificationController::class, 'index']);
+    Route::get('notifications/unread-count',   [NotificationController::class, 'unreadCount']);
+    Route::post('notifications/{id}/read',     [NotificationController::class, 'markAsRead']);
+    Route::post('notifications/read-all',      [NotificationController::class, 'markAllAsRead']);
+
     // Заявки
     Route::get('cases/critical',          [CaseController::class, 'critical']);
     Route::post('cases/{id}/move-stage',        [CaseController::class, 'moveStage']);
@@ -52,6 +66,9 @@ Route::middleware(['auth:api', 'role:owner,manager,superadmin', 'plan.active', '
     Route::apiResource('cases', CaseController::class)->middleware([
         'plan.limit:max_cases',
     ]);
+
+    // Активности заявки (timeline)
+    Route::get('cases/{id}/activities', [CaseActivityController::class, 'index']);
 
     // Документы (вложены в заявку)
     Route::prefix('cases/{caseId}/documents')->group(function () {
