@@ -6,6 +6,7 @@ use App\Modules\Agency\Controllers\ReportController;
 use App\Modules\Case\Controllers\CaseController;
 use App\Modules\Case\Controllers\CaseEngineController;
 use App\Modules\Case\Controllers\DashboardController;
+use App\Modules\Case\Controllers\VisaEngineController;
 use App\Modules\Case\Controllers\KanbanController;
 use App\Modules\Client\Controllers\ClientController;
 use App\Modules\Client\Controllers\ClientPortalController;
@@ -88,6 +89,11 @@ Route::middleware(['auth:api', 'role:owner,manager,superadmin', 'plan.active', '
     });
     Route::get('engine/rules',                        [CaseEngineController::class, 'rules']);
     Route::get('engine/rules/{countryCode}/{visaType}',[CaseEngineController::class, 'ruleDetail']);
+
+    // Visa Engine -- справочник стран, типов виз и требований
+    Route::get('visa-engine/countries',                       [VisaEngineController::class, 'countries']);
+    Route::get('visa-engine/{code}/visa-types',               [VisaEngineController::class, 'visaTypes']);
+    Route::get('visa-engine/{code}/requirements/{visaType}',  [VisaEngineController::class, 'requirements']);
 
     // Задачи агентства
     Route::get('tasks/counters',           [TaskController::class, 'counters']);
