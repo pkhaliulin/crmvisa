@@ -3,6 +3,7 @@
 namespace App\Modules\Document\Services;
 
 use App\Modules\Document\DTOs\PassportData;
+use App\Modules\Document\Models\AiUsageLog;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -37,6 +38,16 @@ PROMPT;
      *
      * @param string $imagePath Абсолютный путь к файлу изображения на диске
      */
+    private ?string $agencyId = null;
+    private ?string $userId = null;
+
+    public function setContext(?string $agencyId, ?string $userId = null): self
+    {
+        $this->agencyId = $agencyId;
+        $this->userId = $userId;
+        return $this;
+    }
+
     public function extractPassport(string $imagePath): PassportData
     {
         $provider = config('services.ocr.provider', 'claude');
@@ -45,6 +56,8 @@ PROMPT;
             'provider' => $provider,
             'path'     => $imagePath,
         ]);
+
+        $start = microtime(true);
 
         try {
             $result = match ($provider) {
@@ -55,14 +68,43 @@ PROMPT;
                 default  => throw new \RuntimeException("Unknown OCR provider: {$provider}"),
             };
 
+            $durationMs = (int) ((microtime(true) - $start) * 1000);
+
             Log::info('OCR passport extraction completed', [
                 'provider'   => $provider,
                 'confidence' => $result->confidence,
                 'has_mrz'    => $result->mrzLine1 !== null,
             ]);
 
+            // Логируем usage если есть данные
+            if (!empty($this->lastUsage)) {
+                AiUsageLog::log(
+                    service: 'ocr_passport',
+                    provider: $this->lastUsage['provider'],
+                    model: $this->lastUsage['model'],
+                    usage: $this->lastUsage['tokens'],
+                    durationMs: $durationMs,
+                    agencyId: $this->agencyId,
+                    userId: $this->userId,
+                );
+            }
+
             return $result;
         } catch (\Throwable $e) {
+            $durationMs = (int) ((microtime(true) - $start) * 1000);
+
+            AiUsageLog::log(
+                service: 'ocr_passport',
+                provider: $provider,
+                model: $provider === 'openai' ? 'gpt-4o-mini' : ($provider === 'claude' ? 'claude-sonnet-4-20250514' : $provider),
+                usage: $this->lastUsage['tokens'] ?? [],
+                status: 'error',
+                error: mb_substr($e->getMessage(), 0, 500),
+                durationMs: $durationMs,
+                agencyId: $this->agencyId,
+                userId: $this->userId,
+            );
+
             Log::error('OCR passport extraction failed', [
                 'provider' => $provider,
                 'error'    => $e->getMessage(),
@@ -71,6 +113,8 @@ PROMPT;
             throw $e;
         }
     }
+
+    private ?array $lastUsage = null;
 
     // ---------------------------------------------------------------
     //  Claude (Anthropic) — claude-sonnet-4-20250514
@@ -116,8 +160,19 @@ PROMPT;
 
         $response->throw();
 
-        $body = $response->json();
-        $text = $body['content'][0]['text'] ?? '';
+        $body  = $response->json();
+        $text  = $body['content'][0]['text'] ?? '';
+        $usage = $body['usage'] ?? [];
+
+        $this->lastUsage = [
+            'provider' => 'claude',
+            'model'    => 'claude-sonnet-4-20250514',
+            'tokens'   => [
+                'prompt_tokens'     => $usage['input_tokens'] ?? 0,
+                'completion_tokens' => $usage['output_tokens'] ?? 0,
+                'total_tokens'      => ($usage['input_tokens'] ?? 0) + ($usage['output_tokens'] ?? 0),
+            ],
+        ];
 
         return $this->parseJsonResponse($text, 'claude', json_encode($body));
     }
@@ -166,6 +221,12 @@ PROMPT;
 
         $body = $response->json();
         $text = $body['choices'][0]['message']['content'] ?? '';
+
+        $this->lastUsage = [
+            'provider' => 'openai',
+            'model'    => 'gpt-4o-mini',
+            'tokens'   => $body['usage'] ?? [],
+        ];
 
         return $this->parseJsonResponse($text, 'openai', json_encode($body));
     }

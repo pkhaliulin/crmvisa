@@ -3,6 +3,7 @@
 namespace App\Modules\Document\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Document\Models\AiUsageLog;
 use App\Modules\Document\Models\DocumentTemplate;
 use App\Support\Helpers\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -133,6 +134,89 @@ class DocumentTemplateController extends Controller
         return ApiResponse::success([
             'providers' => $providers,
             'current'   => config('services.ocr.provider', 'openai'),
+        ]);
+    }
+
+    /**
+     * GET /admin/ai-usage
+     * Статистика использования AI: токены, стоимость, количество вызовов.
+     */
+    public function aiUsage(Request $request): JsonResponse
+    {
+        $days = (int) $request->query('days', 30);
+        $since = now()->subDays($days);
+
+        // Общая статистика
+        $totals = AiUsageLog::where('created_at', '>=', $since)
+            ->selectRaw("
+                COUNT(*) as total_calls,
+                SUM(CASE WHEN status = 'success' THEN 1 ELSE 0 END) as success_calls,
+                SUM(CASE WHEN status = 'error' THEN 1 ELSE 0 END) as error_calls,
+                SUM(prompt_tokens) as total_prompt_tokens,
+                SUM(completion_tokens) as total_completion_tokens,
+                SUM(total_tokens) as total_tokens,
+                SUM(cost_usd) as total_cost_usd,
+                AVG(duration_ms) as avg_duration_ms
+            ")
+            ->first();
+
+        // По сервисам
+        $byService = AiUsageLog::where('created_at', '>=', $since)
+            ->selectRaw("
+                service,
+                COUNT(*) as calls,
+                SUM(total_tokens) as tokens,
+                SUM(cost_usd) as cost_usd
+            ")
+            ->groupBy('service')
+            ->get();
+
+        // По моделям
+        $byModel = AiUsageLog::where('created_at', '>=', $since)
+            ->selectRaw("
+                model,
+                provider,
+                COUNT(*) as calls,
+                SUM(total_tokens) as tokens,
+                SUM(cost_usd) as cost_usd
+            ")
+            ->groupBy('model', 'provider')
+            ->get();
+
+        // По дням (для графика)
+        $daily = AiUsageLog::where('created_at', '>=', $since)
+            ->selectRaw("
+                DATE(created_at) as date,
+                COUNT(*) as calls,
+                SUM(total_tokens) as tokens,
+                SUM(cost_usd) as cost_usd
+            ")
+            ->groupByRaw('DATE(created_at)')
+            ->orderBy('date')
+            ->get();
+
+        // По агентствам (топ-10)
+        $byAgency = AiUsageLog::where('created_at', '>=', $since)
+            ->whereNotNull('agency_id')
+            ->selectRaw("
+                agency_id,
+                COUNT(*) as calls,
+                SUM(total_tokens) as tokens,
+                SUM(cost_usd) as cost_usd
+            ")
+            ->groupBy('agency_id')
+            ->orderByDesc('cost_usd')
+            ->limit(10)
+            ->get();
+
+        return ApiResponse::success([
+            'period_days' => $days,
+            'totals'      => $totals,
+            'by_service'  => $byService,
+            'by_model'    => $byModel,
+            'daily'       => $daily,
+            'by_agency'   => $byAgency,
+            'balance_note' => 'OpenAI balance: check platform.openai.com/usage',
         ]);
     }
 

@@ -3,6 +3,7 @@
 namespace App\Modules\Document\Services;
 
 use App\Modules\Document\DTOs\DocumentAnalysisResult;
+use App\Modules\Document\Models\AiUsageLog;
 use App\Modules\Document\Models\DocumentTemplate;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
@@ -114,23 +115,70 @@ class DocumentAiAnalyzerService
 PROMPT;
     }
 
+    private ?array $lastCallContext = null;
+
     private function callAi(string $imageBase64, string $prompt): array
     {
         $provider = config('services.ocr.provider', 'openai');
+        $start = microtime(true);
 
-        if ($provider === 'openai') {
-            return $this->callOpenAi($imageBase64, $prompt);
+        try {
+            $result = $provider === 'openai'
+                ? $this->callOpenAi($imageBase64, $prompt)
+                : $this->callClaude($imageBase64, $prompt);
+
+            $durationMs = (int) ((microtime(true) - $start) * 1000);
+
+            AiUsageLog::log(
+                service: 'doc_analyze',
+                provider: $this->lastCallContext['provider'],
+                model: $this->lastCallContext['model'],
+                usage: $this->lastCallContext['usage'],
+                durationMs: $durationMs,
+                agencyId: $this->lastCallContext['agency_id'] ?? null,
+                caseId: $this->lastCallContext['case_id'] ?? null,
+                userId: $this->lastCallContext['user_id'] ?? null,
+            );
+
+            return $result;
+        } catch (\Throwable $e) {
+            $durationMs = (int) ((microtime(true) - $start) * 1000);
+
+            AiUsageLog::log(
+                service: 'doc_analyze',
+                provider: $provider,
+                model: $provider === 'openai' ? 'gpt-4o-mini' : 'claude-haiku-4-5-20251001',
+                usage: $this->lastCallContext['usage'] ?? [],
+                status: 'error',
+                error: mb_substr($e->getMessage(), 0, 500),
+                durationMs: $durationMs,
+            );
+
+            throw $e;
         }
+    }
 
-        return $this->callClaude($imageBase64, $prompt);
+    /**
+     * Установить контекст вызова (agency, case, user) для логирования.
+     */
+    public function setContext(?string $agencyId, ?string $caseId = null, ?string $userId = null): self
+    {
+        $this->lastCallContext = array_merge($this->lastCallContext ?? [], [
+            'agency_id' => $agencyId,
+            'case_id'   => $caseId,
+            'user_id'   => $userId,
+        ]);
+        return $this;
     }
 
     private function callOpenAi(string $imageBase64, string $prompt): array
     {
+        $model = 'gpt-4o-mini';
+
         $response = Http::withToken(config('services.ocr.openai_key'))
             ->timeout(30)
             ->post('https://api.openai.com/v1/chat/completions', [
-                'model' => 'gpt-4o-mini',
+                'model' => $model,
                 'messages' => [
                     [
                         'role' => 'user',
@@ -150,17 +198,25 @@ PROMPT;
             throw new \RuntimeException('OpenAI API error: ' . $response->body());
         }
 
+        $this->lastCallContext = array_merge($this->lastCallContext ?? [], [
+            'provider' => 'openai',
+            'model'    => $model,
+            'usage'    => $response->json('usage') ?? [],
+        ]);
+
         $content = $response->json('choices.0.message.content');
         return json_decode($content, true) ?? [];
     }
 
     private function callClaude(string $imageBase64, string $prompt): array
     {
+        $model = 'claude-haiku-4-5-20251001';
+
         $response = Http::withHeaders([
             'x-api-key' => config('services.ocr.claude_key'),
             'anthropic-version' => '2023-06-01',
         ])->timeout(30)->post('https://api.anthropic.com/v1/messages', [
-            'model' => 'claude-haiku-4-5-20251001',
+            'model' => $model,
             'max_tokens' => 2000,
             'messages' => [
                 [
@@ -180,6 +236,17 @@ PROMPT;
         if (!$response->successful()) {
             throw new \RuntimeException('Claude API error: ' . $response->body());
         }
+
+        $usage = $response->json('usage') ?? [];
+        $this->lastCallContext = array_merge($this->lastCallContext ?? [], [
+            'provider' => 'claude',
+            'model'    => $model,
+            'usage'    => [
+                'prompt_tokens'     => $usage['input_tokens'] ?? 0,
+                'completion_tokens' => $usage['output_tokens'] ?? 0,
+                'total_tokens'      => ($usage['input_tokens'] ?? 0) + ($usage['output_tokens'] ?? 0),
+            ],
+        ]);
 
         $content = $response->json('content.0.text');
         return json_decode($content, true) ?? [];

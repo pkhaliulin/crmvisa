@@ -182,12 +182,12 @@ class FranceVisaCaseEngineSeeder extends Seeder
             ]), 'is_required' => true, 'display_order' => 2],
             ['step_number' => 2, 'step_title' => 'Your job', 'field_key' => 'eu_family_member', 'field_label' => 'Family member of EU/EEA citizen travelling', 'field_type' => 'radio', 'options' => json_encode(['yes' => 'Yes', 'no' => 'No']), 'is_required' => true, 'display_order' => 3, 'help_text' => 'Есть ли среди путешествующих член семьи, являющийся гражданином ЕС/ЕЭП'],
             ['step_number' => 2, 'step_title' => 'Your job', 'field_key' => 'employer_name', 'field_label' => 'Employer name', 'field_type' => 'text', 'mapping_source' => 'client.employer_name', 'transform_rule' => 'uppercase', 'is_required' => true, 'display_order' => 4],
-            ['step_number' => 2, 'step_title' => 'Your job', 'field_key' => 'employer_address', 'field_label' => 'Employer address', 'field_type' => 'text', 'mapping_source' => 'client.employer_address', 'transform_rule' => 'uppercase', 'is_required' => true, 'display_order' => 5],
+            ['step_number' => 2, 'step_title' => 'Your job', 'field_key' => 'employer_address', 'field_label' => 'Employer address', 'field_type' => 'text', 'transform_rule' => 'uppercase', 'is_required' => true, 'display_order' => 5],
             ['step_number' => 2, 'step_title' => 'Your job', 'field_key' => 'employer_zip', 'field_label' => 'Post code', 'field_type' => 'text', 'is_required' => true, 'display_order' => 6],
             ['step_number' => 2, 'step_title' => 'Your job', 'field_key' => 'employer_city', 'field_label' => 'City', 'field_type' => 'text', 'transform_rule' => 'uppercase', 'is_required' => true, 'display_order' => 7],
             ['step_number' => 2, 'step_title' => 'Your job', 'field_key' => 'employer_country', 'field_label' => 'Country', 'field_type' => 'select', 'transform_rule' => 'country_name', 'is_required' => true, 'display_order' => 8],
-            ['step_number' => 2, 'step_title' => 'Your job', 'field_key' => 'employer_phone', 'field_label' => 'Telephone', 'field_type' => 'text', 'mapping_source' => 'client.employer_phone', 'is_required' => true, 'display_order' => 9],
-            ['step_number' => 2, 'step_title' => 'Your job', 'field_key' => 'employer_email', 'field_label' => 'Email', 'field_type' => 'text', 'mapping_source' => 'client.employer_email', 'is_required' => true, 'display_order' => 10],
+            ['step_number' => 2, 'step_title' => 'Your job', 'field_key' => 'employer_phone', 'field_label' => 'Telephone', 'field_type' => 'text', 'is_required' => true, 'display_order' => 9],
+            ['step_number' => 2, 'step_title' => 'Your job', 'field_key' => 'employer_email', 'field_label' => 'Email', 'field_type' => 'text', 'is_required' => true, 'display_order' => 10],
 
             // --- Step 3: Your last visa ---
             ['step_number' => 3, 'step_title' => 'Your last visa', 'field_key' => 'has_previous_schengen', 'field_label' => 'Previous Schengen visa', 'field_type' => 'radio', 'options' => json_encode(['yes' => 'Yes', 'no' => 'No']), 'is_required' => true, 'display_order' => 1],

@@ -34,6 +34,7 @@ class OcrController extends Controller
         $fullPath   = Storage::disk('documents')->path($storedPath);
 
         try {
+            $this->ocrService->setContext($agencyId, $request->user()->id);
             $passportData = $this->ocrService->extractPassport($fullPath);
 
             return ApiResponse::success([

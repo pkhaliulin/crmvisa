@@ -27,6 +27,7 @@ Route::middleware(['auth:api', 'role:superadmin'])->group(function () {
     Route::patch('admin/document-templates/{id}/toggle-ai',     [DocumentTemplateController::class, 'toggleAi']);
     Route::delete('admin/document-templates/{id}',              [DocumentTemplateController::class, 'destroy']);
     Route::get('admin/ai-providers',                            [DocumentTemplateController::class, 'aiProviders']);
+    Route::get('admin/ai-usage',                                [DocumentTemplateController::class, 'aiUsage']);
 
     // Требования стран к документам
     Route::get('admin/country-requirements',                [CountryRequirementController::class, 'index']);

@@ -58,8 +58,9 @@
         <a v-if="caseData.client?.phone" :href="`tel:${caseData.client.phone}`" class="text-xs text-gray-400 hover:text-blue-600">{{ formatPhone(caseData.client.phone) }}</a>
       </div>
       <div v-if="caseData.client?.phone" class="flex gap-2 shrink-0 ml-3">
-        <a :href="'tel:' + caseData.client.phone" class="text-xs px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 font-medium">{{ t('crm.caseDetail.call') }}</a>
+        <a :href="'https://t.me/+' + cleanPhone(caseData.client.phone)" target="_blank" class="text-xs px-3 py-1.5 rounded-lg bg-sky-50 text-sky-600 font-medium">TG</a>
         <a :href="'https://wa.me/' + cleanPhone(caseData.client.phone)" target="_blank" class="text-xs px-3 py-1.5 rounded-lg bg-green-50 text-green-600 font-medium">WA</a>
+        <a :href="'tel:' + caseData.client.phone" class="text-xs px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 font-medium">{{ t('crm.caseDetail.call') }}</a>
       </div>
     </div>
 
@@ -362,17 +363,174 @@
       <!-- RIGHT: Sidebar (4/12) -->
       <div class="lg:col-span-4 space-y-4">
 
-        <!-- Client -->
-        <div class="bg-white rounded-xl border border-gray-100 p-4">
-          <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">{{ t('crm.caseDetail.clientSidebarTitle') }}</p>
-          <p class="text-sm font-bold text-gray-900">{{ caseData.client?.name ?? '---' }}</p>
-          <a v-if="caseData.client?.phone" :href="`tel:${caseData.client.phone}`" class="text-xs text-gray-500 hover:text-blue-600 mt-0.5 block">{{ formatPhone(caseData.client.phone) }}</a>
-          <p v-if="caseData.client?.email" class="text-xs text-gray-500">{{ caseData.client.email }}</p>
-          <div v-if="caseData.client?.phone" class="mt-3 flex gap-2">
-            <a :href="'tel:' + caseData.client.phone"
-              class="text-xs px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 font-medium transition-colors">{{ t('crm.caseDetail.callBtn') }}</a>
+        <!-- Client Portrait -->
+        <div class="bg-white rounded-xl border border-gray-100 p-4 space-y-3">
+          <!-- Header: name + type badge -->
+          <div class="flex items-start justify-between gap-2">
+            <div class="min-w-0">
+              <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">{{ t('crm.caseDetail.clientSidebarTitle') }}</p>
+              <RouterLink :to="{ name: 'clients.show', params: { id: caseData.client?.id } }"
+                class="text-sm font-bold text-gray-900 hover:text-blue-600 transition-colors block truncate">
+                {{ caseData.client?.name ?? '---' }}
+              </RouterLink>
+            </div>
+            <span v-if="portrait" :class="['text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap shrink-0', portrait.total_cases > 1 ? 'bg-blue-50 text-blue-600' : 'bg-gray-100 text-gray-500']">
+              {{ portrait.total_cases > 1 ? t('crm.caseDetail.portraitReturning', { n: portrait.total_cases }) : t('crm.caseDetail.portraitFirstClient') }}
+            </span>
+          </div>
+
+          <!-- Age + Nationality row -->
+          <div v-if="clientAge || caseData.client?.nationality" class="flex items-center gap-2 flex-wrap">
+            <span v-if="clientAge" class="text-xs text-gray-600 font-medium">{{ t('crm.caseDetail.portraitAge', { n: clientAge }) }}</span>
+            <span v-if="clientAge && caseData.client?.nationality" class="text-gray-300">|</span>
+            <span v-if="caseData.client?.nationality" class="text-xs text-gray-600">{{ caseData.client.nationality }}</span>
+          </div>
+
+          <!-- Case stats (approved / rejected) -->
+          <div v-if="portrait && (portrait.approved_cases || portrait.rejected_cases)" class="flex items-center gap-3">
+            <span v-if="portrait.approved_cases" class="text-xs font-semibold text-green-600">{{ portrait.approved_cases }} {{ t('crm.caseDetail.portraitApproved') }}</span>
+            <span v-if="portrait.rejected_cases" class="text-xs font-semibold text-red-500">{{ portrait.rejected_cases }} {{ t('crm.caseDetail.portraitRejected') }}</span>
+          </div>
+
+          <!-- Contact buttons -->
+          <div class="flex items-center gap-2">
+            <a v-if="caseData.client?.phone" :href="`tel:${caseData.client.phone}`" class="text-xs text-gray-500 hover:text-blue-600">{{ formatPhone(caseData.client.phone) }}</a>
+            <span v-if="caseData.client?.phone && caseData.client?.email" class="text-gray-300">|</span>
+            <span v-if="caseData.client?.email" class="text-xs text-gray-500">{{ caseData.client.email }}</span>
+          </div>
+          <div v-if="caseData.client?.phone" class="flex gap-2">
+            <a :href="'https://t.me/+' + cleanPhone(caseData.client.phone)" target="_blank"
+              class="text-xs px-3 py-1.5 rounded-lg bg-sky-50 text-sky-600 hover:bg-sky-100 font-medium transition-colors">Telegram</a>
             <a :href="'https://wa.me/' + cleanPhone(caseData.client.phone)" target="_blank"
               class="text-xs px-3 py-1.5 rounded-lg bg-green-50 text-green-600 hover:bg-green-100 font-medium transition-colors">{{ t('crm.caseDetail.whatsappBtn') }}</a>
+            <a :href="'tel:' + caseData.client.phone"
+              class="text-xs px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 font-medium transition-colors">{{ t('crm.caseDetail.callBtn') }}</a>
+          </div>
+
+          <!-- Passport -->
+          <div v-if="portrait?.passport_number" class="pt-2 border-t border-gray-50">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] text-gray-400 uppercase font-bold">{{ t('crm.caseDetail.portraitPassport') }}</span>
+              <span v-if="passportWarning" :class="['text-[10px] font-bold', passportWarning.cls]">{{ passportWarning.text }}</span>
+            </div>
+            <p class="text-xs text-gray-700 font-mono mt-0.5">{{ portrait.passport_number }}
+              <span v-if="portrait.passport_expires_at" class="text-gray-400 font-sans ml-1">{{ t('crm.caseDetail.portraitPassport') }}: {{ fmtShort(portrait.passport_expires_at) }}</span>
+            </p>
+          </div>
+
+          <!-- Scoring for this case country -->
+          <div v-if="countryScore" class="pt-2 border-t border-gray-50">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-[10px] text-gray-400 uppercase font-bold">{{ t('crm.caseDetail.portraitScoring') }}</span>
+              <span :class="['text-lg font-black tabular-nums', scoreColor(countryScore.score)]">{{ countryScore.score }}</span>
+            </div>
+            <div class="bg-gray-200 rounded-full h-1.5 overflow-hidden">
+              <div :class="['h-full rounded-full transition-all', scoreBarColor(countryScore.score)]" :style="{ width: `${countryScore.score}%` }"></div>
+            </div>
+            <p class="text-[10px] text-gray-500 mt-0.5">{{ countryScore.level_label }}</p>
+          </div>
+
+          <!-- Profile sections (only if profile exists) -->
+          <template v-if="profile">
+
+            <!-- Family -->
+            <div class="pt-2 border-t border-gray-50">
+              <p class="text-[10px] text-gray-400 uppercase font-bold mb-1">{{ t('crm.caseDetail.portraitFamily') }}</p>
+              <div class="flex flex-wrap gap-x-3 gap-y-0.5">
+                <span class="text-xs text-gray-700">{{ maritalLabel }}</span>
+                <span v-if="profile.marital_status === 'married' && profile.spouse_employed" class="text-xs text-green-600">{{ t('crm.caseDetail.portraitSpouseWorks') }}</span>
+                <span class="text-xs text-gray-700">
+                  <template v-if="profile.children_count > 0">
+                    {{ t('crm.caseDetail.portraitChildren', { n: profile.children_count }) }}
+                    <span v-if="profile.children_staying_home" class="text-green-600">({{ t('crm.caseDetail.portraitChildrenHome') }})</span>
+                  </template>
+                  <template v-else>{{ t('crm.caseDetail.portraitNoChildren') }}</template>
+                </span>
+              </div>
+            </div>
+
+            <!-- Work -->
+            <div class="pt-2 border-t border-gray-50">
+              <p class="text-[10px] text-gray-400 uppercase font-bold mb-1">{{ t('crm.caseDetail.portraitWork') }}</p>
+              <div class="space-y-0.5">
+                <div class="flex items-center gap-2">
+                  <span :class="['text-xs font-medium', employmentColor]">{{ employmentLabel }}</span>
+                  <span v-if="profile.position" class="text-xs text-gray-500">{{ profile.position }}</span>
+                </div>
+                <p v-if="profile.employer_name" class="text-xs text-gray-500">{{ profile.employer_name }}</p>
+                <p v-if="profile.years_at_current_job" class="text-xs text-gray-400">{{ t('crm.caseDetail.portraitYearsJob', { n: profile.years_at_current_job }) }}</p>
+              </div>
+            </div>
+
+            <!-- Finance -->
+            <div class="pt-2 border-t border-gray-50">
+              <p class="text-[10px] text-gray-400 uppercase font-bold mb-1">{{ t('crm.caseDetail.portraitFinance') }}</p>
+              <div class="grid grid-cols-2 gap-1">
+                <div v-if="profile.monthly_income">
+                  <p class="text-[10px] text-gray-400">{{ t('crm.caseDetail.portraitIncome') }}</p>
+                  <p class="text-xs font-semibold text-gray-800">${{ fmtMoney(profile.monthly_income) }}</p>
+                </div>
+                <div v-if="profile.bank_balance">
+                  <p class="text-[10px] text-gray-400">{{ t('crm.caseDetail.portraitBank') }}</p>
+                  <p class="text-xs font-semibold text-gray-800">${{ fmtMoney(profile.bank_balance) }}</p>
+                </div>
+                <div v-if="profile.has_fixed_deposit && profile.fixed_deposit_amount">
+                  <p class="text-[10px] text-gray-400">{{ t('crm.caseDetail.portraitDeposit') }}</p>
+                  <p class="text-xs font-semibold text-gray-800">${{ fmtMoney(profile.fixed_deposit_amount) }}</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Assets -->
+            <div class="pt-2 border-t border-gray-50">
+              <p class="text-[10px] text-gray-400 uppercase font-bold mb-1">{{ t('crm.caseDetail.portraitAssets') }}</p>
+              <div v-if="profile.has_real_estate || profile.has_car || profile.has_business" class="flex flex-wrap gap-1.5">
+                <span v-if="profile.has_real_estate" class="text-[10px] px-2 py-0.5 rounded-full bg-green-50 text-green-700 font-medium">{{ t('crm.caseDetail.portraitRealEstate') }}</span>
+                <span v-if="profile.has_car" class="text-[10px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-medium">{{ t('crm.caseDetail.portraitCar') }}</span>
+                <span v-if="profile.has_business" class="text-[10px] px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 font-medium">{{ t('crm.caseDetail.portraitBusiness') }}</span>
+              </div>
+              <p v-else class="text-xs text-gray-400">{{ t('crm.caseDetail.portraitNoAssets') }}</p>
+            </div>
+
+            <!-- Visa History -->
+            <div class="pt-2 border-t border-gray-50">
+              <p class="text-[10px] text-gray-400 uppercase font-bold mb-1">{{ t('crm.caseDetail.portraitVisaHistory') }}</p>
+              <div v-if="profile.has_schengen_visa || profile.has_us_visa || profile.has_uk_visa" class="flex flex-wrap gap-1.5 mb-1">
+                <span v-if="profile.has_schengen_visa" class="text-[10px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-medium">{{ t('crm.caseDetail.portraitSchengen') }}</span>
+                <span v-if="profile.has_us_visa" class="text-[10px] px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 font-medium">{{ t('crm.caseDetail.portraitUSA') }}</span>
+                <span v-if="profile.has_uk_visa" class="text-[10px] px-2 py-0.5 rounded-full bg-red-50 text-red-700 font-medium">{{ t('crm.caseDetail.portraitUK') }}</span>
+              </div>
+              <div v-else class="mb-1">
+                <span class="text-xs text-gray-400">{{ t('crm.caseDetail.portraitNoVisas') }}</span>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                <span v-if="profile.previous_refusals > 0" class="text-xs font-semibold text-red-500">{{ t('crm.caseDetail.portraitRefusals', { n: profile.previous_refusals }) }}</span>
+                <span v-else class="text-xs text-green-600">{{ t('crm.caseDetail.portraitCleanHistory') }}</span>
+                <span v-if="profile.has_overstay" class="text-xs font-semibold text-red-600">{{ t('crm.caseDetail.portraitOverstay') }}</span>
+              </div>
+            </div>
+
+            <!-- Education -->
+            <div v-if="profile.education_level" class="pt-2 border-t border-gray-50">
+              <div class="flex items-center justify-between">
+                <span class="text-[10px] text-gray-400 uppercase font-bold">{{ t('crm.caseDetail.portraitEducation') }}</span>
+                <span class="text-xs text-gray-700">{{ educationLabel }}</span>
+              </div>
+            </div>
+
+          </template>
+
+          <!-- No profile hint -->
+          <div v-else-if="!portraitLoading" class="pt-2 border-t border-gray-50">
+            <p class="text-xs text-gray-400">{{ t('crm.caseDetail.portraitNoProfile') }}</p>
+          </div>
+
+          <!-- View full profile link -->
+          <div v-if="caseData.client?.id" class="pt-2 border-t border-gray-50">
+            <RouterLink :to="{ name: 'clients.show', params: { id: caseData.client.id } }"
+              class="text-xs text-blue-500 hover:text-blue-700 font-medium">
+              {{ t('crm.caseDetail.portraitViewProfile') }}
+            </RouterLink>
           </div>
         </div>
 
@@ -601,7 +759,7 @@
 
 <script setup>
 import { ref, computed, onMounted, reactive } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute, useRouter, RouterLink } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { casesApi } from '@/api/cases';
 import { useCountries } from '@/composables/useCountries';
@@ -636,6 +794,9 @@ const checklist = ref({ items: [], progress: null });
 const allowedTransitions = ref({});
 const loading   = ref(true);
 const aiAnalyzingId = ref(null);
+const portrait = ref(null);
+const profile = ref(null);
+const portraitLoading = ref(false);
 const timelineOpen = ref(false);
 const showMoveModal = ref(false);
 const showAddSlot = ref(false);
@@ -831,6 +992,60 @@ function stepClass(idx) {
   return 'bg-gray-200 text-gray-400';
 }
 
+// Client portrait computed
+const clientAge = computed(() => {
+  const dob = portrait.value?.date_of_birth;
+  if (!dob) return null;
+  const birth = new Date(dob);
+  const now = new Date();
+  let age = now.getFullYear() - birth.getFullYear();
+  if (now.getMonth() < birth.getMonth() || (now.getMonth() === birth.getMonth() && now.getDate() < birth.getDate())) age--;
+  return age > 0 ? age : null;
+});
+
+const passportWarning = computed(() => {
+  const exp = portrait.value?.passport_expires_at;
+  if (!exp) return null;
+  const days = Math.floor((new Date(exp) - new Date()) / 86400000);
+  if (days < 0) return { text: t('crm.caseDetail.portraitPassportExpired'), cls: 'text-red-600' };
+  if (days <= 90) return { text: t('crm.caseDetail.portraitPassportExpiring'), cls: 'text-yellow-600' };
+  return null;
+});
+
+const countryScore = computed(() => {
+  if (!portrait.value?.scores?.length || !caseData.value?.country_code) return null;
+  return portrait.value.scores.find(s => s.country_code === caseData.value.country_code) || null;
+});
+
+const MARITAL_MAP = { married: 'portraitMarried', single: 'portraitSingle', divorced: 'portraitDivorced', widowed: 'portraitWidowed' };
+const maritalLabel = computed(() => {
+  const k = MARITAL_MAP[profile.value?.marital_status];
+  return k ? t(`crm.caseDetail.${k}`) : '---';
+});
+
+const EMPLOYMENT_MAP = { government: 'portraitGovernment', private: 'portraitPrivate', business_owner: 'portraitBusinessOwner', self_employed: 'portraitSelfEmployed', student: 'portraitStudent', retired: 'portraitRetired', unemployed: 'portraitUnemployed' };
+const employmentLabel = computed(() => {
+  const k = EMPLOYMENT_MAP[profile.value?.employment_type];
+  return k ? t(`crm.caseDetail.${k}`) : profile.value?.employment_type ?? '---';
+});
+const employmentColor = computed(() => {
+  const et = profile.value?.employment_type;
+  if (et === 'government') return 'text-green-700';
+  if (et === 'unemployed') return 'text-red-600';
+  if (et === 'student') return 'text-blue-600';
+  return 'text-gray-700';
+});
+
+const EDUCATION_MAP = { phd: 'portraitPhd', master: 'portraitMaster', bachelor: 'portraitBachelor', secondary: 'portraitSecondary', none: 'portraitNoEducation' };
+const educationLabel = computed(() => {
+  const k = EDUCATION_MAP[profile.value?.education_level];
+  return k ? t(`crm.caseDetail.${k}`) : '---';
+});
+
+function scoreColor(s) { return s >= 80 ? 'text-green-600' : s >= 60 ? 'text-yellow-600' : 'text-red-600'; }
+function scoreBarColor(s) { return s >= 80 ? 'bg-green-500' : s >= 60 ? 'bg-yellow-400' : 'bg-red-400'; }
+function fmtMoney(v) { return Number(v).toLocaleString('en-US', { maximumFractionDigits: 0 }); }
+
 // Helpers
 function cleanPhone(p) { return (p ?? '').replace(/[^0-9]/g, ''); }
 function fmtFull(d) { if (!d) return '---'; return new Date(d).toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }); }
@@ -849,6 +1064,11 @@ async function load() {
     caseData.value = resp.case ?? resp;
     if (resp.allowed_transitions) allowedTransitions.value = resp.allowed_transitions;
     checklist.value = cl.data.data;
+    // Client portrait
+    if (resp.client_portrait) {
+      portrait.value = resp.client_portrait;
+      profile.value = resp.client_portrait.profile ?? null;
+    }
   } catch (e) {
     loadError.value = e.response?.data?.message || t('crm.caseDetail.loadError');
   } finally { loading.value = false; }

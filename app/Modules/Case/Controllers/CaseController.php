@@ -139,9 +139,46 @@ class CaseController extends Controller
         $case = $this->service->findOrFail($id);
         $this->authorize('view', $case);
 
+        $case->load(['client', 'assignee', 'stageHistory']);
+
+        $caseResource = new CaseResource($case);
+
+        // Client portrait data
+        $portrait = null;
+        if ($case->client) {
+            $client = $case->client;
+            $profile = \App\Modules\Scoring\Models\ClientProfile::where('client_id', $client->id)->first();
+            $scores = \App\Modules\Scoring\Models\ClientScore::where('client_id', $client->id)
+                ->orderByDesc('score')
+                ->get();
+            $caseCount = \App\Modules\Case\Models\VisaCase::where('client_id', $client->id)
+                ->whereNotIn('public_status', ['draft', 'cancelled'])
+                ->count();
+            $completedCount = \App\Modules\Case\Models\VisaCase::where('client_id', $client->id)
+                ->where('stage', 'result')
+                ->where('result_type', 'approved')
+                ->count();
+            $rejectedCount = \App\Modules\Case\Models\VisaCase::where('client_id', $client->id)
+                ->where('stage', 'result')
+                ->where('result_type', 'rejected')
+                ->count();
+
+            $portrait = [
+                'date_of_birth'       => $client->date_of_birth,
+                'passport_number'     => $client->passport_number,
+                'passport_expires_at' => $client->passport_expires_at,
+                'total_cases'         => $caseCount,
+                'approved_cases'      => $completedCount,
+                'rejected_cases'      => $rejectedCount,
+                'profile'             => $profile,
+                'scores'              => $scores,
+            ];
+        }
+
         return ApiResponse::success([
-            'case' => new CaseResource($case->load(['client', 'assignee', 'stageHistory'])),
+            'case' => $caseResource,
             'allowed_transitions' => CaseService::ALLOWED_TRANSITIONS,
+            'client_portrait' => $portrait,
         ]);
     }
 

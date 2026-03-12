@@ -225,7 +225,8 @@ class ChecklistController extends Controller
             'visa_type'    => $case->visa_type,
         ];
 
-        // Вызов AI-анализатора
+        // Вызов AI-анализатора с контекстом для логирования расходов
+        $this->aiAnalyzer->setContext($request->user()->agency_id, $caseId, $request->user()->id);
         $result = $this->aiAnalyzer->analyze($filePath, $template, $context);
 
         // Сохраняем результат анализа в чек-лист
