@@ -167,6 +167,11 @@ const routes = [
                 component: () => import('@/pages/owner/OwnerDocumentsPage.vue'),
             },
             {
+                path: 'documents/:id',
+                name: 'owner.documents.edit',
+                component: () => import('@/pages/owner/OwnerDocumentEditPage.vue'),
+            },
+            {
                 path: 'finance',
                 name: 'owner.finance',
                 component: () => import('@/pages/owner/OwnerFinancePage.vue'),

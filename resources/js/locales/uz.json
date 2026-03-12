@@ -3514,7 +3514,9 @@
       "riskIndicators": "Nimaga e'tibor berish kerak",
       "riskIndicatorsHint": "Menejer bilishi kerak bo'lgan xatarlar",
       "addItem": "+ Qo'shish",
-      "aiColumn": "AI"
+      "aiColumn": "AI",
+      "tabManager": "Menejer",
+      "saved": "Saqlandi"
     },
     "crmUsers": {
       "searchPlaceholder": "Ism yoki email bo'yicha qidirish...",

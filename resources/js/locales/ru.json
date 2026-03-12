@@ -3514,7 +3514,9 @@
       "riskIndicators": "На что обратить внимание",
       "riskIndicatorsHint": "Риски, о которых менеджер должен знать",
       "addItem": "+ Добавить",
-      "aiColumn": "AI"
+      "aiColumn": "AI",
+      "tabManager": "Менеджер",
+      "saved": "Сохранено"
     },
     "crmUsers": {
       "searchPlaceholder": "Поиск по имени или email...",
