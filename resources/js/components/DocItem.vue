@@ -27,7 +27,7 @@
           <a v-if="isSafeUrl(item.document.url)" :href="item.document.url" download class="text-[10px] text-gray-400 hover:text-gray-600">{{ t('crm.doc.download') }}</a>
           <label class="text-[10px] text-gray-400 hover:text-gray-600 cursor-pointer">
             {{ t('crm.doc.replace') }}
-            <input type="file" class="hidden" @change="$emit('upload', item, $event)" />
+            <input type="file" class="hidden" accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx,.tiff,.bmp" @change="$emit('upload', item, $event)" />
           </label>
         </div>
 
@@ -63,7 +63,7 @@
           <label v-if="item.status === 'needs_translation'"
             class="mt-2 inline-block cursor-pointer text-xs px-3 py-1.5 rounded-lg border border-purple-200 text-purple-700 bg-purple-100 hover:bg-purple-200 font-medium transition-colors">
             {{ t('crm.doc.uploadTranslation') }}
-            <input type="file" class="hidden" @change="$emit('upload-translation', item, $event)" />
+            <input type="file" class="hidden" accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx,.tiff,.bmp" @change="$emit('upload-translation', item, $event)" />
           </label>
 
           <!-- Approve translation -->

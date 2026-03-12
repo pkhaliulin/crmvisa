@@ -494,6 +494,8 @@
     "reviewThanks": "Спасибо, что помогаете другим выбрать агентство",
     "reviewPublishedToast": "Отзыв опубликован. Спасибо!",
     "uploadError": "Ошибка загрузки файла",
+    "fileTooLarge": "Файл слишком большой. Максимум {max} МБ",
+    "allowedFormats": "Форматы: PDF, JPG, PNG, DOC",
     "reviewError": "Ошибка отправки отзыва"
   },
   "caseStatus": {
@@ -2791,7 +2793,10 @@
       "statusForTranslation": "На перевод",
       "statusTranslated": "Переведено",
       "statusReview": "На проверке",
-      "statusNotUploaded": "Не загружен"
+      "statusNotUploaded": "Не загружен",
+      "fileTooLarge": "Файл слишком большой. Макс. {max} МБ",
+      "maxFileSize": "до {max} МБ",
+      "uploadFailed": "Ошибка загрузки файла"
     },
     "docAi": {
       "analyze": "Анализ AI",

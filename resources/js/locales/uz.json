@@ -494,6 +494,8 @@
     "reviewThanks": "Boshqalarga agentlik tanlashga yordam berganingiz uchun rahmat",
     "reviewPublishedToast": "Sharh nashr etildi. Rahmat!",
     "uploadError": "Fayl yuklashda xatolik",
+    "fileTooLarge": "Fayl juda katta. Maksimum {max} MB",
+    "allowedFormats": "Formatlar: PDF, JPG, PNG, DOC",
     "reviewError": "Sharh yuborishda xatolik"
   },
   "caseStatus": {
@@ -2791,7 +2793,10 @@
       "statusForTranslation": "Tarjimaga",
       "statusTranslated": "Tarjima qilindi",
       "statusReview": "Tekshiruvda",
-      "statusNotUploaded": "Yuklanmagan"
+      "statusNotUploaded": "Yuklanmagan",
+      "fileTooLarge": "Fayl juda katta. Maks. {max} MB",
+      "maxFileSize": "{max} MB gacha",
+      "uploadFailed": "Fayl yuklashda xatolik"
     },
     "docAi": {
       "analyze": "AI tahlili",

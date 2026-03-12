@@ -4,12 +4,16 @@
         <!-- Toast уведомление о загрузке -->
         <transition name="fade">
             <div v-if="uploadToast"
-                class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50
-                       bg-[#1BA97F] text-white text-sm font-semibold
-                       px-5 py-3 rounded-2xl shadow-lg shadow-[#1BA97F]/30
-                       flex items-center gap-2 pointer-events-none">
-                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                :class="['fixed bottom-6 left-1/2 -translate-x-1/2 z-50',
+                       'text-white text-sm font-semibold',
+                       'px-5 py-3 rounded-2xl shadow-lg',
+                       'flex items-center gap-2 pointer-events-none',
+                       uploadToastError ? 'bg-red-500 shadow-red-500/30' : 'bg-[#1BA97F] shadow-[#1BA97F]/30']">
+                <svg v-if="!uploadToastError" class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                </svg>
+                <svg v-else class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/>
                 </svg>
                 {{ uploadToast }}
             </div>
@@ -642,6 +646,10 @@
                                     accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
                                     @change="(e) => uploadDoc(item.id, e)"/>
                             </label>
+                            <span v-if="item.responsibility !== 'agency' && !item.document_id && item.status !== 'approved' && !isTerminal"
+                                class="text-[10px] text-gray-400 mt-1 block">
+                                {{ $t('cases.allowedFormats') }} &middot; max 20 MB
+                            </span>
                             <div v-else-if="item.responsibility === 'agency' && item.status !== 'approved'"
                                 class="mt-1 text-xs text-gray-400 italic">
                                 {{ item.status === 'done' ? $t('cases.doneByAgency') : $t('cases.waitingAgency') }}
@@ -1185,6 +1193,7 @@ const loading     = ref(true);
 const caseData    = ref(null);
 const uploading   = ref({});
 const uploadToast = ref('');
+const uploadToastError = ref(false);
 
 // --- Отмена заявки ---
 const showCancelConfirm = ref(false);
@@ -1766,9 +1775,21 @@ async function doChangeAgency() {
     }
 }
 
+const MAX_FILE_SIZE_MB = 20;
+
 async function uploadDoc(itemId, event) {
     const file = event.target.files[0];
     if (!file) return;
+
+    // Клиентская валидация размера файла
+    if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+        uploadToast.value = t('cases.fileTooLarge', { max: MAX_FILE_SIZE_MB });
+        uploadToastError.value = true;
+        setTimeout(() => { uploadToast.value = ''; uploadToastError.value = false; }, 4000);
+        event.target.value = '';
+        return;
+    }
+
     uploading.value[itemId] = true;
     try {
         const fd = new FormData();
@@ -1777,10 +1798,14 @@ async function uploadDoc(itemId, event) {
         // Обновляем статус локально
         const item = caseData.value?.checklist?.find(i => i.id === itemId);
         if (item) item.status = 'uploaded';
+        uploadToastError.value = false;
         uploadToast.value = t('cases.docUploaded');
         setTimeout(() => { uploadToast.value = ''; }, 3000);
     } catch (e) {
-        alert(e?.response?.data?.message ?? t('cases.uploadError'));
+        const msg = e?.response?.data?.message ?? t('cases.uploadError');
+        uploadToastError.value = true;
+        uploadToast.value = msg;
+        setTimeout(() => { uploadToast.value = ''; uploadToastError.value = false; }, 4000);
     } finally {
         uploading.value[itemId] = false;
         event.target.value = '';

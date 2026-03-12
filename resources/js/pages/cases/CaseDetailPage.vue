@@ -11,6 +11,14 @@
 
   <div v-else-if="caseData">
 
+    <!-- Toast -->
+    <transition name="fade">
+      <div v-if="toast.msg" :class="['fixed bottom-6 left-1/2 -translate-x-1/2 z-50 text-white text-sm font-medium px-5 py-3 rounded-xl shadow-lg flex items-center gap-2 pointer-events-none',
+        toast.type === 'error' ? 'bg-red-500' : 'bg-green-500']">
+        {{ toast.msg }}
+      </div>
+    </transition>
+
     <!-- ===== TOP BAR ===== -->
     <div class="flex items-center justify-between mb-4">
       <div class="flex items-center gap-3">
@@ -793,6 +801,11 @@ const caseData  = ref(null);
 const checklist = ref({ items: [], progress: null });
 const allowedTransitions = ref({});
 const loading   = ref(true);
+const toast     = ref({ msg: '', type: 'error' });
+function showToast(msg, type = 'success') {
+  toast.value = { msg, type };
+  setTimeout(() => { toast.value = { msg: '', type: 'success' }; }, 4000);
+}
 const aiAnalyzingId = ref(null);
 const portrait = ref(null);
 const profile = ref(null);
@@ -1085,13 +1098,28 @@ async function reloadAll() {
 // Actions
 async function quickMove(stage) { await casesApi.moveStage(id, { stage }); await reloadAll(); }
 
+const MAX_FILE_SIZE_MB = 20;
+
 async function uploadToSlot(item, event) {
   const file = event.target?.files?.[0];
   if (!file) return;
-  const fd = new FormData();
-  fd.append('file', file);
-  await casesApi.uploadToSlot(id, item.id, fd);
-  await reloadAll();
+
+  if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+    showToast(t('crm.doc.fileTooLarge', { max: MAX_FILE_SIZE_MB }), 'error');
+    event.target.value = '';
+    return;
+  }
+
+  try {
+    const fd = new FormData();
+    fd.append('file', file);
+    await casesApi.uploadToSlot(id, item.id, fd);
+    await reloadAll();
+  } catch (e) {
+    showToast(e?.response?.data?.message ?? t('crm.doc.uploadFailed'), 'error');
+  } finally {
+    if (event.target) event.target.value = '';
+  }
 }
 
 async function doAiAnalyze(item) {
@@ -1211,4 +1239,6 @@ onMounted(() => { load(); loadManagers(); });
 <style scoped>
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 .scrollbar-hide::-webkit-scrollbar { display: none; }
+.fade-enter-active, .fade-leave-active { transition: opacity 0.25s, transform 0.25s; }
+.fade-enter-from, .fade-leave-to { opacity: 0; transform: translateY(8px); }
 </style>
