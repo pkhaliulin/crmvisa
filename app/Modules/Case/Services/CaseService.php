@@ -35,7 +35,7 @@ class CaseService extends BaseService
         'translation'   => ['doc_review', 'ready'],
         'ready'         => ['translation', 'review'],
         'review'        => ['ready', 'result'],
-        'result'        => [],
+        'result'        => ['lead'], // повторная подача при отказе
     ];
 
     public function __construct(
@@ -182,8 +182,6 @@ class CaseService extends BaseService
 
     public function moveToStage(VisaCase $case, string $newStage, ?string $notes = null): VisaCase
     {
-        $previousStage = $case->stage;
-
         // Валидация: назначен ли менеджер
         if (! $case->assigned_to) {
             throw ValidationException::withMessages([
@@ -191,23 +189,59 @@ class CaseService extends BaseService
             ]);
         }
 
-        // Валидация: разрешён ли переход
-        $allowed = self::ALLOWED_TRANSITIONS[$previousStage] ?? [];
+        // Валидация: разрешён ли переход (предварительная, до блокировки)
+        $allowed = self::ALLOWED_TRANSITIONS[$case->stage] ?? [];
         if (! in_array($newStage, $allowed)) {
             throw ValidationException::withMessages([
-                'stage' => ["Переход из «{$previousStage}» в «{$newStage}» невозможен."],
+                'stage' => ["Переход из «{$case->stage}» в «{$newStage}» невозможен."],
             ]);
         }
 
+        // Повторная подача: result -> lead только для отказанных заявок
+        if ($case->stage === 'result' && $newStage === 'lead') {
+            if ($case->public_status !== 'rejected') {
+                throw ValidationException::withMessages([
+                    'stage' => ['Повторная подача возможна только для отказанных заявок.'],
+                ]);
+            }
+        }
+
+        // Внешние лиды (не из VisaBor): qualification -> documents только после оплаты
+        if ($case->stage === 'qualification' && $newStage === 'documents') {
+            if ($this->isExternalLead($case) && $case->payment_status !== 'paid') {
+                throw ValidationException::withMessages([
+                    'payment_status' => ['Невозможно перейти к сбору документов без оплаты. Дождитесь оплаты от клиента.'],
+                ]);
+            }
+        }
+
         $result = DB::transaction(function () use ($case, $newStage, $notes) {
+            // SELECT FOR UPDATE — предотвращаем race condition при одновременных перемещениях
+            $lockedCase = VisaCase::where('id', $case->id)->lockForUpdate()->first();
+            if (! $lockedCase) {
+                throw ValidationException::withMessages([
+                    'stage' => ['Заявка не найдена.'],
+                ]);
+            }
+
+            $previousStage = $lockedCase->stage;
+
+            // Повторная валидация после блокировки (stage мог измениться)
+            $allowed = self::ALLOWED_TRANSITIONS[$previousStage] ?? [];
+            if (! in_array($newStage, $allowed)) {
+                throw ValidationException::withMessages([
+                    'stage' => ["Переход из «{$previousStage}» в «{$newStage}» невозможен."],
+                ]);
+            }
+
             // Закрываем текущий этап
-            CaseStage::where('case_id', $case->id)
+            CaseStage::where('case_id', $lockedCase->id)
                 ->whereNull('exited_at')
                 ->update(['exited_at' => now()]);
 
             // Открываем новый этап
             $newCaseStage = CaseStage::create([
-                'case_id'    => $case->id,
+                'case_id'    => $lockedCase->id,
                 'user_id'    => Auth::id(),
                 'stage'      => $newStage,
                 'entered_at' => now(),
@@ -215,32 +249,40 @@ class CaseService extends BaseService
             ]);
 
             // Устанавливаем SLA дедлайн для нового этапа
-            $this->slaService->applyStageSla($newCaseStage, $case);
+            $this->slaService->applyStageSla($newCaseStage, $lockedCase);
 
             // Авто-маппинг stage -> public_status
             $updateData = ['stage' => $newStage];
             $stageOrder = array_flip(array_keys(self::ALLOWED_TRANSITIONS));
-            $isForward = ($stageOrder[$newStage] ?? 0) >= ($stageOrder[$case->stage] ?? 0);
+            $isForward = ($stageOrder[$newStage] ?? 0) >= ($stageOrder[$previousStage] ?? 0);
             if ($isForward) {
+                $mappedStatus = $this->mapStageToPublicStatus($newStage);
+                if ($mappedStatus) {
+                    $updateData['public_status'] = $mappedStatus;
+                }
+            } else {
+                // При откате назад — пересчитать public_status чтобы не было рассинхрона
                 $mappedStatus = $this->mapStageToPublicStatus($newStage);
                 if ($mappedStatus) {
                     $updateData['public_status'] = $mappedStatus;
                 }
             }
 
-            $case->update($updateData);
+            $lockedCase->update($updateData);
 
-            return $case->fresh(['client', 'assignee', 'stageHistory']);
+            return [$lockedCase->fresh(['client', 'assignee', 'stageHistory']), $previousStage];
         });
 
-        CaseStatusChanged::dispatch($result, $previousStage, $newStage, Auth::id());
+        [$freshCase, $previousStage] = $result;
+
+        CaseStatusChanged::dispatch($freshCase, $previousStage, $newStage, Auth::id());
 
         // Уведомление клиенту через единую систему (бренд определяется автоматически)
-        if ($result->client) {
-            $this->notifyClientAboutStageChange($result, $previousStage);
+        if ($freshCase->client) {
+            $this->notifyClientAboutStageChange($freshCase, $previousStage);
         }
 
-        return $result;
+        return $freshCase;
     }
 
     /**
@@ -287,56 +329,69 @@ class CaseService extends BaseService
      */
     public function moveToStageSystem(VisaCase $case, string $newStage, ?string $notes = null): VisaCase
     {
-        $previousStage = $case->stage;
-
-        // Терминальный статус — переход запрещён (#3)
-        if ($previousStage === 'result') {
+        // Предварительная проверка
+        if ($case->stage === 'result') {
             throw ValidationException::withMessages([
                 'stage' => ['Заявка уже завершена, переход невозможен.'],
             ]);
         }
 
-        // Проверка допустимости перехода
-        $allowed = self::ALLOWED_TRANSITIONS[$previousStage] ?? [];
+        $allowed = self::ALLOWED_TRANSITIONS[$case->stage] ?? [];
         if (!in_array($newStage, $allowed)) {
             throw ValidationException::withMessages([
-                'stage' => ["Системный переход из «{$previousStage}» в «{$newStage}» невозможен."],
+                'stage' => ["Системный переход из «{$case->stage}» в «{$newStage}» невозможен."],
             ]);
         }
 
         $result = DB::transaction(function () use ($case, $newStage, $notes) {
-            CaseStage::where('case_id', $case->id)
+            // SELECT FOR UPDATE — предотвращаем race condition
+            $lockedCase = VisaCase::where('id', $case->id)->lockForUpdate()->first();
+            if (! $lockedCase) {
+                throw ValidationException::withMessages([
+                    'stage' => ['Заявка не найдена.'],
+                ]);
+            }
+
+            $previousStage = $lockedCase->stage;
+
+            // Повторная валидация после блокировки
+            $allowed = self::ALLOWED_TRANSITIONS[$previousStage] ?? [];
+            if (!in_array($newStage, $allowed)) {
+                throw ValidationException::withMessages([
+                    'stage' => ["Системный переход из «{$previousStage}» в «{$newStage}» невозможен."],
+                ]);
+            }
+
+            CaseStage::where('case_id', $lockedCase->id)
                 ->whereNull('exited_at')
                 ->update(['exited_at' => now()]);
 
             $newCaseStage = CaseStage::create([
-                'case_id'    => $case->id,
+                'case_id'    => $lockedCase->id,
                 'user_id'    => null,
                 'stage'      => $newStage,
                 'entered_at' => now(),
                 'notes'      => $notes,
             ]);
 
-            $this->slaService->applyStageSla($newCaseStage, $case);
+            $this->slaService->applyStageSla($newCaseStage, $lockedCase);
 
-            // Авто-маппинг stage -> public_status (только при движении вперёд)
+            // Маппинг stage -> public_status (и вперёд, и назад — чтобы не было рассинхрона)
             $updateData = ['stage' => $newStage];
-            $stageOrder = array_flip(array_keys(self::ALLOWED_TRANSITIONS));
-            $isForward = ($stageOrder[$newStage] ?? 0) >= ($stageOrder[$case->stage] ?? 0);
-            if ($isForward) {
-                $mappedStatus = $this->mapStageToPublicStatus($newStage);
-                if ($mappedStatus) {
-                    $updateData['public_status'] = $mappedStatus;
-                }
+            $mappedStatus = $this->mapStageToPublicStatus($newStage);
+            if ($mappedStatus) {
+                $updateData['public_status'] = $mappedStatus;
             }
-            $case->update($updateData);
+            $lockedCase->update($updateData);
 
-            return $case->fresh(['client', 'assignee', 'stageHistory']);
+            return [$lockedCase->fresh(['client', 'assignee', 'stageHistory']), $previousStage];
         });
 
-        CaseStatusChanged::dispatch($result, $previousStage, $newStage, null);
+        [$freshCase, $previousStage] = $result;
 
-        return $result;
+        CaseStatusChanged::dispatch($freshCase, $previousStage, $newStage, null);
+
+        return $freshCase;
     }
 
     /**
@@ -356,6 +411,27 @@ class CaseService extends BaseService
         ];
 
         return $map[$stage] ?? null;
+    }
+
+    /**
+     * Является ли заявка внешним лидом (не из маркетплейса VisaBor).
+     * Внешние лиды: API, Instagram, Telegram, виджет — client.source !== 'marketplace'.
+     * Для них оплата происходит ПОСЛЕ квалификации, а не ДО попадания на канбан.
+     */
+    private function isExternalLead(VisaCase $case): bool
+    {
+        // lead_source заполнен = пришёл через API/внешний канал
+        if ($case->lead_source && $case->lead_source !== 'visabor') {
+            return true;
+        }
+
+        // client.source !== 'marketplace' = не через маркетплейс VisaBor
+        $client = $case->client;
+        if ($client && !in_array($client->source, ['marketplace', 'group_invite'])) {
+            return true;
+        }
+
+        return false;
     }
 
     /**

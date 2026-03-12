@@ -2098,7 +2098,9 @@
       "noManager": "Menejersiz",
       "resetFilters": "Tozalash",
       "noResults": "Topilmadi",
-      "noManagerError": "Avval menejerni tayinlang. Ijrochisiz arizani keyingi bosqichga ko'chirib bo'lmaydi."
+      "noManagerError": "Avval menejerni tayinlang. Ijrochisiz arizani keyingi bosqichga ko'chirib bo'lmaydi.",
+      "assignError": "Menejerni tayinlab bo'lmadi",
+      "paymentRequiredError": "To'lovsiz hujjat yig'ishga o'tib bo'lmaydi. Mijozdan to'lovni kuting."
     },
     "kanbanStageInfo": {
       "lead_desc": "Yangi ariza. 1 soat ichida: mijozga qo'ng'iroq qiling, sayohat maqsadi, muddatlari, guruh tarkibini aniqlang.",
@@ -3476,6 +3478,9 @@
       "managersLabel": "Menejerlar",
       "casesLabel": "Arizalar",
       "leadsLabel": "Lidlar / oy",
+      "sessionsLabel": "Sessiyalar",
+      "sessionsHint": "0 = cheklanmagan",
+      "sessions": "Sessiyalar",
       "sectionConditions": "Shartlar",
       "trialDaysLabel": "Sinov davri, kun",
       "gracePeriodLabel": "Imtiyozli davr, kun",

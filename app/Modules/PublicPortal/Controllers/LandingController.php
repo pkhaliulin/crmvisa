@@ -14,7 +14,9 @@ class LandingController extends Controller
 {
     public function __construct()
     {
-        DB::statement("SET app.is_public_user = 'true'");
+        if (DB::connection()->getDriverName() !== 'sqlite') {
+            DB::statement("SET app.is_public_user = 'true'");
+        }
     }
 
     /**
@@ -23,8 +25,12 @@ class LandingController extends Controller
     protected function isSiteEnabled(): bool
     {
         return Cache::remember('landing:site_enabled', 60, function () {
-            $row = DB::table('site_settings')->where('key', 'site.enabled')->first();
-            return $row ? json_decode($row->value, true) : true;
+            try {
+                $row = DB::table('site_settings')->where('key', 'site.enabled')->first();
+                return $row ? json_decode($row->value, true) : true;
+            } catch (\Exception $e) {
+                return true;
+            }
         });
     }
 
@@ -42,28 +48,40 @@ class LandingController extends Controller
         }
 
         $countries = Cache::remember('landing:countries', 300, function () {
-            return PortalCountry::where('is_active', true)
-                ->orderBy('sort_order')
-                ->get(['country_code', 'name', 'name_uz', 'flag_emoji', 'visa_regime',
-                    'visa_fee_usd', 'min_score', 'continent', 'risk_level',
-                    'is_popular', 'is_high_approval']);
+            try {
+                return PortalCountry::where('is_active', true)
+                    ->orderBy('sort_order')
+                    ->get(['country_code', 'name', 'name_uz', 'flag_emoji', 'visa_regime',
+                        'visa_fee_usd', 'min_score', 'continent', 'risk_level',
+                        'is_popular', 'is_high_approval']);
+            } catch (\Exception $e) {
+                return collect();
+            }
         });
 
         $agencies = Cache::remember('landing:agencies', 300, function () {
-            return Agency::where('is_active', true)
-                ->whereNull('blocked_at')
-                ->with(['workCountries' => fn($q) => $q->where('is_active', true)])
-                ->withCount(['reviews as total_reviews'])
-                ->orderByDesc('total_reviews')
-                ->limit(6)
-                ->get(['id', 'name', 'city', 'plan', 'created_at']);
+            try {
+                return Agency::where('is_active', true)
+                    ->whereNull('blocked_at')
+                    ->with(['workCountries' => fn($q) => $q->where('is_active', true)])
+                    ->withCount(['reviews as total_reviews'])
+                    ->orderByDesc('total_reviews')
+                    ->limit(6)
+                    ->get(['id', 'name', 'city', 'plan', 'created_at']);
+            } catch (\Exception $e) {
+                return collect();
+            }
         });
 
         $stats = Cache::remember('landing:stats', 600, function () {
-            return [
-                'countries' => PortalCountry::where('is_active', true)->count(),
-                'agencies' => Agency::where('is_active', true)->whereNull('blocked_at')->count(),
-            ];
+            try {
+                return [
+                    'countries' => PortalCountry::where('is_active', true)->count(),
+                    'agencies' => Agency::where('is_active', true)->whereNull('blocked_at')->count(),
+                ];
+            } catch (\Exception $e) {
+                return ['countries' => 0, 'agencies' => 0];
+            }
         });
 
         return view('landing.index', compact('countries', 'agencies', 'stats', 'locale', 'siteEnabled'));

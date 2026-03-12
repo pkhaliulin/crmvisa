@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Modules\Agency\Models\Agency;
 use App\Modules\Case\Models\VisaCase;
+use App\Modules\Payment\Models\BillingPlan;
 use App\Modules\User\Models\User;
 use App\Support\Helpers\ApiResponse;
 use Closure;
@@ -14,6 +15,8 @@ class CheckPlanLimits
 {
     /**
      * Usage: middleware('plan.limit:max_cases') or middleware('plan.limit:max_managers')
+     *
+     * Все лимиты берутся из billing_plans (SSOT), а не из Plan enum.
      */
     public function handle(Request $request, Closure $next, string $limitType): Response
     {
@@ -28,23 +31,30 @@ class CheckPlanLimits
             return $next($request);
         }
 
-        $plan = $agency->plan;
-        if (! $plan) {
+        $billingPlan = $this->resolveBillingPlan($agency);
+        if (! $billingPlan) {
             return $next($request);
         }
 
         return match ($limitType) {
-            'max_cases'    => $this->checkCases($agency, $plan, $next, $request),
-            'max_managers' => $this->checkManagers($agency, $plan, $next, $request),
+            'max_cases'    => $this->checkCases($agency, $billingPlan, $next, $request),
+            'max_managers' => $this->checkManagers($agency, $billingPlan, $next, $request),
             default        => $next($request),
         };
     }
 
-    private function checkCases(Agency $agency, $plan, Closure $next, Request $request): Response
+    private function resolveBillingPlan(Agency $agency): ?BillingPlan
     {
-        $maxCases = $plan->maxCases();
+        $planSlug = $agency->effectivePlan();
 
-        if ($maxCases >= PHP_INT_MAX) {
+        return BillingPlan::find($planSlug);
+    }
+
+    private function checkCases(Agency $agency, BillingPlan $plan, Closure $next, Request $request): Response
+    {
+        $maxCases = $plan->max_cases;
+
+        if ($maxCases === 0) {
             return $next($request);
         }
 
@@ -62,11 +72,11 @@ class CheckPlanLimits
         return $next($request);
     }
 
-    private function checkManagers(Agency $agency, $plan, Closure $next, Request $request): Response
+    private function checkManagers(Agency $agency, BillingPlan $plan, Closure $next, Request $request): Response
     {
-        $maxManagers = $plan->maxManagers();
+        $maxManagers = $plan->max_managers;
 
-        if ($maxManagers >= PHP_INT_MAX) {
+        if ($maxManagers === 0) {
             return $next($request);
         }
 

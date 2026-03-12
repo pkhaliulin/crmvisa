@@ -183,6 +183,12 @@
               </svg>
               <span class="text-gray-600">{{ t('owner.billing.leadsPerMonth') }}: <b>{{ p.max_leads_per_month === 0 ? t('owner.billing.noLimit') : p.max_leads_per_month }}</b></span>
             </div>
+            <div v-if="p.max_concurrent_sessions > 0" class="flex items-center gap-2">
+              <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25m18 0A2.25 2.25 0 0018.75 3H5.25A2.25 2.25 0 003 5.25m18 0V12a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 12V5.25"/>
+              </svg>
+              <span class="text-gray-600">{{ t('owner.billing.sessions') }}: <b>{{ p.max_concurrent_sessions }}</b></span>
+            </div>
           </div>
 
           <!-- Условия -->
@@ -479,7 +485,7 @@
           <!-- Лимиты -->
           <div class="bg-gray-50 rounded-xl p-4 space-y-3">
             <div class="text-xs font-bold text-gray-500 uppercase tracking-wider">{{ t('owner.billing.sectionLimits') }}</div>
-            <div class="grid grid-cols-3 gap-3">
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div>
                 <label class="block text-xs text-gray-500 mb-1">{{ t('owner.billing.managersLabel') }}</label>
                 <input v-model.number="planForm.max_managers" type="number" class="w-full px-3 py-2 border rounded-lg text-sm" />
@@ -491,6 +497,11 @@
               <div>
                 <label class="block text-xs text-gray-500 mb-1">{{ t('owner.billing.leadsLabel') }}</label>
                 <input v-model.number="planForm.max_leads_per_month" type="number" class="w-full px-3 py-2 border rounded-lg text-sm" />
+              </div>
+              <div>
+                <label class="block text-xs text-gray-500 mb-1">{{ t('owner.billing.sessionsLabel') }}</label>
+                <input v-model.number="planForm.max_concurrent_sessions" type="number" class="w-full px-3 py-2 border rounded-lg text-sm" />
+                <p class="text-[10px] text-gray-400 mt-0.5">{{ t('owner.billing.sessionsHint') }}</p>
               </div>
             </div>
           </div>
@@ -684,7 +695,7 @@ function defaultPlanForm() {
     slug: '', name: '', name_uz: '', description: '',
     price_monthly: 0, price_yearly: 0, price_uzs: 0,
     activation_fee_uzs: 0, earn_first_enabled: false, earn_first_deduction_pct: 0,
-    max_managers: 3, max_cases: 50, max_leads_per_month: 30,
+    max_managers: 3, max_cases: 50, max_leads_per_month: 30, max_concurrent_sessions: 0,
     has_marketplace: false, has_priority_support: false, has_api_access: false,
     has_custom_domain: false, has_white_label: false, has_analytics: false,
     trial_days: 0, grace_period_days: 3,

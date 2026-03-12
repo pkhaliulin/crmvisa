@@ -121,6 +121,8 @@ class KanbanController extends Controller
             'stage_sla_minutes_left' => $stageSlaMinutesLeft,
             'public_status'       => $case->public_status,
             'payment_status'      => $case->payment_status,
+            'lead_source'         => $case->lead_source,
+            'source'              => $case->client?->source,
             'appointment_date'    => $case->appointment_date?->toDateString(),
             'appointment_time'    => $case->appointment_time,
             'appointment_location'=> $case->appointment_location,

@@ -178,16 +178,37 @@ class CaseServiceTest extends TestCase
         $this->actingAsUser($owner);
 
         $case = VisaCase::factory()->create([
-            'agency_id'   => $agency->id,
-            'client_id'   => $client->id,
-            'stage'       => 'qualification',
-            'assigned_to' => $manager->id,
+            'agency_id'      => $agency->id,
+            'client_id'      => $client->id,
+            'stage'          => 'qualification',
+            'assigned_to'    => $manager->id,
+            'payment_status' => 'paid',
         ]);
 
         $result = $this->service->moveToStage($case, 'documents');
 
         $this->assertEquals('documents', $result->stage);
         $this->assertEquals('document_collection', $result->public_status);
+    }
+
+    public function test_external_lead_qualification_to_documents_requires_payment(): void
+    {
+        [$agency, $owner] = $this->createAgencyWithOwner();
+        $manager = $this->createManager($agency);
+        $client = $this->createClient($agency);
+        $this->actingAsUser($owner);
+
+        $case = VisaCase::factory()->create([
+            'agency_id'      => $agency->id,
+            'client_id'      => $client->id,
+            'stage'          => 'qualification',
+            'assigned_to'    => $manager->id,
+            'lead_source'    => 'api',
+            'payment_status' => 'unpaid',
+        ]);
+
+        $this->expectException(\Illuminate\Validation\ValidationException::class);
+        $this->service->moveToStage($case, 'documents');
     }
 
     public function test_invalid_transition_lead_to_documents_throws(): void
@@ -256,8 +277,8 @@ class CaseServiceTest extends TestCase
         $result = $this->service->moveToStage($case, 'qualification');
 
         $this->assertEquals('qualification', $result->stage);
-        // public_status не должен понижаться при откате
-        $this->assertEquals('document_collection', $result->public_status);
+        // public_status пересчитывается при откате для синхронности stage и public_status
+        $this->assertEquals('manager_assigned', $result->public_status);
     }
 
     public function test_stage_history_recorded_on_transition(): void

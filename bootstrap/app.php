@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\CheckAgencyPlan;
+use App\Http\Middleware\CheckConcurrentSessions;
 use App\Http\Middleware\CheckFeature;
 use App\Http\Middleware\CheckPlanLimits;
 use App\Http\Middleware\CheckRole;
@@ -49,6 +50,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'plan.limit'     => CheckPlanLimits::class,
             'feature'        => CheckFeature::class,
             'auth.apikey'    => \App\Http\Middleware\AuthenticateApiKey::class,
+            'session.limit'  => CheckConcurrentSessions::class,
         ]);
 
         // Rate limiting на все API маршруты

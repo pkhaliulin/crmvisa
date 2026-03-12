@@ -147,8 +147,10 @@ import AppModal from '@/components/AppModal.vue';
 import AppSelect from '@/components/AppSelect.vue';
 import AppInput from '@/components/AppInput.vue';
 import api from '@/api/index';
+import { useToast } from '@/composables/useToast';
 
 const { t } = useI18n();
+const toast = useToast();
 
 const STAGE_KEYS = ['lead', 'qualification', 'documents', 'doc_review', 'translation', 'ready', 'review', 'result'];
 const STAGE_ICONS = { lead: '📥', qualification: '🔍', documents: '📋', doc_review: '🔎', translation: '📝', ready: '📦', review: '⏳', result: '✅' };
@@ -215,7 +217,11 @@ async function handleAssign({ caseId, managerId }) {
   try {
     await api.patch(`/cases/${caseId}`, { assigned_to: managerId });
     await casesStore.fetchKanban();
-  } catch { /* ignore */ }
+  } catch (err) {
+    const msg = err.response?.data?.message || t('crm.kanbanPage.assignError');
+    toast.error(msg);
+    await casesStore.fetchKanban();
+  }
 }
 
 // Обогащаем колонки метаданными + фильтрация по поисковому запросу и фильтрам
@@ -313,6 +319,18 @@ function handleMove({ caseId, stage, fromStage }) {
     setTimeout(() => { moveError.value = ''; }, 5000);
     casesStore.fetchKanban();
     return;
+  }
+
+  // Внешний лид: qualification -> documents только после оплаты
+  if (currentStage === 'qualification' && stage === 'documents' && caseItem) {
+    const isExternal = caseItem.lead_source && caseItem.lead_source !== 'visabor'
+      || (caseItem.source && !['marketplace', 'group_invite'].includes(caseItem.source));
+    if (isExternal && caseItem.payment_status !== 'paid') {
+      moveError.value = t('crm.kanbanPage.paymentRequiredError');
+      setTimeout(() => { moveError.value = ''; }, 5000);
+      casesStore.fetchKanban();
+      return;
+    }
   }
 
   // Если stage указан и он недопустим — показать ошибку и обновить канбан

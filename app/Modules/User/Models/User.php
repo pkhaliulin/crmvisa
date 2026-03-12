@@ -41,6 +41,7 @@ class User extends Authenticatable implements JWTSubject
         'password',
         'role',
         'is_active',
+        'jwt_version',
     ];
 
     protected $hidden = [
@@ -68,8 +69,9 @@ class User extends Authenticatable implements JWTSubject
     public function getJWTCustomClaims(): array
     {
         return [
-            'agency_id' => $this->agency_id,
-            'role'      => $this->role,
+            'agency_id'   => $this->agency_id,
+            'role'        => $this->role,
+            'jwt_version' => $this->jwt_version ?? 1,
         ];
     }
 

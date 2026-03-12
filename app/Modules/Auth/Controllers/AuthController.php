@@ -7,6 +7,8 @@ use App\Modules\Auth\DTOs\LoginDTO;
 use App\Modules\Auth\DTOs\RegisterDTO;
 use App\Modules\Auth\Services\AuthService;
 use App\Support\Helpers\ApiResponse;
+use App\Modules\Agency\Models\Agency;
+use App\Modules\Payment\Models\BillingPlan;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -112,11 +114,31 @@ class AuthController extends Controller
             'email'     => $user->email,
             'role'      => $user->role,
             'agency_id' => $user->agency_id,
-            'agency'    => $user->agency ? [
-                'id'   => $user->agency->id,
-                'name' => $user->agency->name,
-                'plan' => $user->agency->plan,
-            ] : null,
+            'agency'    => $user->agency ? $this->formatAgency($user->agency) : null,
         ]);
+    }
+
+    private function formatAgency(Agency $agency): array
+    {
+        $planSlug = $agency->effectivePlan();
+        $billingPlan = BillingPlan::find($planSlug);
+
+        return [
+            'id'   => $agency->id,
+            'name' => $agency->name,
+            'plan' => $agency->plan,
+            'plan_features' => $billingPlan ? [
+                'max_managers'            => $billingPlan->max_managers,
+                'max_cases'               => $billingPlan->max_cases,
+                'max_leads_per_month'     => $billingPlan->max_leads_per_month,
+                'max_concurrent_sessions' => $billingPlan->max_concurrent_sessions,
+                'has_marketplace'         => $billingPlan->has_marketplace,
+                'has_analytics'           => $billingPlan->has_analytics,
+                'has_api_access'          => $billingPlan->has_api_access,
+                'has_white_label'         => $billingPlan->has_white_label,
+                'has_custom_domain'       => $billingPlan->has_custom_domain,
+                'has_priority_support'    => $billingPlan->has_priority_support,
+            ] : null,
+        ];
     }
 }

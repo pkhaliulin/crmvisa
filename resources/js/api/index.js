@@ -23,7 +23,12 @@ api.interceptors.response.use(
     (res) => res,
     (err) => {
         if (err.response?.status === 401) {
+            const msg = err.response?.data?.message || '';
             localStorage.removeItem('token');
+            // Если сессия завершена из-за concurrent login — передаём сообщение
+            if (msg.includes('Сессия завершена') || msg.includes('одновременную сессию')) {
+                localStorage.setItem('session_expired_msg', msg);
+            }
             window.location.href = '/login';
         } else if (err.response?.status >= 500) {
             const { showToast } = useToast();

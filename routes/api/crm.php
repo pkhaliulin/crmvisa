@@ -21,8 +21,8 @@ use App\Modules\Task\Controllers\TaskController;
 use App\Modules\User\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
-// Защищённые роуты (JWT + роли + активный план)
-Route::middleware(['auth:api', 'role:owner,manager,superadmin', 'plan.active'])->group(function () {
+// Защищённые роуты (JWT + роли + активный план + контроль сессий)
+Route::middleware(['auth:api', 'role:owner,manager,superadmin', 'plan.active', 'session.limit'])->group(function () {
 
     // Клиенты
     Route::post('clients/parse-passport', [ClientController::class, 'parsePassport']);

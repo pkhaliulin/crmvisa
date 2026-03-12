@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Validation\ValidationException;
+use App\Modules\Payment\Models\BillingPlan;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 
 class AuthService
@@ -103,17 +104,19 @@ class AuthService
                 ]);
             }
 
-            $token = JWTAuth::attempt([
-                'email'    => $dto->email,
-                'password' => $dto->password,
-            ]);
-
-            if (! $token) {
+            if (! Hash::check($dto->password, $user->password)) {
                 \Log::channel('auth')->warning('Login failed: wrong password', ['email' => $dto->email, 'user_id' => $user->id]);
                 throw ValidationException::withMessages([
                     'password' => __('auth.wrong_password'),
                 ]);
             }
+
+            // Инкрементируем jwt_version для контроля одновременных сессий.
+            // Все предыдущие токены станут невалидными (jwt_version не совпадает).
+            $user->increment('jwt_version');
+            $user->refresh();
+
+            $token = JWTAuth::fromUser($user);
 
             \Log::channel('auth')->info('Login success', ['email' => $user->email, 'user_id' => $user->id, 'role' => $user->role]);
 
@@ -150,16 +153,34 @@ class AuthService
 
     private function tokenResponse(string $token, User $user): array
     {
+        $planFeatures = null;
+        if ($user->agency) {
+            $planSlug = $user->agency->effectivePlan();
+            $bp = BillingPlan::find($planSlug);
+            if ($bp) {
+                $planFeatures = [
+                    'has_marketplace'         => $bp->has_marketplace,
+                    'has_analytics'           => $bp->has_analytics,
+                    'has_api_access'          => $bp->has_api_access,
+                    'has_white_label'         => $bp->has_white_label,
+                    'has_custom_domain'       => $bp->has_custom_domain,
+                    'has_priority_support'    => $bp->has_priority_support,
+                    'max_concurrent_sessions' => $bp->max_concurrent_sessions,
+                ];
+            }
+        }
+
         return [
             'access_token' => $token,
             'token_type'   => 'bearer',
             'expires_in'   => config('jwt.ttl') * 60,
             'user'         => [
-                'id'         => $user->id,
-                'name'       => $user->name,
-                'email'      => $user->email,
-                'role'       => $user->role,
-                'agency_id'  => $user->agency_id,
+                'id'            => $user->id,
+                'name'          => $user->name,
+                'email'         => $user->email,
+                'role'          => $user->role,
+                'agency_id'     => $user->agency_id,
+                'plan_features' => $planFeatures,
             ],
         ];
     }

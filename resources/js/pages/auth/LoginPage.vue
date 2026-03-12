@@ -2,6 +2,10 @@
   <AuthLayout>
     <h2 class="text-xl font-bold text-gray-900 mb-6">Вход в систему</h2>
 
+    <div v-if="sessionExpiredMsg" class="bg-orange-50 border border-orange-200 rounded-lg p-3 mb-4">
+      <p class="text-sm text-orange-700">{{ sessionExpiredMsg }}</p>
+    </div>
+
     <form @submit.prevent="handleSubmit" class="space-y-4">
       <AppInput
         v-model="form.email"
@@ -69,6 +73,14 @@ const errors   = ref({});
 const errorMsg = ref('');
 const loading      = ref(false);
 const showPassword = ref(false);
+
+// Сообщение о завершении сессии (concurrent session limit)
+const sessionExpiredMsg = ref('');
+const savedMsg = localStorage.getItem('session_expired_msg');
+if (savedMsg) {
+  sessionExpiredMsg.value = savedMsg;
+  localStorage.removeItem('session_expired_msg');
+}
 
 function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());

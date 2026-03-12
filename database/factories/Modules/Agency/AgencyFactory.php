@@ -44,6 +44,11 @@ class AgencyFactory extends Factory
         return $this->state(['plan' => Plan::Pro]);
     }
 
+    public function business(): static
+    {
+        return $this->state(['plan' => Plan::Business]);
+    }
+
     public function enterprise(): static
     {
         return $this->state(['plan' => Plan::Enterprise]);
