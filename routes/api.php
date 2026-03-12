@@ -20,4 +20,9 @@ Route::prefix('v1')->group(function () {
     // Приём лидов по API-ключу агентства (без JWT, аутентификация по vbk_ токену)
     Route::middleware(['auth.apikey', 'throttle:leads_per_agency'])
         ->post('leads/incoming', [\App\Modules\LeadGen\Controllers\IncomingLeadController::class, 'store']);
+
+    // Webhook-и от платёжных систем для подписок (без авторизации, проверка подписи внутри)
+    Route::post('payments/click/callback', [\App\Modules\Payment\Controllers\PaymentController::class, 'clickCallback']);
+    Route::post('payments/payme/callback', [\App\Modules\Payment\Controllers\PaymentController::class, 'paymeCallback']);
+    Route::post('payments/uzum/callback', [\App\Modules\Payment\Controllers\PaymentController::class, 'uzumCallback']);
 });

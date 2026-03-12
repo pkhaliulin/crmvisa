@@ -208,6 +208,11 @@ Route::middleware(['auth:api', 'role:owner,superadmin', 'plan.active'])->group(f
     Route::post('billing/cancel',           [BillingController::class, 'cancel']);
     Route::post('billing/change-plan',    [BillingController::class, 'changePlan']);
     Route::post('billing/cancel-downgrade', [BillingController::class, 'cancelDowngrade']);
+
+    // Платежи через Click/Payme/Uzum
+    Route::post('payments/create',      [\App\Modules\Payment\Controllers\PaymentController::class, 'create']);
+    Route::get('payments/{id}/status',  [\App\Modules\Payment\Controllers\PaymentController::class, 'status']);
+    Route::get('payments',              [\App\Modules\Payment\Controllers\PaymentController::class, 'index']);
 });
 
 // Агентства Pro/Enterprise: управление профилем и лидами маркетплейса

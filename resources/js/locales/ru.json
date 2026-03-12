@@ -2696,7 +2696,16 @@
         "adv7": "Персональный менеджер от VisaBor",
         "adv8": "SLA-гарантия доступности 99.9%",
         "adv9": "Минимальный процент удержания по earn-first (7%)"
-      }
+      },
+      "paymentMethod": "Способ оплаты",
+      "selectPaymentMethod": "Выберите способ оплаты",
+      "payViaClick": "Оплатить через Click",
+      "payViaPayme": "Оплатить через Payme",
+      "payViaUzum": "Оплатить через Uzum",
+      "paymentPending": "Ожидание оплаты",
+      "paymentCompleted": "Оплата завершена",
+      "paymentFailed": "Ошибка оплаты",
+      "amount": "Сумма"
     },
     "overdue": {
       "title": "Просроченные заявки",

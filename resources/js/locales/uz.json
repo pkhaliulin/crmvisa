@@ -2696,7 +2696,16 @@
         "adv7": "VisaBor dan shaxsiy menejer",
         "adv8": "99.9% mavjudlik SLA-kafolati",
         "adv9": "Earn-first bo'yicha minimal ushlab qolish foizi (7%)"
-      }
+      },
+      "paymentMethod": "To'lov usuli",
+      "selectPaymentMethod": "To'lov usulini tanlang",
+      "payViaClick": "Click orqali to'lash",
+      "payViaPayme": "Payme orqali to'lash",
+      "payViaUzum": "Uzum orqali to'lash",
+      "paymentPending": "To'lov kutilmoqda",
+      "paymentCompleted": "To'lov yakunlandi",
+      "paymentFailed": "To'lov xatosi",
+      "amount": "Summa"
     },
     "overdue": {
       "title": "Muddati o'tgan arizalar",
