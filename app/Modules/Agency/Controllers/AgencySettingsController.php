@@ -5,6 +5,7 @@ namespace App\Modules\Agency\Controllers;
 use App\Http\Controllers\Controller;
 use App\Modules\Agency\Models\Agency;
 use App\Modules\Agency\Models\AgencyWorkCountry;
+use App\Modules\Payment\Models\BillingPlan;
 use App\Support\Helpers\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -122,6 +123,102 @@ class AgencySettingsController extends Controller
             'has_key'      => (bool) $agency->api_key,
             'generated_at' => $agency->api_key_generated_at?->toIso8601String(),
         ]);
+    }
+
+    public function featureStatus(Request $request): JsonResponse
+    {
+        if (! $request->user()->agency_id) {
+            return ApiResponse::error('No agency assigned to this account.', null, 403);
+        }
+
+        $agency = Agency::findOrFail($request->user()->agency_id);
+        $planSlug = $agency->effectivePlan();
+        $plan = BillingPlan::find($planSlug);
+
+        if (! $plan) {
+            return ApiResponse::error('Billing plan not found.', null, 404);
+        }
+
+        $hasActiveWorkCountries = $agency->workCountries()->where('is_active', true)->exists();
+        $hasServicePackages = $agency->packages()->exists();
+        $hasDescription = ! empty($agency->description);
+        $hasLogoUrl = ! empty($agency->logo_url);
+        $hasTelegramBotToken = ! empty($agency->telegram_bot_token);
+        $hasTelegramBotUsername = ! empty($agency->telegram_bot_username);
+        $hasCustomDomain = ! empty($agency->custom_domain);
+
+        $features = [
+            'marketplace' => [
+                'available' => $plan->has_marketplace,
+                'activated' => $plan->has_marketplace && $hasDescription && $hasActiveWorkCountries && $hasServicePackages,
+                'requirements' => [
+                    'description' => $hasDescription,
+                    'work_countries' => $hasActiveWorkCountries,
+                    'service_packages' => $hasServicePackages,
+                ],
+            ],
+            'white_label' => [
+                'available' => $plan->has_white_label,
+                'activated' => $plan->has_white_label && $hasLogoUrl && $hasTelegramBotToken && $hasTelegramBotUsername,
+                'requirements' => [
+                    'logo_url' => $hasLogoUrl,
+                    'telegram_bot_token' => $hasTelegramBotToken,
+                    'telegram_bot_username' => $hasTelegramBotUsername,
+                ],
+            ],
+            'api_access' => [
+                'available' => $plan->has_api_access,
+                'activated' => $plan->has_api_access && ! empty($agency->api_key),
+                'requirements' => [
+                    'api_key' => ! empty($agency->api_key),
+                ],
+            ],
+            'analytics' => [
+                'available' => $plan->has_analytics,
+                'activated' => $plan->has_analytics,
+                'requirements' => [],
+            ],
+            'custom_domain' => [
+                'available' => $plan->has_custom_domain,
+                'activated' => $plan->has_custom_domain && $hasCustomDomain,
+                'requirements' => [
+                    'custom_domain' => $hasCustomDomain,
+                ],
+            ],
+            'priority_support' => [
+                'available' => $plan->has_priority_support,
+                'activated' => $plan->has_priority_support,
+                'requirements' => [],
+            ],
+        ];
+
+        return ApiResponse::success([
+            'features' => $features,
+            'current_plan' => $planSlug,
+            'plan_name' => $plan->name,
+        ]);
+    }
+
+    public function updateBranding(Request $request): JsonResponse
+    {
+        if (! $request->user()->agency_id) {
+            return ApiResponse::error('No agency assigned to this account.', null, 403);
+        }
+
+        $data = $request->validate([
+            'logo_url'               => ['sometimes', 'nullable', 'string', 'max:500'],
+            'primary_color'          => ['sometimes', 'nullable', 'string', 'regex:/^#[0-9a-fA-F]{6}$/'],
+            'secondary_color'        => ['sometimes', 'nullable', 'string', 'regex:/^#[0-9a-fA-F]{6}$/'],
+            'favicon_url'            => ['sometimes', 'nullable', 'string', 'max:500'],
+            'telegram_bot_token'     => ['sometimes', 'nullable', 'string', 'max:255'],
+            'telegram_bot_username'  => ['sometimes', 'nullable', 'string', 'max:100'],
+            'custom_domain'          => ['sometimes', 'nullable', 'string', 'max:255'],
+        ]);
+
+        $agency = Agency::findOrFail($request->user()->agency_id);
+        $agency->update($data);
+
+        return ApiResponse::success($agency->fresh());
     }
 
     public function removeWorkCountry(Request $request, string $cc): JsonResponse

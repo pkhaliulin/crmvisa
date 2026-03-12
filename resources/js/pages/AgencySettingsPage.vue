@@ -8,7 +8,7 @@
     <!-- Вкладки -->
     <div class="flex gap-1 bg-gray-100 rounded-xl p-1 w-fit">
       <button v-for="tab in tabs" :key="tab.key"
-        @click="activeTab = tab.key"
+        @click="switchTab(tab.key)"
         :class="['px-4 py-1.5 text-sm rounded-lg transition-all font-medium flex items-center gap-2',
           activeTab === tab.key
             ? 'bg-white text-gray-900 shadow-sm'
@@ -16,8 +16,11 @@
         <svg v-if="tab.key === 'agency'" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21"/>
         </svg>
-        <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <svg v-else-if="tab.key === 'profile'" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/>
+        </svg>
+        <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z"/>
         </svg>
         {{ tab.label }}
       </button>
@@ -468,6 +471,249 @@
           </div>
         </div>
       </template>
+
+      <!-- ==================== ВКЛАДКА: Возможности тарифа ==================== -->
+      <template v-if="activeTab === 'features'">
+        <div v-if="featuresLoading" class="flex items-center justify-center py-20">
+          <div class="animate-spin w-7 h-7 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+        </div>
+
+        <div v-else-if="featuresError" class="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+          <p class="text-red-600 font-medium">{{ featuresError }}</p>
+        </div>
+
+        <div v-else class="space-y-4">
+          <!-- Сетка карточек функций -->
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div v-for="feat in featureCards" :key="feat.key"
+              class="bg-white rounded-xl border overflow-hidden transition-all"
+              :class="feat.statusClass">
+
+              <!-- Заголовок карточки -->
+              <div class="px-5 py-4 flex items-start gap-3">
+                <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                  :class="feat.available ? feat.iconBg : 'bg-gray-100'">
+                  <svg class="w-5 h-5" :class="feat.available ? feat.iconColor : 'text-gray-400'" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" :d="feat.icon" />
+                  </svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <h3 class="font-semibold text-sm" :class="feat.available ? 'text-gray-900' : 'text-gray-400'">{{ feat.name }}</h3>
+                  <p class="text-xs mt-0.5" :class="feat.available ? 'text-gray-500' : 'text-gray-400'">{{ feat.desc }}</p>
+                </div>
+              </div>
+
+              <!-- Статус -->
+              <div class="px-5 pb-4">
+                <!-- Заблокировано -->
+                <div v-if="!feat.available" class="space-y-3">
+                  <div class="flex items-center gap-2 text-sm text-gray-400">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/>
+                    </svg>
+                    {{ t('crm.settings.featureLocked') }}
+                  </div>
+                  <router-link :to="{ name: 'billing' }"
+                    class="inline-flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12h15m0 0l-6.75-6.75M19.5 12l-6.75 6.75"/>
+                    </svg>
+                    {{ t('crm.settings.upgradeToUnlock', { plan: 'Pro' }) }}
+                  </router-link>
+                </div>
+
+                <!-- Активно (без требований или все выполнены) -->
+                <div v-else-if="feat.activated" class="flex items-center gap-2">
+                  <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/>
+                    </svg>
+                    {{ t('crm.settings.featureActive') }}
+                  </span>
+                </div>
+
+                <!-- Требуется настройка -->
+                <div v-else class="space-y-3">
+                  <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-orange-50 text-orange-700">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126z"/>
+                    </svg>
+                    {{ t('crm.settings.featureNeedsSetup') }}
+                  </span>
+
+                  <!-- Чеклист требований -->
+                  <div v-if="Object.keys(feat.requirements).length" class="space-y-1.5">
+                    <div v-for="(met, reqKey) in feat.requirements" :key="reqKey"
+                      class="flex items-center gap-2 text-xs">
+                      <svg v-if="met" class="w-3.5 h-3.5 text-green-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/>
+                      </svg>
+                      <svg v-else class="w-3.5 h-3.5 text-gray-300 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="9"/>
+                      </svg>
+                      <span :class="met ? 'text-gray-500 line-through' : 'text-gray-700'">
+                        {{ requirementLabel(reqKey) }}
+                      </span>
+                      <span class="ml-auto text-xs" :class="met ? 'text-green-600' : 'text-gray-400'">
+                        {{ met ? t('crm.settings.filled') : t('crm.settings.notFilled') }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Действия для активных функций -->
+                <div v-if="feat.available && feat.activated" class="mt-3">
+                  <!-- Аналитика -->
+                  <router-link v-if="feat.key === 'analytics'" :to="{ name: 'reports' }"
+                    class="inline-flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75z"/>
+                    </svg>
+                    {{ t('crm.settings.goToReports') }}
+                  </router-link>
+
+                  <!-- Поддержка -->
+                  <div v-if="feat.key === 'priority_support'" class="space-y-1 text-xs text-gray-500">
+                    <p>{{ t('crm.settings.supportEmail') }}</p>
+                    <p>{{ t('crm.settings.supportTelegram') }}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- API-ключ (если API доступен) -->
+          <template v-if="featureStatus?.api_access?.available">
+            <section class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+              <div class="px-5 py-3 bg-gradient-to-r from-gray-50 to-white border-b border-gray-100 flex items-center gap-2">
+                <div class="w-7 h-7 rounded-lg bg-indigo-50 flex items-center justify-center">
+                  <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z"/>
+                  </svg>
+                </div>
+                <h2 class="font-semibold text-gray-700 text-sm">{{ t('crm.settings.apiKeySection') }}</h2>
+              </div>
+              <div class="p-5 space-y-4">
+                <div v-if="generatedApiKey" class="bg-green-50 border border-green-200 rounded-lg p-4 space-y-2">
+                  <p class="text-sm font-medium text-green-800">{{ t('crm.settings.apiKeyGenerated') }}</p>
+                  <code class="block text-xs bg-white border border-green-200 rounded px-3 py-2 font-mono text-gray-800 break-all">{{ generatedApiKey }}</code>
+                  <p class="text-xs text-orange-600">{{ t('crm.settings.apiKeyWarning') }}</p>
+                </div>
+                <button @click="generateApiKey" :disabled="generatingKey"
+                  class="px-4 py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
+                  :class="apiKeyInfo?.has_key
+                    ? 'bg-orange-50 text-orange-700 hover:bg-orange-100 border border-orange-200'
+                    : 'bg-blue-600 text-white hover:bg-blue-700'">
+                  <div v-if="generatingKey" class="w-4 h-4 border-2 border-current/30 border-t-current rounded-full animate-spin"></div>
+                  <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z"/>
+                  </svg>
+                  {{ apiKeyInfo?.has_key ? t('crm.settings.regenerateApiKey') : t('crm.settings.generateApiKey') }}
+                </button>
+              </div>
+            </section>
+          </template>
+
+          <!-- White-label настройки (если доступно) -->
+          <template v-if="featureStatus?.white_label?.available">
+            <section class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+              <div class="px-5 py-3 bg-gradient-to-r from-gray-50 to-white border-b border-gray-100 flex items-center gap-2">
+                <div class="w-7 h-7 rounded-lg bg-violet-50 flex items-center justify-center">
+                  <svg class="w-4 h-4 text-violet-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c0-.399-.078-.78-.22-1.128zm0 0a15.998 15.998 0 003.388-1.62m-5.043-.025a15.994 15.994 0 011.622-3.395m3.42 3.42a15.995 15.995 0 004.764-4.648l3.876-5.814a1.151 1.151 0 00-1.597-1.597L14.146 6.32a15.996 15.996 0 00-4.649 4.763m3.42 3.42a6.776 6.776 0 00-3.42-3.42"/>
+                  </svg>
+                </div>
+                <h2 class="font-semibold text-gray-700 text-sm">{{ t('crm.settings.whiteLabel') }}</h2>
+              </div>
+              <div class="p-5 space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('crm.settings.logoUrl') }}</label>
+                    <input v-model="brandingForm.logo_url" type="url" placeholder="https://..."
+                      class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-colors" />
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('crm.settings.faviconUrl') }}</label>
+                    <input v-model="brandingForm.favicon_url" type="url" placeholder="https://..."
+                      class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-colors" />
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('crm.settings.primaryColor') }}</label>
+                    <div class="flex items-center gap-2">
+                      <input v-model="brandingForm.primary_color" type="color"
+                        class="w-10 h-10 rounded-lg border border-gray-200 cursor-pointer p-0.5" />
+                      <input v-model="brandingForm.primary_color" type="text" placeholder="#0A1F44" maxlength="7"
+                        class="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-colors font-mono" />
+                    </div>
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('crm.settings.secondaryColor') }}</label>
+                    <div class="flex items-center gap-2">
+                      <input v-model="brandingForm.secondary_color" type="color"
+                        class="w-10 h-10 rounded-lg border border-gray-200 cursor-pointer p-0.5" />
+                      <input v-model="brandingForm.secondary_color" type="text" placeholder="#1BA97F" maxlength="7"
+                        class="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-colors font-mono" />
+                    </div>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('crm.settings.telegramBotToken') }}</label>
+                    <input v-model="brandingForm.telegram_bot_token" type="text" placeholder="123456:ABC-DEF..."
+                      class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-colors font-mono text-xs" />
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('crm.settings.telegramBotUsername') }}</label>
+                    <div class="flex items-center">
+                      <span class="px-3 py-2 bg-gray-50 border border-r-0 border-gray-200 rounded-l-lg text-sm text-gray-400">@</span>
+                      <input v-model="brandingForm.telegram_bot_username" type="text" placeholder="my_visa_bot"
+                        class="flex-1 border border-gray-200 rounded-r-lg px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-colors" />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Кастомный домен (если доступно) -->
+                <div v-if="featureStatus?.custom_domain?.available">
+                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('crm.settings.customDomainInput') }}</label>
+                  <input v-model="brandingForm.custom_domain" type="text" placeholder="visa.myagency.com"
+                    class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-colors" />
+                  <p class="text-xs text-gray-400 mt-1">{{ t('crm.settings.customDomainHint') }}</p>
+                </div>
+
+                <!-- Кнопка сохранить брендинг -->
+                <div class="flex items-center justify-between pt-2">
+                  <div>
+                    <p v-if="brandingSuccess" class="text-sm text-green-600 font-medium flex items-center gap-1.5">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/>
+                      </svg>
+                      {{ brandingSuccess }}
+                    </p>
+                    <p v-if="brandingError" class="text-sm text-red-600 flex items-center gap-1.5">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/>
+                      </svg>
+                      {{ brandingError }}
+                    </p>
+                  </div>
+                  <button @click="saveBranding" :disabled="savingBranding"
+                    class="px-6 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center gap-2">
+                    <svg v-if="!savingBranding" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/>
+                    </svg>
+                    <div v-else class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    {{ savingBranding ? t('crm.settings.saving') : t('crm.settings.saveBranding') }}
+                  </button>
+                </div>
+              </div>
+            </section>
+          </template>
+        </div>
+      </template>
     </template>
   </div>
 </template>
@@ -495,9 +741,32 @@ const activeTab = ref('agency');
 const showCurrentPw = ref(false);
 const showNewPw = ref(false);
 
+// Features tab state
+const featuresLoading = ref(false);
+const featuresError = ref('');
+const featureStatus = ref(null);
+const featuresLoaded = ref(false);
+const apiKeyInfo = ref(null);
+const generatedApiKey = ref('');
+const generatingKey = ref(false);
+const savingBranding = ref(false);
+const brandingSuccess = ref('');
+const brandingError = ref('');
+
+const brandingForm = ref({
+  logo_url: '',
+  primary_color: '#0A1F44',
+  secondary_color: '#1BA97F',
+  favicon_url: '',
+  telegram_bot_token: '',
+  telegram_bot_username: '',
+  custom_domain: '',
+});
+
 const tabs = computed(() => [
-  { key: 'agency',  label: t('crm.settings.tabAgency') },
-  { key: 'profile', label: t('crm.settings.tabProfile') },
+  { key: 'agency',   label: t('crm.settings.tabAgency') },
+  { key: 'profile',  label: t('crm.settings.tabProfile') },
+  { key: 'features', label: t('crm.settings.features') },
 ]);
 
 const leadModes = computed(() => [
@@ -540,6 +809,176 @@ const passwordStrengthLabel = computed(() => {
   const labels = ['', t('crm.settings.strengthWeak'), t('crm.settings.strengthMedium'), t('crm.settings.strengthGood'), t('crm.settings.strengthStrong')];
   return labels[passwordStrength.value] || '';
 });
+
+// Feature icons and metadata
+const featureCards = computed(() => {
+  if (!featureStatus.value) return [];
+  const fs = featureStatus.value;
+  return [
+    {
+      key: 'marketplace',
+      name: t('crm.settings.marketplace'),
+      desc: t('crm.settings.marketplaceDesc'),
+      icon: 'M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349m-16.5 11.65V9.35m0 0a3.001 3.001 0 003.75-.615A2.993 2.993 0 009.75 9.75c.896 0 1.7-.393 2.25-1.016a2.993 2.993 0 002.25 1.016c.896 0 1.7-.393 2.25-1.016a3.001 3.001 0 003.75.614m-16.5 0a3.004 3.004 0 01-.621-4.72L4.318 3.44A1.5 1.5 0 015.378 3h13.243a1.5 1.5 0 011.06.44l1.19 1.189a3 3 0 01-.621 4.72m-13.5 8.65h3.75a.75.75 0 00.75-.75V13.5a.75.75 0 00-.75-.75H6.75a.75.75 0 00-.75.75v3.15c0 .415.336.75.75.75z',
+      iconBg: 'bg-emerald-50',
+      iconColor: 'text-emerald-600',
+      available: fs.marketplace?.available,
+      activated: fs.marketplace?.activated,
+      requirements: fs.marketplace?.requirements || {},
+      statusClass: !fs.marketplace?.available ? 'border-gray-200 opacity-60' : fs.marketplace?.activated ? 'border-green-200' : 'border-orange-200',
+    },
+    {
+      key: 'white_label',
+      name: t('crm.settings.whiteLabel'),
+      desc: t('crm.settings.whiteLabelDesc'),
+      icon: 'M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c0-.399-.078-.78-.22-1.128zm0 0a15.998 15.998 0 003.388-1.62m-5.043-.025a15.994 15.994 0 011.622-3.395m3.42 3.42a15.995 15.995 0 004.764-4.648l3.876-5.814a1.151 1.151 0 00-1.597-1.597L14.146 6.32a15.996 15.996 0 00-4.649 4.763m3.42 3.42a6.776 6.776 0 00-3.42-3.42',
+      iconBg: 'bg-violet-50',
+      iconColor: 'text-violet-600',
+      available: fs.white_label?.available,
+      activated: fs.white_label?.activated,
+      requirements: fs.white_label?.requirements || {},
+      statusClass: !fs.white_label?.available ? 'border-gray-200 opacity-60' : fs.white_label?.activated ? 'border-green-200' : 'border-orange-200',
+    },
+    {
+      key: 'api_access',
+      name: t('crm.settings.apiAccess'),
+      desc: t('crm.settings.apiAccessDesc'),
+      icon: 'M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5',
+      iconBg: 'bg-indigo-50',
+      iconColor: 'text-indigo-600',
+      available: fs.api_access?.available,
+      activated: fs.api_access?.activated,
+      requirements: fs.api_access?.requirements || {},
+      statusClass: !fs.api_access?.available ? 'border-gray-200 opacity-60' : fs.api_access?.activated ? 'border-green-200' : 'border-orange-200',
+    },
+    {
+      key: 'analytics',
+      name: t('crm.settings.analyticsFeature'),
+      desc: t('crm.settings.analyticsDesc'),
+      icon: 'M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z',
+      iconBg: 'bg-blue-50',
+      iconColor: 'text-blue-600',
+      available: fs.analytics?.available,
+      activated: fs.analytics?.activated,
+      requirements: fs.analytics?.requirements || {},
+      statusClass: !fs.analytics?.available ? 'border-gray-200 opacity-60' : fs.analytics?.activated ? 'border-green-200' : 'border-orange-200',
+    },
+    {
+      key: 'custom_domain',
+      name: t('crm.settings.customDomain'),
+      desc: t('crm.settings.customDomainDesc'),
+      icon: 'M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418',
+      iconBg: 'bg-cyan-50',
+      iconColor: 'text-cyan-600',
+      available: fs.custom_domain?.available,
+      activated: fs.custom_domain?.activated,
+      requirements: fs.custom_domain?.requirements || {},
+      statusClass: !fs.custom_domain?.available ? 'border-gray-200 opacity-60' : fs.custom_domain?.activated ? 'border-green-200' : 'border-orange-200',
+    },
+    {
+      key: 'priority_support',
+      name: t('crm.settings.prioritySupport'),
+      desc: t('crm.settings.prioritySupportDesc'),
+      icon: 'M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z',
+      iconBg: 'bg-amber-50',
+      iconColor: 'text-amber-600',
+      available: fs.priority_support?.available,
+      activated: fs.priority_support?.activated,
+      requirements: fs.priority_support?.requirements || {},
+      statusClass: !fs.priority_support?.available ? 'border-gray-200 opacity-60' : fs.priority_support?.activated ? 'border-green-200' : 'border-orange-200',
+    },
+  ];
+});
+
+const requirementLabelMap = computed(() => ({
+  description: t('crm.settings.reqDescription'),
+  work_countries: t('crm.settings.reqWorkCountries'),
+  service_packages: t('crm.settings.reqServicePackages'),
+  logo_url: t('crm.settings.reqLogoUrl'),
+  telegram_bot_token: t('crm.settings.reqTelegramBotToken'),
+  telegram_bot_username: t('crm.settings.reqTelegramBotUsername'),
+  custom_domain: t('crm.settings.reqCustomDomain'),
+  api_key: t('crm.settings.apiKeySection'),
+}));
+
+function requirementLabel(key) {
+  return requirementLabelMap.value[key] || key;
+}
+
+function switchTab(key) {
+  activeTab.value = key;
+  if (key === 'features' && !featuresLoaded.value) {
+    loadFeatureStatus();
+  }
+}
+
+async function loadFeatureStatus() {
+  featuresLoading.value = true;
+  featuresError.value = '';
+  try {
+    const [statusRes, keyRes] = await Promise.all([
+      api.get('/agency/feature-status'),
+      api.get('/agency/api-key'),
+    ]);
+    featureStatus.value = statusRes.data?.data?.features || {};
+    apiKeyInfo.value = keyRes.data?.data || {};
+    featuresLoaded.value = true;
+
+    // Pre-fill branding form from agency settings
+    const settingsRes = await api.get('/agency/settings');
+    const agencyData = settingsRes.data?.data || {};
+    brandingForm.value = {
+      logo_url: agencyData.logo_url || '',
+      primary_color: agencyData.primary_color || '#0A1F44',
+      secondary_color: agencyData.secondary_color || '#1BA97F',
+      favicon_url: agencyData.favicon_url || '',
+      telegram_bot_token: agencyData.telegram_bot_token || '',
+      telegram_bot_username: agencyData.telegram_bot_username || '',
+      custom_domain: agencyData.custom_domain || '',
+    };
+  } catch (e) {
+    featuresError.value = e.response?.data?.message || t('crm.settings.featureStatusError');
+  } finally {
+    featuresLoading.value = false;
+  }
+}
+
+async function generateApiKey() {
+  generatingKey.value = true;
+  try {
+    const res = await api.post('/agency/api-key');
+    generatedApiKey.value = res.data?.data?.api_key || '';
+    apiKeyInfo.value = { has_key: true, generated_at: res.data?.data?.generated_at };
+    // Reload feature status to update api_access activated state
+    const statusRes = await api.get('/agency/feature-status');
+    featureStatus.value = statusRes.data?.data?.features || {};
+  } catch (e) {
+    // silent
+  } finally {
+    generatingKey.value = false;
+  }
+}
+
+async function saveBranding() {
+  savingBranding.value = true;
+  brandingSuccess.value = '';
+  brandingError.value = '';
+  try {
+    const payload = Object.fromEntries(
+      Object.entries(brandingForm.value).map(([k, v]) => [k, v === '' ? null : v])
+    );
+    await api.patch('/agency/branding', payload);
+    brandingSuccess.value = t('crm.settings.brandingSaved');
+    setTimeout(() => { brandingSuccess.value = ''; }, 3000);
+    // Reload feature status
+    const statusRes = await api.get('/agency/feature-status');
+    featureStatus.value = statusRes.data?.data?.features || {};
+  } catch (e) {
+    brandingError.value = e.response?.data?.message || t('crm.settings.brandingSaveError');
+  } finally {
+    savingBranding.value = false;
+  }
+}
 
 onMounted(async () => {
   try {

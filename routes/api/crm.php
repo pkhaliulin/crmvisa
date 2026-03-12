@@ -132,6 +132,10 @@ Route::middleware(['auth:api', 'role:owner,superadmin', 'plan.active'])->group(f
     Route::post('agency/work-countries',               [AgencySettingsController::class, 'addWorkCountry']);
     Route::delete('agency/work-countries/{cc}',        [AgencySettingsController::class, 'removeWorkCountry']);
 
+    // Статус функций тарифа + брендинг
+    Route::get('agency/feature-status',               [AgencySettingsController::class, 'featureStatus']);
+    Route::patch('agency/branding',                   [AgencySettingsController::class, 'updateBranding']);
+
     // API-ключ агентства для лидогенерации
     Route::post('agency/api-key',                     [AgencySettingsController::class, 'generateApiKey']);
     Route::get('agency/api-key',                      [AgencySettingsController::class, 'apiKeyInfo']);

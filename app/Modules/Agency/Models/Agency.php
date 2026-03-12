@@ -55,6 +55,10 @@ class Agency extends BaseModel
         'rating',
         'reviews_count',
         'top_criterion',
+        'primary_color',
+        'secondary_color',
+        'custom_domain',
+        'favicon_url',
     ];
 
     protected $casts = [
