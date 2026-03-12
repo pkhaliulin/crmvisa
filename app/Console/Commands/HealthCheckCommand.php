@@ -610,7 +610,7 @@ class HealthCheckCommand extends Command
             $this->warnMsg('Директория документов не найдена: ' . $uploadDir);
         }
 
-        // Возраст последнего бэкапа
+        // Возраст последнего локального бэкапа (опционально — основные бэкапы через ServerCore)
         $backupDir = '/var/backups/crmvisa';
         if (is_dir($backupDir)) {
             $files = glob("{$backupDir}/db_*.sql.gz.enc");
@@ -621,15 +621,15 @@ class HealthCheckCommand extends Command
                 $size = number_format(filesize($latest) / 1024 / 1024, 2);
 
                 if ($ageHours > 25) {
-                    $this->err("Последний бэкап: {$ageHours}ч назад ({$size} MB) — RPO нарушен (>25ч)");
+                    $this->warnMsg("Локальный бэкап: {$ageHours}ч назад ({$size} MB) — RPO >25ч");
                 } else {
-                    $this->ok("Последний бэкап: {$ageHours}ч назад ({$size} MB)");
+                    $this->ok("Локальный бэкап: {$ageHours}ч назад ({$size} MB)");
                 }
             } else {
-                $this->err('Бэкапы не найдены в ' . $backupDir);
+                $this->ok('Локальные бэкапы не настроены (используется ServerCore: полный 1/7 + инкр. 6/7, 30 дней)');
             }
         } else {
-            $this->warnMsg('Директория бэкапов не найдена: ' . $backupDir);
+            $this->ok('Локальные бэкапы не настроены (используется ServerCore: полный 1/7 + инкр. 6/7, 30 дней)');
         }
     }
 
