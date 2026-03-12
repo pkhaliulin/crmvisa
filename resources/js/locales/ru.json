@@ -2793,6 +2793,18 @@
       "statusReview": "На проверке",
       "statusNotUploaded": "Не загружен"
     },
+    "docAi": {
+      "analyze": "Анализ AI",
+      "analyzing": "Анализ...",
+      "confidence": "Уверенность AI",
+      "extractedData": "Извлечённые данные",
+      "notExtracted": "не извлечено",
+      "validation": "Валидация",
+      "stopFactors": "Стоп-факторы",
+      "successFactors": "Позитивные факторы",
+      "risks": "Риски",
+      "reanalyze": "Повторить анализ"
+    },
     "nationalities": {
       "UZB": "Узбекистан",
       "KAZ": "Казахстан",
@@ -3013,6 +3025,24 @@
       "serviceFee": "Сервисный сбор",
       "maxStay": "Макс. пребывание",
       "days": "дн."
+    },
+    "aiDash": {
+      "title": "AI-оценка готовности",
+      "completeness": "Комплектность",
+      "riskLevel": "Уровень риска",
+      "riskMinimal": "Минимальный",
+      "riskLow": "Низкий",
+      "riskMedium": "Средний",
+      "riskCritical": "Критический",
+      "submissionReady": "Готов к подаче",
+      "notReady": "Не готов",
+      "missingRequired": "Нет обязательных",
+      "lowConfidence": "Слабая уверенность",
+      "stopFactorsLabel": "Стоп-факторы",
+      "mismatches": "Несоответствия",
+      "refresh": "Обновить оценку",
+      "loading": "Расчёт...",
+      "noData": "Запустите анализ документов для оценки"
     },
     "knowledge": {
       "title": "База знаний",

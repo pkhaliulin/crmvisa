@@ -89,12 +89,16 @@ Route::middleware(['auth:api', 'role:owner,manager,superadmin', 'plan.active', '
         Route::get('/',                        [ChecklistController::class, 'index']);
         Route::post('/',                       [ChecklistController::class, 'store']);
         Route::post('/{itemId}/upload',        [ChecklistController::class, 'upload']);
+        Route::post('/{itemId}/ai-analyze',    [ChecklistController::class, 'analyzeDocument']);
         Route::patch('/{itemId}/check',        [ChecklistController::class, 'check']);
         Route::patch('/{itemId}/review',       [ChecklistController::class, 'review']);
         Route::post('/{itemId}/upload-translation',   [ChecklistController::class, 'uploadTranslation']);
         Route::patch('/{itemId}/approve-translation',  [ChecklistController::class, 'approveTranslation']);
         Route::delete('/{itemId}',             [ChecklistController::class, 'destroy']);
     });
+
+    // AI-оценка рисков кейса
+    Route::get('cases/{caseId}/ai-risk', [ChecklistController::class, 'caseRiskScore']);
 
     // Visa Case Engine
     Route::prefix('cases/{id}/engine')->group(function () {

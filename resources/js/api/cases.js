@@ -35,6 +35,10 @@ export const casesApi = {
     uploadTranslation:  (caseId, itemId, form) => api.post(`/cases/${caseId}/checklist/${itemId}/upload-translation`, form, { headers: { 'Content-Type': 'multipart/form-data' } }),
     approveTranslation: (caseId, itemId)       => api.patch(`/cases/${caseId}/checklist/${itemId}/approve-translation`),
 
+    // AI-анализ документов
+    aiAnalyze:    (caseId, itemId) => api.post(`/cases/${caseId}/checklist/${itemId}/ai-analyze`),
+    aiRiskScore:  (caseId) => api.get(`/cases/${caseId}/ai-risk`),
+
     // Bulk actions
     bulkAssign:   (data) => api.post('/cases/bulk/assign', data),
     bulkPriority: (data) => api.post('/cases/bulk/priority', data),

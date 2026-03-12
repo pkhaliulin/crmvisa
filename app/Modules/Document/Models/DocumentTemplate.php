@@ -24,13 +24,34 @@ class DocumentTemplate extends BaseModel
         'metadata_schema',
         'is_active',
         'sort_order',
+        // AI fields
+        'ai_enabled',
+        'ai_extraction_schema',
+        'ai_validation_rules',
+        'ai_stop_factors',
+        'ai_success_factors',
+        'ai_risk_indicators',
+        'manager_instructions',
+        'translation_required',
+        'max_age_days',
+        'confidence_criteria',
     ];
 
     protected $casts = [
-        'is_repeatable'   => 'boolean',
-        'is_active'       => 'boolean',
-        'sort_order'      => 'integer',
-        'metadata_schema' => 'array',
+        'is_repeatable'        => 'boolean',
+        'is_active'            => 'boolean',
+        'sort_order'           => 'integer',
+        'metadata_schema'      => 'array',
+        // AI fields
+        'ai_enabled'           => 'boolean',
+        'ai_extraction_schema' => 'array',
+        'ai_validation_rules'  => 'array',
+        'ai_stop_factors'      => 'array',
+        'ai_success_factors'   => 'array',
+        'ai_risk_indicators'   => 'array',
+        'translation_required' => 'boolean',
+        'max_age_days'         => 'integer',
+        'confidence_criteria'  => 'array',
     ];
 
     // -------------------------------------------------------------------------

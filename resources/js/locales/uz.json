@@ -2793,6 +2793,18 @@
       "statusReview": "Tekshiruvda",
       "statusNotUploaded": "Yuklanmagan"
     },
+    "docAi": {
+      "analyze": "AI tahlili",
+      "analyzing": "Tahlil...",
+      "confidence": "AI ishonchliligi",
+      "extractedData": "Ajratilgan ma'lumotlar",
+      "notExtracted": "ajratilmagan",
+      "validation": "Tekshirish",
+      "stopFactors": "To'siq omillar",
+      "successFactors": "Ijobiy omillar",
+      "risks": "Xavflar",
+      "reanalyze": "Qayta tahlil"
+    },
     "nationalities": {
       "UZB": "O'zbekiston",
       "KAZ": "Qozog'iston",
@@ -3013,6 +3025,24 @@
       "serviceFee": "Xizmat to'lovi",
       "maxStay": "Maks. qolish muddati",
       "days": "kun"
+    },
+    "aiDash": {
+      "title": "AI tayyorlik bahosi",
+      "completeness": "To'liqlik",
+      "riskLevel": "Xavf darajasi",
+      "riskMinimal": "Minimal",
+      "riskLow": "Past",
+      "riskMedium": "O'rta",
+      "riskCritical": "Jiddiy",
+      "submissionReady": "Topshirishga tayyor",
+      "notReady": "Tayyor emas",
+      "missingRequired": "Majburiy hujjatlar yo'q",
+      "lowConfidence": "Past ishonchlilik",
+      "stopFactorsLabel": "To'siq omillar",
+      "mismatches": "Nomuvofiqliklar",
+      "refresh": "Bahoni yangilash",
+      "loading": "Hisoblanmoqda...",
+      "noData": "Baholash uchun hujjatlar tahlilini ishga tushiring"
     },
     "knowledge": {
       "title": "Bilimlar bazasi",

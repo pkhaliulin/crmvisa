@@ -8,6 +8,8 @@ use App\Modules\Case\Services\CaseService;
 use App\Modules\Document\Events\DocumentUploaded;
 use App\Modules\Document\Models\CaseChecklist;
 use App\Modules\Document\Services\ChecklistService;
+use App\Modules\Document\Services\CrossDocumentValidatorService;
+use App\Modules\Document\Services\DocumentAiAnalyzerService;
 use App\Support\Helpers\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -17,6 +19,8 @@ class ChecklistController extends Controller
     public function __construct(
         private readonly ChecklistService $service,
         private readonly CaseService $caseService,
+        private readonly DocumentAiAnalyzerService $aiAnalyzer,
+        private readonly CrossDocumentValidatorService $crossValidator,
     ) {}
 
     /**
@@ -188,6 +192,101 @@ class ChecklistController extends Controller
         $result = $this->service->toggleCheck($item, $validated['checked']);
 
         return ApiResponse::success($result, 'Updated');
+    }
+
+    /**
+     * POST /api/v1/cases/{caseId}/checklist/{itemId}/ai-analyze
+     * AI-анализ загруженного документа: извлечение данных, валидация, оценка рисков
+     */
+    public function analyzeDocument(Request $request, string $caseId, string $itemId): JsonResponse
+    {
+        $case = $this->authorizeCase($request, $caseId);
+        $item = $this->authorizeItem($request, $caseId, $itemId);
+
+        // Проверяем что документ загружен
+        if (!$item->document_id || !$item->document) {
+            return ApiResponse::error('Документ не загружен в этот слот', null, 422);
+        }
+
+        // Получаем шаблон документа через связь countryRequirement -> documentTemplate
+        $template = $item->countryRequirement?->template;
+
+        if (!$template) {
+            return ApiResponse::error('Шаблон документа не найден', null, 422);
+        }
+
+        // Путь к файлу документа
+        $filePath = $item->document->file_path;
+
+        // Контекст кейса для AI-анализа (даты поездки, страна, тип визы)
+        $context = [
+            'travel_date'  => $case->travel_date?->format('Y-m-d'),
+            'country_code' => $case->country_code,
+            'visa_type'    => $case->visa_type,
+        ];
+
+        // Вызов AI-анализатора
+        $result = $this->aiAnalyzer->analyze($filePath, $template, $context);
+
+        // Сохраняем результат анализа в чек-лист
+        $item->update([
+            'ai_analysis'   => $result->toArray(),
+            'ai_analyzed_at' => now(),
+            'ai_confidence'  => $result->confidence,
+        ]);
+
+        return ApiResponse::success($result->toArray(), 'AI-анализ завершён');
+    }
+
+    /**
+     * GET /api/v1/cases/{caseId}/ai-risk
+     * Оценка рисков кейса на основе AI-анализов всех документов
+     */
+    public function caseRiskScore(Request $request, string $caseId): JsonResponse
+    {
+        $case = $this->authorizeCase($request, $caseId);
+
+        // Собираем все элементы чек-листа с AI-анализами
+        $items = CaseChecklist::where('case_id', $caseId)
+            ->where('agency_id', $request->user()->agency_id)
+            ->with(['countryRequirement.template'])
+            ->get();
+
+        // Формируем массив данных документов для кросс-валидации и расчёта рисков
+        $documentsData = [];
+        $documentsAnalysis = [];
+
+        foreach ($items as $item) {
+            $slug = $item->countryRequirement?->template?->slug ?? $item->name;
+            $analysis = $item->ai_analysis;
+
+            // Данные для кросс-валидации (извлечённые поля)
+            if ($analysis && isset($analysis['extracted_data'])) {
+                $documentsData[$slug] = [
+                    'extracted' => $analysis['extracted_data'],
+                ];
+            }
+
+            // Данные для расчёта рисков
+            $documentsAnalysis[$slug] = [
+                'status'       => $item->document_id ? 'uploaded' : 'missing',
+                'required'     => $item->is_required,
+                'confidence'   => $item->ai_confidence,
+                'stop_factors' => $analysis['stop_factors'] ?? [],
+                'weight'       => $item->countryRequirement?->template?->ai_enabled ? 2 : 1,
+            ];
+        }
+
+        // Кросс-валидация: проверка согласованности данных между документами
+        $mismatches = $this->crossValidator->validate($case, $documentsData);
+
+        // Расчёт общего риска кейса
+        $riskResult = $this->crossValidator->calculateCaseRisk($case, $documentsAnalysis);
+
+        // Добавляем несоответствия к результату
+        $riskResult['mismatches'] = $mismatches;
+
+        return ApiResponse::success($riskResult);
     }
 
     // -------------------------------------------------------------------------

@@ -20,10 +20,13 @@ Route::middleware(['auth:api', 'role:superadmin'])->group(function () {
     Route::get('admin/marketplace/stats',      [MarketplaceController::class, 'adminStats']);
 
     // Справочник шаблонов документов
-    Route::get('admin/document-templates',         [DocumentTemplateController::class, 'index']);
-    Route::post('admin/document-templates',        [DocumentTemplateController::class, 'store']);
-    Route::patch('admin/document-templates/{id}',  [DocumentTemplateController::class, 'update']);
-    Route::delete('admin/document-templates/{id}', [DocumentTemplateController::class, 'destroy']);
+    Route::get('admin/document-templates',                      [DocumentTemplateController::class, 'index']);
+    Route::post('admin/document-templates',                     [DocumentTemplateController::class, 'store']);
+    Route::get('admin/document-templates/{id}',                 [DocumentTemplateController::class, 'show']);
+    Route::patch('admin/document-templates/{id}',               [DocumentTemplateController::class, 'update']);
+    Route::patch('admin/document-templates/{id}/toggle-ai',     [DocumentTemplateController::class, 'toggleAi']);
+    Route::delete('admin/document-templates/{id}',              [DocumentTemplateController::class, 'destroy']);
+    Route::get('admin/ai-providers',                            [DocumentTemplateController::class, 'aiProviders']);
 
     // Требования стран к документам
     Route::get('admin/country-requirements',                [CountryRequirementController::class, 'index']);

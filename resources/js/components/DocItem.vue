@@ -43,6 +43,14 @@
           {{ item.review_notes }}
         </p>
 
+        <!-- AI Analysis panel -->
+        <DocAiPanel v-if="item.document && item.type === 'upload'"
+          :analysis="item.ai_analysis"
+          :confidence="item.ai_confidence ?? 0"
+          :loading="aiLoading"
+          :item-id="item.id"
+          @analyze="$emit('ai-analyze', item)" />
+
         <!-- Translation block -->
         <div v-if="item.review_status === 'needs_translation'"
           class="mt-2 p-2.5 bg-purple-50/60 rounded-lg border border-purple-100">
@@ -122,13 +130,14 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import AppBadge from './AppBadge.vue';
+import DocAiPanel from './DocAiPanel.vue';
 
 const { t } = useI18n();
-const props = defineProps({ item: Object });
-defineEmits(['upload', 'toggle', 'review', 'reject', 'translation', 'upload-translation', 'approve-translation', 'preview', 'delete', 'repeat']);
+const props = defineProps({ item: Object, aiLoading: { type: Boolean, default: false } });
+defineEmits(['upload', 'toggle', 'review', 'reject', 'translation', 'upload-translation', 'approve-translation', 'preview', 'delete', 'repeat', 'ai-analyze']);
 
 const STATUS_MAP = computed(() => ({
   approved:             { color: 'green',  label: t('crm.doc.statusAccepted'),       border: 'border-green-100 bg-green-50/30',   bar: 'bg-green-400' },

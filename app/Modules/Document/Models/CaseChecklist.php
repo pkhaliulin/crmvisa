@@ -40,6 +40,9 @@ class CaseChecklist extends BaseModel
         'translation_document_id',
         'translated_by',
         'translated_at',
+        'ai_analysis',
+        'ai_analyzed_at',
+        'ai_confidence',
     ];
 
     protected $casts = [
@@ -51,6 +54,9 @@ class CaseChecklist extends BaseModel
         'translated_at'      => 'datetime',
         'translation_pages'  => 'integer',
         'translation_price'  => 'integer',
+        'ai_analysis'        => 'array',
+        'ai_analyzed_at'     => 'datetime',
+        'ai_confidence'      => 'integer',
     ];
 
     // -------------------------------------------------------------------------

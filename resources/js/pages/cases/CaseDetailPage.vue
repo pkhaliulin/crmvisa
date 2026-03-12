@@ -303,10 +303,12 @@
             <p class="text-[10px] uppercase tracking-widest font-bold text-orange-500 mb-2">{{ t('crm.caseDetail.actionNeeded', { n: actionDocs.length }) }}</p>
             <div class="space-y-2">
               <DocItem v-for="item in actionDocs" :key="item.id" :item="item"
+                :ai-loading="aiAnalyzingId === item.id"
                 @upload="uploadToSlot" @toggle="toggleCheck" @review="reviewSlot"
                 @reject="openReject" @translation="openTranslation"
                 @upload-translation="doUploadTranslation" @approve-translation="doApproveTranslation"
-                @preview="openPreview" @delete="deleteSlot" @repeat="repeatSlot" />
+                @preview="openPreview" @delete="deleteSlot" @repeat="repeatSlot"
+                @ai-analyze="doAiAnalyze" />
             </div>
           </div>
 
@@ -315,16 +317,21 @@
             <p v-if="actionDocs.length" class="text-[10px] uppercase tracking-widest font-bold text-gray-300 mb-2">{{ t('crm.caseDetail.doneItems', { n: otherDocs.length }) }}</p>
             <div class="space-y-2">
               <DocItem v-for="item in otherDocs" :key="item.id" :item="item"
+                :ai-loading="aiAnalyzingId === item.id"
                 @upload="uploadToSlot" @toggle="toggleCheck" @review="reviewSlot"
                 @reject="openReject" @translation="openTranslation"
                 @upload-translation="doUploadTranslation" @approve-translation="doApproveTranslation"
-                @preview="openPreview" @delete="deleteSlot" @repeat="repeatSlot" />
+                @preview="openPreview" @delete="deleteSlot" @repeat="repeatSlot"
+                @ai-analyze="doAiAnalyze" />
             </div>
           </div>
 
           <p v-if="!checklist.items?.length" class="text-sm text-gray-400 py-8 text-center">{{ t('crm.caseDetail.checklistEmpty') }}</p>
           <div class="h-4"></div>
         </div>
+
+        <!-- ===== AI RISK DASHBOARD ===== -->
+        <CaseAiDashboard :case-id="id" ref="aiDashboardRef" />
 
         <!-- ===== TIMELINE (collapsed) ===== -->
         <div class="bg-white rounded-xl border border-gray-100">
@@ -608,6 +615,7 @@ import ReadinessPanel from '@/components/engine/ReadinessPanel.vue';
 import CheckpointsList from '@/components/engine/CheckpointsList.vue';
 import FormWizard from '@/components/engine/FormWizard.vue';
 import CaseGuidancePanel from '@/components/engine/CaseGuidancePanel.vue';
+import CaseAiDashboard from '@/components/CaseAiDashboard.vue';
 import { useAuthStore } from '@/stores/auth';
 import { usersApi } from '@/api/users';
 import { formatPhone } from '@/utils/format';
@@ -627,6 +635,7 @@ const caseData  = ref(null);
 const checklist = ref({ items: [], progress: null });
 const allowedTransitions = ref({});
 const loading   = ref(true);
+const aiAnalyzingId = ref(null);
 const timelineOpen = ref(false);
 const showMoveModal = ref(false);
 const showAddSlot = ref(false);
@@ -645,6 +654,7 @@ const readinessPanelRef = ref(null);
 const checkpointsListRef = ref(null);
 const formWizardRef = ref(null);
 const guidancePanelRef = ref(null);
+const aiDashboardRef = ref(null);
 const hasEngine = computed(() => ['FR'].includes(caseData.value?.country_code)); // Countries with engine rules
 
 function onEngineInit() {
@@ -862,6 +872,19 @@ async function uploadToSlot(item, event) {
   fd.append('file', file);
   await casesApi.uploadToSlot(id, item.id, fd);
   await reloadAll();
+}
+
+async function doAiAnalyze(item) {
+  aiAnalyzingId.value = item.id;
+  try {
+    await casesApi.aiAnalyze(id, item.id);
+    await reloadChecklist();
+    aiDashboardRef.value?.refresh();
+  } catch (e) {
+    console.error('AI analyze error:', e);
+  } finally {
+    aiAnalyzingId.value = null;
+  }
 }
 
 async function toggleCheck(item) { await casesApi.checkSlot(id, item.id, !item.is_checked); await reloadChecklist(); }
