@@ -6,43 +6,81 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Redis;
 
 class HealthCheckCommand extends Command
 {
-    protected $signature = 'app:health-check {--fix : Автоматически исправлять найденные проблемы}';
-    protected $description = 'Проверка целостности данных, API и RLS. Находит баги до пользователя.';
+    protected $signature = 'app:health-check
+        {--fix : Автоматически исправлять найденные проблемы}
+        {--json : Вывод результатов в JSON формате}
+        {--section= : Запустить только указанную секцию (1-10)}';
+
+    protected $description = 'Проверка целостности данных, API, RLS, производительности, очередей, дисков, SSL и безопасности.';
 
     private int $errors = 0;
     private int $warnings = 0;
     private int $fixed = 0;
+    private array $jsonResults = [];
+    private int $totalSections = 10;
 
     public function handle(): int
     {
-        $this->info('=== VisaBor Health Check ===');
-        $this->newLine();
+        $section = $this->option('section') ? (int) $this->option('section') : null;
+        $isJson = (bool) $this->option('json');
 
-        $this->checkDatabase();
-        $this->checkRlsPolicies();
-        $this->checkDataIntegrity();
-        $this->checkApiEndpoints();
-        $this->checkPublicPortal();
+        if (!$isJson) {
+            $this->info('=== VisaBor Health Check v2 ===');
+            $this->newLine();
+        }
 
-        $this->newLine();
-        $this->info('=== Итого ===');
-        $this->line("Ошибок: {$this->errors}");
-        $this->line("Предупреждений: {$this->warnings}");
-        if ($this->option('fix')) {
-            $this->line("Исправлено: {$this->fixed}");
+        $checks = [
+            1  => 'checkDatabase',
+            2  => 'checkRlsPolicies',
+            3  => 'checkDataIntegrity',
+            4  => 'checkApiEndpoints',
+            5  => 'checkPublicPortal',
+            6  => 'checkPerformance',
+            7  => 'checkQueueAndJobs',
+            8  => 'checkDiskAndStorage',
+            9  => 'checkSslAndExternalServices',
+            10 => 'checkSessionsAndSecurity',
+        ];
+
+        foreach ($checks as $num => $method) {
+            if ($section !== null && $section !== $num) {
+                continue;
+            }
+            $this->$method();
+        }
+
+        if ($isJson) {
+            $this->line(json_encode([
+                'status' => $this->errors > 0 ? 'fail' : 'ok',
+                'errors' => $this->errors,
+                'warnings' => $this->warnings,
+                'fixed' => $this->fixed,
+                'checks' => $this->jsonResults,
+            ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+        } else {
+            $this->newLine();
+            $this->info('=== Итого ===');
+            $this->line("Ошибок: {$this->errors}");
+            $this->line("Предупреждений: {$this->warnings}");
+            if ($this->option('fix')) {
+                $this->line("Исправлено: {$this->fixed}");
+            }
         }
 
         return $this->errors > 0 ? 1 : 0;
     }
 
+    // ──────────────────────────────────────────────
+    // [1/10] База данных
+    // ──────────────────────────────────────────────
     private function checkDatabase(): void
     {
-        $this->info('[1/5] База данных');
+        $this->sectionHeader(1, 'База данных');
 
-        // Проверка подключения
         try {
             DB::select('SELECT 1');
             $this->ok('PostgreSQL подключение');
@@ -51,7 +89,6 @@ class HealthCheckCommand extends Command
             return;
         }
 
-        // Проверка ключевых таблиц
         $tables = [
             'agencies', 'users', 'clients', 'cases', 'case_stages',
             'agency_work_countries', 'agency_service_packages', 'global_services',
@@ -65,7 +102,6 @@ class HealthCheckCommand extends Command
         }
         $this->ok('Все ключевые таблицы на месте');
 
-        // Redis
         try {
             Cache::store('redis')->put('health_check', true, 5);
             Cache::store('redis')->forget('health_check');
@@ -75,10 +111,12 @@ class HealthCheckCommand extends Command
         }
     }
 
+    // ──────────────────────────────────────────────
+    // [2/10] RLS политики
+    // ──────────────────────────────────────────────
     private function checkRlsPolicies(): void
     {
-        $this->newLine();
-        $this->info('[2/5] RLS политики');
+        $this->sectionHeader(2, 'RLS политики');
 
         $rlsTables = [
             'cases', 'clients', 'users', 'case_checklist',
@@ -98,7 +136,6 @@ class HealthCheckCommand extends Command
             }
         }
 
-        // Проверка что публичные эндпоинты видят agency_work_countries
         DB::statement("SET app.is_public_user = 'true'");
         $count = DB::table('agency_work_countries')->count();
         DB::statement("RESET app.is_public_user");
@@ -110,10 +147,12 @@ class HealthCheckCommand extends Command
         }
     }
 
+    // ──────────────────────────────────────────────
+    // [3/10] Целостность данных
+    // ──────────────────────────────────────────────
     private function checkDataIntegrity(): void
     {
-        $this->newLine();
-        $this->info('[3/5] Целостность данных');
+        $this->sectionHeader(3, 'Целостность данных');
 
         DB::statement("SET app.is_superadmin = 'true'");
 
@@ -127,7 +166,6 @@ class HealthCheckCommand extends Command
             $this->warnMsg("Агентство '{$a->name}' без рабочих стран — не видно на маркетплейсе");
 
             if ($this->option('fix')) {
-                // Заполнить из пакетов и кейсов
                 $countryCodes = DB::table('agency_service_packages')
                     ->where('agency_id', $a->id)
                     ->distinct()
@@ -227,12 +265,13 @@ class HealthCheckCommand extends Command
         DB::statement("RESET app.is_superadmin");
     }
 
+    // ──────────────────────────────────────────────
+    // [4/10] API эндпоинты (CRM)
+    // ──────────────────────────────────────────────
     private function checkApiEndpoints(): void
     {
-        $this->newLine();
-        $this->info('[4/5] API эндпоинты (CRM)');
+        $this->sectionHeader(4, 'API эндпоинты (CRM)');
 
-        // Логинимся как тестовый owner
         $baseUrl = config('app.url');
         $token = null;
 
@@ -292,10 +331,12 @@ class HealthCheckCommand extends Command
         }
     }
 
+    // ──────────────────────────────────────────────
+    // [5/10] Публичный портал
+    // ──────────────────────────────────────────────
     private function checkPublicPortal(): void
     {
-        $this->newLine();
-        $this->info('[5/5] Публичный портал');
+        $this->sectionHeader(5, 'Публичный портал');
 
         $baseUrl = config('app.url');
 
@@ -342,21 +383,450 @@ class HealthCheckCommand extends Command
         }
     }
 
+    // ──────────────────────────────────────────────
+    // [6/10] Производительность
+    // ──────────────────────────────────────────────
+    private function checkPerformance(): void
+    {
+        $this->sectionHeader(6, 'Производительность');
+
+        // Проверка connection pool — количество активных подключений
+        try {
+            $connections = DB::select("
+                SELECT count(*) as total,
+                       count(*) FILTER (WHERE state = 'active') as active,
+                       count(*) FILTER (WHERE state = 'idle') as idle,
+                       count(*) FILTER (WHERE state = 'idle in transaction') as idle_in_tx
+                FROM pg_stat_activity
+                WHERE datname = current_database()
+            ");
+            if (!empty($connections)) {
+                $c = $connections[0];
+                $this->ok("DB подключения: всего={$c->total}, активные={$c->active}, idle={$c->idle}, idle_in_tx={$c->idle_in_tx}");
+
+                if ($c->idle_in_tx > 5) {
+                    $this->warnMsg("Много idle in transaction подключений ({$c->idle_in_tx}) — возможные утечки транзакций");
+                }
+
+                $maxConnections = DB::select("SHOW max_connections")[0]->max_connections;
+                $usagePercent = round(($c->total / $maxConnections) * 100, 1);
+                if ($usagePercent > 80) {
+                    $this->err("Использование пула подключений: {$usagePercent}% ({$c->total}/{$maxConnections})");
+                } else {
+                    $this->ok("Пул подключений: {$usagePercent}% ({$c->total}/{$maxConnections})");
+                }
+            }
+        } catch (\Exception $e) {
+            $this->warnMsg('Не удалось проверить подключения: ' . $e->getMessage());
+        }
+
+        // Медленные запросы из pg_stat_statements (если расширение доступно)
+        try {
+            $hasPgStatStatements = DB::select("SELECT count(*) as cnt FROM pg_extension WHERE extname = 'pg_stat_statements'")[0]->cnt > 0;
+            if ($hasPgStatStatements) {
+                $slowQueries = DB::select("
+                    SELECT query, calls, round(mean_exec_time::numeric, 2) as avg_ms, round(max_exec_time::numeric, 2) as max_ms
+                    FROM pg_stat_statements
+                    WHERE mean_exec_time > 1000
+                    AND dbid = (SELECT oid FROM pg_database WHERE datname = current_database())
+                    ORDER BY mean_exec_time DESC
+                    LIMIT 3
+                ");
+
+                if (empty($slowQueries)) {
+                    $this->ok('Нет запросов со средним временем > 1 сек');
+                } else {
+                    $this->warnMsg(count($slowQueries) . ' медленных запросов (среднее > 1 сек):');
+                    foreach ($slowQueries as $sq) {
+                        $shortQuery = mb_substr(preg_replace('/\s+/', ' ', $sq->query), 0, 80);
+                        $this->line("    avg={$sq->avg_ms}ms max={$sq->max_ms}ms calls={$sq->calls} | {$shortQuery}...");
+                    }
+                }
+            } else {
+                // Проверяем лог файл на медленные запросы
+                $logFile = storage_path('logs/laravel.log');
+                if (file_exists($logFile)) {
+                    $slowCount = 0;
+                    $tailCmd = "tail -500 " . escapeshellarg($logFile) . " | grep -c 'slow_query\\|QueryException' 2>/dev/null";
+                    $slowCount = (int) trim(shell_exec($tailCmd) ?? '0');
+
+                    if ($slowCount > 0) {
+                        $this->warnMsg("{$slowCount} записей о медленных запросах/ошибках в последних 500 строках лога");
+                    } else {
+                        $this->ok('Нет записей о медленных запросах в логе');
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            $this->warnMsg('Не удалось проверить медленные запросы: ' . $e->getMessage());
+        }
+
+        // Среднее время API ответа из лога request_logs (если таблица есть)
+        try {
+            $hasRequestLogs = DB::select("SELECT to_regclass('public.request_logs') IS NOT NULL AS ok")[0]->ok;
+            if ($hasRequestLogs) {
+                $avgTime = DB::select("
+                    SELECT
+                        round(avg(response_time_ms)::numeric, 0) as avg_ms,
+                        round(max(response_time_ms)::numeric, 0) as max_ms,
+                        count(*) as cnt
+                    FROM (
+                        SELECT response_time_ms FROM request_logs
+                        ORDER BY created_at DESC LIMIT 100
+                    ) recent
+                ");
+                if (!empty($avgTime) && $avgTime[0]->cnt > 0) {
+                    $avg = $avgTime[0]->avg_ms;
+                    $max = $avgTime[0]->max_ms;
+                    if ($avg > 500) {
+                        $this->warnMsg("Среднее время API: {$avg}ms (макс: {$max}ms) — из последних {$avgTime[0]->cnt} запросов");
+                    } else {
+                        $this->ok("Среднее время API: {$avg}ms (макс: {$max}ms) — из последних {$avgTime[0]->cnt} запросов");
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            // Таблица может не существовать — не критично
+        }
+    }
+
+    // ──────────────────────────────────────────────
+    // [7/10] Очереди и задачи
+    // ──────────────────────────────────────────────
+    private function checkQueueAndJobs(): void
+    {
+        $this->sectionHeader(7, 'Очереди и задачи');
+
+        // Проверка воркера
+        $workerRunning = false;
+        exec('pgrep -f "queue:work" 2>/dev/null', $pids, $exitCode);
+        if ($exitCode === 0 && !empty($pids)) {
+            $this->ok('Queue worker запущен (PID: ' . implode(', ', $pids) . ')');
+            $workerRunning = true;
+        } else {
+            // Попробуем Horizon
+            exec('pgrep -f "horizon" 2>/dev/null', $horizonPids, $horizonExit);
+            if ($horizonExit === 0 && !empty($horizonPids)) {
+                $this->ok('Horizon запущен (PID: ' . implode(', ', $horizonPids) . ')');
+                $workerRunning = true;
+            } else {
+                $this->warnMsg('Queue worker не запущен — задачи не обрабатываются');
+            }
+        }
+
+        // Ожидающие задачи
+        try {
+            $hasJobsTable = DB::select("SELECT to_regclass('public.jobs') IS NOT NULL AS ok")[0]->ok;
+            if ($hasJobsTable) {
+                $pendingJobs = DB::table('jobs')->count();
+                if ($pendingJobs > 100) {
+                    $this->warnMsg("Ожидающих задач: {$pendingJobs} — очередь растет");
+                } elseif ($pendingJobs > 0) {
+                    $this->ok("Ожидающих задач: {$pendingJobs}");
+                } else {
+                    $this->ok('Очередь пуста');
+                }
+            }
+        } catch (\Exception $e) {
+            $this->warnMsg('Не удалось проверить таблицу jobs: ' . $e->getMessage());
+        }
+
+        // Неудачные задачи
+        try {
+            $hasFailedTable = DB::select("SELECT to_regclass('public.failed_jobs') IS NOT NULL AS ok")[0]->ok;
+            if ($hasFailedTable) {
+                $failedCount = DB::table('failed_jobs')->count();
+                if ($failedCount > 0) {
+                    $this->warnMsg("Неудачных задач: {$failedCount}");
+
+                    // Последняя ошибка
+                    $lastFailed = DB::table('failed_jobs')
+                        ->orderByDesc('failed_at')
+                        ->first();
+                    if ($lastFailed) {
+                        $errorPreview = mb_substr($lastFailed->exception ?? '', 0, 150);
+                        $this->line("    Последняя ошибка ({$lastFailed->failed_at}): {$errorPreview}...");
+                    }
+                } else {
+                    $this->ok('Нет неудачных задач');
+                }
+            }
+        } catch (\Exception $e) {
+            $this->warnMsg('Не удалось проверить failed_jobs: ' . $e->getMessage());
+        }
+    }
+
+    // ──────────────────────────────────────────────
+    // [8/10] Диск и хранилище
+    // ──────────────────────────────────────────────
+    private function checkDiskAndStorage(): void
+    {
+        $this->sectionHeader(8, 'Диск и хранилище');
+
+        // Проверка дискового пространства
+        $partitions = ['/', '/var/backups'];
+        foreach ($partitions as $partition) {
+            $dfOutput = shell_exec("df -h " . escapeshellarg($partition) . " 2>/dev/null | tail -1");
+            if ($dfOutput) {
+                $parts = preg_split('/\s+/', trim($dfOutput));
+                // Формат: Filesystem Size Used Avail Use% Mounted
+                if (count($parts) >= 5) {
+                    $usePercent = (int) str_replace('%', '', $parts[4]);
+                    $avail = $parts[3];
+                    $mounted = $parts[5] ?? $partition;
+
+                    if ($usePercent > 90) {
+                        $this->err("Диск {$mounted}: {$usePercent}% занято (свободно: {$avail}) — КРИТИЧНО");
+                    } elseif ($usePercent > 80) {
+                        $this->warnMsg("Диск {$mounted}: {$usePercent}% занято (свободно: {$avail})");
+                    } else {
+                        $this->ok("Диск {$mounted}: {$usePercent}% занято (свободно: {$avail})");
+                    }
+                }
+            }
+        }
+
+        // Проверка записи в storage
+        $storageDir = storage_path('logs');
+        if (is_writable($storageDir)) {
+            $this->ok('storage/logs доступен для записи');
+        } else {
+            $this->err('storage/logs НЕ доступен для записи');
+        }
+
+        $frameworkDir = storage_path('framework/cache');
+        if (is_writable($frameworkDir)) {
+            $this->ok('storage/framework/cache доступен для записи');
+        } else {
+            $this->err('storage/framework/cache НЕ доступен для записи');
+        }
+
+        // Размер директории загрузок
+        $uploadDir = storage_path('app/documents');
+        if (is_dir($uploadDir)) {
+            $sizeOutput = trim(shell_exec("du -sh " . escapeshellarg($uploadDir) . " 2>/dev/null | cut -f1") ?? '0');
+            $this->ok("Размер документов: {$sizeOutput}");
+        } else {
+            $this->warnMsg('Директория документов не найдена: ' . $uploadDir);
+        }
+
+        // Возраст последнего бэкапа
+        $backupDir = '/var/backups/crmvisa';
+        if (is_dir($backupDir)) {
+            $files = glob("{$backupDir}/db_*.sql.gz.enc");
+            if (!empty($files)) {
+                sort($files);
+                $latest = end($files);
+                $ageHours = round((time() - filemtime($latest)) / 3600, 1);
+                $size = number_format(filesize($latest) / 1024 / 1024, 2);
+
+                if ($ageHours > 25) {
+                    $this->err("Последний бэкап: {$ageHours}ч назад ({$size} MB) — RPO нарушен (>25ч)");
+                } else {
+                    $this->ok("Последний бэкап: {$ageHours}ч назад ({$size} MB)");
+                }
+            } else {
+                $this->err('Бэкапы не найдены в ' . $backupDir);
+            }
+        } else {
+            $this->warnMsg('Директория бэкапов не найдена: ' . $backupDir);
+        }
+    }
+
+    // ──────────────────────────────────────────────
+    // [9/10] SSL и внешние сервисы
+    // ──────────────────────────────────────────────
+    private function checkSslAndExternalServices(): void
+    {
+        $this->sectionHeader(9, 'SSL и внешние сервисы');
+
+        // Проверка SSL сертификатов
+        $domains = ['visabor.uz', 'visacrm.uz'];
+        foreach ($domains as $domain) {
+            $cmd = "echo | openssl s_client -servername {$domain} -connect {$domain}:443 2>/dev/null | openssl x509 -noout -enddate 2>/dev/null";
+            $output = trim(shell_exec($cmd) ?? '');
+
+            if (empty($output)) {
+                $this->warnMsg("SSL {$domain}: не удалось проверить (домен недоступен или нет openssl)");
+                continue;
+            }
+
+            // Формат: notAfter=Mar 15 12:00:00 2026 GMT
+            if (preg_match('/notAfter=(.+)/', $output, $matches)) {
+                $expiryDate = strtotime(trim($matches[1]));
+                $daysLeft = round(($expiryDate - time()) / 86400);
+
+                if ($daysLeft < 0) {
+                    $this->err("SSL {$domain}: ИСТЕК " . abs($daysLeft) . " дней назад");
+                } elseif ($daysLeft < 14) {
+                    $this->err("SSL {$domain}: истекает через {$daysLeft} дней — СРОЧНО обновить");
+                } elseif ($daysLeft < 30) {
+                    $this->warnMsg("SSL {$domain}: истекает через {$daysLeft} дней");
+                } else {
+                    $this->ok("SSL {$domain}: действителен ещё {$daysLeft} дней");
+                }
+            }
+        }
+
+        // Eskiz SMS API
+        try {
+            $eskizResponse = Http::timeout(5)->get('https://notify.eskiz.uz/api');
+            if ($eskizResponse->status() < 500) {
+                $this->ok('Eskiz SMS API доступен (HTTP ' . $eskizResponse->status() . ')');
+            } else {
+                $this->warnMsg('Eskiz SMS API вернул ' . $eskizResponse->status());
+            }
+        } catch (\Exception $e) {
+            $this->warnMsg('Eskiz SMS API недоступен: ' . $e->getMessage());
+        }
+
+        // Redis PING
+        try {
+            $pong = Redis::ping();
+            $result = is_string($pong) ? $pong : (string) $pong;
+            if (str_contains(strtolower($result), 'pong') || $result === '1' || $pong === true) {
+                $this->ok('Redis PING: OK');
+            } else {
+                $this->warnMsg("Redis PING: неожиданный ответ ({$result})");
+            }
+        } catch (\Exception $e) {
+            $this->warnMsg('Redis PING: ' . $e->getMessage());
+        }
+    }
+
+    // ──────────────────────────────────────────────
+    // [10/10] Сессии и безопасность
+    // ──────────────────────────────────────────────
+    private function checkSessionsAndSecurity(): void
+    {
+        $this->sectionHeader(10, 'Сессии и безопасность');
+
+        // Активные сессии (если используется database driver)
+        try {
+            $hasSessionsTable = DB::select("SELECT to_regclass('public.sessions') IS NOT NULL AS ok")[0]->ok;
+            if ($hasSessionsTable) {
+                $activeSessions = DB::table('sessions')
+                    ->where('last_activity', '>', time() - 7200) // Последние 2 часа
+                    ->count();
+                $this->ok("Активных сессий (2ч): {$activeSessions}");
+            } else {
+                // Проверяем через personal_access_tokens
+                $hasTokensTable = DB::select("SELECT to_regclass('public.personal_access_tokens') IS NOT NULL AS ok")[0]->ok;
+                if ($hasTokensTable) {
+                    $activeTokens = DB::table('personal_access_tokens')
+                        ->where('last_used_at', '>', now()->subHours(2))
+                        ->count();
+                    $this->ok("Активных токенов (2ч): {$activeTokens}");
+                }
+            }
+        } catch (\Exception $e) {
+            $this->warnMsg('Не удалось проверить сессии: ' . $e->getMessage());
+        }
+
+        // Неудачные попытки входа из security лога
+        $securityLog = storage_path('logs/security.log');
+        if (file_exists($securityLog)) {
+            $yesterday = date('Y-m-d', strtotime('-1 day'));
+            $today = date('Y-m-d');
+            $cmd = sprintf(
+                'grep -c "login_failed\\|auth_failed\\|FAILED" %s 2>/dev/null',
+                escapeshellarg($securityLog)
+            );
+            $failedCount = (int) trim(shell_exec($cmd) ?? '0');
+
+            // Более точный подсчет за 24ч
+            $cmd24h = sprintf(
+                'grep -E "%s|%s" %s 2>/dev/null | grep -c "login_failed\\|auth_failed\\|FAILED"',
+                $yesterday,
+                $today,
+                escapeshellarg($securityLog)
+            );
+            $failedCount24h = (int) trim(shell_exec($cmd24h) ?? '0');
+
+            if ($failedCount24h > 50) {
+                $this->err("Неудачных входов за 24ч: {$failedCount24h} — возможна брутфорс-атака");
+            } elseif ($failedCount24h > 10) {
+                $this->warnMsg("Неудачных входов за 24ч: {$failedCount24h}");
+            } else {
+                $this->ok("Неудачных входов за 24ч: {$failedCount24h}");
+            }
+        } else {
+            $this->warnMsg('security.log не найден — логирование безопасности не настроено');
+        }
+
+        // Просроченные trial-агентства
+        try {
+            DB::statement("SET app.is_superadmin = 'true'");
+            $expiredTrials = DB::select("
+                SELECT count(*) as cnt FROM agencies
+                WHERE deleted_at IS NULL
+                AND is_active = true
+                AND trial_ends_at IS NOT NULL
+                AND trial_ends_at < NOW()
+            ");
+            $expiredCount = $expiredTrials[0]->cnt ?? 0;
+            if ($expiredCount > 0) {
+                $this->warnMsg("Просроченных trial-агентств: {$expiredCount} — рекомендуется деактивировать или уведомить");
+            } else {
+                $this->ok('Нет просроченных trial-агентств');
+            }
+            DB::statement("RESET app.is_superadmin");
+        } catch (\Exception $e) {
+            // Поле trial_ends_at может не существовать
+            $this->warnMsg('Не удалось проверить trial-агентства: ' . $e->getMessage());
+            try {
+                DB::statement("RESET app.is_superadmin");
+            } catch (\Exception) {
+                // ignore
+            }
+        }
+    }
+
+    // ──────────────────────────────────────────────
     // Helpers
+    // ──────────────────────────────────────────────
+
+    private function sectionHeader(int $num, string $title): void
+    {
+        if (!$this->option('json')) {
+            $this->newLine();
+            $this->info("[{$num}/{$this->totalSections}] {$title}");
+        }
+    }
+
     private function ok(string $msg): void
     {
-        $this->line("  <fg=green>OK</> {$msg}");
+        $this->addJsonResult('ok', $msg);
+        if (!$this->option('json')) {
+            $this->line("  <fg=green>OK</> {$msg}");
+        }
     }
 
     private function err(string $msg): void
     {
         $this->errors++;
-        $this->line("  <fg=red>ERR</> {$msg}");
+        $this->addJsonResult('error', $msg);
+        if (!$this->option('json')) {
+            $this->line("  <fg=red>ERR</> {$msg}");
+        }
     }
 
     private function warnMsg(string $msg): void
     {
         $this->warnings++;
-        $this->line("  <fg=yellow>WARN</> {$msg}");
+        $this->addJsonResult('warning', $msg);
+        if (!$this->option('json')) {
+            $this->line("  <fg=yellow>WARN</> {$msg}");
+        }
+    }
+
+    private function addJsonResult(string $level, string $message): void
+    {
+        if ($this->option('json')) {
+            $this->jsonResults[] = [
+                'level' => $level,
+                'message' => $message,
+            ];
+        }
     }
 }
