@@ -592,18 +592,13 @@
                         class="px-5 py-3.5 flex items-start gap-3">
                         <div class="mt-0.5 shrink-0 w-5 h-5 rounded-full flex items-center justify-center"
                             :class="{
-                                'bg-[#1BA97F]':   item.status === 'approved',
-                                'bg-blue-100':    item.status === 'uploaded',
-                                'bg-amber-100':   item.status === 'pending' && item.is_required,
-                                'bg-gray-100':    item.status === 'pending' && !item.is_required,
+                                'bg-[#1BA97F]':   item.status === 'approved' || item.status === 'uploaded',
+                                'bg-gray-200':    item.status === 'pending',
                             }">
-                            <svg v-if="item.status === 'approved'" class="w-3 h-3 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+                            <svg v-if="item.status === 'approved' || item.status === 'uploaded'" class="w-3 h-3 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
                             </svg>
-                            <svg v-else-if="item.status === 'uploaded'" class="w-3 h-3 text-blue-600" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-                            <svg v-else class="w-3 h-3" :class="item.is_required ? 'text-amber-600' : 'text-gray-400'"
+                            <svg v-else class="w-3 h-3 text-gray-400"
                                 fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                             </svg>
@@ -612,28 +607,27 @@
                         <div class="flex-1 min-w-0">
                             <div class="flex items-center gap-2 flex-wrap">
                                 <span class="text-sm font-medium text-[#0A1F44]">{{ item.name }}</span>
-                                <span v-if="item.is_required"
-                                    class="text-[10px] font-semibold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-full shrink-0">
-                                    {{ $t('common.required') }}
-                                </span>
                             </div>
                             <p v-if="item.description" class="text-xs text-gray-400 mt-0.5 leading-relaxed">{{ item.description }}</p>
                             <p v-if="item.notes" class="text-xs text-blue-600 mt-0.5">{{ item.notes }}</p>
 
                             <div class="mt-1 text-xs font-medium"
                                 :class="{
-                                    'text-[#1BA97F]': item.status === 'approved',
-                                    'text-blue-600':  item.status === 'uploaded',
-                                    'text-amber-600': item.status === 'pending' && item.is_required,
-                                    'text-gray-400':  item.status === 'pending' && !item.is_required,
+                                    'text-[#1BA97F]': item.status === 'approved' || item.status === 'uploaded',
+                                    'text-gray-500':  item.status === 'pending',
                                 }">
-                                {{ statusLabel(item.status, item.is_required) }}
+                                {{ statusLabel(item.status) }}
                             </div>
 
                             <label v-if="item.responsibility !== 'agency' && item.status !== 'approved' && !isTerminal"
-                                class="inline-flex items-center gap-1.5 text-xs text-[#1BA97F] font-medium
-                                       cursor-pointer hover:text-[#169B72] mt-1.5 select-none"
-                                :class="{ 'opacity-50 pointer-events-none': uploading[item.id] }">
+                                class="inline-flex items-center gap-1.5 text-xs font-medium
+                                       cursor-pointer mt-1.5 select-none"
+                                :class="[
+                                    { 'opacity-50 pointer-events-none': uploading[item.id] },
+                                    item.status === 'uploaded'
+                                        ? 'text-gray-500 hover:text-gray-700'
+                                        : 'text-blue-600 hover:text-blue-800'
+                                ]">
                                 <svg v-if="!uploading[item.id]" class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
                                 </svg>
@@ -1890,10 +1884,10 @@ function getProgressColor(index, status, order) {
     return index < order ? 'bg-[#1BA97F]' : index === order ? 'bg-[#1BA97F]/50' : 'bg-gray-100';
 }
 
-function statusLabel(status, required) {
+function statusLabel(status) {
     if (status === 'approved') return t('cases.approved');
     if (status === 'uploaded') return t('cases.uploadedReview');
-    return required ? t('cases.needUpload') : t('common.optional');
+    return t('cases.needUpload');
 }
 
 function deadlineClass(dateStr) {
