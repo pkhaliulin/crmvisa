@@ -273,13 +273,16 @@ body {
   <p class="support-text">{{ __('landing.maint_support') }}</p>
 </div>
 
-<script>
-const T = @json(collect(__('landing'))->only([
+@php
+$translations = collect(__('landing'))->only([
     'maint_login_title','maint_get_code','maint_sending','maint_sms_error',
     'maint_confirm','maint_checking','maint_wrong_code','maint_enter_full_number',
     'maint_enter_pin','maint_wrong_pin','maint_login_error','maint_resend_in',
     'maint_resend_now','maint_otp_title','maint_pin_title','maint_pin_login_title',
-]));
+]);
+@endphp
+<script>
+const T = @json($translations);
 
 // Если уже авторизован — перенаправить в ЛК
 (function() {
