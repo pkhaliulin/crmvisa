@@ -36,7 +36,7 @@ class SetTenantContext
                     }
 
                     if ($agencyId && preg_match('/^[0-9a-f\-]{36}$/i', $agencyId)) {
-                        DB::statement('SET app.current_tenant_id = ?', [$agencyId]);
+                        DB::statement("SET app.current_tenant_id = '{$agencyId}'");
                     }
                 }
             }
