@@ -53,15 +53,24 @@ return [
     ],
 
     'payme' => [
-        'merchant_id'  => env('PAYME_MERCHANT_ID'),
-        'merchant_key' => env('PAYME_MERCHANT_KEY'),
+        'merchant_id'  => env('PAYME_MERCHANT_ID', ''),
+        'merchant_key' => env('PAYME_MERCHANT_KEY', ''),
+        'key'          => env('PAYME_KEY', ''),
+        'test_key'     => env('PAYME_TEST_KEY', ''),
         'test_mode'    => env('PAYME_TEST_MODE', false),
     ],
 
     'click' => [
-        'merchant_id' => env('CLICK_MERCHANT_ID'),
-        'service_id'  => env('CLICK_SERVICE_ID'),
-        'secret_key'  => env('CLICK_SECRET_KEY'),
+        'merchant_id'      => env('CLICK_MERCHANT_ID', ''),
+        'service_id'       => env('CLICK_SERVICE_ID', ''),
+        'merchant_user_id' => env('CLICK_MERCHANT_USER_ID', ''),
+        'secret_key'       => env('CLICK_SECRET_KEY', ''),
+    ],
+
+    'uzum' => [
+        'terminal_id' => env('UZUM_TERMINAL_ID', ''),
+        'secret_key'  => env('UZUM_SECRET_KEY', ''),
+        'service_id'  => env('UZUM_SERVICE_ID', ''),
     ],
 
     // OCR — распознавание паспортов (мульти-провайдер)

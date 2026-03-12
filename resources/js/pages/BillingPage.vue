@@ -255,6 +255,68 @@
         </div>
       </section>
 
+      <!-- Способ оплаты -->
+      <section v-if="showPaymentSection" class="bg-white rounded-xl border border-gray-200 p-6">
+        <div class="flex items-center gap-2 mb-4">
+          <div class="w-8 h-8 bg-blue-500/10 rounded-lg flex items-center justify-center">
+            <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+            </svg>
+          </div>
+          <h2 class="font-semibold text-gray-700 text-sm uppercase tracking-wide">{{ t('crm.billing.paymentMethod') }}</h2>
+        </div>
+
+        <p class="text-sm text-gray-500 mb-4">{{ t('crm.billing.selectPaymentMethod') }}</p>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+          <button
+            v-for="pm in paymentMethods"
+            :key="pm.value"
+            @click="selectedPaymentMethod = pm.value"
+            :class="[
+              'flex items-center gap-3 p-4 rounded-xl border-2 transition-all text-left',
+              selectedPaymentMethod === pm.value
+                ? 'border-[#1BA97F] bg-[#1BA97F]/5 ring-1 ring-[#1BA97F]/20'
+                : 'border-gray-200 hover:border-gray-300 bg-white',
+            ]"
+          >
+            <div class="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
+              :class="pm.bgClass">
+              <img v-if="pm.logo" :src="pm.logo" :alt="pm.label" class="h-5 object-contain">
+              <span v-else class="text-sm font-bold" :class="pm.textClass">{{ pm.shortName }}</span>
+            </div>
+            <div>
+              <p class="text-sm font-medium text-gray-900">{{ pm.label }}</p>
+              <p class="text-xs text-gray-400">{{ pm.desc }}</p>
+            </div>
+            <div v-if="selectedPaymentMethod === pm.value" class="ml-auto shrink-0">
+              <svg class="w-5 h-5 text-[#1BA97F]" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+              </svg>
+            </div>
+          </button>
+        </div>
+
+        <div v-if="selectedPaymentMethod" class="flex items-center gap-3">
+          <button
+            @click="initiatePayment"
+            :disabled="paymentLoading"
+            class="px-6 py-2.5 bg-[#1BA97F] text-white text-sm font-medium rounded-lg hover:bg-[#158a68] transition-colors flex items-center gap-2 disabled:opacity-60 disabled:cursor-wait"
+          >
+            <div v-if="paymentLoading" class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+            {{ paymentButtonLabel }}
+          </button>
+          <span class="text-sm text-gray-500">
+            {{ t('crm.billing.amount') }}: <span class="font-bold text-gray-900">{{ paymentAmountFormatted }}</span>
+          </span>
+        </div>
+
+        <!-- Статус последнего платежа -->
+        <div v-if="lastPaymentStatus" class="mt-4 p-3 rounded-lg" :class="lastPaymentStatusClass">
+          <p class="text-sm font-medium">{{ lastPaymentStatusText }}</p>
+        </div>
+      </section>
+
       <!-- История -->
       <section class="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-100">
@@ -515,6 +577,9 @@ const selectedPlan = ref(null);
 const changingPlan = ref(false);
 const showDetailModal = ref(false);
 const detailPlan = ref(null);
+const selectedPaymentMethod = ref(null);
+const paymentLoading = ref(false);
+const lastPaymentStatus = ref(null); // null | 'pending' | 'completed' | 'failed'
 
 const planInfo = computed(() => ({
   trial: {
@@ -565,6 +630,101 @@ const planInfo = computed(() => ({
     ],
   },
 }));
+
+const paymentMethods = computed(() => [
+  {
+    value: 'click',
+    label: 'Click',
+    shortName: 'Click',
+    desc: t('crm.billing.payViaClick'),
+    bgClass: 'bg-blue-100',
+    textClass: 'text-blue-700',
+    logo: null,
+  },
+  {
+    value: 'payme',
+    label: 'Payme',
+    shortName: 'Payme',
+    desc: t('crm.billing.payViaPayme'),
+    bgClass: 'bg-cyan-100',
+    textClass: 'text-cyan-700',
+    logo: null,
+  },
+  {
+    value: 'uzum',
+    label: 'Uzum',
+    shortName: 'Uzum',
+    desc: t('crm.billing.payViaUzum'),
+    bgClass: 'bg-purple-100',
+    textClass: 'text-purple-700',
+    logo: null,
+  },
+]);
+
+const showPaymentSection = computed(() => {
+  // Показывать секцию оплаты если есть подписка с ценой > 0
+  if (!sub.value.plan_slug || sub.value.plan_slug === 'trial') return false;
+  const plan = availablePlans.value.find(p => p.slug === sub.value.plan_slug);
+  return plan && (plan.price_uzs > 0 || plan.price_yearly > 0);
+});
+
+const paymentAmountFormatted = computed(() => {
+  if (!sub.value.plan) return fmtMoney(0);
+  const plan = sub.value.plan;
+  const price = sub.value.billing_period === 'yearly' ? (plan.price_yearly || plan.price_uzs) : plan.price_uzs;
+  return fmtMoney(price || 0);
+});
+
+const paymentButtonLabel = computed(() => {
+  const methodLabels = {
+    click: t('crm.billing.payViaClick'),
+    payme: t('crm.billing.payViaPayme'),
+    uzum: t('crm.billing.payViaUzum'),
+  };
+  return methodLabels[selectedPaymentMethod.value] || t('crm.billing.selectPaymentMethod');
+});
+
+const lastPaymentStatusClass = computed(() => {
+  if (lastPaymentStatus.value === 'completed') return 'bg-green-50 text-green-700';
+  if (lastPaymentStatus.value === 'failed') return 'bg-red-50 text-red-700';
+  return 'bg-yellow-50 text-yellow-700';
+});
+
+const lastPaymentStatusText = computed(() => {
+  if (lastPaymentStatus.value === 'completed') return t('crm.billing.paymentCompleted');
+  if (lastPaymentStatus.value === 'failed') return t('crm.billing.paymentFailed');
+  return t('crm.billing.paymentPending');
+});
+
+async function initiatePayment() {
+  if (!selectedPaymentMethod.value || paymentLoading.value) return;
+  paymentLoading.value = true;
+  lastPaymentStatus.value = null;
+
+  try {
+    const res = await api.post('/payments/create', {
+      provider: selectedPaymentMethod.value,
+      type: 'subscription',
+    });
+
+    const data = res.data?.data ?? res.data;
+
+    if (data.checkout_url) {
+      lastPaymentStatus.value = 'pending';
+      // Редирект на страницу оплаты
+      window.location.href = data.checkout_url;
+    } else {
+      showToast(t('crm.billing.paymentFailed'), true);
+      lastPaymentStatus.value = 'failed';
+    }
+  } catch (err) {
+    const msg = err.response?.data?.message || t('crm.billing.paymentFailed');
+    showToast(msg, true);
+    lastPaymentStatus.value = 'failed';
+  } finally {
+    paymentLoading.value = false;
+  }
+}
 
 function openPlanDetail(plan) {
   detailPlan.value = plan;
@@ -742,6 +902,20 @@ async function reloadBillingData() {
 }
 
 onMounted(async () => {
+  // Проверить URL-параметр payment (после возврата с оплаты)
+  const urlParams = new URLSearchParams(window.location.search);
+  const paymentParam = urlParams.get('payment');
+  if (paymentParam === 'success') {
+    lastPaymentStatus.value = 'completed';
+    showToast(t('crm.billing.paymentCompleted'));
+    // Убрать параметр из URL
+    window.history.replaceState({}, '', window.location.pathname);
+  } else if (paymentParam === 'pending') {
+    lastPaymentStatus.value = 'pending';
+    showToast(t('crm.billing.paymentPending'));
+    window.history.replaceState({}, '', window.location.pathname);
+  }
+
   try {
     const [subRes, limRes, txRes, plansRes] = await Promise.allSettled([
       api.get('/billing/subscription'),
