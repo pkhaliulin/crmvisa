@@ -87,17 +87,29 @@
 
     <template v-else>
       <!-- Cards list -->
+      <!-- Select all checkbox -->
+      <div v-if="cases.length" class="flex items-center gap-2 px-1 mb-1">
+        <label class="flex items-center gap-2 cursor-pointer select-none">
+          <input type="checkbox" :checked="allSelected" @change="toggleSelectAll"
+            class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer" />
+          <span class="text-xs text-gray-500 font-medium">{{ t('crm.bulk.selectAll') }}</span>
+        </label>
+      </div>
+
       <div v-if="cases.length" class="space-y-3">
         <div v-for="c in cases" :key="c.id"
           class="group bg-white rounded-xl border border-gray-200 overflow-hidden
                  hover:border-blue-300 hover:shadow-md transition-all cursor-pointer
                  border-l-4"
-          :class="urgencyBorder(c)"
+          :class="[urgencyBorder(c), selectedIds.has(c.id) ? 'ring-2 ring-blue-400' : '']"
           @click="$router.push({ name: 'cases.show', params: { id: c.id } })">
 
           <!-- Top: country + client + priority -->
           <div class="px-5 pt-4 pb-3 flex items-start justify-between gap-3">
             <div class="flex items-center gap-3 min-w-0">
+              <!-- Checkbox -->
+              <input type="checkbox" :checked="selectedIds.has(c.id)" @click.stop="toggleSelect(c.id)"
+                class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer shrink-0" />
               <span class="text-3xl leading-none shrink-0">{{ countryFlag(c.country_code) }}</span>
               <div class="min-w-0">
                 <p class="font-semibold text-gray-900 group-hover:text-blue-700 transition-colors text-base leading-tight truncate">
@@ -221,6 +233,61 @@
         </div>
       </div>
     </template>
+
+    <!-- Floating bulk action bar -->
+    <transition enter-active-class="transition ease-out duration-200" enter-from-class="opacity-0 translate-y-4" enter-to-class="opacity-100 translate-y-0"
+      leave-active-class="transition ease-in duration-150" leave-from-class="opacity-100 translate-y-0" leave-to-class="opacity-0 translate-y-4">
+      <div v-if="selectedIds.size > 0"
+        class="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-gray-900 text-white rounded-2xl shadow-2xl px-6 py-3 flex items-center gap-4">
+        <span class="text-sm font-semibold">{{ t('crm.bulk.selected', { n: selectedIds.size }) }}</span>
+
+        <!-- Assign manager -->
+        <div class="relative" ref="bulkAssignRef">
+          <button @click="showBulkAssign = !showBulkAssign"
+            class="text-sm px-3 py-1.5 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors font-medium">
+            {{ t('crm.bulk.assignManager') }}
+          </button>
+          <div v-if="showBulkAssign" class="absolute bottom-full mb-2 left-0 w-64 bg-white rounded-xl shadow-xl border border-gray-200 p-2">
+            <SearchSelect
+              model-value=""
+              :items="managerItems"
+              :placeholder="t('crm.casesPage.selectManager')"
+              @change="doBulkAssign"
+            />
+          </div>
+        </div>
+
+        <!-- Change priority -->
+        <div class="relative" ref="bulkPriorityRef">
+          <button @click="showBulkPriority = !showBulkPriority"
+            class="text-sm px-3 py-1.5 bg-amber-600 hover:bg-amber-700 rounded-lg transition-colors font-medium">
+            {{ t('crm.bulk.changePriority') }}
+          </button>
+          <div v-if="showBulkPriority" class="absolute bottom-full mb-2 left-0 w-48 bg-white rounded-xl shadow-xl border border-gray-200 p-2">
+            <AppSelect
+              model-value=""
+              :options="priorityOptions"
+              :placeholder="t('crm.casesPage.priorityFilter')"
+              @change="doBulkPriority"
+            />
+          </div>
+        </div>
+
+        <!-- Export -->
+        <button @click="doBulkExport"
+          class="text-sm px-3 py-1.5 bg-green-600 hover:bg-green-700 rounded-lg transition-colors font-medium">
+          {{ t('crm.bulk.export') }}
+        </button>
+
+        <!-- Clear selection -->
+        <button @click="clearSelection"
+          class="text-gray-400 hover:text-white transition-colors ml-1">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -251,6 +318,66 @@ const loading      = ref(false);
 const managers     = ref([]);
 const assigningId  = ref(null);
 const filters      = reactive({ q: '', stage: '', priority: '', assigned_to: '', country_code: '', date_from: '', date_to: '', status: '', page: 1 });
+
+// Bulk selection
+const selectedIds     = ref(new Set());
+const showBulkAssign  = ref(false);
+const showBulkPriority = ref(false);
+const bulkAssignRef   = ref(null);
+const bulkPriorityRef = ref(null);
+
+const allSelected = computed(() => cases.value.length > 0 && cases.value.every(c => selectedIds.value.has(c.id)));
+
+function toggleSelect(id) {
+  const s = new Set(selectedIds.value);
+  if (s.has(id)) s.delete(id);
+  else s.add(id);
+  selectedIds.value = s;
+}
+
+function toggleSelectAll() {
+  if (allSelected.value) {
+    selectedIds.value = new Set();
+  } else {
+    selectedIds.value = new Set(cases.value.map(c => c.id));
+  }
+}
+
+function clearSelection() {
+  selectedIds.value = new Set();
+  showBulkAssign.value = false;
+  showBulkPriority.value = false;
+}
+
+async function doBulkAssign(managerId) {
+  if (!managerId) return;
+  try {
+    await casesApi.bulkAssign({ case_ids: [...selectedIds.value], manager_id: managerId });
+    clearSelection();
+    fetchCases();
+  } catch { /* silently fail */ }
+}
+
+async function doBulkPriority(priority) {
+  if (!priority) return;
+  try {
+    await casesApi.bulkPriority({ case_ids: [...selectedIds.value], priority });
+    clearSelection();
+    fetchCases();
+  } catch { /* silently fail */ }
+}
+
+async function doBulkExport() {
+  try {
+    const res = await casesApi.bulkExport({ case_ids: [...selectedIds.value] });
+    const url = URL.createObjectURL(new Blob([res.data]));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `cases-export-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch { /* silently fail */ }
+}
 
 const hasActiveFilters = computed(() =>
   filters.q || filters.stage || filters.priority || filters.assigned_to || filters.country_code || filters.date_from || filters.date_to || filters.status
@@ -382,6 +509,7 @@ function debouncedFetch() {
 async function fetchCases() {
   loading.value = true;
   assigningId.value = null;
+  selectedIds.value = new Set();
   try {
     const params = {};
     if (filters.q)            params.q            = filters.q;

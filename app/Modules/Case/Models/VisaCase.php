@@ -197,6 +197,11 @@ class VisaCase extends BaseModel
         return $this->hasMany(CaseCheckpointStatus::class, 'case_id');
     }
 
+    public function activities(): HasMany
+    {
+        return $this->hasMany(CaseActivity::class, 'case_id')->orderByDesc('created_at');
+    }
+
     /**
      * Оптимистичное обновление: проверяет lock_version перед записью.
      * Бросает ConflictException если версия устарела (другой менеджер обновил раньше).

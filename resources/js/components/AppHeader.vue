@@ -11,6 +11,9 @@
 
     <!-- Actions -->
     <div class="flex items-center gap-3">
+      <!-- Notification bell -->
+      <NotificationBell />
+
       <!-- Overdue badge -->
       <RouterLink :to="{ name: 'cases', query: { status: 'overdue' } }"
         v-if="overdueCount > 0"
@@ -45,6 +48,7 @@ import { computed } from 'vue';
 import { RouterLink, useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { Bars3Icon, ExclamationTriangleIcon, ArrowRightOnRectangleIcon } from '@heroicons/vue/24/outline';
+import NotificationBell from '@/components/NotificationBell.vue';
 import { useCasesStore } from '@/stores/cases';
 import { useAuthStore } from '@/stores/auth';
 import { setLocale, currentLocale } from '@/i18n';
@@ -90,6 +94,7 @@ const titles = computed(() => ({
   users:          t('crm.nav.users'),
   'users.show':   t('crm.nav.users'),
   tasks:          t('crm.nav.tasks'),
+  notifications:  t('crm.notifications.title'),
   knowledge:      t('crm.nav.knowledge'),
   leadgen:        t('crm.nav.leadgen'),
   'leadgen.detail':        t('crm.nav.leadgen'),

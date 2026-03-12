@@ -3220,6 +3220,23 @@
         "close": "Yopish",
         "resume": "Ishga olish"
       }
+    },
+    "notifications": {
+      "title": "Bildirishnomalar",
+      "markAllRead": "Barchasini o'qilgan deb belgilash",
+      "viewAll": "Barcha bildirishnomalar",
+      "noNew": "Yangi bildirishnomalar yo'q",
+      "justNow": "Hozirgina",
+      "minutesAgo": "{n} daqiqa oldin",
+      "hoursAgo": "{n} soat oldin",
+      "daysAgo": "{n} kun oldin"
+    },
+    "bulk": {
+      "selected": "Tanlangan: {n}",
+      "selectAll": "Barchasini tanlash",
+      "assignManager": "Menejerni tayinlash",
+      "changePriority": "Muhimlikni o'zgartish",
+      "export": "Eksport"
     }
   },
   "owner": {
@@ -3870,6 +3887,19 @@
         "countries": "Davlatlar",
         "pending_notes": "Moderatsiyadagi eslatmalar"
       }
+    }
+  },
+  "me": {
+    "case": {
+      "timeline": "Ariza tarixi",
+      "stageChanged": "Holat o'zgartirildi",
+      "documentUploaded": "Hujjat yuklandi",
+      "documentApproved": "Hujjat tasdiqlandi",
+      "paymentReceived": "To'lov qabul qilindi",
+      "managerAssigned": "Menejer tayinlandi",
+      "message": "Xabar",
+      "note": "Eslatma",
+      "noActivities": "Voqealar yo'q"
     }
   }
 }

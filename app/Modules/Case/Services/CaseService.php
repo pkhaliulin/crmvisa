@@ -6,6 +6,7 @@ use App\Modules\Agency\Models\Agency;
 use App\Modules\Case\Events\CaseAssigned;
 use App\Modules\Case\Events\CaseCreated;
 use App\Modules\Case\Events\CaseStatusChanged;
+use App\Modules\Case\Models\CaseActivity;
 use App\Modules\Case\Models\CaseStage;
 use App\Modules\Case\Models\VisaCase;
 use App\Modules\Case\Repositories\CaseRepository;
@@ -121,6 +122,11 @@ class CaseService extends BaseService
 
         CaseCreated::dispatch($case, Auth::id());
 
+        // Логируем активность
+        static::logActivity($case, 'stage_change', 'Заявка создана', [
+            'stage' => $data['stage'],
+        ]);
+
         return $case;
     }
 
@@ -170,6 +176,12 @@ class CaseService extends BaseService
         // Событие: менеджер назначен
         if ($isNewAssignment) {
             CaseAssigned::dispatch($case, $data['assigned_to'] ?? $case->assigned_to, Auth::id());
+
+            $manager = \App\Modules\User\Models\User::find($data['assigned_to'] ?? $case->assigned_to);
+            static::logActivity($case, 'manager_assigned', 'Менеджер назначен: ' . ($manager?->name ?? 'N/A'), [
+                'manager_id'   => $data['assigned_to'] ?? $case->assigned_to,
+                'manager_name' => $manager?->name,
+            ]);
         }
 
         // После сохранения assigned_to — перемещаем из lead в qualification
@@ -277,6 +289,12 @@ class CaseService extends BaseService
 
         CaseStatusChanged::dispatch($freshCase, $previousStage, $newStage, Auth::id());
 
+        // Логируем активность по заявке
+        static::logActivity($freshCase, 'stage_change', "Этап изменён: {$previousStage} -> {$newStage}", [
+            'previous_stage' => $previousStage,
+            'new_stage'      => $newStage,
+        ]);
+
         // Уведомление клиенту через единую систему (бренд определяется автоматически)
         if ($freshCase->client) {
             $this->notifyClientAboutStageChange($freshCase, $previousStage);
@@ -312,6 +330,27 @@ class CaseService extends BaseService
         } catch (\Throwable) {
             // Не даём ошибке уведомления сломать основной флоу
         }
+    }
+
+    /**
+     * Записать активность по заявке.
+     */
+    public static function logActivity(
+        VisaCase $case,
+        string $type,
+        string $description,
+        array $metadata = [],
+        bool $isInternal = false,
+        ?string $userId = null,
+    ): CaseActivity {
+        return CaseActivity::create([
+            'case_id'     => $case->id,
+            'user_id'     => $userId ?? Auth::id(),
+            'type'        => $type,
+            'description' => $description,
+            'metadata'    => $metadata ?: null,
+            'is_internal' => $isInternal,
+        ]);
     }
 
     public function byStage(string $stage): Collection

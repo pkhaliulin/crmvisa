@@ -10,6 +10,7 @@ use App\Modules\Client\Events\ClientCreatedViaPortal;
 use App\Modules\Client\Events\ClientRegistered;
 use App\Modules\Document\Events\DocumentUploaded;
 use App\Modules\Case\Listeners\InvalidateAgencyCache;
+use App\Modules\Case\Listeners\LogCaseActivity;
 use App\Modules\Notification\Listeners\LogBusinessEvent;
 use App\Modules\Notification\Listeners\SendCaseNotification;
 use App\Modules\Payment\Events\PaymentReceived;
@@ -46,10 +47,12 @@ class EventServiceProvider extends ServiceProvider
         ],
         DocumentUploaded::class => [
             [LogBusinessEvent::class, 'handleDocumentUploaded'],
+            [LogCaseActivity::class, 'handleDocumentUploaded'],
         ],
         PaymentReceived::class => [
             [LogBusinessEvent::class, 'handlePaymentReceived'],
             [InvalidateAgencyCache::class, 'handlePaymentReceived'],
+            [LogCaseActivity::class, 'handlePaymentReceived'],
         ],
         SubscriptionChanged::class => [
             [LogBusinessEvent::class, 'handleSubscriptionChanged'],
