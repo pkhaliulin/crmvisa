@@ -247,10 +247,12 @@ class DocumentDownloadController extends Controller
      */
     private function findDocumentBypassingRls(string $documentId): Document
     {
-        DB::statement("SET LOCAL app.is_superadmin = 'true'");
-        $document = Document::withoutGlobalScopes()->findOrFail($documentId);
-        DB::statement("RESET app.is_superadmin");
-        return $document;
+        DB::statement("SET app.is_superadmin = 'true'");
+        try {
+            return Document::withoutGlobalScopes()->findOrFail($documentId);
+        } finally {
+            DB::statement("RESET app.is_superadmin");
+        }
     }
 
     private function placeholderThumbnail(string $filename): Response
