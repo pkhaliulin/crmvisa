@@ -292,11 +292,12 @@ class ChecklistService
                               ->with([
                                   'document:id,original_name,file_path,mime_type,size,status,created_at',
                                   'countryRequirement.template:id,manager_instructions,ai_enabled,ai_extraction_schema,ai_validation_rules,ai_stop_factors,ai_success_factors,ai_risk_indicators,max_age_days,confidence_criteria,translation_required',
+                                  'familyMember:id,name,relationship',
                               ])
                               ->orderBy('sort_order')
                               ->get();
 
-        // Добавляем подсказки из шаблона в каждый элемент чек-листа
+        // Добавляем подсказки из шаблона и данные о члене семьи
         $items->each(function ($item) {
             $tpl = $item->countryRequirement?->template;
             $item->setAttribute('manager_instructions', $tpl?->manager_instructions);
@@ -308,8 +309,13 @@ class ChecklistService
             $item->setAttribute('ai_risk_indicators', $tpl?->ai_risk_indicators);
             $item->setAttribute('max_age_days', $tpl?->max_age_days);
             $item->setAttribute('translation_required', $tpl?->translation_required ?? false);
+            // Данные о члене семьи
+            $fm = $item->familyMember;
+            $item->setAttribute('family_member_name', $fm?->name);
+            $item->setAttribute('family_member_relationship', $fm?->relationship);
             // Не отдаём вложенные relations в JSON
             $item->unsetRelation('countryRequirement');
+            $item->unsetRelation('familyMember');
         });
 
         $total    = $items->count();

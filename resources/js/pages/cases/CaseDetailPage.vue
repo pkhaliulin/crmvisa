@@ -307,33 +307,48 @@
             </div>
           </div>
 
-          <!-- Action-needed -->
-          <div v-if="actionDocs.length" class="px-5 pt-4">
-            <p class="text-[10px] uppercase tracking-widest font-bold text-orange-500 mb-2">{{ t('crm.caseDetail.actionNeeded', { n: actionDocs.length }) }}</p>
-            <div class="space-y-2">
-              <DocItem v-for="item in actionDocs" :key="item.id" :item="item"
-                :ai-loading="aiAnalyzingId === item.id"
-                @upload="uploadToSlot" @toggle="toggleCheck" @review="reviewSlot"
-                @reject="openReject" @translation="openTranslation"
-                @upload-translation="doUploadTranslation" @approve-translation="doApproveTranslation"
-                @preview="openPreview" @delete="deleteSlot" @repeat="repeatSlot"
-                @ai-analyze="doAiAnalyze" />
-            </div>
-          </div>
+          <!-- Grouped by person -->
+          <template v-for="group in docGroups" :key="group.key">
+            <div class="px-5 pt-4">
+              <!-- Person header -->
+              <div class="flex items-center gap-2 mb-2">
+                <span class="text-[10px] uppercase tracking-widest font-bold"
+                  :class="group.key === '__applicant__' ? 'text-blue-600' : 'text-orange-500'">
+                  {{ group.label }}
+                </span>
+                <span class="text-[10px] text-gray-300 tabular-nums">{{ group.uploaded }}/{{ group.total }}</span>
+              </div>
 
-          <!-- Done docs -->
-          <div v-if="otherDocs.length" class="px-5 pt-4">
-            <p v-if="actionDocs.length" class="text-[10px] uppercase tracking-widest font-bold text-gray-300 mb-2">{{ t('crm.caseDetail.doneItems', { n: otherDocs.length }) }}</p>
-            <div class="space-y-2">
-              <DocItem v-for="item in otherDocs" :key="item.id" :item="item"
-                :ai-loading="aiAnalyzingId === item.id"
-                @upload="uploadToSlot" @toggle="toggleCheck" @review="reviewSlot"
-                @reject="openReject" @translation="openTranslation"
-                @upload-translation="doUploadTranslation" @approve-translation="doApproveTranslation"
-                @preview="openPreview" @delete="deleteSlot" @repeat="repeatSlot"
-                @ai-analyze="doAiAnalyze" />
+              <!-- Action-needed -->
+              <div v-if="group.action.length" class="mb-2">
+                <p class="text-[9px] uppercase tracking-widest font-semibold text-orange-400 mb-1">{{ t('crm.caseDetail.actionNeeded', { n: group.action.length }) }}</p>
+                <div class="space-y-2">
+                  <DocItem v-for="item in group.action" :key="item.id" :item="item"
+                    :ai-loading="aiAnalyzingId === item.id"
+                    @upload="uploadToSlot" @toggle="toggleCheck" @review="reviewSlot"
+                    @reject="openReject" @translation="openTranslation"
+                    @upload-translation="doUploadTranslation" @approve-translation="doApproveTranslation"
+                    @preview="openPreview" @delete="deleteSlot" @repeat="repeatSlot"
+                    @ai-analyze="doAiAnalyze" />
+                </div>
+              </div>
+
+              <!-- Done -->
+              <div v-if="group.done.length">
+                <p v-if="group.action.length" class="text-[9px] uppercase tracking-widest font-semibold text-gray-300 mb-1">{{ t('crm.caseDetail.doneItems', { n: group.done.length }) }}</p>
+                <div class="space-y-2">
+                  <DocItem v-for="item in group.done" :key="item.id" :item="item"
+                    :ai-loading="aiAnalyzingId === item.id"
+                    @upload="uploadToSlot" @toggle="toggleCheck" @review="reviewSlot"
+                    @reject="openReject" @translation="openTranslation"
+                    @upload-translation="doUploadTranslation" @approve-translation="doApproveTranslation"
+                    @preview="openPreview" @delete="deleteSlot" @repeat="repeatSlot"
+                    @ai-analyze="doAiAnalyze" />
+                </div>
+              </div>
             </div>
-          </div>
+            <div class="mx-5 border-b border-gray-100 last:border-0"></div>
+          </template>
 
           <p v-if="!checklist.items?.length" class="text-sm text-gray-400 py-8 text-center">{{ t('crm.caseDetail.checklistEmpty') }}</p>
           <div class="h-4"></div>
@@ -951,6 +966,62 @@ const actionDocs = computed(() => (checklist.value.items ?? []).filter(i => {
 const otherDocs = computed(() => {
   const ids = new Set(actionDocs.value.map(d => d.id));
   return (checklist.value.items ?? []).filter(i => !ids.has(i.id));
+});
+
+const relationshipLabels = {
+  spouse: () => t('crm.caseDetail.familySpouse'),
+  child: () => t('crm.caseDetail.familyChild'),
+  parent: () => t('crm.caseDetail.familyParent'),
+  sibling: () => t('crm.caseDetail.familySibling'),
+};
+
+const isActionItem = (i) => {
+  if (i.status === 'uploaded') return true;
+  if (i.status === 'rejected') return true;
+  if (i.status === 'needs_translation') return true;
+  if (i.status === 'translated') return true;
+  if (!i.document && !i.is_checked && i.type !== 'checkbox') return true;
+  return false;
+};
+
+const docGroups = computed(() => {
+  const items = checklist.value.items ?? [];
+  const groups = new Map();
+  const APPLICANT = '__applicant__';
+
+  for (const item of items) {
+    const key = item.family_member_id || APPLICANT;
+    if (!groups.has(key)) {
+      const rel = item.family_member_relationship;
+      const relLabel = rel && relationshipLabels[rel] ? relationshipLabels[rel]() : (rel || '');
+      groups.set(key, {
+        key,
+        label: key === APPLICANT
+          ? t('crm.caseDetail.applicantDocs')
+          : `${item.family_member_name || t('crm.caseDetail.familyMember')}` + (relLabel ? ` (${relLabel})` : ''),
+        items: [],
+        action: [],
+        done: [],
+        uploaded: 0,
+        total: 0,
+      });
+    }
+    const g = groups.get(key);
+    g.items.push(item);
+    g.total++;
+    if (item.document || item.is_checked) g.uploaded++;
+    if (isActionItem(item)) g.action.push(item);
+    else g.done.push(item);
+  }
+
+  // Заявитель всегда первый
+  const result = [];
+  if (groups.has(APPLICANT)) {
+    result.push(groups.get(APPLICANT));
+    groups.delete(APPLICANT);
+  }
+  for (const g of groups.values()) result.push(g);
+  return result;
 });
 
 // SLA

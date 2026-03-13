@@ -78,6 +78,11 @@ class CaseChecklist extends BaseModel
         return $this->belongsTo(CountryVisaRequirement::class, 'country_requirement_id');
     }
 
+    public function familyMember(): BelongsTo
+    {
+        return $this->belongsTo(\App\Modules\PublicPortal\Models\PublicUserFamilyMember::class, 'family_member_id');
+    }
+
     // -------------------------------------------------------------------------
     // Scopes
     // -------------------------------------------------------------------------
