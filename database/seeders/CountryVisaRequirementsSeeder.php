@@ -144,9 +144,8 @@ class CountryVisaRequirementsSeeder extends Seeder
             // Для ДЕТЕЙ — свидетельство о рождении
             ['*', '*', 'child_birth_certificate',  'required',           'Свидетельство о рождении ребёнка. Нотариальный перевод.', null, 3, null, 'family_child'],
 
-            // Для НЕСОВЕРШЕННОЛЕТНИХ — специфичные документы
+            // Для НЕСОВЕРШЕННОЛЕТНИХ — специфичные документы (birth_certificate уже в family_child)
             ['*', '*', 'parental_consent',         'required',           'Нотариальное согласие на выезд от обоих родителей (если едет с одним). Обязательно для несовершеннолетних.', null, 4, null, 'family_minor'],
-            ['*', '*', 'child_birth_certificate',  'required',           'Свидетельство о рождении — обязательно для несовершеннолетних.', null, 5, null, 'family_minor'],
 
             // Для РОДИТЕЛЕЙ — документ подтверждающий родство
             ['*', '*', 'child_birth_certificate',  'required',           'Свидетельство о рождении заявителя (подтверждение родства с родителем).', null, 3, null, 'family_parent'],
