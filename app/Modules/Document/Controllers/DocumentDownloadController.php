@@ -23,7 +23,7 @@ class DocumentDownloadController extends Controller
             abort(403, 'Invalid or expired link');
         }
 
-        $document = Document::findOrFail($documentId);
+        $document = Document::withoutGlobalScopes()->findOrFail($documentId);
 
         AuditLog::log('document.downloaded', [
             'document_id' => $document->id,
@@ -50,7 +50,7 @@ class DocumentDownloadController extends Controller
             abort(403, 'Invalid or expired link');
         }
 
-        $document = Document::findOrFail($documentId);
+        $document = Document::withoutGlobalScopes()->findOrFail($documentId);
         $disk = Storage::disk('documents');
 
         if (!$disk->exists($document->file_path)) {
@@ -97,7 +97,7 @@ class DocumentDownloadController extends Controller
             abort(403, 'Invalid or expired link');
         }
 
-        $document = Document::findOrFail($documentId);
+        $document = Document::withoutGlobalScopes()->findOrFail($documentId);
         $disk = Storage::disk('documents');
 
         if (!$disk->exists($document->file_path)) {
