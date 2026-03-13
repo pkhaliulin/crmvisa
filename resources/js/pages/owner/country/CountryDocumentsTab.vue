@@ -25,15 +25,29 @@
       </div>
 
       <!-- Фильтр по аудитории -->
-      <div class="flex gap-2 flex-wrap">
-        <button v-for="a in audienceFilterOptions" :key="a.value"
-          @click="audienceFilter = a.value"
-          class="text-xs px-3 py-1.5 rounded-full font-medium transition-colors"
-          :class="audienceFilter === a.value
-            ? 'bg-[#0A1F44] text-white'
-            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'">
-          {{ a.label }} ({{ countByAudience(a.value) }})
-        </button>
+      <div class="space-y-2">
+        <div class="flex gap-2 flex-wrap">
+          <button v-for="a in mainAudienceFilters" :key="a.value"
+            @click="audienceFilter = a.value"
+            class="text-xs px-3 py-1.5 rounded-full font-medium transition-colors"
+            :class="audienceFilter === a.value || (a.value === 'family' && audienceFilter.startsWith('family'))
+              ? 'bg-[#0A1F44] text-white'
+              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'">
+            {{ a.label }} ({{ countByAudience(a.value) }})
+          </button>
+        </div>
+        <!-- Подтипы семьи -->
+        <div v-if="audienceFilter === 'family' || audienceFilter.startsWith('family_')"
+          class="flex gap-1.5 flex-wrap pl-2 border-l-2 border-orange-200">
+          <button v-for="a in familySubFilters" :key="a.value"
+            @click="audienceFilter = a.value"
+            class="text-[11px] px-2.5 py-1 rounded-full font-medium transition-colors"
+            :class="audienceFilter === a.value
+              ? 'bg-orange-500 text-white'
+              : 'bg-orange-50 text-orange-600 hover:bg-orange-100'">
+            {{ a.label }} ({{ countByAudience(a.value) }})
+          </button>
+        </div>
       </div>
 
       <!-- Группы по типу визы -->
@@ -243,10 +257,18 @@ const audienceItems = computed(() => [
   { value: 'family_parent', label: t('countryDetail.audienceParent') },
 ]);
 
-const audienceFilterOptions = computed(() => [
+const mainAudienceFilters = computed(() => [
   { value: 'all', label: t('countryDetail.audienceFilterAll') },
   { value: 'applicant', label: t('countryDetail.audienceApplicant') },
   { value: 'family', label: t('countryDetail.audienceFilterFamily') },
+]);
+
+const familySubFilters = computed(() => [
+  { value: 'family', label: t('countryDetail.audienceFamilyAll') },
+  { value: 'family_spouse', label: t('countryDetail.audienceSpouse') },
+  { value: 'family_child', label: t('countryDetail.audienceChild') },
+  { value: 'family_minor', label: t('countryDetail.audienceMinor') },
+  { value: 'family_parent', label: t('countryDetail.audienceParent') },
 ]);
 
 function audienceLabel(val) {
@@ -294,6 +316,10 @@ const filteredGroups = computed(() => {
       const a = d.target_audience || 'applicant';
       if (audienceFilter.value === 'applicant') return a === 'applicant' || a === 'both';
       if (audienceFilter.value === 'family') return a !== 'applicant';
+      // Конкретный тип семьи
+      if (audienceFilter.value.startsWith('family_')) {
+        return a === audienceFilter.value || a === 'family_all' || a === 'both';
+      }
       return true;
     }),
   })).filter(g => g.docs.length > 0);
@@ -309,6 +335,7 @@ function countByAudience(filter) {
     const a = r.target_audience || 'applicant';
     if (filter === 'applicant') return a === 'applicant' || a === 'both';
     if (filter === 'family') return a !== 'applicant';
+    if (filter.startsWith('family_')) return a === filter || a === 'family_all' || a === 'both';
     return true;
   }).length;
 }
