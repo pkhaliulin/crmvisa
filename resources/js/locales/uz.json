@@ -460,6 +460,8 @@
     "upload": "Yuklash",
     "doneByAgency": "Agentlik tomonidan bajarilgan",
     "waitingAgency": "Agentlikni kutmoqda",
+    "addMoreFile": "+ yana fayl",
+    "slotAdded": "Yana bir joy qo'shildi",
     "noDocsList": "Hujjatlar ro'yxati agentlik tomonidan shakllantiriladi",
     "draftNoAgency": "Agentlik hali tanlanmagan",
     "draftNoAgencyDesc": "Viza arizasini berish uchun agentlikni tanlang. Mutaxassis siz bilan bog'lanadi va hujjatlar bilan yordam beradi.",

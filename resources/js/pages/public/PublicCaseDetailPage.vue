@@ -671,6 +671,17 @@
                                 class="mt-1 text-xs text-gray-400 italic">
                                 {{ item.status === 'done' ? $t('cases.doneByAgency') : $t('cases.waitingAgency') }}
                             </div>
+
+                            <!-- Кнопка "+ ещё" для повторяемых документов -->
+                            <button v-if="item.is_repeatable && !isTerminal && (item.status === 'uploaded' || item.status === 'approved')"
+                                @click="repeatSlot(item)"
+                                :disabled="repeating[item.id]"
+                                class="mt-1.5 inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-medium transition-colors disabled:opacity-50">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+                                </svg>
+                                {{ $t('cases.addMoreFile') }}
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -1209,6 +1220,7 @@ const publicAuth = usePublicAuthStore();
 const loading     = ref(true);
 const caseData    = ref(null);
 const uploading   = ref({});
+const repeating   = ref({});
 const uploadToast = ref('');
 const uploadToastError = ref(false);
 const checkboxLoading = ref({});
@@ -1846,6 +1858,29 @@ async function toggleCheckbox(item) {
         setTimeout(() => { uploadToast.value = ''; uploadToastError.value = false; }, 4000);
     } finally {
         checkboxLoading.value[item.id] = false;
+    }
+}
+
+async function repeatSlot(item) {
+    repeating.value[item.id] = true;
+    try {
+        const { data } = await publicPortalApi.repeatChecklistItem(route.params.id, item.id);
+        const newItem = data.data;
+        // Добавим в чеклист после текущего элемента
+        const list = caseData.value?.checklist;
+        if (list) {
+            const idx = list.findIndex(i => i.id === item.id);
+            list.splice(idx + 1, 0, newItem);
+        }
+        uploadToastError.value = false;
+        uploadToast.value = t('cases.slotAdded');
+        setTimeout(() => { uploadToast.value = ''; }, 3000);
+    } catch (e) {
+        uploadToastError.value = true;
+        uploadToast.value = e?.response?.data?.message ?? t('cases.uploadError');
+        setTimeout(() => { uploadToast.value = ''; uploadToastError.value = false; }, 4000);
+    } finally {
+        repeating.value[item.id] = false;
     }
 }
 

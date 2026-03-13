@@ -166,7 +166,7 @@ class ChecklistController extends Controller
         $this->authorizeCase($request, $caseId);
         $item = $this->authorizeItem($request, $caseId, $itemId);
 
-        if ($item->requirement_id) {
+        if ($item->requirement_id || $item->country_requirement_id) {
             return ApiResponse::error('Cannot delete standard checklist items', null, 403);
         }
 

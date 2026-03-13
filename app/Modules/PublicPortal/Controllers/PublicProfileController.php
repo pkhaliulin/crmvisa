@@ -470,6 +470,7 @@ class PublicProfileController extends Controller
         $publicStatusConfig = $caseStatuses[$publicStatus] ?? null;
 
         $checklist = CaseChecklist::where('case_id', $case->id)
+            ->whereNull('family_member_id')
             ->orderBy('sort_order')
             ->get()
             ->map(fn ($item) => [
@@ -479,6 +480,7 @@ class PublicProfileController extends Controller
                 'type'           => $item->type ?? 'upload',
                 'is_required'    => $item->is_required,
                 'is_checked'     => (bool) $item->is_checked,
+                'is_repeatable'  => (bool) $item->is_repeatable,
                 'responsibility' => $item->responsibility ?? 'client',
                 'status'         => $item->status,
                 'document_id'    => $item->document_id,
@@ -613,6 +615,7 @@ class PublicProfileController extends Controller
                             'type'           => $item->type ?? 'upload',
                             'is_required'    => $item->is_required,
                             'is_checked'     => (bool) $item->is_checked,
+                            'is_repeatable'  => (bool) $item->is_repeatable,
                             'responsibility' => $item->responsibility ?? 'client',
                             'status'         => $item->status,
                             'document_id'    => $item->document_id,
@@ -729,6 +732,66 @@ class PublicProfileController extends Controller
             'status'     => $item->fresh()->status,
             'is_checked' => $checked,
         ]);
+    }
+
+    /**
+     * POST /public/me/cases/{caseId}/checklist/{itemId}/repeat
+     * Добавить ещё один слот для повторяемого документа (метрика ребёнка, старый паспорт и т.д.)
+     */
+    public function repeatChecklistItem(Request $request, string $caseId, string $itemId): JsonResponse
+    {
+        $publicUser = $request->get('_public_user');
+
+        $case = VisaCase::whereHas('client', fn ($q) => $q->where('public_user_id', $publicUser->id))
+            ->findOrFail($caseId);
+
+        $item = CaseChecklist::where('case_id', $case->id)->findOrFail($itemId);
+
+        if (! $item->is_repeatable) {
+            return ApiResponse::error('Этот документ не является повторяемым', null, 422);
+        }
+
+        // Ограничение: не более 10 копий одного документа
+        $existingCount = CaseChecklist::where('case_id', $case->id)
+            ->where('name', $item->name)
+            ->where('family_member_id', $item->family_member_id)
+            ->count();
+
+        if ($existingCount >= 10) {
+            return ApiResponse::error('Максимум 10 копий одного документа', null, 422);
+        }
+
+        $maxOrder = CaseChecklist::where('case_id', $case->id)->max('sort_order') ?? 0;
+
+        $newItem = CaseChecklist::create([
+            'agency_id'              => $case->agency_id,
+            'case_id'                => $case->id,
+            'family_member_id'       => $item->family_member_id,
+            'country_requirement_id' => $item->country_requirement_id,
+            'requirement_id'         => $item->requirement_id,
+            'type'                   => $item->type,
+            'name'                   => $item->name,
+            'description'            => $item->description,
+            'is_required'            => false, // доп. копии не обязательны
+            'is_repeatable'          => true,
+            'responsibility'         => $item->responsibility,
+            'status'                 => 'pending',
+            'sort_order'             => $item->sort_order + 1,
+        ]);
+
+        return ApiResponse::created([
+            'id'            => $newItem->id,
+            'name'          => $newItem->name,
+            'description'   => $newItem->description,
+            'type'          => $newItem->type,
+            'is_required'   => false,
+            'is_checked'    => false,
+            'is_repeatable' => true,
+            'responsibility'=> $newItem->responsibility,
+            'status'        => 'pending',
+            'document_id'   => null,
+            'notes'         => null,
+        ], 'Добавлен дополнительный слот');
     }
 
     /**

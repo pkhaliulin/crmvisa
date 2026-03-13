@@ -56,6 +56,7 @@ class ChecklistService
                 'metadata'               => $req->effectiveMetadata() ? json_encode($req->effectiveMetadata()) : null,
                 'document_id'            => null,
                 'is_checked'             => false,
+                'is_repeatable'          => $tpl->is_repeatable,
                 'status'                 => 'pending',
                 'notes'                  => null,
                 'sort_order'             => $req->display_order,
