@@ -3119,7 +3119,11 @@
       "consularFee": "Консульский сбор",
       "serviceFee": "Сервисный сбор",
       "maxStay": "Макс. пребывание",
-      "days": "дн."
+      "days": "дн.",
+      "discrepanciesTitle": "Расхождения между профилем и документами",
+      "profileValue": "Профиль",
+      "docValue": "Документ",
+      "dismissDiscrepancies": "Скрыть"
     },
     "aiDash": {
       "title": "AI-оценка готовности",

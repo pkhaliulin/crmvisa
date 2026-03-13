@@ -8,6 +8,8 @@ use App\Modules\Case\Models\VisaCaseRule;
 use App\Modules\Case\Services\FranceFormService;
 use App\Modules\Case\Services\VisaCaseEngineService;
 use App\Modules\Knowledge\Models\KnowledgeArticle;
+use App\Modules\Notification\Notifications\BusinessNotification;
+use App\Modules\Notification\Services\NotificationService;
 use App\Support\Helpers\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -143,13 +145,78 @@ class CaseEngineController extends Controller
         $case = VisaCase::where('agency_id', $request->user()->agency_id)
             ->findOrFail($id);
 
-        $prefilled = FranceFormService::applyPrefill($case);
+        $result = FranceFormService::applyPrefill($case);
+        $prefilled     = $result['prefilled'];
+        $discrepancies = $result['discrepancies'];
+
+        // Уведомить агента и клиента о расхождениях
+        if (! empty($discrepancies)) {
+            $this->notifyDiscrepancies($case, $discrepancies);
+        }
 
         return ApiResponse::success([
             'prefilled_count' => count($prefilled),
             'prefilled_keys'  => array_keys($prefilled),
+            'discrepancies'   => $discrepancies,
             'readiness_score' => $case->fresh()->readiness_score,
-        ], 'Поля автозаполнены из данных клиента.');
+        ], empty($discrepancies)
+            ? 'Поля автозаполнены. Данные профиля и документов совпадают.'
+            : 'Поля автозаполнены. Обнаружены расхождения между профилем и документами.'
+        );
+    }
+
+    /**
+     * Уведомить агента и клиента о расхождениях между профилем и документами.
+     */
+    private function notifyDiscrepancies(VisaCase $case, array $discrepancies): void
+    {
+        $case->loadMissing(['client', 'agency']);
+
+        $lines = [];
+        foreach ($discrepancies as $d) {
+            $lines[] = "{$d['label']}: профиль \"{$d['client_value']}\" / документ \"{$d['ai_value']}\"";
+        }
+        $details = implode("\n", $lines);
+
+        // Уведомление агенту (in-app)
+        try {
+            $agentNotification = new BusinessNotification('case.data_mismatch', [
+                'subject'  => "Расхождения в данных клиента — {$case->case_number}",
+                'message'  => "При автозаполнении анкеты обнаружены расхождения между профилем клиента и данными из документов.\nПроверьте и исправьте данные.",
+                'details'  => [$details],
+                'case_id'  => $case->id,
+            ]);
+
+            app(NotificationService::class)->dispatch(
+                agencyId: $case->agency_id,
+                eventType: 'case.data_mismatch',
+                notification: $agentNotification,
+                context: ['case' => $case, 'assigned_to' => $case->assigned_to],
+            );
+        } catch (\Throwable $e) {
+            \Log::warning('Failed to notify agent about discrepancies', ['error' => $e->getMessage()]);
+        }
+
+        // Уведомление клиенту (in-app + telegram)
+        if ($case->client) {
+            try {
+                $clientNotification = new BusinessNotification('case.data_mismatch', [
+                    'subject' => 'Проверьте ваши данные',
+                    'message' => "При проверке документов обнаружены расхождения с вашим профилем.\nПожалуйста, проверьте и обновите данные в личном кабинете.",
+                    'details' => [$details],
+                    'case_id' => $case->id,
+                ]);
+
+                app(NotificationService::class)->dispatchToClient(
+                    $case->client,
+                    $clientNotification,
+                    $case->agency,
+                    ['database', 'telegram'],
+                );
+            } catch (\Throwable $e) {
+                \Log::warning('Failed to notify client about discrepancies', ['error' => $e->getMessage()]);
+            }
+        }
     }
 
     /**

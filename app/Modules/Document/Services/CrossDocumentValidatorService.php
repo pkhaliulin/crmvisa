@@ -15,6 +15,9 @@ class CrossDocumentValidatorService
     {
         $mismatches = [];
 
+        // 0. Profile vs documents — client profile must match passport data
+        $mismatches = array_merge($mismatches, $this->checkProfileConsistency($case, $documentsData));
+
         // 1. Name consistency — all documents must match passport name
         $mismatches = array_merge($mismatches, $this->checkNameConsistency($documentsData));
 
@@ -97,6 +100,109 @@ class CrossDocumentValidatorService
             $score >= 15 => 'low',
             default      => 'minimal',
         };
+    }
+
+    /**
+     * Сравнить данные профиля клиента с данными из паспорта (AI-извлечение).
+     */
+    private function checkProfileConsistency(VisaCase $case, array $docs): array
+    {
+        $mismatches = [];
+
+        $case->loadMissing('client');
+        $client = $case->client;
+        if (! $client) {
+            return $mismatches;
+        }
+
+        $passport = $docs['foreign_passport']['extracted'] ?? [];
+        if (empty($passport)) {
+            return $mismatches;
+        }
+
+        // ФИО
+        $clientName = $client->name;
+        $aiSurname = $passport['surname'] ?? '';
+        $aiGiven = $passport['given_names'] ?? '';
+        $aiFullName = trim("{$aiSurname} {$aiGiven}");
+        if ($clientName && $aiFullName) {
+            $normalClient = $this->normalizeName($clientName);
+            $normalAi = $this->normalizeName($aiFullName);
+            if ($normalClient !== $normalAi && ! str_contains($normalClient, $this->normalizeName($aiSurname ?: '---'))) {
+                $mismatches[] = [
+                    'type'     => 'profile_mismatch',
+                    'level'    => 'critical',
+                    'source'   => 'client_profile',
+                    'field'    => 'name',
+                    'expected' => $aiFullName,
+                    'found'    => $clientName,
+                    'description' => "ФИО в профиле ({$clientName}) не совпадает с паспортом ({$aiFullName})",
+                ];
+            }
+        }
+
+        // Дата рождения
+        $clientDob = $client->date_of_birth;
+        $aiDob = $passport['date_of_birth'] ?? null;
+        if ($clientDob && $aiDob) {
+            try {
+                $clientDate = Carbon::parse($clientDob)->format('Y-m-d');
+                $aiDate = Carbon::parse($aiDob)->format('Y-m-d');
+                if ($clientDate !== $aiDate) {
+                    $mismatches[] = [
+                        'type'     => 'profile_mismatch',
+                        'level'    => 'critical',
+                        'source'   => 'client_profile',
+                        'field'    => 'date_of_birth',
+                        'expected' => $aiDate,
+                        'found'    => $clientDate,
+                        'description' => "Дата рождения в профиле ({$clientDate}) не совпадает с паспортом ({$aiDate})",
+                    ];
+                }
+            } catch (\Throwable) {}
+        }
+
+        // Номер паспорта
+        $clientPassport = $client->passport_number;
+        $aiPassport = $passport['passport_number'] ?? null;
+        if ($clientPassport && $aiPassport) {
+            $cleanClient = preg_replace('/[\s\-]/', '', mb_strtoupper($clientPassport));
+            $cleanAi = preg_replace('/[\s\-]/', '', mb_strtoupper($aiPassport));
+            if ($cleanClient !== $cleanAi) {
+                $mismatches[] = [
+                    'type'     => 'profile_mismatch',
+                    'level'    => 'critical',
+                    'source'   => 'client_profile',
+                    'field'    => 'passport_number',
+                    'expected' => $aiPassport,
+                    'found'    => $clientPassport,
+                    'description' => "Номер паспорта в профиле ({$clientPassport}) не совпадает с документом ({$aiPassport})",
+                ];
+            }
+        }
+
+        // Срок паспорта
+        $clientExpiry = $client->passport_expires_at;
+        $aiExpiry = $passport['expiry_date'] ?? null;
+        if ($clientExpiry && $aiExpiry) {
+            try {
+                $clientDate = Carbon::parse($clientExpiry)->format('Y-m-d');
+                $aiDate = Carbon::parse($aiExpiry)->format('Y-m-d');
+                if ($clientDate !== $aiDate) {
+                    $mismatches[] = [
+                        'type'     => 'profile_mismatch',
+                        'level'    => 'warning',
+                        'source'   => 'client_profile',
+                        'field'    => 'passport_expires_at',
+                        'expected' => $aiDate,
+                        'found'    => $clientDate,
+                        'description' => "Срок паспорта в профиле ({$clientDate}) не совпадает с документом ({$aiDate})",
+                    ];
+                }
+            } catch (\Throwable) {}
+        }
+
+        return $mismatches;
     }
 
     private function checkNameConsistency(array $docs): array

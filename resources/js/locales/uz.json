@@ -3119,7 +3119,11 @@
       "consularFee": "Konsullik to'lovi",
       "serviceFee": "Xizmat to'lovi",
       "maxStay": "Maks. qolish muddati",
-      "days": "kun"
+      "days": "kun",
+      "discrepanciesTitle": "Profil va hujjatlar orasidagi nomuvofiqliklar",
+      "profileValue": "Profil",
+      "docValue": "Hujjat",
+      "dismissDiscrepancies": "Yashirish"
     },
     "aiDash": {
       "title": "AI tayyorlik bahosi",

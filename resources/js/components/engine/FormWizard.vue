@@ -150,6 +150,31 @@
     <div v-else class="text-center py-8">
       <p class="text-xs text-gray-400">{{ t('crm.engine.noFormFields') }}</p>
     </div>
+
+    <!-- Discrepancies alert -->
+    <div v-if="discrepancies.length" class="mx-5 mb-4 p-3 rounded-lg border border-yellow-200 bg-yellow-50">
+      <div class="flex items-start gap-2 mb-2">
+        <svg class="w-4 h-4 text-yellow-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+        </svg>
+        <p class="text-xs font-semibold text-yellow-700">{{ t('crm.engine.discrepanciesTitle') }}</p>
+      </div>
+      <div class="space-y-1.5 ml-6">
+        <div v-for="(d, idx) in discrepancies" :key="idx"
+          :class="['flex flex-col text-xs rounded-md px-2.5 py-1.5',
+            d.severity === 'critical' ? 'bg-red-50 text-red-700' : 'bg-yellow-100/60 text-yellow-800']">
+          <span class="font-medium">{{ d.label }}</span>
+          <div class="flex items-center gap-2 mt-0.5">
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-white/60">{{ t('crm.engine.profileValue') }}: {{ d.client_value }}</span>
+            <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-white/60">{{ t('crm.engine.docValue') }}: {{ d.ai_value }}</span>
+          </div>
+        </div>
+      </div>
+      <button @click="discrepancies = []" class="ml-6 mt-2 text-[10px] text-yellow-600 hover:text-yellow-800 font-medium">
+        {{ t('crm.engine.dismissDiscrepancies') }}
+      </button>
+    </div>
   </div>
 </template>
 
@@ -176,6 +201,7 @@ const formValues = reactive({})
 const checkboxValues = reactive({})
 const copiedKey = ref(null)
 const copyAllDone = ref(false)
+const discrepancies = ref([])
 
 const currentStepData = computed(() => steps.value.find(s => s.step === currentStep.value))
 
@@ -254,7 +280,9 @@ async function doSaveStep() {
 async function doPrefill() {
   prefilling.value = true
   try {
-    await caseEngineApi.prefillForm(props.caseId)
+    const res = await caseEngineApi.prefillForm(props.caseId)
+    const data = res.data?.data ?? res.data
+    discrepancies.value = data?.discrepancies ?? []
     await loadForm()
     emit('updated')
   } finally {

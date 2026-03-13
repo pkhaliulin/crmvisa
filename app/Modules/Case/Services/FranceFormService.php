@@ -126,6 +126,7 @@ class FranceFormService
 
     /**
      * Применить prefill ко всем полям разом.
+     * Возвращает ['prefilled' => [...], 'discrepancies' => [...]]
      */
     public static function applyPrefill(VisaCase $case): array
     {
@@ -137,7 +138,148 @@ class FranceFormService
             VisaCaseEngineService::refreshCaseReadiness($case);
         }
 
-        return $prefilled;
+        // Кросс-валидация: профиль клиента vs данные из AI-анализа документов
+        $discrepancies = static::crossValidateClientVsAi($case);
+
+        return [
+            'prefilled'     => $prefilled,
+            'discrepancies' => $discrepancies,
+        ];
+    }
+
+    /**
+     * Сравнить данные профиля клиента с AI-извлечёнными данными из документов.
+     * Возвращает массив расхождений.
+     */
+    public static function crossValidateClientVsAi(VisaCase $case): array
+    {
+        $case->loadMissing('client');
+        $client = $case->client;
+        if (! $client) {
+            return [];
+        }
+
+        $aiData = static::collectAiExtractedData($case);
+        if (empty($aiData)) {
+            return [];
+        }
+
+        $discrepancies = [];
+
+        // Маппинг: что сравнивать (client field => ai form key => label)
+        $comparisons = [
+            ['client_field' => 'name', 'ai_keys' => ['surname', 'first_name'], 'type' => 'name', 'label' => 'ФИО'],
+            ['client_field' => 'date_of_birth', 'ai_keys' => ['birth_date'], 'type' => 'date', 'label' => 'Дата рождения'],
+            ['client_field' => 'passport_number', 'ai_keys' => ['passport_number'], 'type' => 'text', 'label' => 'Номер паспорта'],
+            ['client_field' => 'passport_expires_at', 'ai_keys' => ['passport_expiry_date'], 'type' => 'date', 'label' => 'Срок паспорта'],
+            ['client_field' => 'nationality', 'ai_keys' => ['nationality'], 'type' => 'nationality', 'label' => 'Гражданство'],
+        ];
+
+        foreach ($comparisons as $comp) {
+            $clientValue = $client->{$comp['client_field']};
+            if ($clientValue === null || $clientValue === '') {
+                continue; // Нет данных в профиле — нечего сравнивать
+            }
+
+            switch ($comp['type']) {
+                case 'name':
+                    $aiSurname = $aiData['surname'] ?? '';
+                    $aiFirstName = $aiData['first_name'] ?? '';
+                    if (! $aiSurname && ! $aiFirstName) break;
+
+                    $aiFullName = mb_strtoupper(trim("{$aiSurname} {$aiFirstName}"));
+                    $clientName = mb_strtoupper(trim((string) $clientValue));
+
+                    // Нормализуем: убираем двойные пробелы
+                    $aiFullName = preg_replace('/\s+/', ' ', $aiFullName);
+                    $clientName = preg_replace('/\s+/', ' ', $clientName);
+
+                    if ($aiFullName && $clientName && $aiFullName !== $clientName) {
+                        // Проверим, не содержит ли одно имя другое (частичное совпадение)
+                        if (! str_contains($clientName, $aiSurname ? mb_strtoupper($aiSurname) : '---')) {
+                            $discrepancies[] = [
+                                'field'        => 'name',
+                                'label'        => $comp['label'],
+                                'client_value' => $clientValue,
+                                'ai_value'     => trim("{$aiSurname} {$aiFirstName}"),
+                                'severity'     => 'high',
+                            ];
+                        }
+                    }
+                    break;
+
+                case 'date':
+                    $aiDateKey = $comp['ai_keys'][0];
+                    $aiDate = $aiData[$aiDateKey] ?? null;
+                    if (! $aiDate) break;
+
+                    try {
+                        $clientDate = \Carbon\Carbon::parse($clientValue)->format('Y-m-d');
+                        $aiDateParsed = \Carbon\Carbon::parse($aiDate)->format('Y-m-d');
+
+                        if ($clientDate !== $aiDateParsed) {
+                            $discrepancies[] = [
+                                'field'        => $comp['client_field'],
+                                'label'        => $comp['label'],
+                                'client_value' => $clientDate,
+                                'ai_value'     => $aiDateParsed,
+                                'severity'     => 'critical',
+                            ];
+                        }
+                    } catch (\Throwable) {
+                        // Не удалось распарсить дату — пропускаем
+                    }
+                    break;
+
+                case 'text':
+                    $aiKey = $comp['ai_keys'][0];
+                    $aiValue = $aiData[$aiKey] ?? null;
+                    if (! $aiValue) break;
+
+                    $cleanClient = preg_replace('/[\s\-]/', '', mb_strtoupper((string) $clientValue));
+                    $cleanAi = preg_replace('/[\s\-]/', '', mb_strtoupper((string) $aiValue));
+
+                    if ($cleanClient !== $cleanAi) {
+                        $discrepancies[] = [
+                            'field'        => $comp['client_field'],
+                            'label'        => $comp['label'],
+                            'client_value' => $clientValue,
+                            'ai_value'     => $aiValue,
+                            'severity'     => 'critical',
+                        ];
+                    }
+                    break;
+
+                case 'nationality':
+                    $aiNationality = $aiData['nationality'] ?? null;
+                    if (! $aiNationality) break;
+
+                    // client.nationality = ISO Alpha-3 (UZB), AI = ISO Alpha-2 (UZ)
+                    $alpha3to2 = [
+                        'UZB' => 'UZ', 'RUS' => 'RU', 'KAZ' => 'KZ', 'TJK' => 'TJ',
+                        'KGZ' => 'KG', 'TKM' => 'TM', 'FRA' => 'FR', 'DEU' => 'DE',
+                        'ITA' => 'IT', 'ESP' => 'ES', 'GBR' => 'GB', 'USA' => 'US',
+                        'TUR' => 'TR', 'ARE' => 'AE', 'CHN' => 'CN', 'JPN' => 'JP',
+                        'KOR' => 'KR', 'IND' => 'IN',
+                    ];
+
+                    $clientCode2 = $alpha3to2[strtoupper((string) $clientValue)] ?? strtoupper((string) $clientValue);
+                    $aiCode2 = strtoupper((string) $aiNationality);
+
+                    if ($clientCode2 !== $aiCode2) {
+                        $discrepancies[] = [
+                            'field'        => 'nationality',
+                            'label'        => $comp['label'],
+                            'client_value' => $clientValue,
+                            'ai_value'     => $aiNationality,
+                            'severity'     => 'medium',
+                        ];
+                    }
+                    break;
+            }
+        }
+
+        return $discrepancies;
     }
 
     /**
