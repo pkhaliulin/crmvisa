@@ -8,6 +8,7 @@ use App\Support\Helpers\AuditLog;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class DocumentDownloadController extends Controller
@@ -23,7 +24,7 @@ class DocumentDownloadController extends Controller
             abort(403, 'Invalid or expired link');
         }
 
-        $document = Document::withoutGlobalScopes()->findOrFail($documentId);
+        $document = $this->findDocumentBypassingRls($documentId);
 
         AuditLog::log('document.downloaded', [
             'document_id' => $document->id,
@@ -50,7 +51,7 @@ class DocumentDownloadController extends Controller
             abort(403, 'Invalid or expired link');
         }
 
-        $document = Document::withoutGlobalScopes()->findOrFail($documentId);
+        $document = $this->findDocumentBypassingRls($documentId);
         $disk = Storage::disk('documents');
 
         if (!$disk->exists($document->file_path)) {
@@ -97,7 +98,7 @@ class DocumentDownloadController extends Controller
             abort(403, 'Invalid or expired link');
         }
 
-        $document = Document::withoutGlobalScopes()->findOrFail($documentId);
+        $document = $this->findDocumentBypassingRls($documentId);
         $disk = Storage::disk('documents');
 
         if (!$disk->exists($document->file_path)) {
@@ -238,6 +239,18 @@ class DocumentDownloadController extends Controller
         imagedestroy($thumb);
 
         return $result;
+    }
+
+    /**
+     * Найти документ, обходя PostgreSQL RLS.
+     * Безопасно: эти эндпоинты защищены signed URL.
+     */
+    private function findDocumentBypassingRls(string $documentId): Document
+    {
+        DB::statement("SET LOCAL app.is_superadmin = 'true'");
+        $document = Document::withoutGlobalScopes()->findOrFail($documentId);
+        DB::statement("RESET app.is_superadmin");
+        return $document;
     }
 
     private function placeholderThumbnail(string $filename): Response
