@@ -244,7 +244,7 @@
       </div>
 
       <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-        <div v-for="vs in visaborScores" :key="vs.country_code" class="border border-gray-100 rounded-lg p-3">
+        <div v-for="vs in filteredVisaborScores" :key="vs.country_code" class="border border-gray-100 rounded-lg p-3">
           <div class="flex items-center justify-between mb-1">
             <span class="text-sm font-semibold">{{ countryFlag(vs.country_code) }} {{ countryName(vs.country_code) }}</span>
             <span :class="['text-lg font-bold', scoreColor(vs.score)]">{{ vs.score }}</span>
@@ -423,6 +423,17 @@ const educationLabel = computed(() => {
 });
 
 function fmtMoney(v) { return v ? Number(v).toLocaleString('en-US') : '0'; }
+
+// Show VisaBor scores only for countries from client's cases, or top-5 if no cases
+const filteredVisaborScores = computed(() => {
+  if (!visaborScores.value.length) return [];
+  const caseCountries = new Set((client.value?.cases ?? []).map(c => c.country_code));
+  if (caseCountries.size > 0) {
+    const matched = visaborScores.value.filter(s => caseCountries.has(s.country_code));
+    return matched.length ? matched : visaborScores.value.slice(0, 5);
+  }
+  return visaborScores.value.slice(0, 5);
+});
 
 const VISABOR_BLOCK_LABELS = { finances: 'finances', social_ties: 'social_ties', visa_history: 'visa_history', travel_purpose: 'travel_purpose', profile: 'profile' };
 function visaborBlockLabel(key) {
