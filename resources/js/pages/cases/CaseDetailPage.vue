@@ -271,85 +271,107 @@
           </div>
         </div>
 
-        <!-- ===== FORM WIZARD (Visa Case Engine) ===== -->
-        <FormWizard v-if="caseData.visa_case_rule_id && caseData.embassy_platform"
-          ref="formWizardRef"
-          :case-id="caseData.id"
-          @updated="onEngineUpdate" />
-
-        <!-- ===== DOCUMENTS ===== -->
+        <!-- ===== DOCUMENTS (collapsible) ===== -->
         <div class="bg-white rounded-xl border border-gray-100 overflow-hidden">
-          <div class="flex items-center justify-between px-5 py-3 border-b border-gray-50">
+          <button @click="docsOpen = !docsOpen"
+            class="flex items-center justify-between w-full px-5 py-3 text-left hover:bg-gray-50/50 transition-colors">
             <div class="flex items-center gap-3">
               <h3 class="font-semibold text-gray-800 text-sm">{{ t('crm.caseDetail.documentsTitle') }}</h3>
               <span v-if="checklist.progress" class="text-xs text-gray-400 tabular-nums">
                 {{ t('crm.caseDetail.uploadedOf', { uploaded: checklist.progress.uploaded, total: checklist.progress.total }) }}
               </span>
+              <span v-if="!docsOpen && actionDocs.length" class="text-[10px] font-bold text-orange-500">{{ t('crm.caseDetail.actionNeeded', { n: actionDocs.length }) }}</span>
             </div>
             <div class="flex items-center gap-2">
-              <button v-if="uploadedCount > 0" @click="downloadZip" :disabled="zipLoading"
+              <button v-if="docsOpen && uploadedCount > 0" @click.stop="downloadZip" :disabled="zipLoading"
                 class="text-xs text-gray-500 hover:text-gray-700 px-2.5 py-1 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50">
                 {{ zipLoading ? 'ZIP...' : t('crm.caseDetail.downloadZip') }}
               </button>
-              <button @click="showAddSlot = true"
+              <button v-if="docsOpen" @click.stop="showAddSlot = true"
                 class="text-xs text-blue-600 hover:text-blue-700 px-2.5 py-1 rounded-lg hover:bg-blue-50 font-medium transition-colors">
                 {{ t('crm.caseDetail.addDocument') }}
               </button>
+              <svg :class="['w-4 h-4 text-gray-400 transition-transform duration-200', docsOpen ? 'rotate-180' : '']"
+                fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+              </svg>
             </div>
-          </div>
+          </button>
 
-          <!-- Person tabs -->
-          <div v-if="docTabs.length > 1" class="px-5 pt-3 flex gap-1 overflow-x-auto scrollbar-hide">
-            <button v-for="tab in docTabs" :key="tab.key"
-              @click="activeDocTab = tab.key"
-              class="shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap"
-              :class="activeDocTab === tab.key
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-500 hover:bg-gray-200'">
-              {{ tab.label }}
-              <span class="ml-1 text-[10px] opacity-70">{{ tab.uploaded }}/{{ tab.total }}</span>
-            </button>
-          </div>
-
-          <!-- Progress -->
-          <div v-if="activeTabItems.length" class="px-5 pt-3">
-            <div class="w-full bg-gray-100 rounded-full h-1 overflow-hidden">
-              <div class="h-full rounded-full transition-all duration-700 ease-out"
-                :class="activeTabUploaded >= activeTabItems.length ? 'bg-green-500' : 'bg-blue-500'"
-                :style="{ width: (activeTabItems.length ? (activeTabUploaded / activeTabItems.length * 100) : 0) + '%' }"></div>
+          <div v-if="docsOpen">
+            <!-- Person tabs -->
+            <div v-if="docTabs.length > 1" class="px-5 pt-3 flex gap-1 overflow-x-auto scrollbar-hide">
+              <button v-for="tab in docTabs" :key="tab.key"
+                @click="activeDocTab = tab.key"
+                class="shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap"
+                :class="activeDocTab === tab.key
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-500 hover:bg-gray-200'">
+                {{ tab.label }}
+                <span class="ml-1 text-[10px] opacity-70">{{ tab.uploaded }}/{{ tab.total }}</span>
+              </button>
             </div>
-          </div>
 
-          <!-- Action-needed -->
-          <div v-if="activeTabAction.length" class="px-5 pt-4">
-            <p class="text-[10px] uppercase tracking-widest font-bold text-orange-500 mb-2">{{ t('crm.caseDetail.actionNeeded', { n: activeTabAction.length }) }}</p>
-            <div class="space-y-2">
-              <DocItem v-for="item in activeTabAction" :key="item.id" :item="item"
-                :ai-loading="aiAnalyzingId === item.id"
-                @upload="uploadToSlot" @toggle="toggleCheck" @review="reviewSlot"
-                @reject="openReject" @translation="openTranslation"
-                @upload-translation="doUploadTranslation" @approve-translation="doApproveTranslation"
-                @preview="openPreview" @delete="deleteSlot" @repeat="repeatSlot"
-                @ai-analyze="doAiAnalyze" />
+            <!-- Progress -->
+            <div v-if="activeTabItems.length" class="px-5 pt-3">
+              <div class="w-full bg-gray-100 rounded-full h-1 overflow-hidden">
+                <div class="h-full rounded-full transition-all duration-700 ease-out"
+                  :class="activeTabUploaded >= activeTabItems.length ? 'bg-green-500' : 'bg-blue-500'"
+                  :style="{ width: (activeTabItems.length ? (activeTabUploaded / activeTabItems.length * 100) : 0) + '%' }"></div>
+              </div>
             </div>
-          </div>
 
-          <!-- Done docs -->
-          <div v-if="activeTabDone.length" class="px-5 pt-4">
-            <p v-if="activeTabAction.length" class="text-[10px] uppercase tracking-widest font-bold text-gray-300 mb-2">{{ t('crm.caseDetail.doneItems', { n: activeTabDone.length }) }}</p>
-            <div class="space-y-2">
-              <DocItem v-for="item in activeTabDone" :key="item.id" :item="item"
-                :ai-loading="aiAnalyzingId === item.id"
-                @upload="uploadToSlot" @toggle="toggleCheck" @review="reviewSlot"
-                @reject="openReject" @translation="openTranslation"
-                @upload-translation="doUploadTranslation" @approve-translation="doApproveTranslation"
-                @preview="openPreview" @delete="deleteSlot" @repeat="repeatSlot"
-                @ai-analyze="doAiAnalyze" />
+            <!-- Action-needed -->
+            <div v-if="activeTabAction.length" class="px-5 pt-4">
+              <p class="text-[10px] uppercase tracking-widest font-bold text-orange-500 mb-2">{{ t('crm.caseDetail.actionNeeded', { n: activeTabAction.length }) }}</p>
+              <div class="space-y-2">
+                <DocItem v-for="item in activeTabAction" :key="item.id" :item="item"
+                  :ai-loading="aiAnalyzingId === item.id"
+                  @upload="uploadToSlot" @toggle="toggleCheck" @review="reviewSlot"
+                  @reject="openReject" @translation="openTranslation"
+                  @upload-translation="doUploadTranslation" @approve-translation="doApproveTranslation"
+                  @preview="openPreview" @delete="deleteSlot" @repeat="repeatSlot"
+                  @ai-analyze="doAiAnalyze" />
+              </div>
             </div>
-          </div>
 
-          <p v-if="!checklist.items?.length" class="text-sm text-gray-400 py-8 text-center">{{ t('crm.caseDetail.checklistEmpty') }}</p>
-          <div class="h-4"></div>
+            <!-- Done docs -->
+            <div v-if="activeTabDone.length" class="px-5 pt-4">
+              <p v-if="activeTabAction.length" class="text-[10px] uppercase tracking-widest font-bold text-gray-300 mb-2">{{ t('crm.caseDetail.doneItems', { n: activeTabDone.length }) }}</p>
+              <div class="space-y-2">
+                <DocItem v-for="item in activeTabDone" :key="item.id" :item="item"
+                  :ai-loading="aiAnalyzingId === item.id"
+                  @upload="uploadToSlot" @toggle="toggleCheck" @review="reviewSlot"
+                  @reject="openReject" @translation="openTranslation"
+                  @upload-translation="doUploadTranslation" @approve-translation="doApproveTranslation"
+                  @preview="openPreview" @delete="deleteSlot" @repeat="repeatSlot"
+                  @ai-analyze="doAiAnalyze" />
+              </div>
+            </div>
+
+            <p v-if="!checklist.items?.length" class="text-sm text-gray-400 py-8 text-center">{{ t('crm.caseDetail.checklistEmpty') }}</p>
+            <div class="h-4"></div>
+          </div>
+        </div>
+
+        <!-- ===== FORM WIZARD / Embassy Form (collapsible) ===== -->
+        <div v-if="caseData.visa_case_rule_id && caseData.embassy_platform" class="bg-white rounded-xl border border-gray-100 overflow-hidden">
+          <button @click="formWizardOpen = !formWizardOpen"
+            class="flex items-center justify-between w-full px-5 py-3 text-left hover:bg-gray-50/50 transition-colors">
+            <div class="flex items-center gap-2">
+              <h3 class="font-semibold text-gray-800 text-sm">{{ t('crm.caseDetail.embassyFormTitle') }}</h3>
+              <span class="text-xs text-gray-400">{{ caseData.embassy_platform }}</span>
+            </div>
+            <svg :class="['w-4 h-4 text-gray-400 transition-transform duration-200', formWizardOpen ? 'rotate-180' : '']"
+              fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+            </svg>
+          </button>
+          <div v-if="formWizardOpen">
+            <FormWizard ref="formWizardRef"
+              :case-id="caseData.id"
+              @updated="onEngineUpdate" />
+          </div>
         </div>
 
         <!-- ===== AI RISK DASHBOARD ===== -->
@@ -825,6 +847,8 @@ const portrait = ref(null);
 const profile = ref(null);
 const portraitLoading = ref(false);
 const timelineOpen = ref(false);
+const docsOpen = ref(true);
+const formWizardOpen = ref(false);
 const showMoveModal = ref(false);
 const showAddSlot = ref(false);
 const showRejectModal = ref(false);
