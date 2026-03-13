@@ -105,13 +105,15 @@
                 <div class="mb-3">
                     <div class="flex items-center gap-0.5 mb-1">
                         <div v-for="(s, i) in getVisibleStatuses(caseData)" :key="s.key"
-                            class="flex-1 h-2 rounded-full transition-colors"
-                            :class="getProgressColor(i, caseData.public_status, currentStepIdx)">
+                            class="flex-1 h-2 rounded-full transition-colors cursor-help"
+                            :class="getProgressColor(i, caseData.public_status, currentStepIdx)"
+                            :title="$t('caseStatus.desc.' + s.key)">
                         </div>
                     </div>
                     <div class="flex mt-1">
                         <div v-for="(s, i) in getVisibleStatuses(caseData)" :key="'l'+s.key"
-                            class="flex-1 text-center">
+                            class="flex-1 text-center cursor-help"
+                            :title="$t('caseStatus.desc.' + s.key)">
                             <span class="text-[7px] sm:text-[9px] leading-tight block truncate px-0.5"
                                 :class="i === currentStepIdx ? 'text-[#1BA97F] font-bold' : i < currentStepIdx ? 'text-gray-500' : 'text-gray-300'">
                                 {{ $t('caseStatus.step.' + s.key) }}
