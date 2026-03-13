@@ -739,8 +739,8 @@
                                 </svg>
                                 {{ $t('cases.addMoreFile') }}
                             </button>
-                            <!-- Кнопка удалить для доп. копий (не-обязательных) -->
-                            <button v-if="!item.is_required && !isTerminal"
+                            <!-- Кнопка удалить только для кастомных документов менеджера (не из шаблона суперадмина) -->
+                            <button v-if="!item.is_from_template && !isTerminal"
                                 @click="deleteSlot(item)"
                                 :disabled="deleting[item.id]"
                                 class="mt-1.5 inline-flex items-center gap-1 text-xs text-red-400 hover:text-red-600 font-medium transition-colors disabled:opacity-50">

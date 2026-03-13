@@ -21,6 +21,16 @@ class ChecklistService
      */
     public function createForCase(VisaCase $case): void
     {
+        // Идемпотентность: если чеклист уже создан из шаблонов — не дублировать
+        $existingTemplateItems = CaseChecklist::where('case_id', $case->id)
+            ->whereNull('family_member_id')
+            ->whereNotNull('country_requirement_id')
+            ->count();
+
+        if ($existingTemplateItems > 0) {
+            return;
+        }
+
         $visaType = $case->visa_type ?? '*';
 
         $requirements = CountryVisaRequirement::active()
@@ -43,7 +53,7 @@ class ChecklistService
                 continue;
             }
 
-            $baseItem = [
+            $items[] = [
                 'id'                     => (string) \Illuminate\Support\Str::uuid(),
                 'agency_id'              => $case->agency_id,
                 'case_id'                => $case->id,
@@ -64,9 +74,6 @@ class ChecklistService
                 'created_at'             => now(),
                 'updated_at'             => now(),
             ];
-
-            // Repeatable-документ (метрика ребёнка): добавляем 1 слот с запасом
-            $items[] = $baseItem;
         }
 
         if (! empty($items)) {
@@ -80,6 +87,16 @@ class ChecklistService
      */
     private function createForCaseLegacy(VisaCase $case): void
     {
+        // Идемпотентность: если legacy-чеклист уже создан — не дублировать
+        $existingLegacy = CaseChecklist::where('case_id', $case->id)
+            ->whereNull('family_member_id')
+            ->whereNotNull('requirement_id')
+            ->count();
+
+        if ($existingLegacy > 0) {
+            return;
+        }
+
         $requirements = DocumentRequirement::forCase($case->country_code, $case->visa_type ?? '*');
 
         if ($requirements->isEmpty()) {
@@ -112,6 +129,15 @@ class ChecklistService
      */
     public function createForFamilyMember(VisaCase $case, $familyMember): void
     {
+        // Идемпотентность: если чеклист для этого члена семьи уже создан — не дублировать
+        $existing = CaseChecklist::where('case_id', $case->id)
+            ->where('family_member_id', $familyMember->id)
+            ->count();
+
+        if ($existing > 0) {
+            return;
+        }
+
         $visaType = $case->visa_type ?? '*';
         $isMinor = $familyMember->isMinor();
 

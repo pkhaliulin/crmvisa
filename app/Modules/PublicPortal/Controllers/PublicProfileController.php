@@ -992,20 +992,21 @@ class PublicProfileController extends Controller
         $doc = $item->document_id ? Document::find($item->document_id) : null;
 
         return [
-            'id'             => $item->id,
-            'name'           => $item->name,
-            'description'    => $item->description,
-            'type'           => $item->type ?? 'upload',
-            'is_required'    => $item->is_required,
-            'is_checked'     => (bool) $item->is_checked,
-            'is_repeatable'  => (bool) $item->is_repeatable,
-            'responsibility' => $item->responsibility ?? 'client',
-            'status'         => $item->status,
-            'document_id'    => $item->document_id,
-            'notes'          => $item->notes,
-            'file_name'      => $doc?->original_name,
-            'file_url'       => $doc?->url,
-            'file_mime'      => $doc?->mime_type,
+            'id'               => $item->id,
+            'name'             => $item->name,
+            'description'      => $item->description,
+            'type'             => $item->type ?? 'upload',
+            'is_required'      => $item->is_required,
+            'is_checked'       => (bool) $item->is_checked,
+            'is_repeatable'    => (bool) $item->is_repeatable,
+            'is_from_template' => (bool) ($item->country_requirement_id || $item->requirement_id),
+            'responsibility'   => $item->responsibility ?? 'client',
+            'status'           => $item->status,
+            'document_id'      => $item->document_id,
+            'notes'            => $item->notes,
+            'file_name'        => $doc?->original_name,
+            'file_url'         => $doc?->url,
+            'file_mime'        => $doc?->mime_type,
         ];
     }
 
