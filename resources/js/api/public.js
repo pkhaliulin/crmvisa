@@ -61,6 +61,10 @@ export const publicPortalApi = {
         publicApi.patch(`/me/cases/${caseId}/checklist/${itemId}/check`, { checked }),
     repeatChecklistItem: (caseId, itemId) =>
         publicApi.post(`/me/cases/${caseId}/checklist/${itemId}/repeat`),
+    deleteChecklistItem: (caseId, itemId) =>
+        publicApi.delete(`/me/cases/${caseId}/checklist/${itemId}`),
+    previewDocument: (documentId) =>
+        publicApi.get(`/me/documents/${documentId}/preview`),
 
     // Family
     familyMembers:      ()            => publicApi.get('/me/family'),

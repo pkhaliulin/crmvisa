@@ -22,6 +22,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use App\Modules\Document\Models\Document;
 use App\Modules\Payment\Models\ClientPayment;
 use App\Modules\Service\Models\AgencyServicePackage;
 
@@ -473,19 +474,7 @@ class PublicProfileController extends Controller
             ->whereNull('family_member_id')
             ->orderBy('sort_order')
             ->get()
-            ->map(fn ($item) => [
-                'id'             => $item->id,
-                'name'           => $item->name,
-                'description'    => $item->description,
-                'type'           => $item->type ?? 'upload',
-                'is_required'    => $item->is_required,
-                'is_checked'     => (bool) $item->is_checked,
-                'is_repeatable'  => (bool) $item->is_repeatable,
-                'responsibility' => $item->responsibility ?? 'client',
-                'status'         => $item->status,
-                'document_id'    => $item->document_id,
-                'notes'          => $item->notes,
-            ]);
+            ->map(fn ($item) => $this->mapChecklistItem($item));
 
         $stageTimeline = $case->stageHistory->map(fn ($s) => [
             'stage'       => $s->stage,
@@ -608,19 +597,7 @@ class PublicProfileController extends Controller
                         ->where('family_member_id', $cm->familyMember->id)
                         ->orderBy('sort_order')
                         ->get()
-                        ->map(fn ($item) => [
-                            'id'             => $item->id,
-                            'name'           => $item->name,
-                            'description'    => $item->description,
-                            'type'           => $item->type ?? 'upload',
-                            'is_required'    => $item->is_required,
-                            'is_checked'     => (bool) $item->is_checked,
-                            'is_repeatable'  => (bool) $item->is_repeatable,
-                            'responsibility' => $item->responsibility ?? 'client',
-                            'status'         => $item->status,
-                            'document_id'    => $item->document_id,
-                            'notes'          => $item->notes,
-                        ]),
+                        ->map(fn ($item) => $this->mapChecklistItem($item)),
                 ]),
         ]);
     }
@@ -953,6 +930,80 @@ class PublicProfileController extends Controller
             'ocr_status' => 'pending',
             'message'    => 'Паспорт загружен. Данные распознаются автоматически (обычно до 30 сек).',
         ]);
+    }
+
+    /**
+     * DELETE /public/me/cases/{caseId}/checklist/{itemId}
+     * Удалить повторный слот чеклиста (только не-обязательные копии).
+     */
+    public function deleteChecklistItem(Request $request, string $caseId, string $itemId): JsonResponse
+    {
+        $publicUser = $request->get('_public_user');
+
+        $case = VisaCase::whereHas('client', fn ($q) => $q->where('public_user_id', $publicUser->id))
+            ->findOrFail($caseId);
+
+        $item = CaseChecklist::where('case_id', $case->id)->findOrFail($itemId);
+
+        // Нельзя удалять обязательные оригинальные документы
+        if ($item->is_required) {
+            return ApiResponse::error('Нельзя удалить обязательный документ', null, 422);
+        }
+
+        // Удалить связанный документ файл если есть
+        if ($item->document_id) {
+            $doc = Document::find($item->document_id);
+            if ($doc && $doc->file_path) {
+                \Illuminate\Support\Facades\Storage::disk('local')->delete($doc->file_path);
+            }
+            $doc?->delete();
+        }
+
+        $item->forceDelete();
+
+        return ApiResponse::success(['message' => 'Слот удалён']);
+    }
+
+    /**
+     * GET /public/me/documents/{documentId}/preview
+     * Временная ссылка на документ для предпросмотра.
+     */
+    public function previewDocument(Request $request, string $documentId): JsonResponse
+    {
+        $publicUser = $request->get('_public_user');
+
+        $document = Document::whereHas('case', function ($q) use ($publicUser) {
+            $q->whereHas('client', fn ($c) => $c->where('public_user_id', $publicUser->id));
+        })->findOrFail($documentId);
+
+        return ApiResponse::success([
+            'url'           => $document->url,
+            'original_name' => $document->original_name,
+            'mime_type'     => $document->mime_type,
+            'size'          => $document->size,
+        ]);
+    }
+
+    private function mapChecklistItem(CaseChecklist $item): array
+    {
+        $doc = $item->document_id ? Document::find($item->document_id) : null;
+
+        return [
+            'id'             => $item->id,
+            'name'           => $item->name,
+            'description'    => $item->description,
+            'type'           => $item->type ?? 'upload',
+            'is_required'    => $item->is_required,
+            'is_checked'     => (bool) $item->is_checked,
+            'is_repeatable'  => (bool) $item->is_repeatable,
+            'responsibility' => $item->responsibility ?? 'client',
+            'status'         => $item->status,
+            'document_id'    => $item->document_id,
+            'notes'          => $item->notes,
+            'file_name'      => $doc?->original_name,
+            'file_url'       => $doc?->url,
+            'file_mime'      => $doc?->mime_type,
+        ];
     }
 
     private function toDateStr(mixed $val): ?string

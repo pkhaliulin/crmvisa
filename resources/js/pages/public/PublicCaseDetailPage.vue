@@ -620,6 +620,12 @@
                                 }">
                                 {{ statusLabel(item.status, item) }}
                             </div>
+                            <!-- Имя загруженного файла + предпросмотр -->
+                            <button v-if="item.file_name && item.document_id"
+                                @click="openPreview(item)"
+                                class="mt-0.5 text-[11px] text-blue-500 hover:text-blue-700 hover:underline truncate max-w-full block text-left transition-colors">
+                                {{ item.file_name }}
+                            </button>
 
                             <!-- Checkbox type: кнопка отметки -->
                             <button v-if="item.type === 'checkbox' && item.responsibility !== 'agency' && !isTerminal"
@@ -683,6 +689,20 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
                                 </svg>
                                 {{ $t('cases.addMoreFile') }}
+                            </button>
+                            <!-- Кнопка удалить для доп. копий (не-обязательных) -->
+                            <button v-if="!item.is_required && !isTerminal"
+                                @click="deleteSlot(item)"
+                                :disabled="deleting[item.id]"
+                                class="mt-1.5 inline-flex items-center gap-1 text-xs text-red-400 hover:text-red-600 font-medium transition-colors disabled:opacity-50">
+                                <svg v-if="!deleting[item.id]" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                </svg>
+                                <svg v-else class="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                                </svg>
+                                {{ $t('cases.deleteSlot') }}
                             </button>
                         </div>
                     </div>
@@ -1199,6 +1219,31 @@
         </div>
 
     </div>
+
+    <!-- Модалка предпросмотра документа -->
+    <teleport to="body">
+        <transition name="fade">
+            <div v-if="previewModal.show" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60" @click.self="previewModal.show = false">
+                <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
+                    <div class="flex items-center justify-between px-5 py-3 border-b border-gray-100">
+                        <span class="text-sm font-bold text-[#0A1F44] truncate">{{ previewModal.name }}</span>
+                        <button @click="previewModal.show = false" class="text-gray-400 hover:text-gray-600 transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+                    <div class="flex-1 overflow-auto p-1 min-h-[300px] flex items-center justify-center bg-gray-50">
+                        <div v-if="previewModal.loading" class="text-gray-400 text-sm">{{ $t('cases.loading') }}...</div>
+                        <img v-else-if="previewModal.mime?.startsWith('image/')" :src="previewModal.url" class="max-w-full max-h-[75vh] object-contain rounded"/>
+                        <iframe v-else-if="previewModal.mime === 'application/pdf'" :src="previewModal.url" class="w-full h-[75vh] border-0 rounded"/>
+                        <div v-else class="text-center py-8">
+                            <p class="text-sm text-gray-500 mb-3">{{ $t('cases.previewNotSupported') }}</p>
+                            <a :href="previewModal.url" target="_blank" class="text-sm text-blue-600 hover:underline font-medium">{{ $t('cases.downloadFile') }}</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </transition>
+    </teleport>
 </template>
 
 <script setup>
@@ -1223,6 +1268,8 @@ const loading     = ref(true);
 const caseData    = ref(null);
 const uploading   = ref({});
 const repeating   = ref({});
+const deleting    = ref({});
+const previewModal = ref({ show: false, url: '', name: '', mime: '', loading: false });
 const uploadToast = ref('');
 const uploadToastError = ref(false);
 const checkboxLoading = ref({});
@@ -1828,8 +1875,12 @@ async function uploadDoc(itemId, event) {
         fd.append('file', file);
         await publicPortalApi.uploadChecklistItem(route.params.id, itemId, fd);
         // Обновляем статус локально
-        const item = caseData.value?.checklist?.find(i => i.id === itemId);
-        if (item) item.status = 'uploaded';
+        const item = caseData.value?.checklist?.find(i => i.id === itemId)
+            || caseData.value?.family_members?.flatMap(fm => fm.checklist || []).find(i => i.id === itemId);
+        if (item) {
+            item.status = 'uploaded';
+            item.file_name = file.name;
+        }
         uploadToastError.value = false;
         uploadToast.value = t('cases.docUploaded');
         setTimeout(() => { uploadToast.value = ''; }, 3000);
@@ -1883,6 +1934,48 @@ async function repeatSlot(item) {
         setTimeout(() => { uploadToast.value = ''; uploadToastError.value = false; }, 4000);
     } finally {
         repeating.value[item.id] = false;
+    }
+}
+
+async function deleteSlot(item) {
+    deleting.value[item.id] = true;
+    try {
+        await publicPortalApi.deleteChecklistItem(route.params.id, item.id);
+        const list = caseData.value?.checklist;
+        if (list) {
+            const idx = list.findIndex(i => i.id === item.id);
+            if (idx !== -1) list.splice(idx, 1);
+        }
+        // Также проверяем family members
+        caseData.value?.family_members?.forEach(fm => {
+            const idx = fm.checklist?.findIndex(i => i.id === item.id);
+            if (idx !== undefined && idx !== -1) fm.checklist.splice(idx, 1);
+        });
+        uploadToastError.value = false;
+        uploadToast.value = t('cases.slotDeleted');
+        setTimeout(() => { uploadToast.value = ''; }, 3000);
+    } catch (e) {
+        uploadToastError.value = true;
+        uploadToast.value = e?.response?.data?.message ?? t('cases.uploadError');
+        setTimeout(() => { uploadToast.value = ''; uploadToastError.value = false; }, 4000);
+    } finally {
+        deleting.value[item.id] = false;
+    }
+}
+
+async function openPreview(item) {
+    previewModal.value = { show: true, url: '', name: item.file_name || item.name, mime: '', loading: true };
+    try {
+        const { data } = await publicPortalApi.previewDocument(item.document_id);
+        const d = data.data;
+        previewModal.value.url = d.url;
+        previewModal.value.mime = d.mime_type;
+        previewModal.value.name = d.original_name || item.name;
+    } catch {
+        previewModal.value.url = '';
+        previewModal.value.mime = '';
+    } finally {
+        previewModal.value.loading = false;
     }
 }
 
