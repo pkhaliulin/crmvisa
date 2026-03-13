@@ -60,11 +60,17 @@ class DocumentAiAnalyzerService
         }
     }
 
+    /** MIME-типы, которые OpenAI/Claude принимают напрямую */
+    private const SUPPORTED_IMAGE_MIMES = [
+        'image/png', 'image/jpeg', 'image/gif', 'image/webp',
+    ];
+
     private function prepareImage(UploadedFile|string $file): array
     {
         if ($file instanceof UploadedFile) {
             $content = file_get_contents($file->getRealPath());
             $mime = $file->getMimeType();
+            $filename = $file->getClientOriginalName();
         } else {
             $disk = Storage::disk('documents');
             if (!$disk->exists($file)) {
@@ -72,14 +78,42 @@ class DocumentAiAnalyzerService
             }
             $content = $disk->get($file);
             $mime = $disk->mimeType($file) ?: 'application/octet-stream';
+            $filename = $file;
         }
 
-        // PDF — конвертируем первую страницу в JPEG через pdftoppm
-        if ($mime === 'application/pdf' || str_ends_with(strtolower($file instanceof UploadedFile ? $file->getClientOriginalName() : $file), '.pdf')) {
+        // Уже поддерживаемый формат — отдаём как есть
+        if (in_array($mime, self::SUPPORTED_IMAGE_MIMES, true)) {
+            return ['data' => base64_encode($content), 'mime' => $mime];
+        }
+
+        // TIFF — конвертируем в JPEG
+        if (in_array($mime, ['image/tiff', 'image/bmp', 'image/heic', 'image/heif'])) {
+            $content = $this->convertImageToJpeg($content);
+            return ['data' => base64_encode($content), 'mime' => 'image/jpeg'];
+        }
+
+        // PDF
+        $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+        if ($mime === 'application/pdf' || $ext === 'pdf') {
             $content = $this->pdfToJpeg($content);
-            $mime = 'image/jpeg';
+            return ['data' => base64_encode($content), 'mime' => 'image/jpeg'];
         }
 
+        // Office документы (Word, Excel, etc.) — конвертируем через LibreOffice в PDF, потом в JPEG
+        $officeTypes = [
+            'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'application/vnd.oasis.opendocument.text', 'application/vnd.oasis.opendocument.spreadsheet',
+            'application/rtf', 'text/rtf',
+        ];
+        $officeExts = ['doc', 'docx', 'xls', 'xlsx', 'odt', 'ods', 'rtf'];
+        if (in_array($mime, $officeTypes, true) || in_array($ext, $officeExts, true)) {
+            $content = $this->officeToJpeg($content, $ext);
+            return ['data' => base64_encode($content), 'mime' => 'image/jpeg'];
+        }
+
+        // Неизвестный формат — пытаемся как изображение
+        Log::warning("AI Analyzer: unknown MIME {$mime}, attempting as-is", ['file' => $filename]);
         return ['data' => base64_encode($content), 'mime' => $mime];
     }
 
@@ -89,7 +123,6 @@ class DocumentAiAnalyzerService
         $tmpOut = tempnam(sys_get_temp_dir(), 'ai_img_');
         try {
             file_put_contents($tmpPdf, $pdfContent);
-            // pdftoppm: первая страница, JPEG, 200 DPI
             $cmd = sprintf(
                 'pdftoppm -jpeg -r 200 -f 1 -l 1 -singlefile %s %s 2>&1',
                 escapeshellarg($tmpPdf),
@@ -105,6 +138,74 @@ class DocumentAiAnalyzerService
             @unlink($tmpPdf);
             @unlink($tmpOut);
             @unlink($tmpOut . '.jpg');
+        }
+    }
+
+    /**
+     * TIFF/BMP/HEIC -> JPEG через GD (для форматов, поддерживаемых PHP GD).
+     * Если GD не справляется — fallback через convert (ImageMagick) если есть.
+     */
+    private function convertImageToJpeg(string $content): string
+    {
+        $tmp = tempnam(sys_get_temp_dir(), 'ai_img_');
+        $tmpJpeg = $tmp . '.jpg';
+        try {
+            file_put_contents($tmp, $content);
+
+            // Пробуем GD
+            $img = @imagecreatefromstring($content);
+            if ($img) {
+                imagejpeg($img, $tmpJpeg, 90);
+                imagedestroy($img);
+                return file_get_contents($tmpJpeg);
+            }
+
+            // Fallback: convert (ImageMagick)
+            $cmd = sprintf('convert %s %s 2>&1', escapeshellarg($tmp), escapeshellarg($tmpJpeg));
+            exec($cmd, $output, $exitCode);
+            if ($exitCode === 0 && file_exists($tmpJpeg)) {
+                return file_get_contents($tmpJpeg);
+            }
+
+            throw new \RuntimeException('Image conversion to JPEG failed');
+        } finally {
+            @unlink($tmp);
+            @unlink($tmpJpeg);
+        }
+    }
+
+    /**
+     * Office (doc/docx/xls/xlsx/odt/rtf) -> PDF -> JPEG через LibreOffice.
+     */
+    private function officeToJpeg(string $content, string $ext): string
+    {
+        $tmpDir = sys_get_temp_dir() . '/ai_office_' . uniqid();
+        @mkdir($tmpDir);
+        $tmpFile = $tmpDir . '/doc.' . $ext;
+        try {
+            file_put_contents($tmpFile, $content);
+
+            // LibreOffice headless -> PDF
+            $cmd = sprintf(
+                'libreoffice --headless --convert-to pdf --outdir %s %s 2>&1',
+                escapeshellarg($tmpDir),
+                escapeshellarg($tmpFile)
+            );
+            exec($cmd, $output, $exitCode);
+            $pdfPath = $tmpDir . '/doc.pdf';
+
+            if ($exitCode !== 0 || !file_exists($pdfPath)) {
+                throw new \RuntimeException(
+                    'Office to PDF conversion failed (libreoffice not installed?): ' . implode("\n", $output)
+                );
+            }
+
+            // PDF -> JPEG
+            return $this->pdfToJpeg(file_get_contents($pdfPath));
+        } finally {
+            // Очистка
+            array_map('unlink', glob($tmpDir . '/*'));
+            @rmdir($tmpDir);
         }
     }
 
