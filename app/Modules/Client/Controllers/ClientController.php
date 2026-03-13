@@ -9,6 +9,8 @@ use App\Modules\Client\Resources\ClientResource;
 use App\Modules\Client\Services\ClientService;
 use App\Modules\Document\Models\CaseChecklist;
 use App\Modules\Document\Services\OcrService;
+use App\Modules\PublicPortal\Models\PublicScoreCache;
+use App\Modules\PublicPortal\Models\PublicUser;
 use App\Modules\Scoring\Models\ClientProfile;
 use App\Support\Helpers\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -74,6 +76,26 @@ class ClientController extends Controller
         $this->service->delete($id);
 
         return ApiResponse::success(null, 'Client deleted.');
+    }
+
+    /**
+     * GET /clients/{id}/visabor-scoring
+     * Скоринг клиента из личного кабинета VisaBor.
+     */
+    public function visaborScoring(Request $request, string $id): JsonResponse
+    {
+        $client = $this->service->findOrFail($id);
+        $this->authorize('view', $client);
+
+        if (!$client->public_user_id) {
+            return ApiResponse::success([]);
+        }
+
+        $scores = PublicScoreCache::where('public_user_id', $client->public_user_id)
+            ->orderByDesc('score')
+            ->get(['country_code', 'score', 'breakdown', 'calculated_at']);
+
+        return ApiResponse::success($scores);
     }
 
     /**
@@ -185,6 +207,76 @@ class ClientController extends Controller
             }
         }
 
+        // Синхронизация из публичного портала VisaBor (если клиент зарегистрирован)
+        if ($client->public_user_id) {
+            $pu = PublicUser::find($client->public_user_id);
+            if ($pu) {
+                // Базовые данные клиента из портала
+                if ($pu->dob && empty($clientUpdates['date_of_birth'])) {
+                    $clientUpdates['date_of_birth'] = $pu->dob;
+                }
+                if ($pu->citizenship && empty($clientUpdates['nationality'])) {
+                    // Портал хранит ISO-2 (UZ), CRM — ISO-3 (UZB)
+                    $clientUpdates['nationality'] = $this->iso2ToIso3($pu->citizenship);
+                }
+                if ($pu->passport_number && empty($clientUpdates['passport_number'])) {
+                    $clientUpdates['passport_number'] = $pu->passport_number;
+                }
+                if ($pu->passport_expires_at && empty($clientUpdates['passport_expires_at'])) {
+                    $clientUpdates['passport_expires_at'] = $pu->passport_expires_at;
+                }
+
+                // Профиль из портала — маппинг public_users полей → client_profiles
+                $employmentMap = [
+                    'employed' => 'private', 'government' => 'government', 'business_owner' => 'business_owner',
+                    'self_employed' => 'self_employed', 'student' => 'student', 'retired' => 'retired',
+                    'unemployed' => 'unemployed',
+                ];
+                if ($pu->employment_type) {
+                    $profileUpdates['employment_type'] = $profileUpdates['employment_type']
+                        ?? ($employmentMap[$pu->employment_type] ?? $pu->employment_type);
+                }
+                if ($pu->monthly_income_usd) {
+                    $profileUpdates['monthly_income'] = $profileUpdates['monthly_income'] ?? $pu->monthly_income_usd;
+                }
+                if ($pu->marital_status) {
+                    $profileUpdates['marital_status'] = $profileUpdates['marital_status'] ?? $pu->marital_status;
+                }
+                if ($pu->has_children && $pu->children_count) {
+                    $profileUpdates['children_count'] = $profileUpdates['children_count'] ?? $pu->children_count;
+                    $profileUpdates['children_staying_home'] = $profileUpdates['children_staying_home'] ?? true;
+                }
+                if ($pu->has_property) {
+                    $profileUpdates['has_real_estate'] = $profileUpdates['has_real_estate'] ?? true;
+                }
+                if ($pu->has_car) {
+                    $profileUpdates['has_car'] = $profileUpdates['has_car'] ?? true;
+                }
+                if ($pu->has_schengen_visa) {
+                    $profileUpdates['has_schengen_visa'] = $profileUpdates['has_schengen_visa'] ?? true;
+                }
+                if ($pu->has_us_visa) {
+                    $profileUpdates['has_us_visa'] = $profileUpdates['has_us_visa'] ?? true;
+                }
+                if ($pu->had_visa_refusal && $pu->refusals_count) {
+                    $profileUpdates['previous_refusals'] = $profileUpdates['previous_refusals'] ?? $pu->refusals_count;
+                }
+                if ($pu->had_overstay) {
+                    $profileUpdates['has_overstay'] = $profileUpdates['has_overstay'] ?? true;
+                }
+                if ($pu->education_level) {
+                    $profileUpdates['education_level'] = $profileUpdates['education_level'] ?? $pu->education_level;
+                }
+                if ($pu->employed_years) {
+                    $yearsMap = ['less_1' => 0.5, '1_2' => 1.5, '2_5' => 3.5, '5_10' => 7, 'more_10' => 12];
+                    $profileUpdates['years_at_current_job'] = $profileUpdates['years_at_current_job']
+                        ?? ($yearsMap[$pu->employed_years] ?? 0);
+                }
+
+                $applied[] = 'VisaBor (профиль клиента)';
+            }
+        }
+
         // Применяем обновления Client
         if (!empty($clientUpdates)) {
             // Не перезаписываем уже заполненные поля
@@ -220,11 +312,33 @@ class ClientController extends Controller
         $client->refresh();
         $profile = ClientProfile::where('client_id', $client->id)->first();
 
+        // VisaBor scoring из кабинета клиента
+        $visaborScoring = null;
+        if ($client->public_user_id) {
+            $visaborScoring = PublicScoreCache::where('public_user_id', $client->public_user_id)
+                ->orderByDesc('score')
+                ->get(['country_code', 'score', 'breakdown', 'calculated_at']);
+        }
+
         return ApiResponse::success([
             'client'  => (new ClientResource($client))->withPii(),
             'profile' => $profile,
             'applied_from' => array_unique($applied),
+            'visabor_scoring' => $visaborScoring,
         ], 'Данные клиента обновлены из AI-анализа документов.');
+    }
+
+    private function iso2ToIso3(string $iso2): string
+    {
+        $map = [
+            'UZ' => 'UZB', 'RU' => 'RUS', 'KZ' => 'KAZ', 'TJ' => 'TJK',
+            'KG' => 'KGZ', 'TM' => 'TKM', 'UA' => 'UKR', 'GE' => 'GEO',
+            'AZ' => 'AZE', 'AM' => 'ARM', 'BY' => 'BLR', 'MD' => 'MDA',
+            'TR' => 'TUR', 'CN' => 'CHN', 'IN' => 'IND', 'AF' => 'AFG',
+            'PK' => 'PAK', 'BD' => 'BGD', 'IR' => 'IRN', 'IQ' => 'IRQ',
+        ];
+        $code = strtoupper(trim($iso2));
+        return $map[$code] ?? $code;
     }
 
     private function nationalityToAlpha3(string $nationality): string

@@ -2339,7 +2339,14 @@
       "noCases": "Заявок нет",
       "scoring": "Скоринг",
       "recalculate": "Пересчитать",
-      "scoringEmpty": "Скоринг не рассчитан. Нажмите «Пересчитать»."
+      "scoringEmpty": "Скоринг не рассчитан. Нажмите «Пересчитать».",
+      "visaborScoring": "Скоринг VisaBor",
+      "visaborScoringDesc": "Баллы из личного кабинета клиента на visabor.uz",
+      "vb_finances": "Финансы",
+      "vb_social_ties": "Соц. связи",
+      "vb_visa_history": "Визовая история",
+      "vb_travel_purpose": "Цель поездки",
+      "vb_profile": "Профиль"
     },
     "users": {
       "title": "Сотрудники",

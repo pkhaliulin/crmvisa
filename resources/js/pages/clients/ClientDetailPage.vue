@@ -233,7 +233,40 @@
       <p v-else class="text-sm text-gray-400">{{ t('crm.clientDetail.noCases') }}</p>
     </div>
 
-    <!-- Scoring -->
+    <!-- VisaBor scoring (from client's personal cabinet) -->
+    <div v-if="visaborScores.length" class="bg-white rounded-xl border border-gray-200 p-6">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h3 class="font-semibold text-gray-800">{{ t('crm.clientDetail.visaborScoring') }}</h3>
+          <p class="text-xs text-gray-400 mt-0.5">{{ t('crm.clientDetail.visaborScoringDesc') }}</p>
+        </div>
+        <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-semibold">VisaBor</span>
+      </div>
+
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+        <div v-for="vs in visaborScores" :key="vs.country_code" class="border border-gray-100 rounded-lg p-3">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-sm font-semibold">{{ countryFlag(vs.country_code) }} {{ countryName(vs.country_code) }}</span>
+            <span :class="['text-lg font-bold', scoreColor(vs.score)]">{{ vs.score }}</span>
+          </div>
+          <div class="bg-gray-200 rounded-full h-1.5 overflow-hidden">
+            <div :class="['h-full rounded-full', scoreBarColor(vs.score)]" :style="{ width: `${vs.score}%` }" />
+          </div>
+          <!-- Breakdown blocks -->
+          <div v-if="vs.breakdown" class="mt-2 space-y-0.5">
+            <div v-for="(val, key) in vs.breakdown" :key="key" class="flex items-center gap-1.5">
+              <span class="text-[10px] text-gray-400 w-16 truncate">{{ visaborBlockLabel(key) }}</span>
+              <div class="flex-1 h-1 bg-gray-100 rounded-full overflow-hidden">
+                <div class="h-full rounded-full bg-emerald-400" :style="{ width: `${val}%` }" />
+              </div>
+              <span class="text-[10px] text-gray-500 w-5 text-right">{{ val }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scoring (agency) -->
     <div class="bg-white rounded-xl border border-gray-200 p-6">
       <div class="flex items-center justify-between mb-4">
         <h3 class="font-semibold text-gray-800">{{ t('crm.clientDetail.scoring') }}</h3>
@@ -248,7 +281,7 @@
           :class="s.is_blocked ? 'border-red-200 bg-red-50' : 'border-gray-100'"
         >
           <div class="flex items-center justify-between mb-1">
-            <span class="text-sm font-semibold">{{ flags[s.country_code] ?? '' }} {{ s.country_code }}</span>
+            <span class="text-sm font-semibold">{{ countryFlag(s.country_code) }} {{ s.country_code }}</span>
             <span :class="['text-lg font-bold', scoreColor(s.score)]">{{ s.score }}</span>
           </div>
           <div class="bg-gray-200 rounded-full h-1.5 overflow-hidden">
@@ -298,6 +331,7 @@ const id     = route.params.id;
 const client = ref(null);
 const profile = ref(null);
 const scores = ref([]);
+const visaborScores = ref([]);
 const loading = ref(true);
 const recalcLoading = ref(false);
 const applyingAi = ref(false);
@@ -390,6 +424,11 @@ const educationLabel = computed(() => {
 
 function fmtMoney(v) { return v ? Number(v).toLocaleString('en-US') : '0'; }
 
+const VISABOR_BLOCK_LABELS = { finances: 'finances', social_ties: 'social_ties', visa_history: 'visa_history', travel_purpose: 'travel_purpose', profile: 'profile' };
+function visaborBlockLabel(key) {
+  return t(`crm.clientDetail.vb_${key}`, key);
+}
+
 function scoreColor(s) {
   if (s >= 80) return 'text-green-600';
   if (s >= 60) return 'text-yellow-600';
@@ -416,6 +455,13 @@ async function load() {
     if (profile.value && !profile.value.marital_status && !profile.value.employment_type && !profile.value.bank_balance && !profile.value.has_real_estate) {
       profile.value = null;
     }
+    // Load VisaBor scoring if client has public_user_id
+    if (client.value?.public_user_id) {
+      try {
+        const vRes = await clientsApi.visaborScoring(id);
+        visaborScores.value = vRes.data.data ?? [];
+      } catch { /* no portal scores */ }
+    }
   } finally {
     loading.value = false;
   }
@@ -439,6 +485,7 @@ async function applyAiData() {
     client.value = data.data.client;
     if (data.data.profile) profile.value = data.data.profile;
     aiAppliedDocs.value = data.data.applied_from ?? [];
+    if (data.data.visabor_scoring?.length) visaborScores.value = data.data.visabor_scoring;
     // Recalculate scoring after profile update
     if (profile.value) {
       const sRes = await clientsApi.recalculate(id);

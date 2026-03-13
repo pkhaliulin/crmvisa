@@ -31,6 +31,7 @@ class ClientResource extends JsonResource
             'phone'       => $this->phone,
             'nationality' => $this->nationality,
             'source'      => $this->source,
+            'public_user_id' => $this->public_user_id,
             'notes'       => $this->notes,
             'created_at'  => $this->created_at?->toDateTimeString(),
         ];

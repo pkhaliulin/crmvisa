@@ -13,6 +13,7 @@ export const clientsApi = {
         return api.post('/clients/parse-passport', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
     },
     applyAiData:  (id)     => api.post(`/clients/${id}/apply-ai-data`),
+    visaborScoring: (id)   => api.get(`/clients/${id}/visabor-scoring`),
     getProfile:   (id)     => api.get(`/clients/${id}/profile`),
     saveProfile:  (id, data) => api.post(`/clients/${id}/profile`, data),
     getScores:    (id)     => api.get(`/clients/${id}/scoring`),

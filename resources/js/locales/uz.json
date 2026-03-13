@@ -2339,7 +2339,14 @@
       "noCases": "Arizalar yo'q",
       "scoring": "Skoring",
       "recalculate": "Qayta hisoblash",
-      "scoringEmpty": "Skoring hisoblanmagan. «Qayta hisoblash» tugmasini bosing."
+      "scoringEmpty": "Skoring hisoblanmagan. «Qayta hisoblash» tugmasini bosing.",
+      "visaborScoring": "VisaBor skoringi",
+      "visaborScoringDesc": "Mijozning visabor.uz shaxsiy kabinetidagi ballar",
+      "vb_finances": "Moliya",
+      "vb_social_ties": "Ijt. aloqalar",
+      "vb_visa_history": "Viza tarixi",
+      "vb_travel_purpose": "Safar maqsadi",
+      "vb_profile": "Profil"
     },
     "users": {
       "title": "Xodimlar",
