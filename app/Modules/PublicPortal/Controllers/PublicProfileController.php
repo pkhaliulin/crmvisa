@@ -476,9 +476,12 @@ class PublicProfileController extends Controller
                 'id'             => $item->id,
                 'name'           => $item->name,
                 'description'    => $item->description,
+                'type'           => $item->type ?? 'upload',
                 'is_required'    => $item->is_required,
+                'is_checked'     => (bool) $item->is_checked,
                 'responsibility' => $item->responsibility ?? 'client',
                 'status'         => $item->status,
+                'document_id'    => $item->document_id,
                 'notes'          => $item->notes,
             ]);
 
@@ -604,12 +607,16 @@ class PublicProfileController extends Controller
                         ->orderBy('sort_order')
                         ->get()
                         ->map(fn ($item) => [
-                            'id'          => $item->id,
-                            'name'        => $item->name,
-                            'description' => $item->description,
-                            'is_required' => $item->is_required,
-                            'status'      => $item->status,
-                            'notes'       => $item->notes,
+                            'id'             => $item->id,
+                            'name'           => $item->name,
+                            'description'    => $item->description,
+                            'type'           => $item->type ?? 'upload',
+                            'is_required'    => $item->is_required,
+                            'is_checked'     => (bool) $item->is_checked,
+                            'responsibility' => $item->responsibility ?? 'client',
+                            'status'         => $item->status,
+                            'document_id'    => $item->document_id,
+                            'notes'          => $item->notes,
                         ]),
                 ]),
         ]);

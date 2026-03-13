@@ -648,7 +648,10 @@
                                         ? 'text-gray-500 hover:text-gray-700'
                                         : 'text-blue-600 hover:text-blue-800'
                                 ]">
-                                <svg v-if="!uploading[item.id]" class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <svg v-if="!uploading[item.id] && item.status === 'uploaded'" class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182M4.031 9.865H9.02"/>
+                                </svg>
+                                <svg v-else-if="!uploading[item.id]" class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
                                 </svg>
                                 <svg v-else class="w-3.5 h-3.5 shrink-0 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -660,9 +663,9 @@
                                     accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
                                     @change="(e) => uploadDoc(item.id, e)"/>
                             </label>
-                            <span v-if="item.type !== 'checkbox' && item.responsibility !== 'agency' && !item.document_id && item.status !== 'approved' && !isTerminal"
+                            <span v-if="item.type !== 'checkbox' && item.responsibility !== 'agency' && !item.document_id && item.status === 'pending' && !isTerminal"
                                 class="text-[10px] text-gray-400 mt-1 block">
-                                {{ $t('cases.allowedFormats') }} &middot; max 20 MB
+                                {{ $t('cases.allowedFormats') }} &middot; max {{ MAX_FILE_SIZE_MB }} MB
                             </span>
                             <div v-else-if="item.responsibility === 'agency' && item.status !== 'approved'"
                                 class="mt-1 text-xs text-gray-400 italic">
