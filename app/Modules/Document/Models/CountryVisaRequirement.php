@@ -21,6 +21,7 @@ class CountryVisaRequirement extends BaseModel
         'notes',
         'override_metadata',
         'display_order',
+        'target_audience',
         'is_active',
         'effective_from',
         'effective_to',
@@ -64,6 +65,43 @@ class CountryVisaRequirement extends BaseModel
               // Глобальные для всех стран
               ->orWhere(fn ($q) => $q->where('country_code', '*')->where('visa_type', '*'));
         });
+    }
+
+    /**
+     * Документы для основного заявителя (applicant + both).
+     */
+    public function scopeForApplicant(Builder $query): Builder
+    {
+        return $query->whereIn('target_audience', ['applicant', 'both']);
+    }
+
+    /**
+     * Документы для члена семьи по типу родства.
+     * $relationship: child, spouse, parent, sibling, other
+     * $isMinor: true если несовершеннолетний
+     */
+    public function scopeForFamilyMember(Builder $query, string $relationship, bool $isMinor = false): Builder
+    {
+        $audiences = ['family_all', 'both'];
+
+        // Специфичные для типа родства
+        $map = [
+            'spouse'  => 'family_spouse',
+            'child'   => 'family_child',
+            'parent'  => 'family_parent',
+            'sibling' => 'family_all', // нет отдельного, только общие
+            'other'   => 'family_all',
+        ];
+
+        if (isset($map[$relationship]) && $map[$relationship] !== 'family_all') {
+            $audiences[] = $map[$relationship];
+        }
+
+        if ($isMinor) {
+            $audiences[] = 'family_minor';
+        }
+
+        return $query->whereIn('target_audience', array_unique($audiences));
     }
 
     public function scopeRequired(Builder $query): Builder

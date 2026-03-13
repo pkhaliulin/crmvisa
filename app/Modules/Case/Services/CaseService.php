@@ -173,6 +173,15 @@ class CaseService extends BaseService
             $case = $this->repository->update($id, $data);
         }
 
+        // Пересоздание чек-листа при смене страны или типа визы
+        $countryChanged = isset($data['country_code']) && $data['country_code'] !== ($case->getOriginal('country_code') ?? $case->country_code);
+        $visaTypeChanged = isset($data['visa_type']) && $data['visa_type'] !== ($case->getOriginal('visa_type') ?? $case->visa_type);
+        if ($countryChanged || $visaTypeChanged) {
+            $checklistService = app(ChecklistService::class);
+            $result = $checklistService->recreateForCase($case);
+            static::logActivity($case, 'checklist_recreated', 'Чек-лист пересоздан: ' . ($countryChanged ? 'смена страны' : 'смена типа визы'), $result);
+        }
+
         // Событие: менеджер назначен
         if ($isNewAssignment) {
             CaseAssigned::dispatch($case, $data['assigned_to'] ?? $case->assigned_to, Auth::id());

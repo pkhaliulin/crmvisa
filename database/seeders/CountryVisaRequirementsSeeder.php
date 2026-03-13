@@ -12,12 +12,14 @@ class CountryVisaRequirementsSeeder extends Seeder
     {
         $templates = DB::table('document_templates')->pluck('id', 'slug');
 
-        // Формат: [country, visa_type, slug, level, notes, override, order, ai_country_notes]
+        // Формат: [country, visa_type, slug, level, notes, override, order, ai_country_notes, target_audience?]
         // level: required | recommended | confirmation_only
+        // target_audience: applicant (default) | family_all | family_spouse | family_child | family_minor | family_parent | both
         // ai_country_notes: страно-специфичные AI-инструкции
 
         $requirements = array_merge(
             $this->universal(),
+            $this->universalFamily(),
             $this->franceTourist(),
             $this->franceBusiness(),
             $this->franceStudent(),
@@ -44,9 +46,13 @@ class CountryVisaRequirementsSeeder extends Seeder
             $this->koreaTourist(),
             $this->japanTourist(),
             $this->turkeyTourist(),
+            $this->schengenFamilyMinor(),
         );
 
-        foreach ($requirements as [$cc, $vt, $slug, $level, $notes, $override, $order, $aiNotes]) {
+        foreach ($requirements as $row) {
+            [$cc, $vt, $slug, $level, $notes, $override, $order, $aiNotes] = $row;
+            $targetAudience = $row[8] ?? 'applicant';
+
             $templateId = $templates[$slug] ?? null;
             if (!$templateId) {
                 $this->command?->warn("Шаблон не найден: {$slug}");
@@ -54,6 +60,7 @@ class CountryVisaRequirementsSeeder extends Seeder
             }
 
             $hasAiColumns = \Illuminate\Support\Facades\Schema::hasColumn('country_visa_requirements', 'ai_country_notes');
+            $hasTargetAudience = \Illuminate\Support\Facades\Schema::hasColumn('country_visa_requirements', 'target_audience');
 
             $data = [
                 'id'                   => (string) Str::uuid(),
@@ -71,7 +78,14 @@ class CountryVisaRequirementsSeeder extends Seeder
                 'updated_at'           => now(),
             ];
 
+            $uniqueKeys = ['country_code', 'visa_type', 'document_template_id'];
             $updateFields = ['requirement_level', 'notes', 'override_metadata', 'display_order', 'updated_at'];
+
+            if ($hasTargetAudience) {
+                $data['target_audience'] = $targetAudience;
+                $uniqueKeys[] = 'target_audience';
+                $updateFields[] = 'target_audience';
+            }
 
             if ($hasAiColumns && $aiNotes) {
                 $data['ai_country_notes'] = $aiNotes;
@@ -80,7 +94,7 @@ class CountryVisaRequirementsSeeder extends Seeder
 
             DB::table('country_visa_requirements')->upsert(
                 $data,
-                ['country_code', 'visa_type', 'document_template_id'],
+                $uniqueKeys,
                 $updateFields
             );
         }
@@ -112,6 +126,55 @@ class CountryVisaRequirementsSeeder extends Seeder
             ['*', '*', 'family_composition',       'recommended',        null, null, 18, null],
             ['*', '*', 'residence_permit',         'recommended',        'Если проживает не в стране гражданства.', null, 19, null],
         ];
+    }
+
+    // ================================================================
+    // УНИВЕРСАЛЬНЫЕ — документы для членов семьи
+    // ================================================================
+    private function universalFamily(): array
+    {
+        return [
+            // Для ВСЕХ членов семьи — паспорт и фото
+            ['*', '*', 'foreign_passport',         'required',           'Паспорт члена семьи', null, 1, null, 'family_all'],
+            ['*', '*', 'photo_3x4',                'confirmation_only',  'Фото члена семьи', null, 2, null, 'family_all'],
+
+            // Для СУПРУГА — свидетельство о браке
+            ['*', '*', 'marriage_certificate',     'required',           'Свидетельство о заключении брака. Нотариальный перевод.', null, 3, null, 'family_spouse'],
+
+            // Для ДЕТЕЙ — свидетельство о рождении
+            ['*', '*', 'child_birth_certificate',  'required',           'Свидетельство о рождении ребёнка. Нотариальный перевод.', null, 3, null, 'family_child'],
+
+            // Для НЕСОВЕРШЕННОЛЕТНИХ — специфичные документы
+            ['*', '*', 'parental_consent',         'required',           'Нотариальное согласие на выезд от обоих родителей (если едет с одним). Обязательно для несовершеннолетних.', null, 4, null, 'family_minor'],
+            ['*', '*', 'child_birth_certificate',  'required',           'Свидетельство о рождении — обязательно для несовершеннолетних.', null, 5, null, 'family_minor'],
+
+            // Для РОДИТЕЛЕЙ — документ подтверждающий родство
+            ['*', '*', 'child_birth_certificate',  'required',           'Свидетельство о рождении заявителя (подтверждение родства с родителем).', null, 3, null, 'family_parent'],
+        ];
+    }
+
+    // ================================================================
+    // ШЕНГЕН — доп. документы для несовершеннолетних
+    // ================================================================
+    private function schengenFamilyMinor(): array
+    {
+        $schengenCountries = ['FR', 'DE', 'ES', 'IT'];
+        $visaTypes = ['tourist', 'business'];
+        $items = [];
+
+        foreach ($schengenCountries as $cc) {
+            foreach ($visaTypes as $vt) {
+                // Страховка для ребёнка — обязательна в Шенгене
+                $items[] = [$cc, $vt, 'travel_insurance', 'required', 'Страховка для несовершеннолетнего. Минимум 30 000 EUR, зона Шенген.', ['min_coverage_eur' => 30000], 6, null, 'family_minor'];
+            }
+        }
+
+        // UK — TB тест для семьи тоже нужен
+        $items[] = ['GB', 'tourist', 'tb_test', 'required', 'TB тест для члена семьи. Обязателен для граждан Узбекистана.', null, 6, null, 'family_all'];
+        $items[] = ['GB', 'business', 'tb_test', 'required', 'TB тест для члена семьи.', null, 6, null, 'family_all'];
+        $items[] = ['GB', 'student', 'tb_test', 'required', 'TB тест для члена семьи.', null, 6, null, 'family_all'];
+
+        return $items;
     }
 
     // ================================================================

@@ -25,6 +25,7 @@ class ChecklistService
 
         $requirements = CountryVisaRequirement::active()
             ->forCountry($case->country_code, $visaType)
+            ->forApplicant()
             ->with('template')
             ->orderBy('display_order')
             ->get();
@@ -104,6 +105,153 @@ class ChecklistService
         ])->toArray();
 
         DB::table('case_checklist')->insert($items);
+    }
+
+    /**
+     * Создать чек-лист для члена семьи на основе CountryVisaRequirement + target_audience.
+     */
+    public function createForFamilyMember(VisaCase $case, $familyMember): void
+    {
+        $visaType = $case->visa_type ?? '*';
+        $isMinor = $familyMember->isMinor();
+
+        $requirements = CountryVisaRequirement::active()
+            ->forCountry($case->country_code, $visaType)
+            ->forFamilyMember($familyMember->relationship, $isMinor)
+            ->with('template')
+            ->orderBy('display_order')
+            ->get();
+
+        if ($requirements->isEmpty()) {
+            // Фолбэк: базовый минимальный набор если шаблонов нет
+            $this->createFamilyMemberChecklistFallback($case, $familyMember);
+            return;
+        }
+
+        $items = [];
+        foreach ($requirements as $req) {
+            $tpl = $req->template;
+            if (!$tpl || !$tpl->is_active) {
+                continue;
+            }
+
+            $items[] = [
+                'id'                     => (string) \Illuminate\Support\Str::uuid(),
+                'agency_id'              => $case->agency_id,
+                'case_id'                => $case->id,
+                'family_member_id'       => $familyMember->id,
+                'country_requirement_id' => $req->id,
+                'type'                   => $tpl->type,
+                'name'                   => $tpl->name . ' — ' . $familyMember->name,
+                'description'            => $req->notes ?? $tpl->description,
+                'is_required'            => $req->isRequired(),
+                'responsibility'         => $tpl->default_responsibility ?? 'client',
+                'requirement_level'      => $req->requirement_level,
+                'metadata'               => $req->effectiveMetadata() ? json_encode($req->effectiveMetadata()) : null,
+                'document_id'            => null,
+                'is_checked'             => false,
+                'is_repeatable'          => $tpl->is_repeatable ?? false,
+                'status'                 => 'pending',
+                'notes'                  => null,
+                'sort_order'             => $req->display_order,
+                'created_at'             => now(),
+                'updated_at'             => now(),
+            ];
+        }
+
+        if (!empty($items)) {
+            DB::table('case_checklist')->insert($items);
+        }
+    }
+
+    /**
+     * Фолбэк: базовый набор документов для члена семьи если шаблонов нет.
+     */
+    private function createFamilyMemberChecklistFallback(VisaCase $case, $member): void
+    {
+        $isMinor = $member->isMinor();
+        $items = [
+            ['Копия паспорта', 'Сканы всех заполненных страниц паспорта', true, 'upload', 1],
+            ['Фото 3.5x4.5', 'Фото на белом фоне, без очков и головных уборов', true, 'confirmation_only', 2],
+        ];
+
+        if ($isMinor) {
+            $items[] = ['Свидетельство о рождении', 'Копия свидетельства о рождении', true, 'upload', 3];
+            $items[] = ['Согласие на выезд', 'Нотариальное согласие от обоих родителей (если едет с одним)', true, 'upload', 4];
+        }
+
+        if ($member->relationship === 'spouse') {
+            $items[] = ['Свидетельство о браке', 'Копия свидетельства о заключении брака', true, 'upload', 3];
+        }
+
+        $rows = [];
+        foreach ($items as [$name, $desc, $required, $type, $order]) {
+            $rows[] = [
+                'id'              => (string) \Illuminate\Support\Str::uuid(),
+                'agency_id'       => $case->agency_id,
+                'case_id'         => $case->id,
+                'family_member_id'=> $member->id,
+                'type'            => $type,
+                'name'            => $name . ' — ' . $member->name,
+                'description'     => $desc,
+                'is_required'     => $required,
+                'status'          => 'pending',
+                'sort_order'      => $order,
+                'created_at'      => now(),
+                'updated_at'      => now(),
+            ];
+        }
+
+        DB::table('case_checklist')->insert($rows);
+    }
+
+    /**
+     * Пересоздать чек-лист при смене страны/типа визы.
+     * Удаляет слоты без загруженных файлов, создаёт новые из шаблонов.
+     */
+    public function recreateForCase(VisaCase $case): array
+    {
+        return DB::transaction(function () use ($case) {
+            // Сохраняем слоты с загруженными файлами
+            $uploaded = CaseChecklist::where('case_id', $case->id)
+                ->whereNull('family_member_id')
+                ->whereNotNull('document_id')
+                ->get();
+
+            // Удаляем все пустые слоты заявителя
+            CaseChecklist::where('case_id', $case->id)
+                ->whereNull('family_member_id')
+                ->whereNull('document_id')
+                ->where('is_checked', false)
+                ->delete();
+
+            // Создаём новые из шаблонов
+            $this->createForCase($case);
+
+            // Пересоздаём для каждого члена семьи
+            $familyMembers = \App\Modules\Case\Models\CaseFamilyMember::where('case_id', $case->id)
+                ->with('familyMember')
+                ->get();
+
+            foreach ($familyMembers as $cm) {
+                // Удаляем пустые слоты члена семьи
+                CaseChecklist::where('case_id', $case->id)
+                    ->where('family_member_id', $cm->family_member_id)
+                    ->whereNull('document_id')
+                    ->where('is_checked', false)
+                    ->delete();
+
+                // Создаём новые
+                if ($cm->familyMember) {
+                    $this->createForFamilyMember($case, $cm->familyMember);
+                }
+            }
+
+            return [
+                'preserved_uploads' => $uploaded->count(),
+                'message' => 'Чек-лист пересоздан для новой страны/типа визы',
+            ];
+        });
     }
 
     /**

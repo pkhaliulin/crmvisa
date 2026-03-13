@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Modules\Case\Models\CaseFamilyMember;
 use App\Modules\Case\Models\VisaCase;
 use App\Modules\Document\Models\CaseChecklist;
+use App\Modules\Document\Services\ChecklistService;
 use App\Modules\PublicPortal\Models\PublicUserFamilyMember;
 use App\Modules\Payment\Models\ClientPayment;
 use App\Support\Helpers\ApiResponse;
@@ -144,12 +145,17 @@ class PublicFamilyController extends Controller
             $member = $cm->familyMember;
 
             $docs = ($allChecklists[$member->id] ?? collect())->map(fn ($item) => [
-                'id'          => $item->id,
-                'name'        => $item->name,
-                'description' => $item->description,
-                'is_required' => $item->is_required,
-                'status'      => $item->status,
-                'notes'       => $item->notes,
+                'id'            => $item->id,
+                'name'          => $item->name,
+                'description'   => $item->description,
+                'type'          => $item->type ?? 'upload',
+                'is_required'   => $item->is_required,
+                'is_checked'    => (bool) $item->is_checked,
+                'is_repeatable' => (bool) ($item->is_repeatable ?? false),
+                'responsibility'=> $item->responsibility ?? 'client',
+                'document_id'   => $item->document_id,
+                'status'        => $item->status,
+                'notes'         => $item->notes,
             ]);
 
             return [
@@ -236,70 +242,12 @@ class PublicFamilyController extends Controller
     }
 
     /**
-     * Создать базовый чеклист документов для члена семьи.
+     * Создать чеклист документов для члена семьи через ChecklistService.
+     * Использует CountryVisaRequirement + target_audience из шаблонов суперадмина.
      */
     private function createFamilyMemberChecklist(VisaCase $case, PublicUserFamilyMember $member): void
     {
-        $isMinor = $member->isMinor();
-
-        $items = [
-            [
-                'name'        => "Копия паспорта — {$member->name}",
-                'description' => 'Сканы всех заполненных страниц паспорта',
-                'is_required' => true,
-                'sort_order'  => 1,
-            ],
-            [
-                'name'        => "Фото 3.5x4.5 — {$member->name}",
-                'description' => 'Фото на белом фоне, без очков и головных уборов',
-                'is_required' => true,
-                'sort_order'  => 2,
-            ],
-        ];
-
-        if ($isMinor) {
-            $items[] = [
-                'name'        => "Свидетельство о рождении — {$member->name}",
-                'description' => 'Копия свидетельства о рождении',
-                'is_required' => true,
-                'sort_order'  => 3,
-            ];
-            $items[] = [
-                'name'        => "Согласие на выезд — {$member->name}",
-                'description' => 'Нотариальное согласие от обоих родителей (если едет с одним)',
-                'is_required' => true,
-                'sort_order'  => 4,
-            ];
-        }
-
-        if ($member->relationship === 'spouse') {
-            $items[] = [
-                'name'        => "Свидетельство о браке — {$member->name}",
-                'description' => 'Копия свидетельства о заключении брака',
-                'is_required' => true,
-                'sort_order'  => 3,
-            ];
-        }
-
-        $rows = [];
-        foreach ($items as $item) {
-            $rows[] = [
-                'id'              => Str::uuid()->toString(),
-                'agency_id'       => $case->agency_id,
-                'case_id'         => $case->id,
-                'family_member_id'=> $member->id,
-                'type'            => 'upload',
-                'name'            => $item['name'],
-                'description'     => $item['description'],
-                'is_required'     => $item['is_required'],
-                'status'          => 'pending',
-                'sort_order'      => $item['sort_order'],
-                'created_at'      => now(),
-                'updated_at'      => now(),
-            ];
-        }
-
-        DB::table('case_checklist')->insert($rows);
+        app(ChecklistService::class)->createForFamilyMember($case, $member);
     }
 
     /**
