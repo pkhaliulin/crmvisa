@@ -34,6 +34,7 @@ Route::middleware(['auth:api', 'role:owner,manager,superadmin', 'plan.active', '
 
     // Клиенты
     Route::post('clients/parse-passport', [ClientController::class, 'parsePassport']);
+    Route::post('clients/{id}/apply-ai-data', [ClientController::class, 'applyAiData']);
     Route::apiResource('clients', ClientController::class)->middleware([
         'plan.limit:max_cases', // enforce на создание -- POST /clients
     ]);

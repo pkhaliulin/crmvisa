@@ -7,7 +7,9 @@ use App\Modules\Client\Requests\StoreClientRequest;
 use App\Modules\Client\Requests\UpdateClientRequest;
 use App\Modules\Client\Resources\ClientResource;
 use App\Modules\Client\Services\ClientService;
+use App\Modules\Document\Models\CaseChecklist;
 use App\Modules\Document\Services\OcrService;
+use App\Modules\Scoring\Models\ClientProfile;
 use App\Support\Helpers\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -72,6 +74,156 @@ class ClientController extends Controller
         $this->service->delete($id);
 
         return ApiResponse::success(null, 'Client deleted.');
+    }
+
+    /**
+     * POST /clients/{id}/apply-ai-data
+     * Автозаполнение данных клиента из AI-анализа документов в кейсах.
+     */
+    public function applyAiData(Request $request, string $id): JsonResponse
+    {
+        $client = $this->service->findOrFail($id);
+        $this->authorize('update', $client);
+
+        // Собираем все AI-анализы из чеклистов всех кейсов клиента
+        $caseIds = $client->cases()->pluck('id');
+        $items = CaseChecklist::whereIn('case_id', $caseIds)
+            ->whereNotNull('ai_analysis')
+            ->where('ai_confidence', '>', 0)
+            ->orderByDesc('ai_confidence')
+            ->get();
+
+        $clientUpdates = [];
+        $profileUpdates = [];
+        $applied = [];
+
+        foreach ($items as $item) {
+            $data = $item->ai_analysis['extracted_data'] ?? [];
+            if (empty($data)) continue;
+
+            $name = $item->name;
+
+            // Загранпаспорт — основные данные клиента
+            if (str_contains($name, 'Загранпаспорт') || str_contains($name, 'загранпаспорт')) {
+                if (!empty($data['passport_number']) && empty($clientUpdates['passport_number'])) {
+                    $clientUpdates['passport_number'] = $data['passport_number'];
+                }
+                if (!empty($data['expiry_date']) && empty($clientUpdates['passport_expires_at'])) {
+                    $clientUpdates['passport_expires_at'] = $data['expiry_date'];
+                }
+                if (!empty($data['date_of_birth']) && empty($clientUpdates['date_of_birth'])) {
+                    $clientUpdates['date_of_birth'] = $data['date_of_birth'];
+                }
+                if (!empty($data['nationality']) && empty($clientUpdates['nationality'])) {
+                    $clientUpdates['nationality'] = $this->nationalityToAlpha3($data['nationality']);
+                }
+                $applied[] = $name;
+            }
+
+            // Внутренний паспорт — дата рождения, место рождения
+            if (str_contains($name, 'Внутренний паспорт') || str_contains($name, 'внутренний паспорт')) {
+                if (!empty($data['date_of_birth']) && empty($clientUpdates['date_of_birth'])) {
+                    $clientUpdates['date_of_birth'] = $data['date_of_birth'];
+                }
+                $applied[] = $name;
+            }
+
+            // Свидетельство о браке → married
+            if (str_contains($name, 'браке') || str_contains($name, 'Свидетельство о браке')) {
+                if (!empty($data['marriage_date'])) {
+                    $profileUpdates['marital_status'] = 'married';
+                }
+                $applied[] = $name;
+            }
+
+            // Справка об остатке на счёте
+            if (str_contains($name, 'остатке') || str_contains($name, 'банк') || str_contains($name, 'счёте')) {
+                if (!empty($data['balance'])) {
+                    $profileUpdates['bank_balance'] = (float) $data['balance'];
+                }
+                $applied[] = $name;
+            }
+
+            // Выписка о недвижимости
+            if (str_contains($name, 'недвижимост') || str_contains($name, 'Выписка')) {
+                if (!empty($data['owner_name'])) {
+                    $profileUpdates['has_real_estate'] = true;
+                }
+                $applied[] = $name;
+            }
+
+            // Техпаспорт автомобиля
+            if (str_contains($name, 'техпаспорт') || str_contains($name, 'Техпаспорт') || str_contains($name, 'автомобил')) {
+                $profileUpdates['has_car'] = true;
+                $applied[] = $name;
+            }
+
+            // Метрика ребёнка
+            if (str_contains($name, 'Метрика') || str_contains($name, 'метрика')) {
+                $existingChildren = $profileUpdates['children_count'] ?? 0;
+                $profileUpdates['children_count'] = $existingChildren + 1;
+                $profileUpdates['children_staying_home'] = true;
+                $applied[] = $name;
+            }
+        }
+
+        // Применяем обновления Client
+        if (!empty($clientUpdates)) {
+            // Не перезаписываем уже заполненные поля
+            $toUpdate = [];
+            foreach ($clientUpdates as $field => $value) {
+                if (empty($client->$field)) {
+                    $toUpdate[$field] = $value;
+                }
+            }
+            if (!empty($toUpdate)) {
+                $client->update($toUpdate);
+            }
+        }
+
+        // Применяем обновления ClientProfile
+        if (!empty($profileUpdates)) {
+            $profile = ClientProfile::firstOrCreate(
+                ['client_id' => $client->id],
+                ['client_id' => $client->id]
+            );
+            // Не перезаписываем уже заполненные поля
+            $toUpdate = [];
+            foreach ($profileUpdates as $field => $value) {
+                if (empty($profile->$field)) {
+                    $toUpdate[$field] = $value;
+                }
+            }
+            if (!empty($toUpdate)) {
+                $profile->update($toUpdate);
+            }
+        }
+
+        $client->refresh();
+        $profile = ClientProfile::where('client_id', $client->id)->first();
+
+        return ApiResponse::success([
+            'client'  => (new ClientResource($client))->withPii(),
+            'profile' => $profile,
+            'applied_from' => array_unique($applied),
+        ], 'Данные клиента обновлены из AI-анализа документов.');
+    }
+
+    private function nationalityToAlpha3(string $nationality): string
+    {
+        $map = [
+            'UZBEKISTAN'  => 'UZB',
+            'RUSSIAN'     => 'RUS',
+            'RUSSIA'      => 'RUS',
+            'KAZAKHSTAN'  => 'KAZ',
+            'TAJIKISTAN'  => 'TJK',
+            'KYRGYZSTAN'  => 'KGZ',
+            'TURKMENISTAN' => 'TKM',
+            'UKRAINE'     => 'UKR',
+            'GEORGIA'     => 'GEO',
+            'AZERBAIJAN'  => 'AZE',
+        ];
+        return $map[strtoupper(trim($nationality))] ?? strtoupper(substr($nationality, 0, 3));
     }
 
     /**
