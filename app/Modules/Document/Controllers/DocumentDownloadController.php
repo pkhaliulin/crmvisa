@@ -59,30 +59,26 @@ class DocumentDownloadController extends Controller
         }
 
         $mime = $document->mime_type ?? 'application/octet-stream';
+        $content = $disk->get($document->file_path);
 
         // Изображения — отдаём как есть inline
         if (str_starts_with($mime, 'image/')) {
-            return response($disk->get($document->file_path))
+            return response($content)
                 ->header('Content-Type', $mime)
                 ->header('Content-Disposition', 'inline; filename="' . $document->original_name . '"')
-                ->header('Cache-Control', 'private, max-age=3600');
+                ->header('Cache-Control', 'private, max-age=3600')
+                ->header('X-Frame-Options', 'SAMEORIGIN');
         }
 
-        // PDF — отдаём inline (браузер умеет показывать)
-        if ($mime === 'application/pdf') {
-            return response($disk->get($document->file_path))
-                ->header('Content-Type', 'application/pdf')
-                ->header('Content-Disposition', 'inline; filename="' . $document->original_name . '"')
-                ->header('Cache-Control', 'private, max-age=3600');
-        }
-
-        // Office и прочее — конвертируем в JPEG
-        $jpeg = $this->convertToJpeg($disk->get($document->file_path), $document->file_path);
+        // PDF и Office — конвертируем в JPEG для просмотра в модале
+        // (iframe с PDF блокируется X-Frame-Options: DENY)
+        $jpeg = $this->convertToJpeg($content, $document->file_path);
         if ($jpeg) {
             return response($jpeg)
                 ->header('Content-Type', 'image/jpeg')
                 ->header('Content-Disposition', 'inline')
-                ->header('Cache-Control', 'private, max-age=3600');
+                ->header('Cache-Control', 'private, max-age=3600')
+                ->header('X-Frame-Options', 'SAMEORIGIN');
         }
 
         abort(415, 'Preview not available for this file type');

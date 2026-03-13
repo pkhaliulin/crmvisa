@@ -789,9 +789,8 @@
         </div>
       </div>
       <div class="flex-1 overflow-auto p-4 min-h-0">
-        <img v-if="isImage(preview.mime_type)" :src="preview.preview_url || preview.url" class="max-w-full mx-auto rounded-lg shadow" />
-        <iframe v-else-if="isPdf(preview.mime_type)" :src="preview.preview_url || preview.url" class="w-full rounded-lg border" style="height:70vh"></iframe>
-        <img v-else-if="preview.preview_url" :src="preview.preview_url" class="max-w-full mx-auto rounded-lg shadow" />
+        <img v-if="preview.preview_url" :src="preview.preview_url" class="max-w-full mx-auto rounded-lg shadow" />
+        <img v-else-if="isImage(preview.mime_type)" :src="preview.url" class="max-w-full mx-auto rounded-lg shadow" />
         <div v-else class="flex flex-col items-center justify-center py-16 text-gray-400">
           <p class="text-sm">{{ t('crm.caseDetail.previewUnavailable') }}</p>
           <a :href="preview.url" download class="mt-4 text-blue-600 text-sm hover:underline">{{ t('crm.caseDetail.previewDownloadFile') }}</a>
