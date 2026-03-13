@@ -63,6 +63,7 @@ class CountryRequirementController extends Controller
             'visa_type'            => 'required|string|max:50',
             'document_template_id' => 'required|uuid|exists:document_templates,id',
             'requirement_level'    => ['required', Rule::in(['required','recommended','confirmation_only'])],
+            'target_audience'      => ['sometimes', Rule::in(['applicant','both','family_all','family_spouse','family_child','family_minor','family_parent'])],
             'notes'                => 'nullable|string',
             'override_metadata'    => 'nullable|array',
             'display_order'        => 'integer',
@@ -71,10 +72,11 @@ class CountryRequirementController extends Controller
             'effective_to'         => 'nullable|date|after_or_equal:effective_from',
         ]);
 
-        // Проверяем уникальность
+        // Проверяем уникальность (с учётом target_audience)
         $exists = CountryVisaRequirement::where('country_code', $data['country_code'])
             ->where('visa_type', $data['visa_type'])
             ->where('document_template_id', $data['document_template_id'])
+            ->where('target_audience', $data['target_audience'] ?? 'applicant')
             ->exists();
 
         if ($exists) {
@@ -96,6 +98,7 @@ class CountryRequirementController extends Controller
 
         $data = $request->validate([
             'requirement_level' => ['sometimes', Rule::in(['required','recommended','confirmation_only'])],
+            'target_audience'   => ['sometimes', Rule::in(['applicant','both','family_all','family_spouse','family_child','family_minor','family_parent'])],
             'notes'             => 'nullable|string',
             'override_metadata' => 'nullable|array',
             'display_order'     => 'integer',

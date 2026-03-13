@@ -246,6 +246,7 @@ class CountryDetailController extends Controller
                 'country_visa_requirements.*',
                 'document_templates.name as template_name',
                 'document_templates.category as template_category',
+                'document_templates.type as template_type',
             )
             ->orderBy('country_visa_requirements.visa_type')
             ->orderBy('document_templates.category')

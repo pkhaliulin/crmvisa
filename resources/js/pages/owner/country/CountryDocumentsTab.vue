@@ -12,7 +12,7 @@
 
     <template v-else>
       <!-- Счётчики по уровням -->
-      <div class="flex gap-3">
+      <div class="flex gap-3 flex-wrap">
         <span class="text-xs px-2.5 py-1 rounded-full bg-red-50 text-red-700 font-medium">
           {{ $t('countryDetail.levelRequired') }}: {{ countByLevel('required') }}
         </span>
@@ -24,9 +24,21 @@
         </span>
       </div>
 
+      <!-- Фильтр по аудитории -->
+      <div class="flex gap-2 flex-wrap">
+        <button v-for="a in audienceFilterOptions" :key="a.value"
+          @click="audienceFilter = a.value"
+          class="text-xs px-3 py-1.5 rounded-full font-medium transition-colors"
+          :class="audienceFilter === a.value
+            ? 'bg-[#0A1F44] text-white'
+            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'">
+          {{ a.label }} ({{ countByAudience(a.value) }})
+        </button>
+      </div>
+
       <!-- Группы по типу визы -->
-      <div v-if="groups.length" class="space-y-4">
-        <div v-for="g in groups" :key="g.visa_type"
+      <div v-if="filteredGroups.length" class="space-y-4">
+        <div v-for="g in filteredGroups" :key="g.visa_type"
           class="bg-white rounded-xl border border-gray-100 overflow-hidden">
           <div class="px-5 py-3 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
             <div class="flex items-center gap-2">
@@ -53,6 +65,11 @@
                   <div class="text-sm text-gray-800 font-medium truncate">{{ doc.template_name }}</div>
                   <div class="text-[10px] text-gray-400" v-if="doc.notes">{{ doc.notes }}</div>
                 </div>
+                <!-- Audience badge -->
+                <span class="text-[10px] px-1.5 py-0.5 rounded flex-shrink-0"
+                  :class="audienceBadgeClass(doc.target_audience)">
+                  {{ audienceLabel(doc.target_audience) }}
+                </span>
                 <span class="text-[10px] px-1.5 py-0.5 rounded bg-gray-200 text-gray-500 flex-shrink-0">
                   {{ doc.template_category }}
                 </span>
@@ -63,6 +80,12 @@
               </div>
 
               <div class="flex items-center gap-2 flex-shrink-0">
+                <SearchSelect
+                  :modelValue="doc.target_audience || 'applicant'"
+                  @update:modelValue="updateAudience(doc.id, $event)"
+                  :items="audienceItems"
+                  compact
+                />
                 <SearchSelect
                   :modelValue="doc.requirement_level"
                   @update:modelValue="updateLevel(doc.id, $event)"
@@ -88,7 +111,7 @@
 
     <!-- Modal: Add Document -->
     <div v-if="showModal" class="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-      <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+      <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
         <h3 class="font-bold text-[#0A1F44] text-lg mb-4">{{ $t('countryDetail.addDocTitle') }}</h3>
 
         <div class="space-y-3">
@@ -105,6 +128,15 @@
                 {{ vt }}
               </label>
             </div>
+          </div>
+
+          <!-- Аудитория (для кого) -->
+          <div>
+            <SearchSelect
+              v-model="form.target_audience"
+              :items="audienceItems"
+              :label="$t('countryDetail.targetAudience')"
+            />
           </div>
 
           <!-- Шаблон документа -->
@@ -129,8 +161,9 @@
           <!-- Примечание -->
           <div>
             <label class="text-xs text-gray-500 mb-1 block">{{ $t('countryDetail.docNotes') }}</label>
-            <input v-model="form.notes"
+            <input v-model="form.notes" maxlength="500"
               class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1BA97F]" />
+            <span class="text-xs text-gray-400">{{ (form.notes || '').length }}/500</span>
           </div>
         </div>
 
@@ -183,12 +216,14 @@ const visaTypes    = ref([]);
 const loading      = ref(true);
 const saving       = ref(false);
 const showModal    = ref(false);
+const audienceFilter = ref('all');
 
 const form = reactive({
   allTypes: true,
   selectedTypes: [],
   document_template_id: '',
   requirement_level: 'required',
+  target_audience: 'applicant',
   notes: '',
 });
 
@@ -197,6 +232,33 @@ const requirementLevelItems = computed(() => [
   { value: 'recommended', label: t('countryDetail.levelRecommended') },
   { value: 'confirmation_only', label: t('countryDetail.levelConfirmation') },
 ]);
+
+const audienceItems = computed(() => [
+  { value: 'applicant', label: t('countryDetail.audienceApplicant') },
+  { value: 'both', label: t('countryDetail.audienceBoth') },
+  { value: 'family_all', label: t('countryDetail.audienceFamilyAll') },
+  { value: 'family_spouse', label: t('countryDetail.audienceSpouse') },
+  { value: 'family_child', label: t('countryDetail.audienceChild') },
+  { value: 'family_minor', label: t('countryDetail.audienceMinor') },
+  { value: 'family_parent', label: t('countryDetail.audienceParent') },
+]);
+
+const audienceFilterOptions = computed(() => [
+  { value: 'all', label: t('countryDetail.audienceFilterAll') },
+  { value: 'applicant', label: t('countryDetail.audienceApplicant') },
+  { value: 'family', label: t('countryDetail.audienceFilterFamily') },
+]);
+
+function audienceLabel(val) {
+  const item = audienceItems.value.find(a => a.value === val);
+  return item?.label || val;
+}
+
+function audienceBadgeClass(val) {
+  if (!val || val === 'applicant') return 'bg-blue-50 text-blue-600';
+  if (val === 'both') return 'bg-purple-50 text-purple-600';
+  return 'bg-orange-50 text-orange-600';
+}
 
 const templateItems = computed(() =>
   filteredTemplates.value.map(tpl => ({ value: tpl.id, label: `${tpl.name} (${tpl.category})` }))
@@ -217,7 +279,6 @@ const groups = computed(() => {
     if (!map[key]) map[key] = { visa_type: key, docs: [] };
     map[key].docs.push(r);
   }
-  // Сортировка: * первым, потом по алфавиту
   return Object.values(map).sort((a, b) => {
     if (a.visa_type === '*') return -1;
     if (b.visa_type === '*') return 1;
@@ -225,15 +286,37 @@ const groups = computed(() => {
   });
 });
 
+const filteredGroups = computed(() => {
+  if (audienceFilter.value === 'all') return groups.value;
+  return groups.value.map(g => ({
+    ...g,
+    docs: g.docs.filter(d => {
+      const a = d.target_audience || 'applicant';
+      if (audienceFilter.value === 'applicant') return a === 'applicant' || a === 'both';
+      if (audienceFilter.value === 'family') return a !== 'applicant';
+      return true;
+    }),
+  })).filter(g => g.docs.length > 0);
+});
+
 function countByLevel(level) {
   return requirements.value.filter(r => r.requirement_level === level).length;
 }
 
+function countByAudience(filter) {
+  if (filter === 'all') return requirements.value.length;
+  return requirements.value.filter(r => {
+    const a = r.target_audience || 'applicant';
+    if (filter === 'applicant') return a === 'applicant' || a === 'both';
+    if (filter === 'family') return a !== 'applicant';
+    return true;
+  }).length;
+}
+
 const filteredTemplates = computed(() => {
-  // Показываем шаблоны, которых нет ещё ни в одном выбранном типе
   const targetTypes = form.allTypes ? ['*'] : form.selectedTypes;
   const existing = requirements.value
-    .filter(r => targetTypes.includes(r.visa_type))
+    .filter(r => targetTypes.includes(r.visa_type) && (r.target_audience || 'applicant') === form.target_audience)
     .map(r => r.document_template_id);
   return templates.value.filter(t => t.is_active && !existing.includes(t.id));
 });
@@ -261,6 +344,7 @@ function openAdd() {
   form.selectedTypes = [];
   form.document_template_id = '';
   form.requirement_level = 'required';
+  form.target_audience = 'applicant';
   form.notes = '';
   showModal.value = true;
 }
@@ -268,18 +352,17 @@ function openAdd() {
 async function saveDoc() {
   saving.value = true;
   try {
-    // Определяем для каких типов виз создавать
     const targetTypes = form.allTypes
-      ? ['*', ...visaTypes.value]  // Для всех: * + каждый тип отдельно
+      ? ['*', ...visaTypes.value]
       : form.selectedTypes;
 
-    // Создаём записи для каждого типа
     const promises = targetTypes.map(vt =>
       ownerCountriesApi.requirementStore({
         country_code: props.countryCode,
         visa_type: vt,
         document_template_id: form.document_template_id,
         requirement_level: form.requirement_level,
+        target_audience: form.target_audience,
         notes: form.notes || null,
         is_active: true,
       }).catch(e => console.error('[CountryDocumentsTab]', e))
@@ -299,6 +382,14 @@ async function updateLevel(id, level) {
     await ownerCountriesApi.requirementUpdate(id, { requirement_level: level });
     const req = requirements.value.find(r => r.id === id);
     if (req) req.requirement_level = level;
+  } catch { /* ignore */ }
+}
+
+async function updateAudience(id, audience) {
+  try {
+    await ownerCountriesApi.requirementUpdate(id, { target_audience: audience });
+    const req = requirements.value.find(r => r.id === id);
+    if (req) req.target_audience = audience;
   } catch { /* ignore */ }
 }
 
