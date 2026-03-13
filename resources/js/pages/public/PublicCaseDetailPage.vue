@@ -105,8 +105,8 @@
                 <div class="mb-3">
                     <div class="flex items-center gap-0.5 mb-1">
                         <div v-for="(s, i) in getVisibleStatuses(caseData)" :key="s.key"
-                            class="flex-1 h-2 rounded-full transition-colors cursor-help"
-                            :class="getProgressColor(i, caseData.public_status, currentStepIdx)"
+                            class="flex-1 h-2 rounded-full transition-all cursor-help"
+                            :class="[getProgressColor(i, caseData.public_status, currentStepIdx), hoveredStep === s.key ? 'ring-2 ring-[#1BA97F]/30 scale-y-125' : '']"
                             @mouseenter="hoveredStep = s.key" @mouseleave="hoveredStep = null">
                         </div>
                     </div>
@@ -114,8 +114,8 @@
                         <div v-for="(s, i) in getVisibleStatuses(caseData)" :key="'l'+s.key"
                             class="flex-1 text-center cursor-help relative"
                             @mouseenter="hoveredStep = s.key" @mouseleave="hoveredStep = null">
-                            <span class="text-[7px] sm:text-[9px] leading-tight block truncate px-0.5"
-                                :class="i === currentStepIdx ? 'text-[#1BA97F] font-bold' : i < currentStepIdx ? 'text-gray-500' : 'text-gray-300'">
+                            <span class="text-[7px] sm:text-[9px] leading-tight block truncate px-0.5 transition-colors"
+                                :class="hoveredStep === s.key ? 'text-[#0A1F44] font-bold' : i === currentStepIdx ? 'text-[#1BA97F] font-bold' : i < currentStepIdx ? 'text-gray-500' : 'text-gray-300'">
                                 {{ $t('caseStatus.step.' + s.key) }}
                             </span>
                         </div>
