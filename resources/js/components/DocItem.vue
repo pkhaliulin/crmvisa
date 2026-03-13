@@ -171,6 +171,7 @@ const STATUS_MAP = computed(() => ({
   needs_translation:    { color: 'purple', label: t('crm.doc.statusForTranslation'),  border: 'border-purple-100 bg-purple-50/20', bar: 'bg-purple-400' },
   translated:           { color: 'purple', label: t('crm.doc.statusTranslated'),      border: 'border-purple-100 bg-purple-50/20', bar: 'bg-purple-400' },
   uploaded:             { color: 'blue',   label: t('crm.doc.statusReview'),           border: 'border-blue-100 bg-blue-50/20',     bar: 'bg-blue-400' },
+  not_available:        { color: 'orange', label: t('crm.doc.statusNotAvailable'),     border: 'border-amber-100 bg-amber-50/20',   bar: 'bg-amber-400' },
 }));
 
 const statusEntry = computed(() => {

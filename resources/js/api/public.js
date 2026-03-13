@@ -57,8 +57,8 @@ export const publicPortalApi = {
         publicApi.post(`/me/cases/${caseId}/checklist/${itemId}/upload`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
         }),
-    checkChecklistItem: (caseId, itemId, checked) =>
-        publicApi.patch(`/me/cases/${caseId}/checklist/${itemId}/check`, { checked }),
+    checkChecklistItem: (caseId, itemId, checked, status = null) =>
+        publicApi.patch(`/me/cases/${caseId}/checklist/${itemId}/check`, { checked, ...(status ? { status } : {}) }),
     repeatChecklistItem: (caseId, itemId) =>
         publicApi.post(`/me/cases/${caseId}/checklist/${itemId}/repeat`),
     deleteChecklistItem: (caseId, itemId) =>

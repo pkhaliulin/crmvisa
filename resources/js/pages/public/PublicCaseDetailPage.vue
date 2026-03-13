@@ -595,10 +595,14 @@
                         <div class="mt-0.5 shrink-0 w-5 h-5 rounded-full flex items-center justify-center"
                             :class="{
                                 'bg-[#1BA97F]':   item.status === 'approved' || item.status === 'uploaded' || item.is_checked,
-                                'bg-gray-200':    item.status === 'pending' && !item.is_checked,
+                                'bg-amber-400':   item.status === 'not_available',
+                                'bg-gray-200':    (item.status === 'pending' || item.status === 'rejected') && !item.is_checked,
                             }">
                             <svg v-if="item.status === 'approved' || item.status === 'uploaded' || item.is_checked" class="w-3 h-3 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                            </svg>
+                            <svg v-else-if="item.status === 'not_available'" class="w-3 h-3 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/>
                             </svg>
                             <svg v-else class="w-3 h-3 text-gray-400"
                                 fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -616,6 +620,8 @@
                             <div class="mt-1 text-xs font-medium"
                                 :class="{
                                     'text-[#1BA97F]': item.status === 'approved' || item.status === 'uploaded' || item.is_checked,
+                                    'text-amber-500': item.status === 'not_available',
+                                    'text-red-500':   item.status === 'rejected',
                                     'text-gray-500':  item.status === 'pending' && !item.is_checked,
                                 }">
                                 {{ statusLabel(item.status, item) }}
@@ -671,10 +677,24 @@
                                     accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
                                     @change="(e) => uploadDoc(item.id, e)"/>
                             </label>
-                            <span v-if="item.type !== 'checkbox' && item.responsibility !== 'agency' && !item.document_id && item.status === 'pending' && !isTerminal"
-                                class="text-[10px] text-gray-400 mt-1 block">
-                                {{ $t('cases.allowedFormats') }} &middot; max {{ MAX_FILE_SIZE_MB }} MB
-                            </span>
+                            <div v-if="item.type !== 'checkbox' && item.responsibility !== 'agency' && !item.document_id && (item.status === 'pending' || item.status === 'not_available') && !isTerminal"
+                                class="mt-1 flex items-center gap-3 flex-wrap">
+                                <span v-if="item.status === 'pending'" class="text-[10px] text-gray-400">
+                                    {{ $t('cases.allowedFormats') }} &middot; max {{ MAX_FILE_SIZE_MB }} MB
+                                </span>
+                                <button v-if="item.status !== 'not_available'"
+                                    @click="markNotAvailable(item)"
+                                    :disabled="notAvailableLoading[item.id]"
+                                    class="text-[10px] text-amber-500 hover:text-amber-700 font-medium transition-colors disabled:opacity-50">
+                                    {{ $t('cases.noDocument') }}
+                                </button>
+                                <button v-else
+                                    @click="undoNotAvailable(item)"
+                                    :disabled="notAvailableLoading[item.id]"
+                                    class="text-[10px] text-blue-500 hover:text-blue-700 font-medium transition-colors disabled:opacity-50">
+                                    {{ $t('cases.undoNoDocument') }}
+                                </button>
+                            </div>
                             <div v-else-if="item.responsibility === 'agency' && item.status !== 'approved'"
                                 class="mt-1 text-xs text-gray-400 italic">
                                 {{ item.status === 'done' ? $t('cases.doneByAgency') : $t('cases.waitingAgency') }}
@@ -1269,6 +1289,7 @@ const caseData    = ref(null);
 const uploading   = ref({});
 const repeating   = ref({});
 const deleting    = ref({});
+const notAvailableLoading = ref({});
 const previewModal = ref({ show: false, url: '', name: '', mime: '', loading: false });
 const uploadToast = ref('');
 const uploadToastError = ref(false);
@@ -1979,6 +2000,40 @@ async function openPreview(item) {
     }
 }
 
+async function markNotAvailable(item) {
+    notAvailableLoading.value[item.id] = true;
+    try {
+        await publicPortalApi.checkChecklistItem(route.params.id, item.id, false, 'not_available');
+        item.status = 'not_available';
+        uploadToastError.value = false;
+        uploadToast.value = t('cases.markedNotAvailable');
+        setTimeout(() => { uploadToast.value = ''; }, 3000);
+    } catch (e) {
+        uploadToastError.value = true;
+        uploadToast.value = e?.response?.data?.message ?? t('cases.uploadError');
+        setTimeout(() => { uploadToast.value = ''; uploadToastError.value = false; }, 4000);
+    } finally {
+        notAvailableLoading.value[item.id] = false;
+    }
+}
+
+async function undoNotAvailable(item) {
+    notAvailableLoading.value[item.id] = true;
+    try {
+        await publicPortalApi.checkChecklistItem(route.params.id, item.id, false, 'pending');
+        item.status = 'pending';
+        uploadToastError.value = false;
+        uploadToast.value = t('cases.undoneNotAvailable');
+        setTimeout(() => { uploadToast.value = ''; }, 3000);
+    } catch (e) {
+        uploadToastError.value = true;
+        uploadToast.value = e?.response?.data?.message ?? t('cases.uploadError');
+        setTimeout(() => { uploadToast.value = ''; uploadToastError.value = false; }, 4000);
+    } finally {
+        notAvailableLoading.value[item.id] = false;
+    }
+}
+
 const PUBLIC_STATUSES = [
     { key: 'draft',                order: 0 },
     { key: 'awaiting_payment',     order: 1 },
@@ -2060,6 +2115,8 @@ function getProgressColor(index, status, order) {
 function statusLabel(status, item) {
     if (status === 'approved') return t('cases.approved');
     if (status === 'uploaded') return item?.type === 'checkbox' ? t('cases.checkboxChecked') : t('cases.uploadedReview');
+    if (status === 'not_available') return t('cases.notAvailable');
+    if (status === 'rejected') return t('cases.rejectedByAgency');
     return item?.type === 'checkbox' ? t('cases.checkboxMark') : t('cases.needUpload');
 }
 

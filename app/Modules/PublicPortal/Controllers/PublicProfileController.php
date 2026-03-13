@@ -684,14 +684,21 @@ class PublicProfileController extends Controller
     {
         $publicUser = $request->get('_public_user');
 
-        $request->validate([
-            'checked' => ['required', 'boolean'],
-        ]);
-
         $case = VisaCase::whereHas('client', fn ($q) => $q->where('public_user_id', $publicUser->id))
             ->findOrFail($caseId);
 
         $item = CaseChecklist::where('case_id', $case->id)->findOrFail($itemId);
+
+        // Смена статуса на not_available / pending (для любого типа документа)
+        if ($request->has('status') && in_array($request->input('status'), ['not_available', 'pending'])) {
+            $newStatus = $request->input('status');
+            $item->update(['status' => $newStatus]);
+
+            return ApiResponse::success(['status' => $newStatus, 'is_checked' => (bool) $item->is_checked]);
+        }
+
+        // Checkbox toggle
+        $request->validate(['checked' => ['required', 'boolean']]);
 
         if ($item->type !== 'checkbox') {
             return ApiResponse::error('Этот документ требует загрузки файла', null, 422);
