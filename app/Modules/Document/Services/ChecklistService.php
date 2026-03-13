@@ -7,9 +7,12 @@ use App\Modules\Document\Models\CaseChecklist;
 use App\Modules\Document\Models\CountryVisaRequirement;
 use App\Modules\Document\Models\Document;
 use App\Modules\Document\Models\DocumentRequirement;
+use App\Modules\Notification\Notifications\BusinessNotification;
+use App\Modules\Notification\Services\NotificationService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class ChecklistService
@@ -416,7 +419,52 @@ class ChecklistService
             Document::where('id', $item->document_id)->update(['status' => $docStatus]);
         }
 
+        // Уведомление клиенту при отклонении документа
+        if ($reviewStatus === 'rejected') {
+            $this->notifyClientDocumentRejected($item, $notes);
+        }
+
         return $item->fresh(['document']);
+    }
+
+    /**
+     * Уведомить клиента об отклонении документа.
+     */
+    private function notifyClientDocumentRejected(CaseChecklist $item, ?string $notes): void
+    {
+        try {
+            $case = VisaCase::with('client')->find($item->case_id);
+            if (!$case?->client) {
+                return;
+            }
+
+            $docName = $item->name ?? 'Документ';
+            $notification = new BusinessNotification('document.rejected', [
+                'subject'  => "Документ \"{$docName}\" отклонён",
+                'message'  => "Ваш документ \"{$docName}\" был отклонён менеджером. Пожалуйста, загрузите новый файл.",
+                'details'  => array_filter([
+                    $notes ? "Причина: {$notes}" : null,
+                    "Заявка: {$case->country_code} / {$case->visa_type}",
+                ]),
+                'case_id'      => $case->id,
+                'document_name' => $docName,
+                'reject_notes'  => $notes,
+            ]);
+
+            $agency = $case->agency_id ? \App\Modules\Agency\Models\Agency::find($case->agency_id) : null;
+
+            app(NotificationService::class)->dispatchToClient(
+                $case->client,
+                $notification,
+                $agency,
+                ['database', 'email', 'telegram'],
+            );
+        } catch (\Throwable $e) {
+            Log::warning('Failed to notify client about document rejection', [
+                'checklist_item_id' => $item->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**

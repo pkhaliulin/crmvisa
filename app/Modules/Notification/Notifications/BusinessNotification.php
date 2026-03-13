@@ -117,6 +117,7 @@ class BusinessNotification extends Notification implements ShouldQueue
             'sla.warning'          => 'Предупреждение SLA',
             'document.uploaded'    => 'Документ загружен',
             'document.reviewed'    => 'Документ проверен',
+            'document.rejected'    => 'Документ отклонён',
             'payment.received'     => 'Платёж получен',
             'subscription.changed' => 'Подписка изменена',
             'subscription.expired' => 'Подписка истекла',

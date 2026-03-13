@@ -644,7 +644,11 @@
                                 <span class="text-sm font-medium text-[#0A1F44]">{{ item.name }}</span>
                             </div>
                             <p v-if="item.description" class="text-xs text-gray-400 mt-0.5 leading-relaxed">{{ item.description }}</p>
-                            <p v-if="item.notes" class="text-xs text-blue-600 mt-0.5">{{ item.notes }}</p>
+                            <p v-if="item.notes && item.status === 'rejected'"
+                              class="text-xs text-red-600 bg-red-50 rounded px-2 py-1 mt-1">
+                              {{ item.notes }}
+                            </p>
+                            <p v-else-if="item.notes" class="text-xs text-blue-600 mt-0.5">{{ item.notes }}</p>
 
                             <div class="mt-1 text-xs font-medium"
                                 :class="{
