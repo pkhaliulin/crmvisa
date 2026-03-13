@@ -107,20 +107,36 @@
                         <div v-for="(s, i) in getVisibleStatuses(caseData)" :key="s.key"
                             class="flex-1 h-2 rounded-full transition-colors cursor-help"
                             :class="getProgressColor(i, caseData.public_status, currentStepIdx)"
-                            :title="$t('caseStatus.desc.' + s.key)">
+                            @mouseenter="hoveredStep = s.key" @mouseleave="hoveredStep = null">
                         </div>
                     </div>
                     <div class="flex mt-1">
                         <div v-for="(s, i) in getVisibleStatuses(caseData)" :key="'l'+s.key"
-                            class="flex-1 text-center cursor-help"
-                            :title="$t('caseStatus.desc.' + s.key)">
+                            class="flex-1 text-center cursor-help relative"
+                            @mouseenter="hoveredStep = s.key" @mouseleave="hoveredStep = null">
                             <span class="text-[7px] sm:text-[9px] leading-tight block truncate px-0.5"
                                 :class="i === currentStepIdx ? 'text-[#1BA97F] font-bold' : i < currentStepIdx ? 'text-gray-500' : 'text-gray-300'">
                                 {{ $t('caseStatus.step.' + s.key) }}
                             </span>
                         </div>
                     </div>
-                    <p class="text-sm font-medium mt-2" :class="statusTextColor(caseData.public_status)">
+                    <!-- VisaBor tooltip -->
+                    <transition name="fade">
+                        <div v-if="hoveredStep" class="relative mt-2">
+                            <div class="absolute -top-[6px] left-5 w-3 h-3 rotate-45 border-l border-t bg-violet-50 border-violet-200 z-10"></div>
+                            <div class="absolute top-[-1px] left-[22px] w-[10px] h-[2px] bg-violet-50 z-10"></div>
+                            <div class="bg-gradient-to-br from-violet-50 via-indigo-50 to-purple-50 border border-violet-200 rounded-2xl p-3 shadow-sm">
+                                <div class="flex items-center gap-1.5 mb-1">
+                                    <div class="w-5 h-5 rounded-full bg-gradient-to-br from-[#1BA97F] to-[#0d7a5c] flex items-center justify-center shrink-0">
+                                        <span class="text-[8px] font-bold text-white">VB</span>
+                                    </div>
+                                    <span class="text-[10px] font-semibold text-violet-500">VisaBor</span>
+                                </div>
+                                <p class="text-xs text-[#0A1F44] leading-relaxed">{{ $t('caseStatus.desc.' + hoveredStep) }}</p>
+                            </div>
+                        </div>
+                    </transition>
+                    <p v-if="!hoveredStep" class="text-sm font-medium mt-2" :class="statusTextColor(caseData.public_status)">
                         {{ caseData.public_status_tooltip || caseData.public_status_label }}
                     </p>
                 </div>
@@ -1290,6 +1306,7 @@ const uploading   = ref({});
 const repeating   = ref({});
 const deleting    = ref({});
 const notAvailableLoading = ref({});
+const hoveredStep = ref(null);
 const previewModal = ref({ show: false, url: '', name: '', mime: '', loading: false });
 const uploadToast = ref('');
 const uploadToastError = ref(false);
