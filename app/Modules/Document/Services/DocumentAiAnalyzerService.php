@@ -441,21 +441,26 @@ PROMPT;
 
         if ($rule === 'must_be_future') {
             try {
-                $date = \Carbon\Carbon::parse($value);
-                $ok = $date->isFuture();
+                $expiry = \Carbon\Carbon::parse($value);
+                if ($expiry->isPast()) {
+                    return ['status' => 'critical', 'message' => "Документ просрочен ({$value})"];
+                }
                 if (isset($context['travel_date'])) {
                     $travel = \Carbon\Carbon::parse($context['travel_date']);
-                    $monthsLeft = $date->diffInMonths($travel, false);
+                    // Сколько месяцев от даты поездки до даты окончания
+                    $monthsLeft = $travel->diffInMonths($expiry, false);
+                    if ($monthsLeft < 0) {
+                        return ['status' => 'critical', 'message' => "Документ истекает до поездки ({$value})"];
+                    }
                     if ($monthsLeft < 3) {
-                        return ['status' => 'critical', 'message' => "Срок действия менее 3 мес. до поездки ({$value})"];
+                        return ['status' => 'critical', 'message' => "Срок действия менее 3 мес. после поездки ({$value}), осталось {$monthsLeft} мес."];
                     }
                     if ($monthsLeft < 6) {
-                        return ['status' => 'warning', 'message' => "Срок действия менее 6 мес. до поездки ({$value})"];
+                        return ['status' => 'warning', 'message' => "Срок действия менее 6 мес. после поездки ({$value}), осталось {$monthsLeft} мес."];
                     }
                 }
-                return $ok
-                    ? ['status' => 'ok', 'message' => "Дата в будущем ({$value})"]
-                    : ['status' => 'critical', 'message' => "Документ просрочен ({$value})"];
+                $monthsFromNow = (int) now()->diffInMonths($expiry, false);
+                return ['status' => 'ok', 'message' => "Действителен до {$value} (ещё {$monthsFromNow} мес.)"];
             } catch (\Exception $e) {
                 return ['status' => 'warning', 'message' => 'Не удалось разобрать дату'];
             }
