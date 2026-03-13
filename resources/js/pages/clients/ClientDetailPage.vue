@@ -455,12 +455,29 @@ async function load() {
     if (profile.value && !profile.value.marital_status && !profile.value.employment_type && !profile.value.bank_balance && !profile.value.has_real_estate) {
       profile.value = null;
     }
-    // Load VisaBor scoring if client has public_user_id
+    // Auto-sync from VisaBor if client has portal account and profile is empty
     if (client.value?.public_user_id) {
-      try {
-        const vRes = await clientsApi.visaborScoring(id);
-        visaborScores.value = vRes.data.data ?? [];
-      } catch { /* no portal scores */ }
+      if (!profile.value) {
+        // Profile empty — auto-pull data from VisaBor portal
+        try {
+          const { data } = await clientsApi.applyAiData(id);
+          client.value = data.data.client;
+          if (data.data.profile) profile.value = data.data.profile;
+          aiAppliedDocs.value = data.data.applied_from ?? [];
+          if (data.data.visabor_scoring?.length) visaborScores.value = data.data.visabor_scoring;
+          // Recalculate agency scoring with new profile data
+          if (profile.value) {
+            const sRes = await clientsApi.recalculate(id);
+            scores.value = sRes.data.data ?? [];
+          }
+        } catch { /* sync failed, not critical */ }
+      } else {
+        // Profile exists, just load VisaBor scoring
+        try {
+          const vRes = await clientsApi.visaborScoring(id);
+          visaborScores.value = vRes.data.data ?? [];
+        } catch { /* no portal scores */ }
+      }
     }
   } finally {
     loading.value = false;
