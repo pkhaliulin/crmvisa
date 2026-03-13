@@ -111,9 +111,28 @@ class ChecklistService
     public function getForCase(string $caseId): array
     {
         $items = CaseChecklist::where('case_id', $caseId)
-                              ->with('document:id,original_name,file_path,mime_type,size,status,created_at')
+                              ->with([
+                                  'document:id,original_name,file_path,mime_type,size,status,created_at',
+                                  'countryRequirement.template:id,manager_instructions,ai_enabled,ai_extraction_schema,ai_validation_rules,ai_stop_factors,ai_success_factors,ai_risk_indicators,max_age_days,confidence_criteria,translation_required',
+                              ])
                               ->orderBy('sort_order')
                               ->get();
+
+        // Добавляем подсказки из шаблона в каждый элемент чек-листа
+        $items->each(function ($item) {
+            $tpl = $item->countryRequirement?->template;
+            $item->setAttribute('manager_instructions', $tpl?->manager_instructions);
+            $item->setAttribute('ai_enabled', $tpl?->ai_enabled ?? false);
+            $item->setAttribute('ai_extraction_schema', $tpl?->ai_extraction_schema);
+            $item->setAttribute('ai_validation_rules', $tpl?->ai_validation_rules);
+            $item->setAttribute('ai_stop_factors', $tpl?->ai_stop_factors);
+            $item->setAttribute('ai_success_factors', $tpl?->ai_success_factors);
+            $item->setAttribute('ai_risk_indicators', $tpl?->ai_risk_indicators);
+            $item->setAttribute('max_age_days', $tpl?->max_age_days);
+            $item->setAttribute('translation_required', $tpl?->translation_required ?? false);
+            // Не отдаём вложенные relations в JSON
+            $item->unsetRelation('countryRequirement');
+        });
 
         $total    = $items->count();
         $uploaded = $items->whereIn('status', ['uploaded', 'approved'])->count();

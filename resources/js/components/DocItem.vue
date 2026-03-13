@@ -43,6 +43,29 @@
           {{ item.review_notes }}
         </p>
 
+        <!-- Manager hints (collapsible) -->
+        <div v-if="item.manager_instructions" class="mt-2">
+          <button @click="hintsOpen = !hintsOpen"
+            class="flex items-center gap-1 text-[10px] font-semibold text-amber-600 hover:text-amber-700 uppercase tracking-wider">
+            <svg :class="['w-3 h-3 transition-transform', hintsOpen ? 'rotate-90' : '']" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+            </svg>
+            {{ t('crm.doc.managerHints') }}
+          </button>
+          <div v-if="hintsOpen" class="mt-1.5 text-xs text-gray-600 bg-amber-50/60 border border-amber-100 rounded-lg p-2.5 whitespace-pre-line leading-relaxed">{{ item.manager_instructions }}</div>
+        </div>
+
+        <!-- Stop / Risk / Success factors -->
+        <div v-if="hintsOpen && (item.ai_stop_factors?.length || item.ai_risk_indicators?.length || item.ai_success_factors?.length)"
+          class="mt-1.5 flex flex-wrap gap-1.5">
+          <span v-for="f in (item.ai_stop_factors || [])" :key="'s'+f"
+            class="text-[10px] px-1.5 py-0.5 rounded bg-red-50 text-red-600 border border-red-100">{{ f }}</span>
+          <span v-for="f in (item.ai_risk_indicators || [])" :key="'r'+f"
+            class="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-600 border border-amber-100">{{ f }}</span>
+          <span v-for="f in (item.ai_success_factors || [])" :key="'g'+f"
+            class="text-[10px] px-1.5 py-0.5 rounded bg-green-50 text-green-600 border border-green-100">{{ f }}</span>
+        </div>
+
         <!-- AI Analysis panel -->
         <DocAiPanel v-if="item.document && item.type === 'upload'"
           :analysis="item.ai_analysis"
@@ -138,6 +161,8 @@ import DocAiPanel from './DocAiPanel.vue';
 const { t } = useI18n();
 const props = defineProps({ item: Object, aiLoading: { type: Boolean, default: false } });
 defineEmits(['upload', 'toggle', 'review', 'reject', 'translation', 'upload-translation', 'approve-translation', 'preview', 'delete', 'repeat', 'ai-analyze']);
+
+const hintsOpen = ref(false);
 
 const STATUS_MAP = computed(() => ({
   approved:             { color: 'green',  label: t('crm.doc.statusAccepted'),       border: 'border-green-100 bg-green-50/30',   bar: 'bg-green-400' },

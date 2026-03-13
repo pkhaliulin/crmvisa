@@ -2798,7 +2798,8 @@
       "statusNotUploaded": "Yuklanmagan",
       "fileTooLarge": "Fayl juda katta. Maks. {max} MB",
       "maxFileSize": "{max} MB gacha",
-      "uploadFailed": "Fayl yuklashda xatolik"
+      "uploadFailed": "Fayl yuklashda xatolik",
+      "managerHints": "Ko'rsatmalar"
     },
     "docAi": {
       "analyze": "AI tahlili",

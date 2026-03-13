@@ -2798,7 +2798,8 @@
       "statusNotUploaded": "Не загружен",
       "fileTooLarge": "Файл слишком большой. Макс. {max} МБ",
       "maxFileSize": "до {max} МБ",
-      "uploadFailed": "Ошибка загрузки файла"
+      "uploadFailed": "Ошибка загрузки файла",
+      "managerHints": "Подсказки"
     },
     "docAi": {
       "analyze": "Анализ AI",
