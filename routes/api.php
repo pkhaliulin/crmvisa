@@ -7,9 +7,13 @@ use Illuminate\Support\Facades\Route;
 // Health endpoint (без авторизации, для UptimeRobot/Pingdom)
 Route::get('health', HealthController::class);
 
-// Signed URL для скачивания документов (без авторизации — подпись в URL)
+// Signed URL для документов (без авторизации — подпись в URL)
 Route::get('documents/{document}/download', [DocumentDownloadController::class, 'download'])
     ->name('documents.download');
+Route::get('documents/{document}/preview', [DocumentDownloadController::class, 'preview'])
+    ->name('documents.preview');
+Route::get('documents/{document}/thumbnail', [DocumentDownloadController::class, 'thumbnail'])
+    ->name('documents.thumbnail');
 
 Route::prefix('v1')->group(function () {
     require __DIR__.'/api/auth.php';

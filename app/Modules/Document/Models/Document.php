@@ -35,7 +35,7 @@ class Document extends BaseModel
         'ocr_processed_at' => 'datetime',
     ];
 
-    protected $appends = ['url'];
+    protected $appends = ['url', 'preview_url', 'thumbnail_url'];
 
     public function getUrlAttribute(): ?string
     {
@@ -43,6 +43,26 @@ class Document extends BaseModel
         return URL::temporarySignedRoute(
             'documents.download',
             now()->addMinutes(30),
+            ['document' => $this->id]
+        );
+    }
+
+    public function getPreviewUrlAttribute(): ?string
+    {
+        if (!$this->file_path) return null;
+        return URL::temporarySignedRoute(
+            'documents.preview',
+            now()->addMinutes(30),
+            ['document' => $this->id]
+        );
+    }
+
+    public function getThumbnailUrlAttribute(): ?string
+    {
+        if (!$this->file_path) return null;
+        return URL::temporarySignedRoute(
+            'documents.thumbnail',
+            now()->addMinutes(60),
             ['document' => $this->id]
         );
     }

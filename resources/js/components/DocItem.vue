@@ -4,6 +4,14 @@
       <!-- Status bar -->
       <div :class="['w-1 rounded-full self-stretch shrink-0', barClass]"></div>
 
+      <!-- Thumbnail -->
+      <button v-if="item.document?.thumbnail_url" @click="$emit('preview', item.document)"
+        class="shrink-0 w-14 h-14 rounded-lg overflow-hidden border border-gray-200 hover:border-blue-400 hover:shadow-md transition-all cursor-pointer bg-gray-50">
+        <img :src="item.document.thumbnail_url" :alt="item.name"
+          class="w-full h-full object-cover" loading="lazy"
+          @error="$event.target.parentElement.style.display='none'" />
+      </button>
+
       <!-- Content -->
       <div class="flex-1 min-w-0">
         <!-- Name + badge -->
