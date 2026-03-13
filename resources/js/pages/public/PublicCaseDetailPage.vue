@@ -123,8 +123,10 @@
                     <!-- VisaBor tooltip -->
                     <transition name="fade">
                         <div v-if="hoveredStep" class="relative mt-2">
-                            <div class="absolute -top-[6px] left-5 w-3 h-3 rotate-45 border-l border-t bg-violet-50 border-violet-200 z-10"></div>
-                            <div class="absolute top-[-1px] left-[22px] w-[10px] h-[2px] bg-violet-50 z-10"></div>
+                            <div class="absolute -top-[6px] w-3 h-3 rotate-45 border-l border-t bg-violet-50 border-violet-200 z-10 transition-all duration-150"
+                                :style="{ left: tooltipArrowLeft }"></div>
+                            <div class="absolute top-[-1px] w-[10px] h-[2px] bg-violet-50 z-10 transition-all duration-150"
+                                :style="{ left: `calc(${tooltipArrowLeft} + 1px)` }"></div>
                             <div class="bg-gradient-to-br from-violet-50 via-indigo-50 to-purple-50 border border-violet-200 rounded-2xl p-3 shadow-sm">
                                 <div class="flex items-center gap-1.5 mb-1">
                                     <div class="w-5 h-5 rounded-full bg-gradient-to-br from-[#1BA97F] to-[#0d7a5c] flex items-center justify-center shrink-0">
@@ -2089,6 +2091,17 @@ const currentStepIdx = computed(() => {
     const s = caseData.value.public_status;
     if (s === 'completed' || s === 'rejected' || s === 'cancelled') return 9;
     return caseData.value.public_status_order ?? 0;
+});
+
+const tooltipArrowLeft = computed(() => {
+    if (!hoveredStep.value || !caseData.value) return '20px';
+    const statuses = getVisibleStatuses(caseData.value);
+    const idx = statuses.findIndex(s => s.key === hoveredStep.value);
+    if (idx < 0) return '20px';
+    const total = statuses.length;
+    // Центр этапа: (idx + 0.5) / total * 100%
+    const pct = ((idx + 0.5) / total * 100);
+    return `calc(${pct}% - 6px)`;
 });
 
 const VISA_TYPE_LABELS = computed(() => ({
