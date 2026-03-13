@@ -60,17 +60,52 @@ class DocumentAiAnalyzerService
         }
     }
 
-    private function prepareImage(UploadedFile|string $file): string
+    private function prepareImage(UploadedFile|string $file): array
     {
         if ($file instanceof UploadedFile) {
-            return base64_encode(file_get_contents($file->getRealPath()));
+            $content = file_get_contents($file->getRealPath());
+            $mime = $file->getMimeType();
+        } else {
+            $disk = Storage::disk('documents');
+            if (!$disk->exists($file)) {
+                throw new \RuntimeException("File not found: {$file}");
+            }
+            $content = $disk->get($file);
+            $mime = $disk->mimeType($file) ?: 'application/octet-stream';
         }
-        // Path relative to 'documents' disk
-        $disk = Storage::disk('documents');
-        if (!$disk->exists($file)) {
-            throw new \RuntimeException("File not found: {$file}");
+
+        // PDF — конвертируем первую страницу в JPEG через pdftoppm
+        if ($mime === 'application/pdf' || str_ends_with(strtolower($file instanceof UploadedFile ? $file->getClientOriginalName() : $file), '.pdf')) {
+            $content = $this->pdfToJpeg($content);
+            $mime = 'image/jpeg';
         }
-        return base64_encode($disk->get($file));
+
+        return ['data' => base64_encode($content), 'mime' => $mime];
+    }
+
+    private function pdfToJpeg(string $pdfContent): string
+    {
+        $tmpPdf = tempnam(sys_get_temp_dir(), 'ai_pdf_');
+        $tmpOut = tempnam(sys_get_temp_dir(), 'ai_img_');
+        try {
+            file_put_contents($tmpPdf, $pdfContent);
+            // pdftoppm: первая страница, JPEG, 200 DPI
+            $cmd = sprintf(
+                'pdftoppm -jpeg -r 200 -f 1 -l 1 -singlefile %s %s 2>&1',
+                escapeshellarg($tmpPdf),
+                escapeshellarg($tmpOut)
+            );
+            exec($cmd, $output, $exitCode);
+            $jpegPath = $tmpOut . '.jpg';
+            if ($exitCode !== 0 || !file_exists($jpegPath)) {
+                throw new \RuntimeException('PDF to JPEG conversion failed: ' . implode("\n", $output));
+            }
+            return file_get_contents($jpegPath);
+        } finally {
+            @unlink($tmpPdf);
+            @unlink($tmpOut);
+            @unlink($tmpOut . '.jpg');
+        }
     }
 
     private function buildPrompt(DocumentTemplate $template, array $schema, array $rules, array $context): string
@@ -118,15 +153,15 @@ PROMPT;
 
     private ?array $lastCallContext = null;
 
-    private function callAi(string $imageBase64, string $prompt): array
+    private function callAi(array $imageData, string $prompt): array
     {
         $provider = config('services.ocr.provider', 'openai');
         $start = microtime(true);
 
         try {
             $result = $provider === 'openai'
-                ? $this->callOpenAi($imageBase64, $prompt)
-                : $this->callClaude($imageBase64, $prompt);
+                ? $this->callOpenAi($imageData, $prompt)
+                : $this->callClaude($imageData, $prompt);
 
             $durationMs = (int) ((microtime(true) - $start) * 1000);
 
@@ -172,12 +207,14 @@ PROMPT;
         return $this;
     }
 
-    private function callOpenAi(string $imageBase64, string $prompt): array
+    private function callOpenAi(array $imageData, string $prompt): array
     {
         $model = 'gpt-4o-mini';
+        $mime = $imageData['mime'] ?? 'image/jpeg';
+        $base64 = $imageData['data'];
 
         $response = Http::withToken(config('services.ocr.openai_key'))
-            ->timeout(30)
+            ->timeout(60)
             ->post('https://api.openai.com/v1/chat/completions', [
                 'model' => $model,
                 'messages' => [
@@ -186,7 +223,7 @@ PROMPT;
                         'content' => [
                             ['type' => 'text', 'text' => $prompt],
                             ['type' => 'image_url', 'image_url' => [
-                                'url' => "data:image/jpeg;base64,{$imageBase64}",
+                                'url' => "data:{$mime};base64,{$base64}",
                             ]],
                         ],
                     ],
@@ -209,14 +246,16 @@ PROMPT;
         return json_decode($content, true) ?? [];
     }
 
-    private function callClaude(string $imageBase64, string $prompt): array
+    private function callClaude(array $imageData, string $prompt): array
     {
         $model = 'claude-haiku-4-5-20251001';
+        $mime = $imageData['mime'] ?? 'image/jpeg';
+        $base64 = $imageData['data'];
 
         $response = Http::withHeaders([
             'x-api-key' => config('services.ocr.claude_key'),
             'anthropic-version' => '2023-06-01',
-        ])->timeout(30)->post('https://api.anthropic.com/v1/messages', [
+        ])->timeout(60)->post('https://api.anthropic.com/v1/messages', [
             'model' => $model,
             'max_tokens' => 2000,
             'messages' => [
@@ -225,8 +264,8 @@ PROMPT;
                     'content' => [
                         ['type' => 'image', 'source' => [
                             'type' => 'base64',
-                            'media_type' => 'image/jpeg',
-                            'data' => $imageBase64,
+                            'media_type' => $mime,
+                            'data' => $base64,
                         ]],
                         ['type' => 'text', 'text' => $prompt],
                     ],
