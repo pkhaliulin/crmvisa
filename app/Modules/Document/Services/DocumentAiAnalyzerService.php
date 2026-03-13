@@ -8,6 +8,7 @@ use App\Modules\Document\Models\DocumentTemplate;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class DocumentAiAnalyzerService
 {
@@ -64,12 +65,12 @@ class DocumentAiAnalyzerService
         if ($file instanceof UploadedFile) {
             return base64_encode(file_get_contents($file->getRealPath()));
         }
-        // Path to stored file
-        $path = storage_path('app/' . $file);
-        if (!file_exists($path)) {
+        // Path relative to 'documents' disk
+        $disk = Storage::disk('documents');
+        if (!$disk->exists($file)) {
             throw new \RuntimeException("File not found: {$file}");
         }
-        return base64_encode(file_get_contents($path));
+        return base64_encode($disk->get($file));
     }
 
     private function buildPrompt(DocumentTemplate $template, array $schema, array $rules, array $context): string
