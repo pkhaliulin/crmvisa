@@ -54,6 +54,23 @@
             </div>
           </div>
 
+          <!-- Person mismatch alert -->
+          <div v-if="analysis.person_mismatch"
+            class="flex items-start gap-2 p-2.5 rounded-lg bg-red-100 border border-red-300 text-red-800">
+            <svg class="w-5 h-5 shrink-0 text-red-600 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+            </svg>
+            <div>
+              <p class="text-xs font-bold">{{ t('crm.docAi.wrongPerson') }}</p>
+              <p class="text-[11px] mt-0.5">
+                {{ t('crm.docAi.expectedPerson') }}: <strong>{{ analysis.person_mismatch.expected_person }}</strong>
+              </p>
+              <p class="text-[11px]">
+                {{ t('crm.docAi.foundPerson') }}: <strong>{{ analysis.person_mismatch.document_person }}</strong>
+              </p>
+            </div>
+          </div>
+
           <!-- Extracted data -->
           <div v-if="analysis.extracted_data && Object.keys(analysis.extracted_data).length">
             <p class="text-[10px] font-semibold text-violet-600 uppercase tracking-wide mb-1">

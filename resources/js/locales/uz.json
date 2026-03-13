@@ -2839,7 +2839,10 @@
       "stopFactors": "To'siq omillar",
       "successFactors": "Ijobiy omillar",
       "risks": "Xavflar",
-      "reanalyze": "Qayta tahlil"
+      "reanalyze": "Qayta tahlil",
+      "wrongPerson": "Boshqa odamning hujjati!",
+      "expectedPerson": "Kutilmoqda",
+      "foundPerson": "Hujjatda"
     },
     "nationalities": {
       "UZB": "O'zbekiston",

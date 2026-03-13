@@ -5,11 +5,14 @@ namespace App\Modules\Document\Controllers;
 use App\Http\Controllers\Controller;
 use App\Modules\Case\Models\VisaCase;
 use App\Modules\Case\Services\CaseService;
+use App\Modules\Document\DTOs\DocumentAnalysisResult;
 use App\Modules\Document\Events\DocumentUploaded;
 use App\Modules\Document\Models\CaseChecklist;
 use App\Modules\Document\Services\ChecklistService;
 use App\Modules\Document\Services\CrossDocumentValidatorService;
 use App\Modules\Document\Services\DocumentAiAnalyzerService;
+use App\Modules\Notification\Notifications\BusinessNotification;
+use App\Modules\Notification\Services\NotificationService;
 use App\Support\Helpers\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -229,14 +232,30 @@ class ChecklistController extends Controller
         $this->aiAnalyzer->setContext($request->user()->agency_id, $caseId, $request->user()->id);
         $result = $this->aiAnalyzer->analyze($filePath, $template, $context);
 
+        // Проверка: документ принадлежит правильному человеку?
+        $personMismatch = $this->checkDocumentBelongsToPerson($item, $case, $result);
+
+        $analysisData = $result->toArray();
+        if ($personMismatch) {
+            $analysisData['person_mismatch'] = $personMismatch;
+        }
+
         // Сохраняем результат анализа в чек-лист
         $item->update([
-            'ai_analysis'   => $result->toArray(),
+            'ai_analysis'   => $analysisData,
             'ai_analyzed_at' => now(),
             'ai_confidence'  => $result->confidence,
         ]);
 
-        return ApiResponse::success($result->toArray(), 'AI-анализ завершён');
+        // Уведомить агента и клиента о неправильном документе
+        if ($personMismatch) {
+            $this->notifyPersonMismatch($case, $item, $personMismatch);
+        }
+
+        return ApiResponse::success($analysisData, $personMismatch
+            ? 'AI-анализ завершён. Внимание: документ может принадлежать другому человеку!'
+            : 'AI-анализ завершён'
+        );
     }
 
     /**
@@ -307,5 +326,150 @@ class ChecklistController extends Controller
                              ->where('case_id', $caseId)
                              ->where('agency_id', $request->user()->agency_id)
                              ->firstOrFail();
+    }
+
+    /**
+     * Проверить, что документ принадлежит правильному человеку.
+     * Сравнивает имя из AI-извлечения с ожидаемым именем (клиент или член семьи).
+     */
+    private function checkDocumentBelongsToPerson(
+        CaseChecklist $item,
+        VisaCase $case,
+        DocumentAnalysisResult $result,
+    ): ?array {
+        $extracted = $result->extractedData;
+        if (empty($extracted)) {
+            return null;
+        }
+
+        // Имя из документа (AI)
+        $docSurname = $extracted['surname'] ?? '';
+        $docGivenNames = $extracted['given_names'] ?? '';
+        $docFullName = $extracted['full_name'] ?? '';
+        $docName = $docFullName ?: trim("{$docSurname} {$docGivenNames}");
+
+        if (! $docName) {
+            // Попробовать другие поля (child_name, spouse1_name, etc.)
+            $docName = $extracted['child_name']
+                ?? $extracted['student_name']
+                ?? $extracted['employee_name']
+                ?? $extracted['account_holder']
+                ?? $extracted['applicant_name']
+                ?? '';
+        }
+
+        if (! $docName) {
+            return null; // AI не извлёк имя — не можем проверить
+        }
+
+        $normalizedDocName = $this->normalizeName($docName);
+
+        // Ожидаемое имя
+        if ($item->family_member_id) {
+            // Документ для члена семьи
+            $item->loadMissing('familyMember');
+            $expectedName = $item->familyMember?->name ?? '';
+        } else {
+            // Документ для основного заявителя
+            $case->loadMissing('client');
+            $expectedName = $case->client?->name ?? '';
+        }
+
+        if (! $expectedName) {
+            return null;
+        }
+
+        $normalizedExpected = $this->normalizeName($expectedName);
+
+        // Сравнение: ищем хотя бы частичное совпадение фамилии
+        if ($normalizedDocName === $normalizedExpected) {
+            return null; // Совпадает полностью
+        }
+
+        // Разбиваем на слова и проверяем пересечение
+        $docWords = array_filter(explode(' ', $normalizedDocName));
+        $expectedWords = array_filter(explode(' ', $normalizedExpected));
+        $common = array_intersect($docWords, $expectedWords);
+
+        // Если хотя бы фамилия совпадает — считаем OK (у семьи одна фамилия)
+        // Но если ни одного общего слова — точно не тот человек
+        if (count($common) >= 1) {
+            // Одно общее слово (фамилия). Проверим, не совпадают ли остальные
+            // Если all words match except one — likely same person with different name format
+            $diffCount = count(array_diff($docWords, $expectedWords)) + count(array_diff($expectedWords, $docWords));
+            if ($diffCount <= 2) {
+                return null; // Достаточно похоже
+            }
+        }
+
+        // Нет совпадений или слишком большая разница — несоответствие
+        $expectedLabel = $item->family_member_id
+            ? ($item->familyMember?->name ?? 'член семьи')
+            : ($case->client?->name ?? 'заявитель');
+
+        return [
+            'expected_person' => $expectedLabel,
+            'document_person' => $docName,
+            'severity'        => 'critical',
+            'message'         => "Документ содержит данные \"{$docName}\", но загружен в слот \"{$expectedLabel}\"",
+        ];
+    }
+
+    /**
+     * Уведомить агента и клиента о загрузке документа не того человека.
+     */
+    private function notifyPersonMismatch(VisaCase $case, CaseChecklist $item, array $mismatch): void
+    {
+        $case->loadMissing(['client', 'agency']);
+        $docName = $item->name ?? 'Документ';
+
+        // Уведомление агенту
+        try {
+            $notification = new BusinessNotification('document.person_mismatch', [
+                'subject' => "Неверный документ — {$case->case_number}",
+                'message' => "Документ \"{$docName}\" содержит данные \"{$mismatch['document_person']}\", "
+                    . "но загружен для \"{$mismatch['expected_person']}\".\n"
+                    . "Вероятно, загружен документ другого человека. Проверьте и замените.",
+                'details' => [$mismatch['message']],
+                'case_id' => $case->id,
+            ]);
+
+            app(NotificationService::class)->dispatch(
+                agencyId: $case->agency_id,
+                eventType: 'document.person_mismatch',
+                notification: $notification,
+                context: ['case' => $case, 'assigned_to' => $case->assigned_to],
+            );
+        } catch (\Throwable $e) {
+            \Log::warning('Failed to notify agent about person mismatch', ['error' => $e->getMessage()]);
+        }
+
+        // Уведомление клиенту
+        if ($case->client) {
+            try {
+                $clientNotification = new BusinessNotification('document.person_mismatch', [
+                    'subject' => 'Загружен документ другого человека',
+                    'message' => "Документ \"{$docName}\" для \"{$mismatch['expected_person']}\" "
+                        . "содержит данные \"{$mismatch['document_person']}\".\n"
+                        . "Пожалуйста, загрузите правильный документ.",
+                    'details' => [$mismatch['message']],
+                    'case_id' => $case->id,
+                ]);
+
+                app(NotificationService::class)->dispatchToClient(
+                    $case->client,
+                    $clientNotification,
+                    $case->agency,
+                    ['database', 'telegram'],
+                );
+            } catch (\Throwable $e) {
+                \Log::warning('Failed to notify client about person mismatch', ['error' => $e->getMessage()]);
+            }
+        }
+    }
+
+    private function normalizeName(string $name): string
+    {
+        return mb_strtolower(trim(preg_replace('/\s+/', ' ', $name)));
     }
 }

@@ -2839,7 +2839,10 @@
       "stopFactors": "Стоп-факторы",
       "successFactors": "Позитивные факторы",
       "risks": "Риски",
-      "reanalyze": "Повторить анализ"
+      "reanalyze": "Повторить анализ",
+      "wrongPerson": "Документ другого человека!",
+      "expectedPerson": "Ожидается",
+      "foundPerson": "В документе"
     },
     "nationalities": {
       "UZB": "Узбекистан",
