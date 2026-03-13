@@ -464,6 +464,8 @@
     "slotAdded": "Yana bir joy qo'shildi",
     "deleteSlot": "O'chirish",
     "slotDeleted": "Joy o'chirildi",
+    "confirmDeleteSlotTitle": "Hujjatni o'chirishni xohlaysizmi?",
+    "confirmDeleteSlotMsg": "«{name}» hujjati ro'yxatdan o'chiriladi. Bu amalni qaytarib bo'lmaydi.",
     "previewNotSupported": "Ushbu format ko'rib chiqishni qo'llab-quvvatlamaydi",
     "downloadFile": "Faylni yuklab olish",
     "loading": "Yuklanmoqda",

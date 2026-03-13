@@ -714,13 +714,13 @@
                                 <button v-if="item.status !== 'not_available'"
                                     @click="markNotAvailable(item)"
                                     :disabled="notAvailableLoading[item.id]"
-                                    class="text-[10px] text-amber-500 hover:text-amber-700 font-medium transition-colors disabled:opacity-50">
+                                    class="text-xs text-amber-600 hover:text-amber-800 font-semibold transition-colors disabled:opacity-50">
                                     {{ $t('cases.noDocument') }}
                                 </button>
                                 <button v-else
                                     @click="undoNotAvailable(item)"
                                     :disabled="notAvailableLoading[item.id]"
-                                    class="text-[10px] text-blue-500 hover:text-blue-700 font-medium transition-colors disabled:opacity-50">
+                                    class="text-xs text-blue-500 hover:text-blue-700 font-medium transition-colors disabled:opacity-50">
                                     {{ $t('cases.undoNoDocument') }}
                                 </button>
                             </div>
@@ -741,15 +741,11 @@
                             </button>
                             <!-- Кнопка удалить только для кастомных документов менеджера (не из шаблона суперадмина) -->
                             <button v-if="!item.is_from_template && !isTerminal"
-                                @click="deleteSlot(item)"
+                                @click="confirmDeleteSlot = item"
                                 :disabled="deleting[item.id]"
-                                class="mt-1.5 inline-flex items-center gap-1 text-xs text-red-400 hover:text-red-600 font-medium transition-colors disabled:opacity-50">
-                                <svg v-if="!deleting[item.id]" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                class="mt-1.5 inline-flex items-center gap-1 text-[10px] text-gray-400 hover:text-red-400 transition-colors disabled:opacity-50">
+                                <svg v-if="!deleting[item.id]" class="w-2.5 h-2.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                </svg>
-                                <svg v-else class="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
                                 </svg>
                                 {{ $t('cases.deleteSlot') }}
                             </button>
@@ -1288,6 +1284,29 @@
                             <p class="text-sm text-gray-500 mb-3">{{ $t('cases.previewNotSupported') }}</p>
                             <a :href="previewModal.url" target="_blank" class="text-sm text-blue-600 hover:underline font-medium">{{ $t('cases.downloadFile') }}</a>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </transition>
+    </teleport>
+
+    <!-- Modal: Confirm delete slot -->
+    <teleport to="body">
+        <transition name="fade">
+            <div v-if="confirmDeleteSlot" class="fixed inset-0 z-[60] bg-black/40 flex items-center justify-center p-4" @click.self="confirmDeleteSlot = null">
+                <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+                    <h3 class="text-base font-bold text-[#0A1F44] mb-2">{{ $t('cases.confirmDeleteSlotTitle') }}</h3>
+                    <p class="text-sm text-gray-600 mb-4">{{ $t('cases.confirmDeleteSlotMsg', { name: confirmDeleteSlot?.name }) }}</p>
+                    <div class="flex gap-3">
+                        <button @click="doDeleteSlot"
+                            :disabled="deleting[confirmDeleteSlot?.id]"
+                            class="flex-1 py-2.5 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 disabled:opacity-60">
+                            {{ deleting[confirmDeleteSlot?.id] ? $t('common.loading') : $t('common.confirmDeleteBtn') }}
+                        </button>
+                        <button @click="confirmDeleteSlot = null"
+                            class="px-5 py-2.5 border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50">
+                            {{ $t('common.cancel') }}
+                        </button>
                     </div>
                 </div>
             </div>
@@ -1988,7 +2007,11 @@ async function repeatSlot(item) {
     }
 }
 
-async function deleteSlot(item) {
+const confirmDeleteSlot = ref(null);
+
+async function doDeleteSlot() {
+    const item = confirmDeleteSlot.value;
+    if (!item) return;
     deleting.value[item.id] = true;
     try {
         await publicPortalApi.deleteChecklistItem(route.params.id, item.id);
@@ -1997,11 +2020,11 @@ async function deleteSlot(item) {
             const idx = list.findIndex(i => i.id === item.id);
             if (idx !== -1) list.splice(idx, 1);
         }
-        // Также проверяем family members
         caseData.value?.family_members?.forEach(fm => {
             const idx = fm.checklist?.findIndex(i => i.id === item.id);
             if (idx !== undefined && idx !== -1) fm.checklist.splice(idx, 1);
         });
+        confirmDeleteSlot.value = null;
         uploadToastError.value = false;
         uploadToast.value = t('cases.slotDeleted');
         setTimeout(() => { uploadToast.value = ''; }, 3000);

@@ -464,6 +464,8 @@
     "slotAdded": "Добавлен ещё один слот",
     "deleteSlot": "Удалить",
     "slotDeleted": "Слот удалён",
+    "confirmDeleteSlotTitle": "Удалить документ?",
+    "confirmDeleteSlotMsg": "Документ «{name}» будет удалён из чек-листа. Это действие нельзя отменить.",
     "previewNotSupported": "Предпросмотр этого формата не поддерживается",
     "downloadFile": "Скачать файл",
     "loading": "Загрузка",
