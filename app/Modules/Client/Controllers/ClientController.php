@@ -102,9 +102,10 @@ class ClientController extends Controller
             if (empty($data)) continue;
 
             $name = $item->name;
+            $isApplicant = empty($item->family_member_id); // только документы заявителя
 
-            // Загранпаспорт — основные данные клиента
-            if (str_contains($name, 'Загранпаспорт') || str_contains($name, 'загранпаспорт')) {
+            // Загранпаспорт — основные данные клиента (только заявитель)
+            if ($isApplicant && (str_contains($name, 'Загранпаспорт') || str_contains($name, 'загранпаспорт'))) {
                 if (!empty($data['passport_number']) && empty($clientUpdates['passport_number'])) {
                     $clientUpdates['passport_number'] = $data['passport_number'];
                 }
@@ -120,8 +121,8 @@ class ClientController extends Controller
                 $applied[] = $name;
             }
 
-            // Внутренний паспорт — дата рождения, место рождения
-            if (str_contains($name, 'Внутренний паспорт') || str_contains($name, 'внутренний паспорт')) {
+            // Внутренний паспорт — дата рождения, место рождения (только заявитель)
+            if ($isApplicant && (str_contains($name, 'Внутренний паспорт') || str_contains($name, 'внутренний паспорт'))) {
                 if (!empty($data['date_of_birth']) && empty($clientUpdates['date_of_birth'])) {
                     $clientUpdates['date_of_birth'] = $data['date_of_birth'];
                 }
@@ -145,7 +146,7 @@ class ClientController extends Controller
             }
 
             // Выписка о недвижимости
-            if (str_contains($name, 'недвижимост') || str_contains($name, 'Выписка')) {
+            if ($isApplicant && (str_contains($name, 'недвижимост') || str_contains($name, 'Выписка о недвижимост'))) {
                 if (!empty($data['owner_name'])) {
                     $profileUpdates['has_real_estate'] = true;
                 }
@@ -153,8 +154,25 @@ class ClientController extends Controller
             }
 
             // Техпаспорт автомобиля
-            if (str_contains($name, 'техпаспорт') || str_contains($name, 'Техпаспорт') || str_contains($name, 'автомобил')) {
+            if ($isApplicant && (str_contains($name, 'техпаспорт') || str_contains($name, 'Техпаспорт') || str_contains($name, 'автомобил'))) {
                 $profileUpdates['has_car'] = true;
+                $applied[] = $name;
+            }
+
+            // Трудовая книжка
+            if ($isApplicant && (str_contains($name, 'Трудовая') || str_contains($name, 'трудовая'))) {
+                if (!empty($data['employer_name']) && empty($profileUpdates['employer_name'])) {
+                    $profileUpdates['employer_name'] = $data['employer_name'];
+                }
+                if (!empty($data['position']) && empty($profileUpdates['position'])) {
+                    $profileUpdates['position'] = $data['position'];
+                }
+                $applied[] = $name;
+            }
+
+            // Авиабилеты
+            if ($isApplicant && (str_contains($name, 'Авиабилет') || str_contains($name, 'авиабилет'))) {
+                $profileUpdates['has_return_ticket'] = true;
                 $applied[] = $name;
             }
 
