@@ -485,6 +485,17 @@
                         </div>
                     </div>
 
+                    <!-- Предупреждение: перевод и нотариус -->
+                    <div class="flex items-start gap-2.5 p-3 rounded-xl bg-purple-50/60 border border-purple-100">
+                        <div class="w-7 h-7 rounded-full bg-gradient-to-br from-[#1BA97F] to-[#0d7a5c] flex items-center justify-center shrink-0 mt-0.5">
+                            <span class="text-white text-[10px] font-bold">VB</span>
+                        </div>
+                        <div>
+                            <span class="text-[10px] font-semibold text-purple-500">VisaBor</span>
+                            <p class="text-xs text-purple-700 leading-relaxed mt-0.5">{{ $t('payment.translationNotice') }}</p>
+                        </div>
+                    </div>
+
                     <!-- ИТОГО к оплате -->
                     <div class="flex items-center justify-between p-4 rounded-xl bg-[#0A1F44] text-white">
                         <span class="text-sm font-semibold">{{ $t('payment.total') }}</span>

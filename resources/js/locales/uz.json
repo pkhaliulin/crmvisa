@@ -1082,7 +1082,9 @@
     "invoiceQty": "Soni",
     "invoiceAmount": "Summa",
     "visaService": "Viza xizmati",
-    "securePayment": "Himoyalangan ulanish orqali xavfsiz to'lov"
+    "securePayment": "Himoyalangan ulanish orqali xavfsiz to'lov",
+    "translationNotice": "Hujjatlarni tarjima qilish va notarial tasdiqlash alohida to'lanadi. Narx sahifalar soniga qarab hisoblanadi. Menejer hisob-kitobni tayyorlab, alohida hisob-faktura yuboradi.",
+    "translationNoticeShort": "Tarjima va notarius alohida to'lanadi"
   },
   "billing": {
     "title": "Hisob-kitoblar",

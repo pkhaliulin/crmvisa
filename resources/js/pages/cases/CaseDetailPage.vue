@@ -1060,7 +1060,13 @@ function scoreBarColor(s) { return s >= 80 ? 'bg-green-500' : s >= 60 ? 'bg-yell
 function fmtMoney(v) { return Number(v).toLocaleString('en-US', { maximumFractionDigits: 0 }); }
 
 // Helpers
-function cleanPhone(p) { return (p ?? '').replace(/[^0-9]/g, ''); }
+function cleanPhone(p) {
+  let raw = p ?? '';
+  // Защита от PHP serialize обёртки: s:13:"+998971550027";
+  const m = raw.match(/^s:\d+:"(.+)";?$/);
+  if (m) raw = m[1];
+  return raw.replace(/[^0-9]/g, '');
+}
 function fmtFull(d) { if (!d) return '---'; return new Date(d).toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }); }
 function fmtShort(d) { if (!d) return '---'; return new Date(d).toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric' }); }
 function isImage(m) { return m?.startsWith('image/'); }

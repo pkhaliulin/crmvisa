@@ -54,7 +54,7 @@ class CaseActivityController extends Controller
      */
     public function publicIndex(Request $request, string $id): JsonResponse
     {
-        $publicUser = $request->attributes->get('public_user');
+        $publicUser = $request->get('_public_user');
 
         $case = VisaCase::where('id', $id)
             ->whereHas('client', function ($q) use ($publicUser) {

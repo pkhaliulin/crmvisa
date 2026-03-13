@@ -800,12 +800,8 @@ class PublicProfileController extends Controller
             );
         }
 
-        // Отменяем связанный pending-платёж если есть
-        \App\Modules\Payment\Models\ClientPayment::where('case_id', $case->id)
-            ->where('status', 'pending')
-            ->update(['status' => 'cancelled']);
-
-        $case->update(['public_status' => 'cancelled']);
+        // Делегируем в CaseService (SSOT) — обновит stage, public_status, платежи, историю
+        $case = app(CaseService::class)->cancelCase($case, 'Отменено клиентом');
 
         \App\Support\Helpers\AuditLog::log('case.cancelled', [
             'case_id' => $case->id,
