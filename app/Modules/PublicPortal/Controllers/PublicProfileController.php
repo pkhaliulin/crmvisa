@@ -909,7 +909,7 @@ class PublicProfileController extends Controller
         DB::transaction(function () use ($case, $publicUser) {
             // Устанавливаем tenant context для RLS (позволяет UPDATE agency_id)
             if ($case->agency_id) {
-                DB::statement('SET LOCAL app.current_tenant_id = ?', [$case->agency_id]);
+                DB::unprepared("SET LOCAL app.current_tenant_id = '{$case->agency_id}'");
             }
 
             // Архивируем старые лиды

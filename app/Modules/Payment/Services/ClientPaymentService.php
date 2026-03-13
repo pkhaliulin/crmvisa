@@ -23,7 +23,7 @@ class ClientPaymentService
     {
         return DB::transaction(function () use ($case, $publicUser, $provider) {
             if ($case->agency_id && DB::connection()->getDriverName() !== 'sqlite') {
-                DB::statement('SET LOCAL app.current_tenant_id = ?', [$case->agency_id]);
+                DB::unprepared("SET LOCAL app.current_tenant_id = '{$case->agency_id}'");
             }
 
             $package = $case->agency_id
@@ -242,7 +242,7 @@ class ClientPaymentService
             DB::transaction(function () use ($payment, $provider, $data) {
                 if ($payment->agency_id) {
                     if (DB::connection()->getDriverName() !== 'sqlite') {
-                        DB::statement('SET LOCAL app.current_tenant_id = ?', [$payment->agency_id]);
+                        DB::unprepared("SET LOCAL app.current_tenant_id = '{$payment->agency_id}'");
                     }
                 }
 
