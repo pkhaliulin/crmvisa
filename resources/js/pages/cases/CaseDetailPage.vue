@@ -298,57 +298,55 @@
             </div>
           </div>
 
+          <!-- Person tabs -->
+          <div v-if="docTabs.length > 1" class="px-5 pt-3 flex gap-1 overflow-x-auto scrollbar-hide">
+            <button v-for="tab in docTabs" :key="tab.key"
+              @click="activeDocTab = tab.key"
+              class="shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap"
+              :class="activeDocTab === tab.key
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-500 hover:bg-gray-200'">
+              {{ tab.label }}
+              <span class="ml-1 text-[10px] opacity-70">{{ tab.uploaded }}/{{ tab.total }}</span>
+            </button>
+          </div>
+
           <!-- Progress -->
-          <div v-if="checklist.progress?.total > 0" class="px-5 pt-3">
+          <div v-if="activeTabItems.length" class="px-5 pt-3">
             <div class="w-full bg-gray-100 rounded-full h-1 overflow-hidden">
               <div class="h-full rounded-full transition-all duration-700 ease-out"
-                :class="checklist.progress.percent === 100 ? 'bg-green-500' : 'bg-blue-500'"
-                :style="{ width: checklist.progress.percent + '%' }"></div>
+                :class="activeTabUploaded >= activeTabItems.length ? 'bg-green-500' : 'bg-blue-500'"
+                :style="{ width: (activeTabItems.length ? (activeTabUploaded / activeTabItems.length * 100) : 0) + '%' }"></div>
             </div>
           </div>
 
-          <!-- Grouped by person -->
-          <template v-for="group in docGroups" :key="group.key">
-            <div class="px-5 pt-4">
-              <!-- Person header -->
-              <div class="flex items-center gap-2 mb-2">
-                <span class="text-[10px] uppercase tracking-widest font-bold"
-                  :class="group.key === '__applicant__' ? 'text-blue-600' : 'text-orange-500'">
-                  {{ group.label }}
-                </span>
-                <span class="text-[10px] text-gray-300 tabular-nums">{{ group.uploaded }}/{{ group.total }}</span>
-              </div>
-
-              <!-- Action-needed -->
-              <div v-if="group.action.length" class="mb-2">
-                <p class="text-[9px] uppercase tracking-widest font-semibold text-orange-400 mb-1">{{ t('crm.caseDetail.actionNeeded', { n: group.action.length }) }}</p>
-                <div class="space-y-2">
-                  <DocItem v-for="item in group.action" :key="item.id" :item="item"
-                    :ai-loading="aiAnalyzingId === item.id"
-                    @upload="uploadToSlot" @toggle="toggleCheck" @review="reviewSlot"
-                    @reject="openReject" @translation="openTranslation"
-                    @upload-translation="doUploadTranslation" @approve-translation="doApproveTranslation"
-                    @preview="openPreview" @delete="deleteSlot" @repeat="repeatSlot"
-                    @ai-analyze="doAiAnalyze" />
-                </div>
-              </div>
-
-              <!-- Done -->
-              <div v-if="group.done.length">
-                <p v-if="group.action.length" class="text-[9px] uppercase tracking-widest font-semibold text-gray-300 mb-1">{{ t('crm.caseDetail.doneItems', { n: group.done.length }) }}</p>
-                <div class="space-y-2">
-                  <DocItem v-for="item in group.done" :key="item.id" :item="item"
-                    :ai-loading="aiAnalyzingId === item.id"
-                    @upload="uploadToSlot" @toggle="toggleCheck" @review="reviewSlot"
-                    @reject="openReject" @translation="openTranslation"
-                    @upload-translation="doUploadTranslation" @approve-translation="doApproveTranslation"
-                    @preview="openPreview" @delete="deleteSlot" @repeat="repeatSlot"
-                    @ai-analyze="doAiAnalyze" />
-                </div>
-              </div>
+          <!-- Action-needed -->
+          <div v-if="activeTabAction.length" class="px-5 pt-4">
+            <p class="text-[10px] uppercase tracking-widest font-bold text-orange-500 mb-2">{{ t('crm.caseDetail.actionNeeded', { n: activeTabAction.length }) }}</p>
+            <div class="space-y-2">
+              <DocItem v-for="item in activeTabAction" :key="item.id" :item="item"
+                :ai-loading="aiAnalyzingId === item.id"
+                @upload="uploadToSlot" @toggle="toggleCheck" @review="reviewSlot"
+                @reject="openReject" @translation="openTranslation"
+                @upload-translation="doUploadTranslation" @approve-translation="doApproveTranslation"
+                @preview="openPreview" @delete="deleteSlot" @repeat="repeatSlot"
+                @ai-analyze="doAiAnalyze" />
             </div>
-            <div class="mx-5 border-b border-gray-100 last:border-0"></div>
-          </template>
+          </div>
+
+          <!-- Done docs -->
+          <div v-if="activeTabDone.length" class="px-5 pt-4">
+            <p v-if="activeTabAction.length" class="text-[10px] uppercase tracking-widest font-bold text-gray-300 mb-2">{{ t('crm.caseDetail.doneItems', { n: activeTabDone.length }) }}</p>
+            <div class="space-y-2">
+              <DocItem v-for="item in activeTabDone" :key="item.id" :item="item"
+                :ai-loading="aiAnalyzingId === item.id"
+                @upload="uploadToSlot" @toggle="toggleCheck" @review="reviewSlot"
+                @reject="openReject" @translation="openTranslation"
+                @upload-translation="doUploadTranslation" @approve-translation="doApproveTranslation"
+                @preview="openPreview" @delete="deleteSlot" @repeat="repeatSlot"
+                @ai-analyze="doAiAnalyze" />
+            </div>
+          </div>
 
           <p v-if="!checklist.items?.length" class="text-sm text-gray-400 py-8 text-center">{{ t('crm.caseDetail.checklistEmpty') }}</p>
           <div class="h-4"></div>
@@ -814,6 +812,7 @@ const id     = route.params.id;
 // State
 const caseData  = ref(null);
 const checklist = ref({ items: [], progress: null });
+const activeDocTab = ref('all');
 const allowedTransitions = ref({});
 const loading   = ref(true);
 const toast     = ref({ msg: '', type: 'error' });
@@ -968,13 +967,6 @@ const otherDocs = computed(() => {
   return (checklist.value.items ?? []).filter(i => !ids.has(i.id));
 });
 
-const relationshipLabels = {
-  spouse: () => t('crm.caseDetail.familySpouse'),
-  child: () => t('crm.caseDetail.familyChild'),
-  parent: () => t('crm.caseDetail.familyParent'),
-  sibling: () => t('crm.caseDetail.familySibling'),
-};
-
 const isActionItem = (i) => {
   if (i.status === 'uploaded') return true;
   if (i.status === 'rejected') return true;
@@ -984,44 +976,46 @@ const isActionItem = (i) => {
   return false;
 };
 
-const docGroups = computed(() => {
+const countUploaded = (items) => items.filter(i => i.document || i.is_checked).length;
+
+const docTabs = computed(() => {
   const items = checklist.value.items ?? [];
-  const groups = new Map();
-  const APPLICANT = '__applicant__';
+  const applicantItems = items.filter(i => !i.family_member_id);
+  const familyMap = new Map();
 
   for (const item of items) {
-    const key = item.family_member_id || APPLICANT;
-    if (!groups.has(key)) {
-      const rel = item.family_member_relationship;
-      const relLabel = rel && relationshipLabels[rel] ? relationshipLabels[rel]() : (rel || '');
-      groups.set(key, {
-        key,
-        label: key === APPLICANT
-          ? t('crm.caseDetail.applicantDocs')
-          : `${item.family_member_name || t('crm.caseDetail.familyMember')}` + (relLabel ? ` (${relLabel})` : ''),
+    if (!item.family_member_id) continue;
+    if (!familyMap.has(item.family_member_id)) {
+      familyMap.set(item.family_member_id, {
+        key: item.family_member_id,
+        label: item.family_member_name || t('crm.caseDetail.familyMember'),
         items: [],
-        action: [],
-        done: [],
-        uploaded: 0,
-        total: 0,
       });
     }
-    const g = groups.get(key);
-    g.items.push(item);
-    g.total++;
-    if (item.document || item.is_checked) g.uploaded++;
-    if (isActionItem(item)) g.action.push(item);
-    else g.done.push(item);
+    familyMap.get(item.family_member_id).items.push(item);
   }
 
-  // Заявитель всегда первый
-  const result = [];
-  if (groups.has(APPLICANT)) {
-    result.push(groups.get(APPLICANT));
-    groups.delete(APPLICANT);
+  const tabs = [
+    { key: 'all', label: t('common.all'), items, uploaded: countUploaded(items), total: items.length },
+    { key: 'applicant', label: caseData.value?.client?.name || t('crm.caseDetail.applicantDocs'), items: applicantItems, uploaded: countUploaded(applicantItems), total: applicantItems.length },
+  ];
+
+  for (const fm of familyMap.values()) {
+    tabs.push({ key: fm.key, label: fm.label, items: fm.items, uploaded: countUploaded(fm.items), total: fm.items.length });
   }
-  for (const g of groups.values()) result.push(g);
-  return result;
+
+  return tabs;
+});
+
+const activeTabItems = computed(() => {
+  const tab = docTabs.value.find(t => t.key === activeDocTab.value);
+  return tab?.items ?? [];
+});
+const activeTabUploaded = computed(() => countUploaded(activeTabItems.value));
+const activeTabAction = computed(() => activeTabItems.value.filter(isActionItem));
+const activeTabDone = computed(() => {
+  const ids = new Set(activeTabAction.value.map(d => d.id));
+  return activeTabItems.value.filter(i => !ids.has(i.id));
 });
 
 // SLA
