@@ -22,12 +22,14 @@
           </p>
         </div>
         <div class="flex items-center gap-2">
-          <AppButton v-if="hasAiData" variant="outline" size="sm" :loading="applyingAi" @click="applyAiData">
-            {{ t('crm.clientDetail.fillFromDocs') }}
-          </AppButton>
-          <RouterLink :to="{ name: 'clients.create', query: { edit: client.id } }">
-            <AppButton variant="outline" size="sm">{{ t('crm.clientDetail.edit') }}</AppButton>
-          </RouterLink>
+          <template v-if="hasCases">
+            <AppButton v-if="hasAiData" variant="outline" size="sm" :loading="applyingAi" @click="applyAiData">
+              {{ t('crm.clientDetail.fillFromDocs') }}
+            </AppButton>
+            <RouterLink :to="{ name: 'clients.create', query: { edit: client.id } }">
+              <AppButton variant="outline" size="sm">{{ t('crm.clientDetail.edit') }}</AppButton>
+            </RouterLink>
+          </template>
         </div>
       </div>
 
@@ -156,7 +158,7 @@
 
       <div v-else class="text-center py-6">
         <p class="text-sm text-gray-400 mb-3">{{ t('crm.clientDetail.profileEmpty') }}</p>
-        <AppButton v-if="hasAiData" variant="outline" size="sm" :loading="applyingAi" @click="applyAiData">
+        <AppButton v-if="hasCases" variant="outline" size="sm" :loading="applyingAi" @click="applyAiData">
           {{ t('crm.clientDetail.fillFromDocs') }}
         </AppButton>
       </div>
@@ -279,8 +281,8 @@ const loading = ref(true);
 const applyingAi = ref(false);
 const aiAppliedDocs = ref([]);
 
-// Has at least 1 case (potential AI data source)
-const hasAiData = computed(() => (client.value?.cases?.length ?? 0) > 0);
+const hasCases = computed(() => (client.value?.cases?.length ?? 0) > 0);
+const hasAiData = computed(() => hasCases.value);
 
 // Profile has meaningful data
 const hasProfileData = computed(() => {
