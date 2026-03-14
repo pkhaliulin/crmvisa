@@ -276,16 +276,13 @@ class PublicProfileController extends Controller
             ? ['%удостоверен%', '%ID%', '%id.card%', '%id_card%']
             : ['%аспорт%', '%passport%'];
 
+        $caseIds = $this->getUserCaseIds($user);
+        if ($caseIds->isEmpty()) {
+            return ApiResponse::error('Документ не найден в заявках', null, 404);
+        }
+
         $checklistItem = CaseChecklist::whereHas('document')
-            ->whereIn('case_id', function ($q) use ($user) {
-                $q->select('id')
-                    ->from('cases')
-                    ->whereIn('client_id', function ($q2) use ($user) {
-                        $q2->select('id')
-                            ->from('clients')
-                            ->where('public_user_id', $user->id);
-                    });
-            })
+            ->whereIn('case_id', $caseIds)
             ->where(function ($q) use ($namePatterns) {
                 foreach ($namePatterns as $pattern) {
                     $q->orWhere('name', 'like', $pattern);
@@ -492,18 +489,7 @@ class PublicProfileController extends Controller
      */
     private function syncFromCaseAiAnalysis($user, array &$update): void
     {
-        // Найти заявки клиента
-        $clientIds = \DB::table('clients')
-            ->where('public_user_id', $user->id)
-            ->pluck('id');
-
-        if ($clientIds->isEmpty()) return;
-
-        $caseIds = \DB::table('cases')
-            ->whereIn('client_id', $clientIds)
-            ->whereNull('deleted_at')
-            ->pluck('id');
-
+        $caseIds = $this->getUserCaseIds($user);
         if ($caseIds->isEmpty()) return;
 
         // AI-проанализированные документы из чеклиста
@@ -965,6 +951,38 @@ class PublicProfileController extends Controller
     /**
      * Проверить наличие загруженного паспорта в заявках.
      */
+    /**
+     * Выполнить callback с временными superadmin-привилегиями для кросс-тенантного доступа.
+     * Восстанавливает is_public_user после выполнения.
+     */
+    private function withCrossTenantAccess(callable $callback): mixed
+    {
+        \DB::statement("SET app.is_superadmin = 'true'");
+        try {
+            return $callback();
+        } finally {
+            \DB::statement("SET app.is_superadmin = 'false'");
+            \DB::statement("SET app.is_public_user = 'true'");
+        }
+    }
+
+    /**
+     * Получить case_ids клиента через кросс-тенантный доступ.
+     */
+    private function getUserCaseIds($user): \Illuminate\Support\Collection
+    {
+        return $this->withCrossTenantAccess(function () use ($user) {
+            $clientIds = \DB::table('clients')
+                ->where('public_user_id', $user->id)
+                ->pluck('id');
+            if ($clientIds->isEmpty()) return collect();
+            return \DB::table('cases')
+                ->whereIn('client_id', $clientIds)
+                ->whereNull('deleted_at')
+                ->pluck('id');
+        });
+    }
+
     private function checkPassportInCase($user): bool
     {
         return $this->checkDocInCase($user, ['%аспорт%', '%passport%']);
@@ -977,16 +995,11 @@ class PublicProfileController extends Controller
 
     private function checkDocInCase($user, array $namePatterns): bool
     {
+        $caseIds = $this->getUserCaseIds($user);
+        if ($caseIds->isEmpty()) return false;
+
         return CaseChecklist::whereHas('document')
-            ->whereIn('case_id', function ($q) use ($user) {
-                $q->select('id')
-                    ->from('cases')
-                    ->whereIn('client_id', function ($q2) use ($user) {
-                        $q2->select('id')
-                            ->from('clients')
-                            ->where('public_user_id', $user->id);
-                    });
-            })
+            ->whereIn('case_id', $caseIds)
             ->where(function ($q) use ($namePatterns) {
                 foreach ($namePatterns as $pattern) {
                     $q->orWhere('name', 'like', $pattern);
