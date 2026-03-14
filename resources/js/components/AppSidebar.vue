@@ -49,7 +49,7 @@ import {
   HomeIcon, ViewColumnsIcon, ClipboardDocumentListIcon, ClipboardDocumentCheckIcon,
   UsersIcon, UserGroupIcon,
   ChartBarIcon, BriefcaseIcon, ExclamationTriangleIcon, Cog6ToothIcon, CreditCardIcon, GlobeAltIcon,
-  MegaphoneIcon, BookOpenIcon
+  MegaphoneIcon, BookOpenIcon, BanknotesIcon
 } from '@heroicons/vue/24/outline';
 
 defineProps({ collapsed: Boolean });
@@ -81,6 +81,7 @@ const navItems = computed(() => {
     items.push(
       { to: { name: 'leadgen' },   icon: MegaphoneIcon,  label: t('crm.nav.leadgen') },
       { to: { name: 'reports' },   icon: ChartBarIcon,   label: t('crm.nav.reports') },
+      { to: { name: 'finance' },   icon: BanknotesIcon,  label: t('crm.nav.finance') },
       { to: { name: 'services' },  icon: BriefcaseIcon,  label: t('crm.nav.services') },
       { to: { name: 'billing' },   icon: CreditCardIcon, label: t('crm.nav.billing') },
       { to: { name: 'settings' },  icon: Cog6ToothIcon,  label: t('crm.nav.settings') },

@@ -1,0 +1,429 @@
+<template>
+  <div class="space-y-4">
+    <div>
+      <h1 class="text-xl font-bold text-gray-900">{{ t('crm.finance.title') }}</h1>
+      <p class="text-sm text-gray-500 mt-1">{{ t('crm.finance.subtitle') }}</p>
+    </div>
+
+    <!-- Вкладки -->
+    <div class="flex gap-1 bg-gray-100 rounded-xl p-1 w-fit">
+      <button v-for="tab in tabs" :key="tab.key"
+        @click="activeTab = tab.key"
+        :class="['px-4 py-1.5 text-sm rounded-lg transition-all font-medium',
+          activeTab === tab.key
+            ? 'bg-white text-gray-900 shadow-sm'
+            : 'text-gray-500 hover:text-gray-700']">
+        {{ tab.label }}
+      </button>
+    </div>
+
+    <div v-if="loading" class="flex items-center justify-center py-20">
+      <div class="animate-spin w-7 h-7 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+    </div>
+
+    <!-- ОБЗОР -->
+    <div v-else-if="activeTab === 'overview'" class="space-y-4">
+      <!-- Метрики -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+          <p class="text-xs text-gray-500 uppercase tracking-wide">{{ t('crm.finance.totalRevenue') }}</p>
+          <p class="text-2xl font-bold text-green-600 mt-1">{{ fmtAmount(overview.total_revenue) }}</p>
+        </div>
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+          <p class="text-xs text-gray-500 uppercase tracking-wide">{{ t('crm.finance.debtAmount') }}</p>
+          <p class="text-2xl font-bold text-orange-500 mt-1">{{ fmtAmount(overview.debt_amount) }}</p>
+        </div>
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+          <p class="text-xs text-gray-500 uppercase tracking-wide">{{ t('crm.finance.refundsTotal') }}</p>
+          <p class="text-2xl font-bold text-red-600 mt-1">{{ fmtAmount(overview.refunds_total) }}</p>
+        </div>
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+          <p class="text-xs text-gray-500 uppercase tracking-wide">{{ t('crm.finance.netRevenue') }}</p>
+          <p class="text-2xl font-bold text-blue-600 mt-1">{{ fmtAmount(overview.net_revenue) }}</p>
+        </div>
+      </div>
+
+      <!-- Предупреждения -->
+      <div v-if="overview.overdue_count || overview.blocked_count" class="flex gap-3 flex-wrap">
+        <span v-if="overview.overdue_count" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 text-red-700 text-sm font-medium">
+          <ExclamationTriangleIcon class="w-4 h-4" />
+          {{ t('crm.finance.overdueWarning') }}: {{ overview.overdue_count }}
+        </span>
+        <span v-if="overview.blocked_count" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-orange-50 text-orange-700 text-sm font-medium">
+          <ExclamationTriangleIcon class="w-4 h-4" />
+          {{ t('crm.finance.blocked') }}: {{ overview.blocked_count }}
+        </span>
+      </div>
+
+      <!-- Заявки по статусу оплаты + Выручка по методу -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <!-- По статусу оплаты -->
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <h3 class="font-semibold text-gray-700 mb-4">{{ t('crm.finance.casesTitle') }}</h3>
+          <div class="space-y-3">
+            <div v-for="item in paymentStatusItems" :key="item.key" class="space-y-1">
+              <div class="flex items-center justify-between text-sm">
+                <span class="text-gray-600">{{ item.label }}</span>
+                <span class="font-semibold text-gray-900">{{ item.count }}</span>
+              </div>
+              <div class="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                <div class="h-full rounded-full transition-all" :class="item.barColor"
+                  :style="{ width: maxPaymentStatus ? (item.count / maxPaymentStatus * 100) + '%' : '0%' }"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- По методу оплаты -->
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <h3 class="font-semibold text-gray-700 mb-4">{{ t('crm.finance.revenueByMethod') }}</h3>
+          <div class="space-y-3">
+            <div v-for="item in methodItems" :key="item.key" class="space-y-1">
+              <div class="flex items-center justify-between text-sm">
+                <span class="text-gray-600">{{ item.label }}</span>
+                <span class="font-semibold text-gray-900">{{ fmtAmount(item.amount) }}</span>
+              </div>
+              <div class="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                <div class="h-full rounded-full bg-[#1BA97F] transition-all"
+                  :style="{ width: maxMethodAmount ? (item.amount / maxMethodAmount * 100) + '%' : '0%' }"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ПЛАТЕЖИ -->
+    <div v-else-if="activeTab === 'payments'" class="space-y-4">
+      <!-- Фильтры -->
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+        <div class="flex flex-wrap gap-3 items-end">
+          <div class="w-48">
+            <label class="text-xs text-gray-500 mb-1 block">{{ t('crm.finance.filterMethod') }}</label>
+            <SearchSelect v-model="filters.method" :items="methodOptions" compact allow-all :all-label="t('crm.finance.filterMethod')" />
+          </div>
+          <div>
+            <label class="text-xs text-gray-500 mb-1 block">{{ t('crm.finance.filterFrom') }}</label>
+            <input v-model="filters.from" type="date" class="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1BA97F]/30" />
+          </div>
+          <div>
+            <label class="text-xs text-gray-500 mb-1 block">{{ t('crm.finance.filterTo') }}</label>
+            <input v-model="filters.to" type="date" class="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1BA97F]/30" />
+          </div>
+          <div class="w-48">
+            <label class="text-xs text-gray-500 mb-1 block">{{ t('crm.finance.filterClient') }}</label>
+            <input v-model="filters.client" type="text" :placeholder="t('crm.finance.filterClient')"
+              class="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1BA97F]/30" />
+          </div>
+          <button @click="loadPayments" class="px-4 py-1.5 bg-[#1BA97F] text-white text-sm rounded-lg hover:bg-[#158f6b] transition-colors">
+            {{ t('crm.finance.filterApply') }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Таблица платежей -->
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-left border-b border-gray-100">
+                <th class="px-4 py-3 font-medium text-gray-500">{{ t('crm.finance.date') }}</th>
+                <th class="px-4 py-3 font-medium text-gray-500">{{ t('crm.finance.caseNumber') }}</th>
+                <th class="px-4 py-3 font-medium text-gray-500">{{ t('crm.finance.client') }}</th>
+                <th class="px-4 py-3 font-medium text-gray-500">{{ t('crm.finance.amount') }}</th>
+                <th class="px-4 py-3 font-medium text-gray-500">{{ t('crm.finance.method') }}</th>
+                <th class="px-4 py-3 font-medium text-gray-500">{{ t('crm.finance.manager') }}</th>
+                <th class="px-4 py-3 font-medium text-gray-500">{{ t('crm.finance.comment') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="p in payments.data" :key="p.id" class="border-b border-gray-50 hover:bg-gray-50/50">
+                <td class="px-4 py-3 text-gray-700">{{ formatDate(p.paid_at) }}</td>
+                <td class="px-4 py-3">
+                  <router-link v-if="p.case_id" :to="{ name: 'cases.show', params: { id: p.case_id } }" class="text-blue-600 hover:underline">
+                    #{{ p.case_number }}
+                  </router-link>
+                  <span v-else class="text-gray-400">--</span>
+                </td>
+                <td class="px-4 py-3 text-gray-700">{{ p.client_name ?? '--' }}</td>
+                <td class="px-4 py-3 font-semibold text-gray-900">{{ fmtAmount(p.amount) }}</td>
+                <td class="px-4 py-3 text-gray-600">{{ methodLabel(p.method) }}</td>
+                <td class="px-4 py-3 text-gray-600">{{ p.manager_name ?? '--' }}</td>
+                <td class="px-4 py-3 text-gray-400 max-w-[200px] truncate">{{ p.comment ?? '' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div v-if="!payments.data?.length" class="py-12 text-center text-gray-400 text-sm">{{ t('crm.finance.noData') }}</div>
+
+        <!-- Пагинация -->
+        <div v-if="payments.last_page > 1" class="flex items-center justify-center gap-2 p-4 border-t border-gray-100">
+          <button v-for="page in payments.last_page" :key="page"
+            @click="loadPayments(page)"
+            :class="['w-8 h-8 rounded-lg text-sm font-medium transition-colors',
+              page === payments.current_page ? 'bg-[#1BA97F] text-white' : 'text-gray-600 hover:bg-gray-100']">
+            {{ page }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ДОЛГИ -->
+    <div v-else-if="activeTab === 'debts'" class="space-y-4">
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-left border-b border-gray-100">
+                <th class="px-4 py-3 font-medium text-gray-500">{{ t('crm.finance.caseNumber') }}</th>
+                <th class="px-4 py-3 font-medium text-gray-500">{{ t('crm.finance.client') }}</th>
+                <th class="px-4 py-3 font-medium text-gray-500">{{ t('crm.finance.totalPrice') }}</th>
+                <th class="px-4 py-3 font-medium text-gray-500">{{ t('crm.finance.paid') }}</th>
+                <th class="px-4 py-3 font-medium text-gray-500">{{ t('crm.finance.remaining') }}</th>
+                <th class="px-4 py-3 font-medium text-gray-500">{{ t('crm.finance.deadline') }}</th>
+                <th class="px-4 py-3 font-medium text-gray-500">{{ t('crm.finance.status') }}</th>
+                <th class="px-4 py-3 font-medium text-gray-500">{{ t('crm.finance.manager') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="d in debts" :key="d.case_id"
+                :class="['border-b border-gray-50', d.is_overdue ? 'bg-red-50/50' : 'hover:bg-gray-50/50']">
+                <td class="px-4 py-3">
+                  <router-link :to="{ name: 'cases.show', params: { id: d.case_id } }" class="text-blue-600 hover:underline">
+                    #{{ d.case_number }}
+                  </router-link>
+                </td>
+                <td class="px-4 py-3 text-gray-700">{{ d.client_name }}</td>
+                <td class="px-4 py-3 font-semibold text-gray-900">{{ fmtAmount(d.total_price) }}</td>
+                <td class="px-4 py-3 text-green-600">{{ fmtAmount(d.paid) }}</td>
+                <td class="px-4 py-3 font-semibold text-orange-600">{{ fmtAmount(d.remaining) }}</td>
+                <td class="px-4 py-3 text-gray-600">{{ formatDate(d.deadline) }}</td>
+                <td class="px-4 py-3">
+                  <span v-if="d.payment_blocked" class="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-700">
+                    {{ t('crm.finance.blocked') }}
+                  </span>
+                  <span v-else-if="d.is_overdue" class="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-700">
+                    {{ t('crm.finance.overdue') }}
+                  </span>
+                  <span v-else class="text-xs font-semibold px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700">
+                    {{ t('crm.finance.unpaid') }}
+                  </span>
+                </td>
+                <td class="px-4 py-3 text-gray-600">{{ d.manager_name ?? '--' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div v-if="!debts.length" class="py-12 text-center text-gray-400 text-sm">{{ t('crm.finance.noData') }}</div>
+      </div>
+    </div>
+
+    <!-- АНАЛИТИКА -->
+    <div v-else-if="activeTab === 'analytics'" class="space-y-4">
+      <!-- По менеджерам -->
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        <h3 class="font-semibold text-gray-700 mb-4">{{ t('crm.finance.byManager') }}</h3>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm mb-4">
+            <thead>
+              <tr class="text-left border-b border-gray-100">
+                <th class="pb-2 font-medium text-gray-500">{{ t('crm.finance.manager') }}</th>
+                <th class="pb-2 font-medium text-gray-500">{{ t('crm.finance.casesCount') }}</th>
+                <th class="pb-2 font-medium text-gray-500">{{ t('crm.finance.totalAmount') }}</th>
+                <th class="pb-2 font-medium text-gray-500 w-1/3"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="row in byManager" :key="row.manager_id" class="border-b border-gray-50">
+                <td class="py-2 text-gray-700">{{ row.manager_name }}</td>
+                <td class="py-2">{{ row.cases_count }}</td>
+                <td class="py-2 font-semibold text-gray-900">{{ fmtAmount(row.total_amount) }}</td>
+                <td class="py-2">
+                  <div class="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div class="h-full rounded-full bg-[#1BA97F] transition-all"
+                      :style="{ width: maxManagerAmount ? (row.total_amount / maxManagerAmount * 100) + '%' : '0%' }"></div>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div v-if="!byManager.length" class="text-sm text-gray-400 text-center py-4">{{ t('crm.finance.noData') }}</div>
+      </div>
+
+      <!-- По странам -->
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        <h3 class="font-semibold text-gray-700 mb-4">{{ t('crm.finance.byCountry') }}</h3>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm mb-4">
+            <thead>
+              <tr class="text-left border-b border-gray-100">
+                <th class="pb-2 font-medium text-gray-500">{{ t('crm.finance.country') }}</th>
+                <th class="pb-2 font-medium text-gray-500">{{ t('crm.finance.casesCount') }}</th>
+                <th class="pb-2 font-medium text-gray-500">{{ t('crm.finance.totalAmount') }}</th>
+                <th class="pb-2 font-medium text-gray-500 w-1/3"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="row in byCountry" :key="row.country_code" class="border-b border-gray-50">
+                <td class="py-2 text-gray-700">
+                  <span class="mr-1">{{ countryFlag(row.country_code) }}</span>
+                  {{ countryName(row.country_code) }}
+                </td>
+                <td class="py-2">{{ row.cases_count }}</td>
+                <td class="py-2 font-semibold text-gray-900">{{ fmtAmount(row.total_amount) }}</td>
+                <td class="py-2">
+                  <div class="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div class="h-full rounded-full bg-blue-500 transition-all"
+                      :style="{ width: maxCountryAmount ? (row.total_amount / maxCountryAmount * 100) + '%' : '0%' }"></div>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div v-if="!byCountry.length" class="text-sm text-gray-400 text-center py-4">{{ t('crm.finance.noData') }}</div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed, onMounted, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
+import api from '@/api/index';
+import { useCountries } from '@/composables/useCountries';
+import SearchSelect from '@/components/SearchSelect.vue';
+import { ExclamationTriangleIcon } from '@heroicons/vue/24/outline';
+
+const { t } = useI18n();
+const { countryName, countryFlag } = useCountries();
+
+const activeTab = ref('overview');
+const loading = ref(false);
+
+// Данные
+const overview = ref({
+  total_revenue: 0, debt_amount: 0, refunds_total: 0, net_revenue: 0,
+  overdue_count: 0, blocked_count: 0,
+  by_payment_status: {}, by_method: {},
+});
+const payments = ref({ data: [], current_page: 1, last_page: 1 });
+const debts = ref([]);
+const byManager = ref([]);
+const byCountry = ref([]);
+
+// Фильтры платежей
+const filters = ref({ method: '', from: '', to: '', client: '' });
+
+const tabs = computed(() => [
+  { key: 'overview',  label: t('crm.finance.tabOverview') },
+  { key: 'payments',  label: t('crm.finance.tabPayments') },
+  { key: 'debts',     label: t('crm.finance.tabDebts') },
+  { key: 'analytics', label: t('crm.finance.tabAnalytics') },
+]);
+
+const methodOptions = computed(() => [
+  { value: 'cash',          label: t('crm.finance.cash') },
+  { value: 'terminal',      label: t('crm.finance.terminal') },
+  { value: 'bank_transfer', label: t('crm.finance.bankTransfer') },
+  { value: 'online',        label: t('crm.finance.online') },
+]);
+
+const methodLabelsMap = computed(() => ({
+  cash: t('crm.finance.cash'),
+  terminal: t('crm.finance.terminal'),
+  bank_transfer: t('crm.finance.bankTransfer'),
+  online: t('crm.finance.online'),
+}));
+function methodLabel(m) { return methodLabelsMap.value[m] ?? m ?? '--'; }
+
+// Обзор — статусы оплаты
+const paymentStatusItems = computed(() => {
+  const s = overview.value.by_payment_status || {};
+  return [
+    { key: 'paid',      label: t('crm.finance.fullyPaid'),   count: s.paid ?? 0,      barColor: 'bg-green-500' },
+    { key: 'partial',   label: t('crm.finance.partialPaid'), count: s.partial ?? 0,   barColor: 'bg-yellow-500' },
+    { key: 'unpaid',    label: t('crm.finance.unpaid'),      count: s.unpaid ?? 0,    barColor: 'bg-red-400' },
+    { key: 'cancelled', label: t('crm.finance.cancelled'),   count: s.cancelled ?? 0, barColor: 'bg-gray-400' },
+  ];
+});
+const maxPaymentStatus = computed(() => Math.max(...paymentStatusItems.value.map(i => i.count), 1));
+
+// Обзор — методы оплаты
+const methodItems = computed(() => {
+  const m = overview.value.by_method || {};
+  return [
+    { key: 'cash',          label: t('crm.finance.cash'),         amount: m.cash ?? 0 },
+    { key: 'terminal',      label: t('crm.finance.terminal'),     amount: m.terminal ?? 0 },
+    { key: 'bank_transfer', label: t('crm.finance.bankTransfer'), amount: m.bank_transfer ?? 0 },
+    { key: 'online',        label: t('crm.finance.online'),       amount: m.online ?? 0 },
+  ];
+});
+const maxMethodAmount = computed(() => Math.max(...methodItems.value.map(i => i.amount), 1));
+
+// Аналитика — максимумы для баров
+const maxManagerAmount = computed(() => byManager.value.length ? Math.max(...byManager.value.map(r => r.total_amount)) : 1);
+const maxCountryAmount = computed(() => byCountry.value.length ? Math.max(...byCountry.value.map(r => r.total_amount)) : 1);
+
+// Форматирование
+function fmtAmount(val) {
+  return Number(val || 0).toLocaleString('ru-RU');
+}
+
+function formatDate(d) {
+  if (!d) return '--';
+  return new Date(d).toLocaleDateString('ru-RU');
+}
+
+// Загрузка данных
+async function loadOverview() {
+  const res = await api.get('/finance/overview');
+  overview.value = res.data.data;
+}
+
+async function loadPayments(page = 1) {
+  const params = { page };
+  if (filters.value.method) params.method = filters.value.method;
+  if (filters.value.from) params.from = filters.value.from;
+  if (filters.value.to) params.to = filters.value.to;
+  if (filters.value.client) params.client = filters.value.client;
+  const res = await api.get('/finance/payments', { params });
+  payments.value = res.data.data ?? res.data;
+}
+
+async function loadDebts() {
+  const res = await api.get('/finance/debts');
+  debts.value = res.data.data;
+}
+
+async function loadByManager() {
+  const res = await api.get('/finance/by-manager');
+  byManager.value = res.data.data;
+}
+
+async function loadByCountry() {
+  const res = await api.get('/finance/by-country');
+  byCountry.value = res.data.data;
+}
+
+async function loadTab(tab) {
+  loading.value = true;
+  try {
+    if (tab === 'overview') {
+      await loadOverview();
+    } else if (tab === 'payments') {
+      await loadPayments();
+    } else if (tab === 'debts') {
+      await loadDebts();
+    } else if (tab === 'analytics') {
+      await Promise.all([loadByManager(), loadByCountry()]);
+    }
+  } catch { /* ignore */ } finally {
+    loading.value = false;
+  }
+}
+
+watch(activeTab, (tab) => loadTab(tab));
+onMounted(() => loadTab('overview'));
+</script>

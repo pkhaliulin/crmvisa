@@ -217,6 +217,13 @@ Route::middleware(['auth:api', 'role:owner,superadmin', 'plan.active'])->group(f
         Route::get('reports/countries',        [ReportController::class, 'countries']);
         Route::get('reports/overdue',          [ReportController::class, 'overdue']);
         Route::get('reports/sla-performance',  [ReportController::class, 'slaPerformance']);
+
+        // Финансовый кабинет
+        Route::get('finance/overview',     [\App\Modules\Finance\Controllers\FinanceController::class, 'overview']);
+        Route::get('finance/payments',     [\App\Modules\Finance\Controllers\FinanceController::class, 'payments']);
+        Route::get('finance/debts',        [\App\Modules\Finance\Controllers\FinanceController::class, 'debts']);
+        Route::get('finance/by-manager',   [\App\Modules\Finance\Controllers\FinanceController::class, 'byManager']);
+        Route::get('finance/by-country',   [\App\Modules\Finance\Controllers\FinanceController::class, 'byCountry']);
     });
 });
 

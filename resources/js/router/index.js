@@ -297,6 +297,12 @@ const routes = [
                 meta: { roles: ['owner', 'superadmin'] },
             },
             {
+                path: 'finance',
+                name: 'finance',
+                component: () => import('@/pages/FinancePage.vue'),
+                meta: { roles: ['owner', 'superadmin'] },
+            },
+            {
                 path: 'services',
                 name: 'services',
                 component: () => import('@/pages/AgencyServicesPage.vue'),
