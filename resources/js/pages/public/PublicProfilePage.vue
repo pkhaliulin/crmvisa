@@ -15,21 +15,35 @@
             </button>
         </div>
 
-        <!-- Загрузка паспорта (OCR) -->
+        <!-- Загрузка документов (OCR) -->
         <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             <div class="px-5 py-4 border-b border-gray-50">
-                <h3 class="font-bold text-[#0A1F44] text-sm">{{ $t('profile.passportOcr') }}</h3>
-                <p class="text-xs text-gray-400 mt-0.5">{{ $t('profile.passportOcrHint') }}</p>
+                <h3 class="font-bold text-[#0A1F44] text-sm">{{ $t('profile.docUpload') }}</h3>
+                <p class="text-xs text-gray-400 mt-0.5">{{ $t('profile.docUploadHint') }}</p>
             </div>
             <div class="p-5">
-                <!-- Статус: ничего не загружено или ошибка — показать зону загрузки -->
+                <!-- Табы: загранпаспорт / ID-карта -->
+                <div v-if="!ocrUploading && ocrStatus !== 'completed'" class="flex gap-2 mb-4">
+                    <button type="button" @click="ocrDocType = 'foreign_passport'"
+                        :class="ocrDocType === 'foreign_passport' ? 'bg-[#1BA97F] text-white border-[#1BA97F]' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'"
+                        class="flex-1 px-3 py-2 rounded-xl text-xs border transition-colors font-medium">
+                        {{ $t('profile.docTypePassport') }}
+                    </button>
+                    <button type="button" @click="ocrDocType = 'id_card'"
+                        :class="ocrDocType === 'id_card' ? 'bg-[#1BA97F] text-white border-[#1BA97F]' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'"
+                        class="flex-1 px-3 py-2 rounded-xl text-xs border transition-colors font-medium">
+                        {{ $t('profile.docTypeIdCard') }}
+                    </button>
+                </div>
+
+                <!-- Зона загрузки -->
                 <div v-if="!ocrUploading && ocrStatus !== 'completed'">
                     <label
                         class="flex flex-col items-center gap-3 p-6 border-2 border-dashed rounded-2xl cursor-pointer transition-colors"
                         :class="ocrStatus === 'failed'
                             ? 'border-red-300 bg-red-50 hover:bg-red-100'
                             : 'border-[#1BA97F]/40 bg-[#1BA97F]/5 hover:bg-[#1BA97F]/10'">
-                        <input type="file" accept="image/*" capture="environment" class="sr-only" @change="handlePassportUpload" />
+                        <input type="file" accept="image/*" capture="environment" class="sr-only" @change="handleDocumentUpload" />
                         <div class="w-12 h-12 rounded-full flex items-center justify-center"
                              :class="ocrStatus === 'failed' ? 'bg-red-100' : 'bg-[#1BA97F]/10'">
                             <svg class="w-6 h-6" :class="ocrStatus === 'failed' ? 'text-red-500' : 'text-[#1BA97F]'" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
@@ -46,7 +60,7 @@
                     </label>
                     <p v-if="ocrStatus === 'failed'" class="text-xs text-red-500 mt-2 text-center">{{ $t('profile.passportOcrFailed') }}</p>
                     <!-- Кнопка: использовать паспорт из заявки -->
-                    <button v-if="hasPassportInCase" @click="ocrFromCaseHandler" type="button" :disabled="ocrUploading"
+                    <button v-if="hasPassportInCase && ocrDocType === 'foreign_passport'" @click="ocrFromCaseHandler" type="button" :disabled="ocrUploading"
                         class="w-full mt-3 flex items-center justify-center gap-2 px-4 py-2.5 border border-[#1BA97F]/40 rounded-xl text-sm font-medium text-[#1BA97F] hover:bg-[#1BA97F]/5 transition-colors">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/>
@@ -74,6 +88,10 @@
                             <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
                         </div>
                         <p class="text-sm font-semibold text-[#0A1F44]">{{ $t('profile.passportOcrDone') }}</p>
+                        <!-- Тип документа -->
+                        <span v-if="ocrDetectedType" class="text-[10px] font-medium px-2 py-0.5 rounded-full bg-blue-50 text-blue-600">
+                            {{ docTypeLabel(ocrDetectedType) }}
+                        </span>
                         <span v-if="ocrExtracted.confidence" class="ml-auto text-[10px] font-medium px-2 py-0.5 rounded-full"
                             :class="ocrExtracted.confidence >= 0.8 ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'">
                             {{ Math.round(ocrExtracted.confidence * 100) }}%
@@ -106,6 +124,21 @@
                         </div>
                     </div>
 
+                    <!-- Кросс-валидация -->
+                    <div v-if="crossValidation" class="mb-3 p-3 rounded-xl border"
+                        :class="crossValidation.note === 'documents_consistent' || crossValidation.note === 'transliteration_difference'
+                            ? 'bg-emerald-50 border-emerald-200'
+                            : 'bg-amber-50 border-amber-200'">
+                        <p class="text-xs font-medium"
+                            :class="crossValidation.note === 'documents_consistent' ? 'text-emerald-700'
+                                : crossValidation.note === 'transliteration_difference' ? 'text-blue-700'
+                                : 'text-amber-700'">
+                            {{ crossValidation.note === 'documents_consistent' ? $t('profile.crossValidationOk')
+                                : crossValidation.note === 'transliteration_difference' ? $t('profile.crossValidationTranslit')
+                                : $t('profile.crossValidationMismatch') }}
+                        </p>
+                    </div>
+
                     <!-- Автозаполненные поля -->
                     <div v-if="ocrAutoFilled.length" class="mb-3">
                         <p class="text-xs font-medium text-[#1BA97F] mb-1.5">{{ $t('profile.passportOcrAutoFilled') }}</p>
@@ -117,7 +150,7 @@
                         </div>
                     </div>
 
-                    <!-- Кнопка: загрузить другой паспорт -->
+                    <!-- Кнопка: загрузить другой документ -->
                     <button @click="resetOcr" type="button"
                         class="text-[11px] text-gray-400 hover:text-gray-600 transition-colors">
                         {{ $t('profile.passportOcrAnother') }}
@@ -210,6 +243,22 @@
                                 {{ $t('profile.female') }}
                             </button>
                         </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.placeOfBirth') }}</label>
+                        <input v-model="form.place_of_birth" :placeholder="$t('profile.placeOfBirth')"
+                            class="w-full border rounded-xl px-3 py-2.5 text-sm outline-none transition-colors"
+                            :class="form.place_of_birth ? 'border-[#1BA97F]' : 'border-gray-200 focus:border-[#1BA97F]'"/>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">
+                            {{ $t('profile.pnfl') }}
+                            <span class="text-gray-400 font-normal">({{ $t('profile.pnflHint') }})</span>
+                        </label>
+                        <input v-model="form.pnfl" maxlength="14" inputmode="numeric" placeholder="00000000000000"
+                            @input="form.pnfl = ($event.target.value || '').replace(/\D/g, '').slice(0, 14)"
+                            class="w-full border rounded-xl px-3 py-2.5 text-sm outline-none transition-colors font-mono tracking-wider"
+                            :class="form.pnfl && form.pnfl.length === 14 ? 'border-[#1BA97F]' : 'border-gray-200 focus:border-[#1BA97F]'"/>
                     </div>
                 </div>
 
@@ -391,6 +440,56 @@
                             <p class="text-xs text-[#0A1F44] leading-relaxed">{{ passportExpiryColor.msg }}</p>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Удостоверение личности (ID) -->
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm">
+            <div class="px-5 py-4 border-b border-gray-50">
+                <h3 class="font-bold text-[#0A1F44] text-sm">{{ $t('profile.idDocTitle') }}</h3>
+                <p class="text-xs text-gray-400 mt-0.5">{{ $t('profile.idDocHint') }}</p>
+            </div>
+            <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.idDocType') }}</label>
+                    <div class="flex gap-2">
+                        <button type="button" @click="form.id_doc_type = 'id_card'"
+                            :class="form.id_doc_type === 'id_card' ? 'bg-[#1BA97F] text-white border-[#1BA97F]' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'"
+                            class="flex-1 px-3 py-2.5 rounded-xl text-xs border transition-colors font-medium">
+                            {{ $t('profile.docTypeIdCard') }}
+                        </button>
+                        <button type="button" @click="form.id_doc_type = 'internal_passport'"
+                            :class="form.id_doc_type === 'internal_passport' ? 'bg-[#1BA97F] text-white border-[#1BA97F]' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'"
+                            class="flex-1 px-3 py-2.5 rounded-xl text-xs border transition-colors font-medium">
+                            {{ $t('profile.docTypeInternalPassport') }}
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.idDocNumber') }}</label>
+                    <input v-model="form.id_doc_number" maxlength="20"
+                        @input="form.id_doc_number = ($event.target.value || '').toUpperCase()"
+                        class="w-full border rounded-xl px-3 py-2.5 text-sm outline-none transition-colors font-mono"
+                        :class="form.id_doc_number ? 'border-[#1BA97F]' : 'border-gray-200 focus:border-[#1BA97F]'"/>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.idDocExpiry') }}</label>
+                    <input v-model="form.id_doc_expires_at" type="date"
+                        class="w-full border rounded-xl px-3 py-2.5 text-sm outline-none transition-colors"
+                        :class="form.id_doc_expires_at ? 'border-[#1BA97F]' : 'border-gray-200 focus:border-[#1BA97F]'"/>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.idDocIssueDate') }}</label>
+                    <input v-model="form.id_doc_issue_date" type="date"
+                        class="w-full border rounded-xl px-3 py-2.5 text-sm outline-none transition-colors"
+                        :class="form.id_doc_issue_date ? 'border-[#1BA97F]' : 'border-gray-200 focus:border-[#1BA97F]'"/>
+                </div>
+                <div class="sm:col-span-2">
+                    <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.idDocIssuedBy') }}</label>
+                    <input v-model="form.id_doc_issued_by"
+                        class="w-full border rounded-xl px-3 py-2.5 text-sm outline-none transition-colors"
+                        :class="form.id_doc_issued_by ? 'border-[#1BA97F]' : 'border-gray-200 focus:border-[#1BA97F]'"/>
                 </div>
             </div>
         </div>
@@ -979,13 +1078,16 @@ const saving    = ref(false);
 const saveMsg   = ref('');
 const saveError = ref(false);
 
-// --- OCR паспорта ---
+// --- OCR документов ---
 const ocrStatus          = ref(publicAuth.user?.ocr_status ?? '');
 const ocrExtracted       = ref(null);
 const ocrMismatches      = ref([]);
 const ocrAutoFilled      = ref([]);
 const ocrUploading       = ref(false);
 const hasPassportInCase  = ref(false);
+const ocrDocType         = ref('foreign_passport');
+const ocrDetectedType    = ref(null);
+const crossValidation    = ref(null);
 
 const OCR_FIELD_MAP = {
     name: 'profile.firstName',
@@ -994,27 +1096,39 @@ const OCR_FIELD_MAP = {
     citizenship: 'profile.citizenship',
     passport_number: 'profile.passportNumber',
     passport_expires_at: 'profile.passportExpiry',
+    id_doc_number: 'profile.idDocNumber',
+    pnfl: 'profile.pnfl',
+    place_of_birth: 'profile.placeOfBirth',
 };
+
+function docTypeLabel(type) {
+    const map = { foreign_passport: t('profile.docTypePassport'), id_card: t('profile.docTypeIdCard'), internal_passport: t('profile.docTypeInternalPassport') };
+    return map[type] || type;
+}
 
 function ocrFieldLabel(field) {
     return t(OCR_FIELD_MAP[field] || field);
 }
 
-async function handlePassportUpload(e) {
+async function handleDocumentUpload(e) {
     const file = e.target.files?.[0];
     if (!file) return;
     ocrUploading.value = true;
     ocrStatus.value = 'processing';
     ocrMismatches.value = [];
     ocrAutoFilled.value = [];
+    ocrDetectedType.value = null;
+    crossValidation.value = null;
     try {
-        const { data } = await publicPortalApi.uploadPassport(file);
+        const { data } = await publicPortalApi.uploadDocument(file, ocrDocType.value);
         const result = data?.data;
         ocrStatus.value = result?.ocr_status ?? 'failed';
         if (result?.ocr_status === 'completed' && result?.extracted) {
             ocrExtracted.value = result.extracted;
             ocrMismatches.value = result.mismatches || [];
-            autoFillFromOcr(result.extracted);
+            ocrDetectedType.value = result.document_type || null;
+            crossValidation.value = result.cross_validation || null;
+            autoFillFromOcr(result.extracted, result.document_type);
         }
     } catch {
         ocrStatus.value = 'failed';
@@ -1024,7 +1138,7 @@ async function handlePassportUpload(e) {
     }
 }
 
-function autoFillFromOcr(extracted) {
+function autoFillFromOcr(extracted, docType = 'foreign_passport') {
     const filled = [];
     const fieldMap = {
         first_name: { formField: null, set: v => { if (!firstName.value) { firstName.value = (v || '').toUpperCase(); filled.push({ field: 'name', value: v }); } } },
@@ -1032,9 +1146,20 @@ function autoFillFromOcr(extracted) {
         dob:                 { formField: 'dob', format: v => v?.slice(0, 10) },
         gender:              { formField: 'gender' },
         citizenship:         { formField: 'citizenship' },
-        passport_number:     { formField: 'passport_number' },
-        passport_expires_at: { formField: 'passport_expires_at', format: v => v?.slice(0, 10) },
+        passport_number:     { formField: docType === 'foreign_passport' ? 'passport_number' : 'id_doc_number' },
+        passport_expires_at: { formField: docType === 'foreign_passport' ? 'passport_expires_at' : 'id_doc_expires_at', format: v => v?.slice(0, 10) },
+        pnfl:                { formField: 'pnfl' },
+        place_of_birth:      { formField: 'place_of_birth' },
     };
+    // ID-специфичные поля
+    if (docType !== 'foreign_passport') {
+        fieldMap.passport_issue_date = { formField: 'id_doc_issue_date', format: v => v?.slice(0, 10) };
+        fieldMap.issuing_authority   = { formField: 'id_doc_issued_by' };
+        if (!form.id_doc_type) form.id_doc_type = docType;
+    } else {
+        fieldMap.passport_issue_date = { formField: 'passport_issue_date', format: v => v?.slice(0, 10) };
+        fieldMap.issuing_authority   = { formField: 'passport_issued_by' };
+    }
     for (const [ocrKey, cfg] of Object.entries(fieldMap)) {
         const val = extracted[ocrKey];
         if (!val) continue;
@@ -1077,6 +1202,8 @@ function resetOcr() {
     ocrExtracted.value = null;
     ocrMismatches.value = [];
     ocrAutoFilled.value = [];
+    ocrDetectedType.value = null;
+    crossValidation.value = null;
 }
 
 async function ocrFromCaseHandler() {
@@ -1084,6 +1211,7 @@ async function ocrFromCaseHandler() {
     ocrStatus.value = 'processing';
     ocrMismatches.value = [];
     ocrAutoFilled.value = [];
+    ocrDetectedType.value = null;
     try {
         const { data } = await publicPortalApi.ocrFromCase();
         const result = data?.data;
@@ -1091,7 +1219,8 @@ async function ocrFromCaseHandler() {
         if (result?.ocr_status === 'completed' && result?.extracted) {
             ocrExtracted.value = result.extracted;
             ocrMismatches.value = result.mismatches || [];
-            autoFillFromOcr(result.extracted);
+            ocrDetectedType.value = result.document_type || null;
+            autoFillFromOcr(result.extracted, result.document_type);
         }
     } catch {
         ocrStatus.value = 'failed';
@@ -1105,7 +1234,16 @@ async function loadPassportData() {
         const { data } = await publicPortalApi.passportData();
         const result = data?.data;
         hasPassportInCase.value = !!result?.has_passport_in_case;
-        if (result?.extracted) {
+        crossValidation.value = result?.cross_validation || null;
+        // Загрузить OCR-данные паспорта
+        const passport = result?.passport;
+        if (passport?.extracted) {
+            ocrExtracted.value = passport.extracted;
+            ocrMismatches.value = passport.mismatches || [];
+            ocrStatus.value = 'completed';
+            ocrDetectedType.value = 'foreign_passport';
+        } else if (result?.extracted) {
+            // Обратная совместимость
             ocrExtracted.value = result.extracted;
             ocrMismatches.value = result.mismatches || [];
             ocrStatus.value = 'completed';
@@ -1274,8 +1412,17 @@ const form = reactive({
     dob:                  publicAuth.user?.dob?.slice(0, 10) ?? '',
     citizenship:          publicAuth.user?.citizenship ?? '',
     gender:               publicAuth.user?.gender ?? '',
+    place_of_birth:       publicAuth.user?.place_of_birth ?? '',
+    pnfl:                 publicAuth.user?.pnfl ?? '',
     passport_number:      publicAuth.user?.passport_number ?? '',
     passport_expires_at:  publicAuth.user?.passport_expires_at?.slice(0, 10) ?? '',
+    passport_issue_date:  publicAuth.user?.passport_issue_date?.slice(0, 10) ?? '',
+    passport_issued_by:   publicAuth.user?.passport_issued_by ?? '',
+    id_doc_type:          publicAuth.user?.id_doc_type ?? '',
+    id_doc_number:        publicAuth.user?.id_doc_number ?? '',
+    id_doc_expires_at:    publicAuth.user?.id_doc_expires_at?.slice(0, 10) ?? '',
+    id_doc_issue_date:    publicAuth.user?.id_doc_issue_date?.slice(0, 10) ?? '',
+    id_doc_issued_by:     publicAuth.user?.id_doc_issued_by ?? '',
     employment_type:      publicAuth.user?.employment_type ?? '',
     employed_years:       publicAuth.user?.employed_years ?? '',
     education_level:      publicAuth.user?.education_level ?? '',
