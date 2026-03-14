@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Modules\Agency\Models\AgencyWorkCountry;
 use App\Modules\Owner\Models\PortalCountry;
 use App\Modules\PublicPortal\Services\PublicScoringService;
+use App\Modules\Scoring\Services\ScoringDataAdapter;
+use App\Modules\Scoring\Services\UnifiedScoringEngine;
 use App\Support\Helpers\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -13,8 +15,10 @@ use Illuminate\Support\Facades\DB;
 
 class PublicScoringController extends Controller
 {
-    public function __construct(private PublicScoringService $scoring)
-    {
+    public function __construct(
+        private PublicScoringService $scoring,
+        private UnifiedScoringEngine $unified,
+    ) {
         // Публичные эндпоинты без auth.public — нужно открыть RLS для мультитенантных таблиц
         DB::statement("SET app.is_public_user = 'true'");
     }
@@ -140,66 +144,89 @@ class PublicScoringController extends Controller
     /**
      * GET /public/scoring/profile
      * Базовый скоринговый профиль клиента (без привязки к стране).
+     * Использует UnifiedScoringEngine (SSOT).
      */
     public function scoreProfile(Request $request): JsonResponse
     {
         $user = $request->get('_public_user');
+        $data = ScoringDataAdapter::fromPublicUser($user);
+        $result = $this->unified->scoreProfile($data);
 
-        // Calculate base blocks
-        $blocks = [
-            'finances'     => $this->scoring->calcFinances($user),
-            'visa_history' => $this->scoring->calcVisaHistory($user),
-            'social_ties'  => $this->scoring->calcSocialTies($user),
-        ];
-
-        $redFlagMultiplier = $this->scoring->applyRedFlags($user);
+        // Red flag описания для UI
         $redFlags = [];
-        if ($redFlagMultiplier < 1.0) {
-            $redFlags = $this->scoring->getRedFlagDescriptions($user, $redFlagMultiplier);
+        if ($result['red_flag_multiplier'] < 1.0) {
+            $redFlags = $this->scoring->getRedFlagDescriptions($user, $result['red_flag_multiplier']);
         }
 
-        // Base score (average of 3 blocks, weighted)
-        $baseScore = (int) round(
-            $blocks['finances'] * 0.30 +
-            $blocks['visa_history'] * 0.40 +
-            $blocks['social_ties'] * 0.30
-        );
-        $baseScore = (int) round($baseScore * $redFlagMultiplier);
-        $baseScore = max(5, min(100, $baseScore));
-
-        // Recommendations
-        $recs = $this->scoring->profileRecommendations($user, $blocks);
+        // Локализовать рекомендации
+        $recs = $this->localizeRecommendations($result['recommendations']);
 
         return ApiResponse::success([
-            'base_score'          => $baseScore,
-            'blocks'              => $blocks,
+            'base_score'          => $result['score'],
+            'blocks'              => $result['blocks'],
+            'weights'             => $result['weights'],
+            'flags'               => $result['flags'],
             'red_flags'           => $redFlags,
-            'red_flag_multiplier' => $redFlagMultiplier,
+            'red_flag_multiplier' => $result['red_flag_multiplier'],
             'recommendations'     => $recs,
             'profile_percent'     => $user->profileCompleteness(),
+            'is_blocked'          => $result['is_blocked'],
         ]);
+    }
+
+    /**
+     * Преобразовать ключи рекомендаций в человекочитаемые тексты.
+     */
+    private function localizeRecommendations(array $recs): array
+    {
+        $texts = [
+            'employment_needed'     => ['text' => 'Официальное трудоустройство значительно повышает шансы', 'docs' => ['Трудовой договор', 'Приказ о назначении']],
+            'income_low'            => ['text' => 'Доход ниже минимального порога — подтвердите доход от $500/мес', 'docs' => ['Справка о доходах с места работы']],
+            'income_not_specified'  => ['text' => 'Укажите ежемесячный доход — это значительно повысит скоринг', 'docs' => ['Справка о доходах', 'Банковская выписка за 3-6 месяцев']],
+            'official_income_helps' => ['text' => 'Подтвердите официальный источник дохода', 'docs' => ['Справка 2-НДФЛ или аналог', 'Налоговая декларация']],
+            'bank_statement_helps'  => ['text' => 'Предоставьте выписку из банка за 3-6 месяцев', 'docs' => ['Банковская выписка']],
+            'property_helps'        => ['text' => 'Укажите наличие недвижимости — главный фактор привязанности к родине', 'docs' => ['Свидетельство о праве собственности']],
+            'visa_history_empty'    => ['text' => 'Нет истории виз — начните с более лояльных направлений (ОАЭ, Турция)', 'docs' => []],
+            'refusal_docs_needed'   => ['text' => 'При наличии отказов важно подготовить полный пакет документов', 'docs' => ['Письмо-объяснение причин отказа', 'Дополнительные подтверждающие документы']],
+            'education_helps'       => ['text' => 'Укажите уровень образования — высшее образование повышает доверие', 'docs' => ['Диплом об образовании']],
+            'criminal_record_block' => ['text' => 'Судимость — подача визы крайне маловероятна', 'docs' => ['Необходима юридическая консультация']],
+        ];
+
+        return array_map(function ($rec) use ($texts) {
+            $key = $rec['text'];
+            $localized = $texts[$key] ?? null;
+            return [
+                'type'     => $rec['type'],
+                'priority' => $rec['priority'],
+                'text'     => $localized['text'] ?? $key,
+                'docs'     => $localized['docs'] ?? [],
+            ];
+        }, $recs);
     }
 
     /**
      * POST /public/scoring/batch
      * Скоринг по набору стран (для ленивой загрузки в разделе "Страны").
+     * Использует UnifiedScoringEngine (SSOT).
      */
     public function scoreBatch(Request $request): JsonResponse
     {
         $user = $request->get('_public_user');
-        $data = $request->validate([
+        $input = $request->validate([
             'countries'   => ['required', 'array', 'min:1', 'max:50'],
             'countries.*' => ['string', 'size:2'],
             'visa_type'   => ['sometimes', 'string', 'in:tourist,business,student,work,transit'],
         ]);
 
-        $visaType = $data['visa_type'] ?? 'tourist';
+        $visaType = $input['visa_type'] ?? 'tourist';
+        $data = ScoringDataAdapter::fromPublicUser($user);
         $results = [];
-        foreach ($data['countries'] as $cc) {
-            $results[] = $this->scoring->score($user, strtoupper($cc), $visaType);
+        foreach ($input['countries'] as $cc) {
+            $result = $this->unified->scoreForCountry($data, strtoupper($cc), $visaType);
+            $result['profile_percent'] = $user->profileCompleteness();
+            $results[] = $result;
         }
 
-        // Sort by score desc
         usort($results, fn ($a, $b) => $b['score'] - $a['score']);
 
         return ApiResponse::success($results);
@@ -208,15 +235,19 @@ class PublicScoringController extends Controller
     /**
      * GET /public/scoring/{country}
      * Скоринг по конкретной стране (требует авторизацию).
+     * Использует UnifiedScoringEngine (SSOT).
      */
     public function scoreCountry(Request $request, string $country): JsonResponse
     {
-        $user     = $request->get('_public_user');
+        $user = $request->get('_public_user');
         $visaType = $request->query('visa_type', 'tourist');
         if (! in_array($visaType, ['tourist', 'business', 'student', 'work', 'transit'])) {
             $visaType = 'tourist';
         }
-        $result   = $this->scoring->score($user, strtoupper($country), $visaType);
+
+        $data = ScoringDataAdapter::fromPublicUser($user);
+        $result = $this->unified->scoreForCountry($data, strtoupper($country), $visaType);
+        $result['profile_percent'] = $user->profileCompleteness();
 
         return ApiResponse::success($result);
     }
@@ -224,15 +255,38 @@ class PublicScoringController extends Controller
     /**
      * GET /public/scoring
      * Скоринг по всем странам для сравнения.
+     * Использует UnifiedScoringEngine (SSOT).
      */
     public function scoreAll(Request $request): JsonResponse
     {
-        $user     = $request->get('_public_user');
+        $user = $request->get('_public_user');
         $visaType = $request->query('visa_type', 'tourist');
         if (! in_array($visaType, ['tourist', 'business', 'student', 'work', 'transit'])) {
             $visaType = 'tourist';
         }
-        $results  = $this->scoring->scoreAll($user, $visaType);
+
+        $data = ScoringDataAdapter::fromPublicUser($user);
+
+        // Получить список стран
+        $countries = DB::table('portal_countries')
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->pluck('country_code')
+            ->toArray();
+
+        if (empty($countries)) {
+            $countries = ['DE', 'ES', 'FR', 'IT', 'PL', 'CZ', 'GB', 'US', 'CA', 'KR', 'AE'];
+        }
+
+        $results = collect($countries)
+            ->map(function ($cc) use ($data, $visaType, $user) {
+                $result = $this->unified->scoreForCountry($data, $cc, $visaType);
+                $result['profile_percent'] = $user->profileCompleteness();
+                return $result;
+            })
+            ->sortByDesc('score')
+            ->values()
+            ->toArray();
 
         return ApiResponse::success([
             'scores'          => $results,

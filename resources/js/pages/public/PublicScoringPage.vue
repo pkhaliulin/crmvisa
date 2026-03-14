@@ -55,7 +55,7 @@
                     </div>
                 </div>
 
-                <!-- Разбивка по 3 базовым блокам -->
+                <!-- Разбивка по 4 блокам -->
                 <div class="space-y-3 mb-4">
                     <div v-for="block in PROFILE_BLOCKS" :key="block.key"
                         class="flex items-center gap-3">
@@ -299,19 +299,18 @@ const formData = ref({
     employed_years:        publicAuth.user?.employed_years        ?? 0,
 });
 
-// 3 базовых блока профиля (без destination и visa_type — они зависят от страны)
-const PROFILE_BLOCKS = computed(() => [
-    { key: 'finances',     label: t('scoring.finances'),        weight: '30%', color: '#1BA97F', desc: t('scoring.financesDesc') },
-    { key: 'visa_history', label: t('scoring.visaHistoryBlock'), weight: '40%', color: '#3B82F6', desc: t('scoring.visaHistoryDesc') },
-    { key: 'social_ties',  label: t('scoring.socialTies'),      weight: '30%', color: '#8B5CF6', desc: t('scoring.socialTiesDesc') },
-]);
+// 4 блока скоринга (UnifiedScoringEngine SSOT)
+const PROFILE_BLOCKS = computed(() => {
+    const w = profile.value.weights || { F: 30, T: 25, V: 30, P: 15 };
+    return [
+        { key: 'F', label: t('scoring.finances'),         weight: w.F + '%', color: '#1BA97F', desc: t('scoring.financesDesc') },
+        { key: 'T', label: t('scoring.ties'),             weight: w.T + '%', color: '#8B5CF6', desc: t('scoring.tiesDesc') },
+        { key: 'V', label: t('scoring.visaHistoryBlock'),  weight: w.V + '%', color: '#3B82F6', desc: t('scoring.visaHistoryDesc') },
+        { key: 'P', label: t('scoring.profileBlock'),      weight: w.P + '%', color: '#F59E0B', desc: t('scoring.profileBlockDesc') },
+    ];
+});
 
-// Все 5 блоков (для объяснения)
-const ALL_BLOCKS = computed(() => [
-    { key: 'finances',     label: t('scoring.finances'),         weight: '30%', color: '#1BA97F', desc: t('scoring.financesDesc') },
-    { key: 'visa_history', label: t('scoring.visaHistoryBlock'),  weight: '40%', color: '#3B82F6', desc: t('scoring.visaHistoryDesc') },
-    { key: 'social_ties',  label: t('scoring.socialTies'),       weight: '30%', color: '#8B5CF6', desc: t('scoring.socialTiesDesc') },
-]);
+const ALL_BLOCKS = PROFILE_BLOCKS;
 
 const LEVELS = computed(() => [
     { range: '80\u2013100%', label: t('scoring.levelHigh'),   color: '#1BA97F', bg: '#f0fdf4' },
@@ -344,10 +343,14 @@ function scoreLabel(score) {
 
 function blockLabel(type) {
     const labels = {
+        F: t('scoring.finances'),
+        T: t('scoring.ties'),
+        V: t('scoring.visaHistoryBlock'),
+        P: t('scoring.profileBlock'),
         finances: t('scoring.finances'),
         visa_history: t('scoring.visaHistoryBlock'),
-        social_ties: t('scoring.socialTies'),
-        profile: t('common.profile'),
+        social_ties: t('scoring.ties'),
+        profile: t('scoring.profileBlock'),
     };
     return labels[type] || type;
 }
@@ -374,10 +377,14 @@ function recIconStyle(priority) {
 
 function recBadgeStyle(type) {
     return {
+        F: 'bg-emerald-100 text-emerald-700',
+        T: 'bg-purple-100 text-purple-700',
+        V: 'bg-blue-100 text-blue-700',
+        P: 'bg-amber-100 text-amber-700',
         finances:     'bg-emerald-100 text-emerald-700',
         visa_history: 'bg-blue-100 text-blue-700',
         social_ties:  'bg-purple-100 text-purple-700',
-        profile:      'bg-gray-100 text-gray-700',
+        profile:      'bg-amber-100 text-amber-700',
     }[type] || 'bg-gray-100 text-gray-600';
 }
 
