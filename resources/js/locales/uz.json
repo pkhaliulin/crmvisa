@@ -168,6 +168,7 @@
     "passportOcrApply": "Tuzatish",
     "passportOcrAutoFilled": "Avtomatik to'ldirildi:",
     "passportOcrAnother": "Boshqa pasport yuklash",
+    "passportOcrFromCase": "Arizadagi pasportdan foydalanish",
     "passportData": "Pasport ma'lumotlari",
     "passportHint": "Pasportning birinchi sahifasini yuklang yoki qo'lda to'ldiring",
     "passportNumber": "Pasport seriyasi va raqami",

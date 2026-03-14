@@ -52,7 +52,9 @@ Route::prefix('public')->middleware(['locale', 'auth.public'])->group(function (
 
     Route::get('me',             [PublicProfileController::class, 'me']);
     Route::patch('me',           [PublicProfileController::class, 'update']);
-    Route::post('me/passport',   [PublicProfileController::class, 'uploadPassport']);
+    Route::post('me/passport',           [PublicProfileController::class, 'uploadPassport']);
+    Route::get('me/passport-data',       [PublicProfileController::class, 'passportData']);
+    Route::post('me/passport-from-case', [PublicProfileController::class, 'ocrFromCase']);
     Route::post('me/email',        [PublicEmailController::class, 'saveEmail']);
     Route::post('me/email/verify', [PublicEmailController::class, 'verifyEmail']);
     Route::post('me/change-phone/send-otp', [PublicPhoneController::class, 'changePhoneSendOtp']);

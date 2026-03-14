@@ -46,6 +46,7 @@ export const publicPortalApi = {
         return publicApi.post('/me/passport', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
     },
     passportData: () => publicApi.get('/me/passport-data'),
+    ocrFromCase:  () => publicApi.post('/me/passport-from-case'),
 
     // Cases
     cases:      ()     => publicApi.get('/me/cases'),

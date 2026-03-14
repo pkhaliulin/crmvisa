@@ -168,6 +168,7 @@
     "passportOcrApply": "Исправить",
     "passportOcrAutoFilled": "Автоматически заполнено:",
     "passportOcrAnother": "Загрузить другой паспорт",
+    "passportOcrFromCase": "Использовать паспорт из заявки",
     "passportData": "Данные паспорта",
     "passportHint": "Загрузите первую страницу паспорта или заполните вручную",
     "passportNumber": "Серия и номер паспорта",
