@@ -59,17 +59,25 @@ class FinanceController extends Controller
             ->first();
 
         // Задолженности (заявки с остатком)
-        $debts = DB::table('cases')
+        $totalContractDebt = DB::table('cases')
             ->where('agency_id', $agencyId)
             ->whereNull('deleted_at')
             ->where('total_price', '>', 0)
             ->whereIn('payment_status', ['unpaid', 'prepayment'])
             ->whereNotIn('public_status', ['cancelled', 'draft'])
-            ->selectRaw("COALESCE(SUM(total_price), 0) - (
-                SELECT COALESCE(SUM(cp.amount), 0) FROM case_payments cp
-                WHERE cp.agency_id = cases.agency_id AND cp.case_id = cases.id AND cp.deleted_at IS NULL
-            ) as total_debt")
-            ->value('total_debt') ?? 0;
+            ->sum('total_price');
+
+        $totalPaidOnDebt = DB::table('case_payments as cp')
+            ->join('cases as c', 'c.id', '=', 'cp.case_id')
+            ->where('cp.agency_id', $agencyId)
+            ->whereNull('cp.deleted_at')
+            ->where('c.total_price', '>', 0)
+            ->whereIn('c.payment_status', ['unpaid', 'prepayment'])
+            ->whereNotIn('c.public_status', ['cancelled', 'draft'])
+            ->whereNull('c.deleted_at')
+            ->sum('cp.amount');
+
+        $debts = max(0, (int) $totalContractDebt - (int) $totalPaidOnDebt);
 
         // Просрочки
         $overdueCount = DB::table('cases')
@@ -102,7 +110,7 @@ class FinanceController extends Controller
                 'completed'         => (int) $refunds->completed_refunds,
                 'pending'           => (int) $refunds->pending_refunds,
             ],
-            'debt'              => (int) $debts,
+            'debt'              => $debts,
             'overdue_count'     => $overdueCount,
             'net_revenue'       => (int) $payments->total_received - (int) ($refunds->completed_refunds ?? 0),
         ]);
