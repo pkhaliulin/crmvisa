@@ -513,7 +513,7 @@ class ChecklistController extends Controller
             "'"  => '',     // убираем оставшиеся апострофы (ъ/ь)
             'ʻ'  => '',     // Unicode modifier letter (U+02BB)
             'ʼ'  => '',     // Unicode modifier apostrophe (U+02BC)
-            '''  => '',     // правая одинарная кавычка
+            "\xe2\x80\x99" => '',  // правая одинарная кавычка (U+2019)
         ];
 
         $result = $name;
