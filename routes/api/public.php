@@ -55,6 +55,9 @@ Route::prefix('public')->middleware(['locale', 'auth.public'])->group(function (
     Route::post('me/passport',           [PublicProfileController::class, 'uploadPassport']);
     Route::get('me/passport-data',       [PublicProfileController::class, 'passportData']);
     Route::post('me/passport-from-case', [PublicProfileController::class, 'ocrFromCase']);
+    Route::post('me/document',            [PublicProfileController::class, 'uploadDocument']);
+    Route::get('me/documents',            [PublicProfileController::class, 'allDocuments']);
+    Route::post('me/documents/validate',  [PublicProfileController::class, 'crossDocumentValidationEndpoint']);
     Route::post('me/email',        [PublicEmailController::class, 'saveEmail']);
     Route::post('me/email/verify', [PublicEmailController::class, 'verifyEmail']);
     Route::post('me/change-phone/send-otp', [PublicPhoneController::class, 'changePhoneSendOtp']);

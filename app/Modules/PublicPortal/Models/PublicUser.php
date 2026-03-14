@@ -24,11 +24,33 @@ class PublicUser extends Model
         'pin_hash',
         'api_token',
         'name',
+        'first_name_lat',
+        'last_name_lat',
+        'middle_name_lat',
+        'first_name_cyr',
+        'last_name_cyr',
+        'middle_name_cyr',
+        'pnfl',
         'dob',
         'citizenship',
         'gender',
+        'place_of_birth',
         'passport_number',
         'passport_expires_at',
+        'passport_issue_date',
+        'passport_issued_by',
+        'passport_country',
+        'passport_file_path',
+        'passport_ocr_status',
+        'passport_ocr_data',
+        'id_doc_type',
+        'id_doc_number',
+        'id_doc_expires_at',
+        'id_doc_issue_date',
+        'id_doc_issued_by',
+        'id_doc_ocr_status',
+        'id_doc_ocr_data',
+        'id_doc_file_path',
         'ocr_status',
         'ocr_raw_data',
         'employment_type',
@@ -52,13 +74,29 @@ class PublicUser extends Model
         'last_login_at',
     ];
 
-    protected $hidden = ['pin_hash', 'api_token', 'ocr_raw_data'];
+    protected $hidden = ['pin_hash', 'api_token', 'ocr_raw_data', 'passport_ocr_data', 'id_doc_ocr_data'];
 
     protected $casts = [
         'dob'                 => 'encrypted',
         'passport_expires_at' => 'encrypted',
         'passport_number'     => 'encrypted',
+        'passport_issue_date' => 'encrypted',
+        'passport_issued_by'  => 'encrypted',
+        'passport_ocr_data'   => 'encrypted:array',
         'ocr_raw_data'        => 'encrypted:array',
+        'first_name_lat'      => 'encrypted',
+        'last_name_lat'       => 'encrypted',
+        'middle_name_lat'     => 'encrypted',
+        'first_name_cyr'      => 'encrypted',
+        'last_name_cyr'       => 'encrypted',
+        'middle_name_cyr'     => 'encrypted',
+        'pnfl'                => 'encrypted',
+        'place_of_birth'      => 'encrypted',
+        'id_doc_number'       => 'encrypted',
+        'id_doc_expires_at'   => 'encrypted',
+        'id_doc_issue_date'   => 'encrypted',
+        'id_doc_issued_by'    => 'encrypted',
+        'id_doc_ocr_data'     => 'encrypted:array',
         'recovery_email'      => 'encrypted',
         'last_login_at'       => 'datetime',
         'email_verified_at'   => 'datetime',
@@ -101,6 +139,21 @@ class PublicUser extends Model
     public function groupMemberships(): HasMany
     {
         return $this->hasMany(CaseGroupMember::class, 'public_user_id');
+    }
+
+    public function documents(): HasMany
+    {
+        return $this->hasMany(PublicUserDocument::class);
+    }
+
+    public function currentForeignPassport(): ?PublicUserDocument
+    {
+        return $this->documents()->ofType('foreign_passport')->current()->latest()->first();
+    }
+
+    public function currentIdDocument(): ?PublicUserDocument
+    {
+        return $this->documents()->whereIn('doc_type', ['id_card', 'internal_passport'])->current()->latest()->first();
     }
 
     // -------------------------------------------------------------------------

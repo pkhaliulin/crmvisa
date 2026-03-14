@@ -18,9 +18,18 @@ use Illuminate\Support\Facades\Log;
 class OcrService
 {
     private const EXTRACTION_PROMPT = <<<'PROMPT'
-Extract passport data from this image. Return JSON with these fields:
-- first_name, last_name, middle_name
-- passport_number
+Extract identity document data from this image. Return JSON with these fields:
+
+Required fields:
+- document_type: "foreign_passport", "id_card", or "internal_passport"
+  (foreign_passport = international travel passport with MRZ zone;
+   id_card = biometric ID card;
+   internal_passport = domestic/internal passport without MRZ)
+- first_name, last_name, middle_name (as written in the document)
+- first_name_latin, last_name_latin (transliterated to Latin if original is Cyrillic)
+- first_name_cyrillic, last_name_cyrillic (if document contains Cyrillic text)
+- script_type: "latin", "cyrillic", or "mixed" (what script the name fields are in)
+- passport_number (document number)
 - nationality (ISO 3-letter code, e.g. UZB, RUS, KAZ, TUR)
 - date_of_birth (YYYY-MM-DD)
 - date_of_expiry (YYYY-MM-DD)
@@ -28,8 +37,16 @@ Extract passport data from this image. Return JSON with these fields:
 - gender (M or F)
 - place_of_birth
 - issuing_authority
-- mrz_line1, mrz_line2
+- pnfl (Personal Number / JSHSHIR / PINFL if visible on document, null otherwise)
+- mrz_line1, mrz_line2 (only for documents with MRZ zone)
 - confidence (0.0 to 1.0, your estimate of extraction accuracy)
+
+If the image is not a valid identity document, return:
+{"document_type": null, "error": "description of what was uploaded instead", "confidence": 0.0}
+
+If the image shows wrong side of document or is too blurry:
+{"document_type": null, "error": "wrong_side" or "too_blurry", "confidence": 0.0}
+
 Return ONLY valid JSON, no explanation.
 PROMPT;
 
