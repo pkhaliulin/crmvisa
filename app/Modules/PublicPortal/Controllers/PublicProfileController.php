@@ -471,9 +471,140 @@ class PublicProfileController extends Controller
             }
         }
 
+        // Дополнить из AI-анализа документов в заявках (case_checklist)
+        $this->syncFromCaseAiAnalysis($user, $update);
+
         if (!empty($update)) {
             $user->update($update);
             $user->refresh();
+        }
+    }
+
+    /**
+     * Подтянуть данные удостоверения личности и загранпаспорта из AI-анализа в заявках.
+     * Правило: case_checklist.ai_analysis — авторитетный источник данных документов.
+     */
+    private function syncFromCaseAiAnalysis($user, array &$update): void
+    {
+        // Найти заявки клиента
+        $clientIds = \DB::table('clients')
+            ->where('public_user_id', $user->id)
+            ->pluck('id');
+
+        if ($clientIds->isEmpty()) return;
+
+        $caseIds = \DB::table('cases')
+            ->whereIn('client_id', $clientIds)
+            ->whereNull('deleted_at')
+            ->pluck('id');
+
+        if ($caseIds->isEmpty()) return;
+
+        // AI-проанализированные документы из чеклиста
+        $items = CaseChecklist::whereIn('case_id', $caseIds)
+            ->whereNotNull('ai_confidence')
+            ->where('ai_confidence', '>=', 30)
+            ->orderByDesc('ai_confidence')
+            ->get();
+
+        foreach ($items as $item) {
+            $ai = $item->ai_analysis ?? [];
+            $extracted = $ai['extracted_data'] ?? [];
+            if (empty($extracted)) continue;
+
+            $name = mb_strtolower($item->name ?? '');
+
+            // Определить тип документа по имени в чеклисте
+            $isPassport = str_contains($name, 'аспорт') && !str_contains($name, 'внутрен');
+            $isId = str_contains($name, 'внутрен') || str_contains($name, 'удостоверен')
+                || str_contains($name, 'id') || str_contains($name, 'id_card');
+
+            if ($isId) {
+                // Внутренний паспорт / ID-карта -> удостоверение личности клиента
+                $docNumber = $extracted['passport_number'] ?? $extracted['document_number'] ?? null;
+                if (!($user->id_doc_number ?? $update['id_doc_number'] ?? null) && $docNumber) {
+                    $update['id_doc_number'] = $docNumber;
+                }
+                if (!($user->id_doc_type ?? $update['id_doc_type'] ?? null)) {
+                    $update['id_doc_type'] = str_contains($name, 'внутрен') ? 'internal_passport' : 'id_card';
+                }
+                $expiryDate = $extracted['expiry_date'] ?? $extracted['date_of_expiry'] ?? null;
+                if (!($user->id_doc_expires_at ?? $update['id_doc_expires_at'] ?? null) && $expiryDate) {
+                    $update['id_doc_expires_at'] = $expiryDate;
+                }
+                $issueDate = $extracted['issue_date'] ?? $extracted['date_of_issue'] ?? null;
+                if (!($user->id_doc_issue_date ?? $update['id_doc_issue_date'] ?? null) && $issueDate) {
+                    $update['id_doc_issue_date'] = $issueDate;
+                }
+                $issuedBy = $extracted['issuing_authority'] ?? $extracted['issued_by'] ?? null;
+                if (!($user->id_doc_issued_by ?? $update['id_doc_issued_by'] ?? null) && $issuedBy) {
+                    $update['id_doc_issued_by'] = $issuedBy;
+                }
+                if ($user->id_doc_ocr_status !== 'completed') {
+                    $update['id_doc_ocr_status'] = 'completed';
+                }
+
+                // Кириллические имена из внутреннего документа
+                $surname = $extracted['surname'] ?? $extracted['last_name'] ?? null;
+                $givenNames = $extracted['given_names'] ?? $extracted['first_name'] ?? null;
+                if (!($user->first_name_cyr ?? $update['first_name_cyr'] ?? null) && $givenNames) {
+                    $firstName = explode(' ', $givenNames)[0] ?? $givenNames;
+                    $update['first_name_cyr'] = $firstName;
+                }
+                if (!($user->last_name_cyr ?? $update['last_name_cyr'] ?? null) && $surname) {
+                    $update['last_name_cyr'] = $surname;
+                }
+
+                // ПИНФЛ из ID
+                $pnfl = $extracted['pnfl'] ?? $extracted['pinfl'] ?? $extracted['personal_number'] ?? null;
+                if (!($user->pnfl ?? $update['pnfl'] ?? null) && $pnfl && preg_match('/^\d{14}$/', $pnfl)) {
+                    $update['pnfl'] = $pnfl;
+                }
+            }
+
+            if ($isPassport) {
+                // Загранпаспорт -> паспортные данные клиента
+                $passNum = $extracted['passport_number'] ?? null;
+                if (!($user->passport_number ?? $update['passport_number'] ?? null) && $passNum) {
+                    $update['passport_number'] = $passNum;
+                }
+                $expiryDate = $extracted['expiry_date'] ?? $extracted['date_of_expiry'] ?? null;
+                if (!($user->passport_expires_at ?? $update['passport_expires_at'] ?? null) && $expiryDate) {
+                    $update['passport_expires_at'] = $expiryDate;
+                }
+                $issueDate = $extracted['issue_date'] ?? $extracted['date_of_issue'] ?? null;
+                if (!($user->passport_issue_date ?? $update['passport_issue_date'] ?? null) && $issueDate) {
+                    $update['passport_issue_date'] = $issueDate;
+                }
+                $issuedBy = $extracted['issuing_authority'] ?? $extracted['issued_by'] ?? null;
+                if (!($user->passport_issued_by ?? $update['passport_issued_by'] ?? null) && $issuedBy) {
+                    $update['passport_issued_by'] = $issuedBy;
+                }
+                if ($user->passport_ocr_status !== 'completed') {
+                    $update['passport_ocr_status'] = 'completed';
+                }
+
+                // Латинские имена из загранпаспорта
+                $surname = $extracted['surname'] ?? $extracted['last_name'] ?? null;
+                $givenNames = $extracted['given_names'] ?? $extracted['first_name'] ?? null;
+                if (!($user->first_name_lat ?? $update['first_name_lat'] ?? null) && $givenNames) {
+                    $firstName = explode(' ', $givenNames)[0] ?? $givenNames;
+                    $update['first_name_lat'] = $firstName;
+                }
+                if (!($user->last_name_lat ?? $update['last_name_lat'] ?? null) && $surname) {
+                    $update['last_name_lat'] = $surname;
+                }
+            }
+
+            // Общие поля (из любого документа)
+            $dob = $extracted['date_of_birth'] ?? null;
+            if (!($user->dob ?? $update['dob'] ?? null) && $dob) {
+                $update['dob'] = $dob;
+            }
+            $gender = $extracted['sex'] ?? $extracted['gender'] ?? null;
+            if (!($user->gender ?? $update['gender'] ?? null) && $gender) {
+                $update['gender'] = strtoupper(substr($gender, 0, 1));
+            }
         }
     }
 
