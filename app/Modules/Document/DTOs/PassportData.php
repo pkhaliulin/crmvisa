@@ -55,8 +55,18 @@ readonly class PassportData
             lastNameLatin:      $data['last_name_latin'] ?? null,
             firstNameCyrillic:  $data['first_name_cyrillic'] ?? null,
             lastNameCyrillic:   $data['last_name_cyrillic'] ?? null,
-            pnfl:               $data['pnfl'] ?? null,
+            pnfl:               self::validatePnfl($data['pnfl'] ?? null),
         );
+    }
+
+    /**
+     * ПИНФЛ = ровно 14 цифр. Всё остальное (MRZ, мусор) — отбрасываем.
+     */
+    private static function validatePnfl(?string $value): ?string
+    {
+        if ($value === null) return null;
+        $digits = preg_replace('/\D/', '', $value);
+        return strlen($digits) === 14 ? $digits : null;
     }
 
     public function toArray(): array

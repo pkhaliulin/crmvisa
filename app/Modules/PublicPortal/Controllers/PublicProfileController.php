@@ -53,7 +53,7 @@ class PublicProfileController extends Controller
             'first_name_cyr'     => 'sometimes|nullable|string|max:100',
             'last_name_cyr'      => 'sometimes|nullable|string|max:100',
             'middle_name_cyr'    => 'sometimes|nullable|string|max:100',
-            'pnfl'               => 'sometimes|nullable|string|max:20',
+            'pnfl'               => ['sometimes', 'nullable', 'string', 'regex:/^\d{14}$/'],
             'dob'                => 'sometimes|date|before:today',
             'citizenship'        => 'sometimes|string|size:2',
             'gender'             => ['sometimes', Rule::in(['M', 'F'])],
@@ -427,7 +427,9 @@ class PublicProfileController extends Controller
             if (!$user->gender && $doc->gender)          $update['gender']         = $doc->gender;
             if (!$user->citizenship && $doc->nationality) $update['citizenship']   = $this->iso3ToIso2($doc->nationality);
             if (!$user->place_of_birth && $doc->place_of_birth) $update['place_of_birth'] = $doc->place_of_birth;
-            if (!$user->pnfl && $doc->pnfl)              $update['pnfl']           = $doc->pnfl;
+            if (!$user->pnfl && $doc->pnfl && preg_match('/^\d{14}$/', $doc->pnfl)) {
+                $update['pnfl'] = $doc->pnfl;
+            }
         }
 
         if (!empty($update)) {
