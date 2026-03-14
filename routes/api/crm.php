@@ -20,7 +20,6 @@ use App\Modules\Owner\Controllers\CountryDetailController;
 use App\Modules\Owner\Controllers\OwnerReferenceDataController;
 use App\Modules\Payment\Controllers\BillingController;
 use App\Modules\Payment\Controllers\MarketplaceController;
-use App\Modules\Scoring\Controllers\ScoringController;
 use App\Modules\Service\Controllers\ServiceCatalogController;
 use App\Modules\Task\Controllers\TaskController;
 use App\Modules\User\Controllers\UserController;
@@ -128,14 +127,9 @@ Route::middleware(['auth:api', 'role:owner,manager,superadmin', 'plan.active', '
     Route::post('tasks/{id}/set-status',   [TaskController::class, 'setStatus']);
     Route::apiResource('tasks', TaskController::class);
 
-    // Скоринг
-    Route::get('scoring/countries',                        [ScoringController::class, 'countries']);
-    Route::get('clients/{id}/profile',                     [ScoringController::class, 'getProfile']);
-    Route::post('clients/{id}/profile',                    [ScoringController::class, 'saveProfile']);
-    Route::get('clients/{id}/scoring',                     [ScoringController::class, 'scores']);
-    Route::get('clients/{id}/scoring/recommendations',     [ScoringController::class, 'recommendations']);
-    Route::post('clients/{id}/scoring/recalculate',        [ScoringController::class, 'recalculate'])->middleware('throttle:heavy');
-    Route::get('clients/{id}/scoring/{country}',           [ScoringController::class, 'scoreByCountry']);
+    // Профиль клиента (единый источник — public_users)
+    Route::get('clients/{id}/profile',                     [ClientController::class, 'profile']);
+    Route::patch('clients/{id}/profile',                   [ClientController::class, 'updateProfile']);
 
 });
 

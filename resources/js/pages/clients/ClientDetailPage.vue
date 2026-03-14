@@ -62,13 +62,18 @@
       </div>
     </div>
 
-    <!-- Profile (questionnaire answers) -->
+    <!-- Profile (from public_users — single source of truth) -->
     <div class="bg-white rounded-xl border border-gray-200 p-6">
       <div class="flex items-center justify-between mb-4">
-        <h3 class="font-semibold text-gray-800">{{ t('crm.clientDetail.profileTitle') }}</h3>
+        <div>
+          <h3 class="font-semibold text-gray-800">{{ t('crm.clientDetail.profileTitle') }}</h3>
+          <p v-if="profile?.profile_percent != null" class="text-xs text-gray-400 mt-0.5">
+            {{ t('crm.clientDetail.profileFilled', { n: profile.profile_percent }) }}
+          </p>
+        </div>
       </div>
 
-      <template v-if="profile">
+      <template v-if="profile && hasProfileData">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
           <!-- Family -->
@@ -78,10 +83,6 @@
               <div class="flex justify-between text-xs">
                 <span class="text-gray-500">{{ t('crm.clientDetail.profileMarital') }}</span>
                 <span class="font-medium text-gray-800">{{ maritalLabel }}</span>
-              </div>
-              <div v-if="profile.marital_status === 'married'" class="flex justify-between text-xs">
-                <span class="text-gray-500">{{ t('crm.clientDetail.profileSpouseWorks') }}</span>
-                <span class="font-medium" :class="profile.spouse_employed ? 'text-green-600' : 'text-gray-400'">{{ profile.spouse_employed ? t('crm.clientDetail.profileYes') : t('crm.clientDetail.profileNo') }}</span>
               </div>
               <div class="flex justify-between text-xs">
                 <span class="text-gray-500">{{ t('crm.clientDetail.profileChildren') }}</span>
@@ -98,17 +99,9 @@
                 <span class="text-gray-500">{{ t('crm.clientDetail.profileEmployment') }}</span>
                 <span class="font-medium text-gray-800">{{ employmentLabel }}</span>
               </div>
-              <div v-if="profile.position" class="flex justify-between text-xs">
-                <span class="text-gray-500">{{ t('crm.clientDetail.profilePosition') }}</span>
-                <span class="font-medium text-gray-800">{{ profile.position }}</span>
-              </div>
-              <div v-if="profile.employer_name" class="flex justify-between text-xs">
-                <span class="text-gray-500">{{ t('crm.clientDetail.profileEmployer') }}</span>
-                <span class="font-medium text-gray-800">{{ profile.employer_name }}</span>
-              </div>
-              <div v-if="profile.years_at_current_job" class="flex justify-between text-xs">
+              <div v-if="profile.employed_years" class="flex justify-between text-xs">
                 <span class="text-gray-500">{{ t('crm.clientDetail.profileYearsJob') }}</span>
-                <span class="font-medium text-gray-800">{{ profile.years_at_current_job }}</span>
+                <span class="font-medium text-gray-800">{{ profile.employed_years }}</span>
               </div>
             </div>
           </div>
@@ -117,19 +110,11 @@
           <div class="space-y-2">
             <p class="text-[10px] text-gray-400 uppercase font-bold tracking-wide">{{ t('crm.clientDetail.profileFinance') }}</p>
             <div class="space-y-1">
-              <div v-if="profile.monthly_income" class="flex justify-between text-xs">
+              <div v-if="profile.monthly_income_usd" class="flex justify-between text-xs">
                 <span class="text-gray-500">{{ t('crm.clientDetail.profileIncome') }}</span>
-                <span class="font-medium text-gray-800">${{ fmtMoney(profile.monthly_income) }}</span>
+                <span class="font-medium text-gray-800">${{ fmtMoney(profile.monthly_income_usd) }}</span>
               </div>
-              <div v-if="profile.bank_balance" class="flex justify-between text-xs">
-                <span class="text-gray-500">{{ t('crm.clientDetail.profileBank') }}</span>
-                <span class="font-medium text-gray-800">${{ fmtMoney(profile.bank_balance) }}</span>
-              </div>
-              <div v-if="profile.has_fixed_deposit && profile.fixed_deposit_amount" class="flex justify-between text-xs">
-                <span class="text-gray-500">{{ t('crm.clientDetail.profileDeposit') }}</span>
-                <span class="font-medium text-gray-800">${{ fmtMoney(profile.fixed_deposit_amount) }}</span>
-              </div>
-              <p v-if="!profile.monthly_income && !profile.bank_balance" class="text-xs text-gray-400">{{ t('crm.clientDetail.profileNoData') }}</p>
+              <p v-if="!profile.monthly_income_usd" class="text-xs text-gray-400">{{ t('crm.clientDetail.profileNoData') }}</p>
             </div>
           </div>
 
@@ -137,10 +122,9 @@
           <div class="space-y-2">
             <p class="text-[10px] text-gray-400 uppercase font-bold tracking-wide">{{ t('crm.clientDetail.profileAssets') }}</p>
             <div class="flex flex-wrap gap-1.5">
-              <span v-if="profile.has_real_estate" class="text-[10px] px-2 py-0.5 rounded-full bg-green-50 text-green-700 font-medium">{{ t('crm.clientDetail.profileRealEstate') }}</span>
+              <span v-if="profile.has_property" class="text-[10px] px-2 py-0.5 rounded-full bg-green-50 text-green-700 font-medium">{{ t('crm.clientDetail.profileRealEstate') }}</span>
               <span v-if="profile.has_car" class="text-[10px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-medium">{{ t('crm.clientDetail.profileCar') }}</span>
-              <span v-if="profile.has_business" class="text-[10px] px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 font-medium">{{ t('crm.clientDetail.profileBusiness') }}</span>
-              <span v-if="!profile.has_real_estate && !profile.has_car && !profile.has_business" class="text-xs text-gray-400">{{ t('crm.clientDetail.profileNoAssets') }}</span>
+              <span v-if="!profile.has_property && !profile.has_car" class="text-xs text-gray-400">{{ t('crm.clientDetail.profileNoAssets') }}</span>
             </div>
           </div>
 
@@ -151,11 +135,14 @@
               <div class="flex flex-wrap gap-1.5">
                 <span v-if="profile.has_schengen_visa" class="text-[10px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-medium">Schengen</span>
                 <span v-if="profile.has_us_visa" class="text-[10px] px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 font-medium">USA</span>
-                <span v-if="profile.has_uk_visa" class="text-[10px] px-2 py-0.5 rounded-full bg-red-50 text-red-700 font-medium">UK</span>
-                <span v-if="!profile.has_schengen_visa && !profile.has_us_visa && !profile.has_uk_visa" class="text-xs text-gray-400">{{ t('crm.clientDetail.profileNoVisas') }}</span>
+                <span v-if="!profile.has_schengen_visa && !profile.has_us_visa" class="text-xs text-gray-400">{{ t('crm.clientDetail.profileNoVisas') }}</span>
               </div>
-              <div v-if="profile.previous_refusals > 0" class="text-xs font-semibold text-red-500">{{ t('crm.clientDetail.profileRefusals', { n: profile.previous_refusals }) }}</div>
-              <div v-if="profile.has_overstay" class="text-xs font-semibold text-red-600">{{ t('crm.clientDetail.profileOverstay') }}</div>
+              <div v-if="profile.visas_obtained_count > 0" class="text-xs text-gray-600">
+                {{ t('crm.clientDetail.profileVisasObtained', { n: profile.visas_obtained_count }) }}
+              </div>
+              <div v-if="profile.refusals_count > 0" class="text-xs font-semibold text-red-500">{{ t('crm.clientDetail.profileRefusals', { n: profile.refusals_count }) }}</div>
+              <div v-if="profile.had_overstay" class="text-xs font-semibold text-red-600">{{ t('crm.clientDetail.profileOverstay') }}</div>
+              <div v-if="profile.had_deportation" class="text-xs font-semibold text-red-700">{{ t('crm.clientDetail.profileDeportation') }}</div>
             </div>
           </div>
 
@@ -265,49 +252,6 @@
         </div>
       </div>
     </div>
-
-    <!-- Scoring (agency) -->
-    <div class="bg-white rounded-xl border border-gray-200 p-6">
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="font-semibold text-gray-800">{{ t('crm.clientDetail.scoring') }}</h3>
-        <AppButton variant="outline" size="sm" :loading="recalcLoading" @click="recalculate">
-          {{ t('crm.clientDetail.recalculate') }}
-        </AppButton>
-      </div>
-
-      <div v-if="scores.length" class="grid grid-cols-2 md:grid-cols-3 gap-3">
-        <div v-for="s in scores" :key="s.country_code"
-          class="border rounded-lg p-3"
-          :class="s.is_blocked ? 'border-red-200 bg-red-50' : 'border-gray-100'"
-        >
-          <div class="flex items-center justify-between mb-1">
-            <span class="text-sm font-semibold">{{ countryFlag(s.country_code) }} {{ s.country_code }}</span>
-            <span :class="['text-lg font-bold', scoreColor(s.score)]">{{ s.score }}</span>
-          </div>
-          <div class="bg-gray-200 rounded-full h-1.5 overflow-hidden">
-            <div :class="['h-full rounded-full', scoreBarColor(s.score)]" :style="{ width: `${s.score}%` }" />
-          </div>
-          <p class="text-xs text-gray-500 mt-1">{{ s.level_label }}</p>
-
-          <!-- Block scores breakdown -->
-          <div v-if="s.block_scores" class="mt-2 space-y-0.5">
-            <div v-for="(bs, code) in s.block_scores" :key="code" class="flex items-center gap-1.5">
-              <span class="text-[10px] text-gray-400 w-6">{{ code }}</span>
-              <div class="flex-1 h-1 bg-gray-100 rounded-full overflow-hidden">
-                <div class="h-full rounded-full bg-blue-400" :style="{ width: `${bs}%` }" />
-              </div>
-              <span class="text-[10px] text-gray-500 w-5 text-right">{{ bs }}</span>
-            </div>
-          </div>
-
-          <!-- Weak blocks -->
-          <div v-if="s.weak_blocks?.length" class="mt-1.5 flex flex-wrap gap-1">
-            <span v-for="wb in s.weak_blocks" :key="wb" class="text-[10px] px-1.5 py-0.5 rounded bg-red-50 text-red-600 font-medium">{{ wb }}</span>
-          </div>
-        </div>
-      </div>
-      <p v-else class="text-sm text-gray-400">{{ t('crm.clientDetail.scoringEmpty') }}</p>
-    </div>
   </div>
 </template>
 
@@ -330,15 +274,22 @@ const route  = useRoute();
 const id     = route.params.id;
 const client = ref(null);
 const profile = ref(null);
-const scores = ref([]);
 const visaborScores = ref([]);
 const loading = ref(true);
-const recalcLoading = ref(false);
 const applyingAi = ref(false);
 const aiAppliedDocs = ref([]);
 
 // Has at least 1 case (potential AI data source)
 const hasAiData = computed(() => (client.value?.cases?.length ?? 0) > 0);
+
+// Profile has meaningful data
+const hasProfileData = computed(() => {
+  if (!profile.value) return false;
+  const p = profile.value;
+  return p.marital_status || p.employment_type || p.monthly_income_usd
+    || p.has_property || p.has_car || p.has_schengen_visa || p.has_us_visa
+    || p.education_level || p.children_count > 0;
+});
 
 const STAGE_LABELS = computed(() => ({
   lead: t('crm.stages.lead'),
@@ -410,7 +361,7 @@ const maritalLabel = computed(() => {
   return k ? t(`crm.clientDetail.${k}`) : '—';
 });
 
-const EMPLOYMENT_MAP = { government: 'profileGovernment', private: 'profilePrivate', business_owner: 'profileBusinessOwner', self_employed: 'profileSelfEmployed', student: 'profileStudent', retired: 'profileRetired', unemployed: 'profileUnemployed' };
+const EMPLOYMENT_MAP = { government: 'profileGovernment', private: 'profilePrivate', employed: 'profilePrivate', business_owner: 'profileBusinessOwner', self_employed: 'profileSelfEmployed', student: 'profileStudent', retired: 'profileRetired', unemployed: 'profileUnemployed' };
 const employmentLabel = computed(() => {
   const k = EMPLOYMENT_MAP[profile.value?.employment_type];
   return k ? t(`crm.clientDetail.${k}`) : '—';
@@ -435,7 +386,6 @@ const filteredVisaborScores = computed(() => {
   return visaborScores.value.slice(0, 5);
 });
 
-const VISABOR_BLOCK_LABELS = { finances: 'finances', social_ties: 'social_ties', visa_history: 'visa_history', travel_purpose: 'travel_purpose', profile: 'profile' };
 function visaborBlockLabel(key) {
   return t(`crm.clientDetail.vb_${key}`, key);
 }
@@ -454,54 +404,24 @@ function scoreBarColor(s) {
 async function load() {
   loading.value = true;
   try {
-    const [cRes, sRes, pRes] = await Promise.all([
+    const [cRes, pRes] = await Promise.all([
       clientsApi.get(id),
-      clientsApi.getScores(id),
       clientsApi.getProfile(id),
     ]);
     client.value = cRes.data.data;
-    scores.value = sRes.data.data ?? [];
     profile.value = pRes.data.data ?? null;
-    // Profile may be empty object with only id/client_id
-    if (profile.value && !profile.value.marital_status && !profile.value.employment_type && !profile.value.bank_balance && !profile.value.has_real_estate) {
-      profile.value = null;
-    }
-    // Auto-sync from VisaBor if client has portal account and profile is empty
+
+    // Load VisaBor scoring
     if (client.value?.public_user_id) {
-      if (!profile.value) {
-        // Profile empty — auto-pull data from VisaBor portal
-        try {
-          const { data } = await clientsApi.applyAiData(id);
-          client.value = data.data.client;
-          if (data.data.profile) profile.value = data.data.profile;
-          aiAppliedDocs.value = data.data.applied_from ?? [];
-          if (data.data.visabor_scoring?.length) visaborScores.value = data.data.visabor_scoring;
-          // Recalculate agency scoring with new profile data
-          if (profile.value) {
-            const sRes = await clientsApi.recalculate(id);
-            scores.value = sRes.data.data ?? [];
-          }
-        } catch { /* sync failed, not critical */ }
-      } else {
-        // Profile exists, just load VisaBor scoring
-        try {
-          const vRes = await clientsApi.visaborScoring(id);
-          visaborScores.value = vRes.data.data ?? [];
-        } catch { /* no portal scores */ }
-      }
+      try {
+        const vRes = await clientsApi.visaborScoring(id);
+        visaborScores.value = vRes.data.data ?? [];
+      } catch { /* no portal scores */ }
     }
+  } catch (e) {
+    console.error('Failed to load client', e);
   } finally {
     loading.value = false;
-  }
-}
-
-async function recalculate() {
-  recalcLoading.value = true;
-  try {
-    const { data } = await clientsApi.recalculate(id);
-    scores.value = data.data ?? [];
-  } finally {
-    recalcLoading.value = false;
   }
 }
 
@@ -514,11 +434,8 @@ async function applyAiData() {
     if (data.data.profile) profile.value = data.data.profile;
     aiAppliedDocs.value = data.data.applied_from ?? [];
     if (data.data.visabor_scoring?.length) visaborScores.value = data.data.visabor_scoring;
-    // Recalculate scoring after profile update
-    if (profile.value) {
-      const sRes = await clientsApi.recalculate(id);
-      scores.value = sRes.data.data ?? [];
-    }
+  } catch (e) {
+    console.error('Failed to apply AI data', e);
   } finally {
     applyingAi.value = false;
   }

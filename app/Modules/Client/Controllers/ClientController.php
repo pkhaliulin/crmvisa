@@ -11,12 +11,12 @@ use App\Modules\Document\Models\CaseChecklist;
 use App\Modules\Document\Services\OcrService;
 use App\Modules\PublicPortal\Models\PublicScoreCache;
 use App\Modules\PublicPortal\Models\PublicUser;
-use App\Modules\Scoring\Models\ClientProfile;
 use App\Support\Helpers\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class ClientController extends Controller
 {
@@ -99,6 +99,142 @@ class ClientController extends Controller
     }
 
     /**
+     * GET /clients/{id}/profile
+     * Профиль клиента из public_users (единый источник данных).
+     */
+    public function profile(Request $request, string $id): JsonResponse
+    {
+        $client = $this->service->findOrFail($id);
+        $this->authorize('view', $client);
+
+        $pu = $this->ensurePublicUser($client);
+
+        return ApiResponse::success($this->formatProfile($pu));
+    }
+
+    /**
+     * PATCH /clients/{id}/profile
+     * Обновить профиль клиента (агентство редактирует public_users).
+     */
+    public function updateProfile(Request $request, string $id): JsonResponse
+    {
+        $client = $this->service->findOrFail($id);
+        $this->authorize('update', $client);
+
+        $data = $request->validate([
+            'name'                => 'sometimes|string|max:255',
+            'dob'                 => 'sometimes|nullable|date|before:today',
+            'citizenship'         => 'sometimes|nullable|string|size:2',
+            'gender'              => ['sometimes', 'nullable', Rule::in(['M', 'F'])],
+            'passport_number'     => 'sometimes|nullable|string|max:20',
+            'passport_expires_at' => 'sometimes|nullable|date',
+            'employment_type'     => ['sometimes', 'nullable', Rule::in([
+                'employed', 'government', 'business_owner', 'self_employed', 'student', 'retired', 'unemployed',
+            ])],
+            'monthly_income_usd'  => 'sometimes|nullable|integer|min:0',
+            'marital_status'      => ['sometimes', 'nullable', Rule::in(['single', 'married', 'divorced', 'widowed'])],
+            'has_children'        => 'sometimes|boolean',
+            'children_count'      => 'sometimes|integer|min:0|max:20',
+            'has_property'        => 'sometimes|boolean',
+            'has_car'             => 'sometimes|boolean',
+            'has_schengen_visa'   => 'sometimes|boolean',
+            'has_us_visa'         => 'sometimes|boolean',
+            'had_visa_refusal'    => 'sometimes|boolean',
+            'had_overstay'        => 'sometimes|boolean',
+            'had_deportation'     => 'sometimes|boolean',
+            'visas_obtained_count' => 'sometimes|integer|min:0|max:50',
+            'refusals_count'      => 'sometimes|integer|min:0|max:20',
+            'employed_years'      => 'sometimes|nullable|integer|min:0|max:50',
+            'education_level'     => ['sometimes', 'nullable', Rule::in(['none', 'secondary', 'bachelor', 'master', 'phd'])],
+        ]);
+
+        $pu = $this->ensurePublicUser($client);
+        $pu->update($data);
+
+        // Синхронизируем базовые поля обратно в clients
+        $clientSync = [];
+        if (isset($data['name'])) $clientSync['name'] = $data['name'];
+        if (isset($data['dob'])) $clientSync['date_of_birth'] = $data['dob'];
+        if (isset($data['passport_number'])) $clientSync['passport_number'] = $data['passport_number'];
+        if (isset($data['passport_expires_at'])) $clientSync['passport_expires_at'] = $data['passport_expires_at'];
+        if (isset($data['citizenship'])) $clientSync['nationality'] = $this->iso2ToIso3($data['citizenship']);
+        if (!empty($clientSync)) {
+            $client->update($clientSync);
+        }
+
+        return ApiResponse::success($this->formatProfile($pu->fresh()));
+    }
+
+    /**
+     * Гарантирует наличие public_user для клиента (создаёт при необходимости).
+     */
+    private function ensurePublicUser($client): PublicUser
+    {
+        if ($client->public_user_id) {
+            return PublicUser::findOrFail($client->public_user_id);
+        }
+
+        // Авто-создание public_user для прямых клиентов
+        $pu = PublicUser::create([
+            'phone' => $client->phone ?? 'agency_' . $client->id,
+            'name'  => $client->name,
+            'dob'   => $client->date_of_birth,
+            'passport_number'     => $client->passport_number,
+            'passport_expires_at' => $client->passport_expires_at,
+            'citizenship'         => $client->nationality ? $this->iso3ToIso2($client->nationality) : null,
+        ]);
+
+        $client->update(['public_user_id' => $pu->id]);
+
+        return $pu;
+    }
+
+    /**
+     * Форматирует PublicUser в профиль для агентства.
+     */
+    private function formatProfile(PublicUser $pu): array
+    {
+        return [
+            'id'                   => $pu->id,
+            'name'                 => $pu->name,
+            'dob'                  => $pu->dob,
+            'citizenship'          => $pu->citizenship,
+            'gender'               => $pu->gender,
+            'passport_number'      => $pu->passport_number,
+            'passport_expires_at'  => $pu->passport_expires_at,
+            'employment_type'      => $pu->employment_type,
+            'monthly_income_usd'   => $pu->monthly_income_usd,
+            'employed_years'       => $pu->employed_years,
+            'marital_status'       => $pu->marital_status,
+            'has_children'         => $pu->has_children,
+            'children_count'       => $pu->children_count,
+            'has_property'         => $pu->has_property,
+            'has_car'              => $pu->has_car,
+            'has_schengen_visa'    => $pu->has_schengen_visa,
+            'has_us_visa'          => $pu->has_us_visa,
+            'had_visa_refusal'     => $pu->had_visa_refusal,
+            'had_overstay'         => $pu->had_overstay,
+            'had_deportation'      => $pu->had_deportation,
+            'visas_obtained_count' => $pu->visas_obtained_count,
+            'refusals_count'       => $pu->refusals_count,
+            'education_level'      => $pu->education_level,
+            'profile_percent'      => $pu->profileCompleteness(),
+        ];
+    }
+
+    private function iso3ToIso2(string $iso3): ?string
+    {
+        $map = [
+            'UZB' => 'UZ', 'RUS' => 'RU', 'KAZ' => 'KZ', 'TJK' => 'TJ',
+            'KGZ' => 'KG', 'TKM' => 'TM', 'UKR' => 'UA', 'GEO' => 'GE',
+            'AZE' => 'AZ', 'ARM' => 'AM', 'BLR' => 'BY', 'MDA' => 'MD',
+            'TUR' => 'TR', 'CHN' => 'CN', 'IND' => 'IN', 'AFG' => 'AF',
+        ];
+        $code = strtoupper(trim($iso3));
+        return $map[$code] ?? null;
+    }
+
+    /**
      * POST /clients/{id}/apply-ai-data
      * Автозаполнение данных клиента из AI-анализа документов в кейсах.
      */
@@ -116,7 +252,7 @@ class ClientController extends Controller
             ->get();
 
         $clientUpdates = [];
-        $profileUpdates = [];
+        $puUpdates = [];
         $applied = [];
 
         foreach ($items as $item) {
@@ -154,15 +290,7 @@ class ClientController extends Controller
             // Свидетельство о браке → married
             if (str_contains($name, 'браке') || str_contains($name, 'Свидетельство о браке')) {
                 if (!empty($data['marriage_date'])) {
-                    $profileUpdates['marital_status'] = 'married';
-                }
-                $applied[] = $name;
-            }
-
-            // Справка об остатке на счёте
-            if (str_contains($name, 'остатке') || str_contains($name, 'банк') || str_contains($name, 'счёте')) {
-                if (!empty($data['balance'])) {
-                    $profileUpdates['bank_balance'] = (float) $data['balance'];
+                    $puUpdates['marital_status'] = 'married';
                 }
                 $applied[] = $name;
             }
@@ -170,116 +298,28 @@ class ClientController extends Controller
             // Выписка о недвижимости
             if ($isApplicant && (str_contains($name, 'недвижимост') || str_contains($name, 'Выписка о недвижимост'))) {
                 if (!empty($data['owner_name'])) {
-                    $profileUpdates['has_real_estate'] = true;
+                    $puUpdates['has_property'] = true;
                 }
                 $applied[] = $name;
             }
 
             // Техпаспорт автомобиля
             if ($isApplicant && (str_contains($name, 'техпаспорт') || str_contains($name, 'Техпаспорт') || str_contains($name, 'автомобил'))) {
-                $profileUpdates['has_car'] = true;
-                $applied[] = $name;
-            }
-
-            // Трудовая книжка
-            if ($isApplicant && (str_contains($name, 'Трудовая') || str_contains($name, 'трудовая'))) {
-                if (!empty($data['employer_name']) && empty($profileUpdates['employer_name'])) {
-                    $profileUpdates['employer_name'] = $data['employer_name'];
-                }
-                if (!empty($data['position']) && empty($profileUpdates['position'])) {
-                    $profileUpdates['position'] = $data['position'];
-                }
-                $applied[] = $name;
-            }
-
-            // Авиабилеты
-            if ($isApplicant && (str_contains($name, 'Авиабилет') || str_contains($name, 'авиабилет'))) {
-                $profileUpdates['has_return_ticket'] = true;
+                $puUpdates['has_car'] = true;
                 $applied[] = $name;
             }
 
             // Метрика ребёнка
             if (str_contains($name, 'Метрика') || str_contains($name, 'метрика')) {
-                $existingChildren = $profileUpdates['children_count'] ?? 0;
-                $profileUpdates['children_count'] = $existingChildren + 1;
-                $profileUpdates['children_staying_home'] = true;
+                $existingChildren = $puUpdates['children_count'] ?? 0;
+                $puUpdates['children_count'] = $existingChildren + 1;
+                $puUpdates['has_children'] = true;
                 $applied[] = $name;
-            }
-        }
-
-        // Синхронизация из публичного портала VisaBor (если клиент зарегистрирован)
-        if ($client->public_user_id) {
-            $pu = PublicUser::find($client->public_user_id);
-            if ($pu) {
-                // Базовые данные клиента из портала
-                if ($pu->dob && empty($clientUpdates['date_of_birth'])) {
-                    $clientUpdates['date_of_birth'] = $pu->dob;
-                }
-                if ($pu->citizenship && empty($clientUpdates['nationality'])) {
-                    // Портал хранит ISO-2 (UZ), CRM — ISO-3 (UZB)
-                    $clientUpdates['nationality'] = $this->iso2ToIso3($pu->citizenship);
-                }
-                if ($pu->passport_number && empty($clientUpdates['passport_number'])) {
-                    $clientUpdates['passport_number'] = $pu->passport_number;
-                }
-                if ($pu->passport_expires_at && empty($clientUpdates['passport_expires_at'])) {
-                    $clientUpdates['passport_expires_at'] = $pu->passport_expires_at;
-                }
-
-                // Профиль из портала — маппинг public_users полей → client_profiles
-                $employmentMap = [
-                    'employed' => 'private', 'government' => 'government', 'business_owner' => 'business_owner',
-                    'self_employed' => 'self_employed', 'student' => 'student', 'retired' => 'retired',
-                    'unemployed' => 'unemployed',
-                ];
-                if ($pu->employment_type) {
-                    $profileUpdates['employment_type'] = $profileUpdates['employment_type']
-                        ?? ($employmentMap[$pu->employment_type] ?? $pu->employment_type);
-                }
-                if ($pu->monthly_income_usd) {
-                    $profileUpdates['monthly_income'] = $profileUpdates['monthly_income'] ?? $pu->monthly_income_usd;
-                }
-                if ($pu->marital_status) {
-                    $profileUpdates['marital_status'] = $profileUpdates['marital_status'] ?? $pu->marital_status;
-                }
-                if ($pu->has_children && $pu->children_count) {
-                    $profileUpdates['children_count'] = $profileUpdates['children_count'] ?? $pu->children_count;
-                    $profileUpdates['children_staying_home'] = $profileUpdates['children_staying_home'] ?? true;
-                }
-                if ($pu->has_property) {
-                    $profileUpdates['has_real_estate'] = $profileUpdates['has_real_estate'] ?? true;
-                }
-                if ($pu->has_car) {
-                    $profileUpdates['has_car'] = $profileUpdates['has_car'] ?? true;
-                }
-                if ($pu->has_schengen_visa) {
-                    $profileUpdates['has_schengen_visa'] = $profileUpdates['has_schengen_visa'] ?? true;
-                }
-                if ($pu->has_us_visa) {
-                    $profileUpdates['has_us_visa'] = $profileUpdates['has_us_visa'] ?? true;
-                }
-                if ($pu->had_visa_refusal && $pu->refusals_count) {
-                    $profileUpdates['previous_refusals'] = $profileUpdates['previous_refusals'] ?? $pu->refusals_count;
-                }
-                if ($pu->had_overstay) {
-                    $profileUpdates['has_overstay'] = $profileUpdates['has_overstay'] ?? true;
-                }
-                if ($pu->education_level) {
-                    $profileUpdates['education_level'] = $profileUpdates['education_level'] ?? $pu->education_level;
-                }
-                if ($pu->employed_years) {
-                    $yearsMap = ['less_1' => 0.5, '1_2' => 1.5, '2_5' => 3.5, '5_10' => 7, 'more_10' => 12];
-                    $profileUpdates['years_at_current_job'] = $profileUpdates['years_at_current_job']
-                        ?? ($yearsMap[$pu->employed_years] ?? 0);
-                }
-
-                $applied[] = 'VisaBor (профиль клиента)';
             }
         }
 
         // Применяем обновления Client
         if (!empty($clientUpdates)) {
-            // Не перезаписываем уже заполненные поля
             $toUpdate = [];
             foreach ($clientUpdates as $field => $value) {
                 if (empty($client->$field)) {
@@ -291,38 +331,46 @@ class ClientController extends Controller
             }
         }
 
-        // Применяем обновления ClientProfile
-        if (!empty($profileUpdates)) {
-            $profile = ClientProfile::firstOrCreate(
-                ['client_id' => $client->id],
-                ['client_id' => $client->id]
-            );
-            // Не перезаписываем уже заполненные поля
+        // Применяем обновления в public_users (единый источник профиля)
+        $pu = $this->ensurePublicUser($client->fresh());
+
+        // Синхронизируем базовые данные из client → public_user (если AI заполнил)
+        if (!empty($clientUpdates['date_of_birth']) && empty($pu->dob)) {
+            $puUpdates['dob'] = $clientUpdates['date_of_birth'];
+        }
+        if (!empty($clientUpdates['passport_number']) && empty($pu->passport_number)) {
+            $puUpdates['passport_number'] = $clientUpdates['passport_number'];
+        }
+        if (!empty($clientUpdates['passport_expires_at']) && empty($pu->passport_expires_at)) {
+            $puUpdates['passport_expires_at'] = $clientUpdates['passport_expires_at'];
+        }
+        if (!empty($clientUpdates['nationality']) && empty($pu->citizenship)) {
+            $puUpdates['citizenship'] = $this->iso3ToIso2($clientUpdates['nationality']);
+        }
+
+        if (!empty($puUpdates)) {
             $toUpdate = [];
-            foreach ($profileUpdates as $field => $value) {
-                if (empty($profile->$field)) {
+            foreach ($puUpdates as $field => $value) {
+                if (empty($pu->$field)) {
                     $toUpdate[$field] = $value;
                 }
             }
             if (!empty($toUpdate)) {
-                $profile->update($toUpdate);
+                $pu->update($toUpdate);
             }
         }
 
         $client->refresh();
-        $profile = ClientProfile::where('client_id', $client->id)->first();
+        $pu->refresh();
 
         // VisaBor scoring из кабинета клиента
-        $visaborScoring = null;
-        if ($client->public_user_id) {
-            $visaborScoring = PublicScoreCache::where('public_user_id', $client->public_user_id)
-                ->orderByDesc('score')
-                ->get(['country_code', 'score', 'breakdown', 'calculated_at']);
-        }
+        $visaborScoring = PublicScoreCache::where('public_user_id', $pu->id)
+            ->orderByDesc('score')
+            ->get(['country_code', 'score', 'breakdown', 'calculated_at']);
 
         return ApiResponse::success([
             'client'  => (new ClientResource($client))->withPii(),
-            'profile' => $profile,
+            'profile' => $this->formatProfile($pu),
             'applied_from' => array_unique($applied),
             'visabor_scoring' => $visaborScoring,
         ], 'Данные клиента обновлены из AI-анализа документов.');

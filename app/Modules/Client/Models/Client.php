@@ -8,6 +8,7 @@ use App\Support\Traits\NormalizesName;
 use App\Support\Traits\NormalizesPhone;
 use Database\Factories\Modules\Client\ClientFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Activitylog\LogOptions;
@@ -59,6 +60,11 @@ class Client extends BaseModel
     public function cases(): HasMany
     {
         return $this->hasMany(\App\Modules\Case\Models\VisaCase::class, 'client_id');
+    }
+
+    public function publicUser(): BelongsTo
+    {
+        return $this->belongsTo(\App\Modules\PublicPortal\Models\PublicUser::class, 'public_user_id');
     }
 
     public function setEmailAttribute(?string $value): void

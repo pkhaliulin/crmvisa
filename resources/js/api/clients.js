@@ -12,11 +12,8 @@ export const clientsApi = {
         fd.append('file', file);
         return api.post('/clients/parse-passport', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
     },
-    applyAiData:  (id)     => api.post(`/clients/${id}/apply-ai-data`),
-    visaborScoring: (id)   => api.get(`/clients/${id}/visabor-scoring`),
-    getProfile:   (id)     => api.get(`/clients/${id}/profile`),
-    saveProfile:  (id, data) => api.post(`/clients/${id}/profile`, data),
-    getScores:    (id)     => api.get(`/clients/${id}/scoring`),
-    recalculate:  (id)     => api.post(`/clients/${id}/scoring/recalculate`),
-    getScore:     (id, country) => api.get(`/clients/${id}/scoring/${country}`),
+    applyAiData:     (id)       => api.post(`/clients/${id}/apply-ai-data`),
+    visaborScoring:  (id)       => api.get(`/clients/${id}/visabor-scoring`),
+    getProfile:      (id)       => api.get(`/clients/${id}/profile`),
+    updateProfile:   (id, data) => api.patch(`/clients/${id}/profile`, data),
 };
