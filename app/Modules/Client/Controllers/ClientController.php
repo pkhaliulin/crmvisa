@@ -53,7 +53,7 @@ class ClientController extends Controller
         $this->authorize('view', $client);
 
         return ApiResponse::success(
-            (new ClientResource($client->load(['cases' => fn ($q) => $q->with('assignee:id,name')->orderBy('created_at', 'desc')])))
+            (new ClientResource($client->load(['publicUser', 'cases' => fn ($q) => $q->with('assignee:id,name')->orderBy('created_at', 'desc')])))
                 ->withPii()
         );
     }
