@@ -472,7 +472,7 @@
             </div>
             <!-- Breakdown -->
             <div v-if="countryScore.breakdown" class="mt-1.5 space-y-0.5">
-              <div v-for="(val, key) in countryScore.breakdown" :key="key" class="flex items-center gap-1.5">
+              <div v-for="(val, key) in filteredBreakdown" :key="key" class="flex items-center gap-1.5">
                 <span class="text-[10px] text-gray-400 w-20 truncate" :title="visaborBlockLabel(key)">{{ visaborBlockLabel(key) }}</span>
                 <div class="flex-1 h-1 bg-gray-100 rounded-full overflow-hidden">
                   <div class="h-full rounded-full bg-emerald-400" :style="{ width: `${val}%` }" />
@@ -1148,6 +1148,14 @@ const scoringLabels = {
   profile: 'crm.caseDetail.scorProfile',
 };
 function visaborBlockLabel(key) { return t(scoringLabels[key] || `crm.clientDetail.vb_${key}`, key); }
+
+const hiddenScoringKeys = new Set(['raw_weighted', 'raw_weight']);
+const filteredBreakdown = computed(() => {
+  if (!countryScore.value?.breakdown) return {};
+  return Object.fromEntries(
+    Object.entries(countryScore.value.breakdown).filter(([k]) => !hiddenScoringKeys.has(k))
+  );
+});
 function fmtMoney(v) { return Number(v).toLocaleString('en-US', { maximumFractionDigits: 0 }); }
 
 // Helpers

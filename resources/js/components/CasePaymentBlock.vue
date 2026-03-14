@@ -50,37 +50,59 @@
       </div>
 
       <!-- Inline settings: total_price + deadline -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <!-- Total price -->
-        <div>
-          <label class="text-xs font-medium text-gray-500 block mb-1">{{ t('crm.casePayment.totalPrice') }}</label>
-          <div class="flex gap-2">
-            <input v-model.number="settingsForm.total_price" type="number" min="0" step="1000"
-              class="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none" />
-            <button @click="saveSettings" :disabled="savingSettings"
-              class="text-xs px-3 py-1.5 rounded-lg bg-[#1BA97F] text-white font-medium hover:bg-[#168c69] disabled:opacity-50 transition-colors">
-              {{ t('common.save') }}
-            </button>
+      <div class="space-y-3">
+        <!-- Total price (inline edit) -->
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-medium text-gray-500">{{ t('crm.casePayment.totalPrice') }}</span>
+          <div class="flex items-center gap-1.5">
+            <template v-if="editingPrice">
+              <input v-model.number="settingsForm.total_price" type="number" min="0" step="1000" ref="priceInput"
+                @keyup.enter="savePriceField" @keyup.escape="editingPrice = false"
+                class="w-32 border border-[#1BA97F] rounded-lg px-2 py-1 text-sm text-right outline-none" />
+              <button @click="savePriceField" class="w-6 h-6 flex items-center justify-center rounded-md hover:bg-green-50 text-[#1BA97F]">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+              </button>
+              <button @click="editingPrice = false" class="w-6 h-6 flex items-center justify-center rounded-md hover:bg-gray-100 text-gray-400">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+            </template>
+            <template v-else>
+              <span class="text-sm font-bold text-gray-900">{{ formatAmount(totalPrice) }}</span>
+              <button @click="editingPrice = true; $nextTick(() => $refs.priceInput?.focus())" class="w-6 h-6 flex items-center justify-center rounded-md hover:bg-gray-100 text-gray-400">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+              </button>
+            </template>
           </div>
         </div>
-        <!-- Deadline -->
-        <div>
-          <label class="text-xs font-medium text-gray-500 block mb-1">{{ t('crm.casePayment.deadline') }}</label>
-          <div class="flex gap-2">
-            <input v-model="settingsForm.payment_deadline" type="date"
-              class="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none" />
-            <button @click="saveSettings" :disabled="savingSettings"
-              class="text-xs px-3 py-1.5 rounded-lg bg-[#1BA97F] text-white font-medium hover:bg-[#168c69] disabled:opacity-50 transition-colors">
-              {{ t('common.save') }}
-            </button>
+        <!-- Deadline (inline edit) -->
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-medium text-gray-500">{{ t('crm.casePayment.deadline') }}</span>
+          <div class="flex items-center gap-1.5">
+            <template v-if="editingDeadline">
+              <input v-model="settingsForm.payment_deadline" type="date" ref="deadlineInput"
+                @keyup.enter="saveDeadlineField" @keyup.escape="editingDeadline = false"
+                class="w-36 border border-[#1BA97F] rounded-lg px-2 py-1 text-sm outline-none" />
+              <button @click="saveDeadlineField" class="w-6 h-6 flex items-center justify-center rounded-md hover:bg-green-50 text-[#1BA97F]">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+              </button>
+              <button @click="editingDeadline = false" class="w-6 h-6 flex items-center justify-center rounded-md hover:bg-gray-100 text-gray-400">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+            </template>
+            <template v-else>
+              <span class="text-sm text-gray-700">{{ settingsForm.payment_deadline || '—' }}</span>
+              <button @click="editingDeadline = true; $nextTick(() => $refs.deadlineInput?.focus())" class="w-6 h-6 flex items-center justify-center rounded-md hover:bg-gray-100 text-gray-400">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+              </button>
+            </template>
           </div>
-          <!-- Quick deadline buttons -->
-          <div class="flex gap-1.5 mt-1.5">
-            <button v-for="d in quickDeadlineDays" :key="d" @click="setQuickDeadline(d)"
-              class="text-[10px] px-2 py-0.5 rounded-md border border-gray-200 text-gray-500 hover:bg-gray-100 transition-colors">
-              +{{ d }} {{ t('crm.casePayment.days') }}
-            </button>
-          </div>
+        </div>
+        <!-- Quick deadline buttons -->
+        <div class="flex gap-1.5">
+          <button v-for="d in quickDeadlineDays" :key="d" @click="setQuickDeadline(d)"
+            class="text-[10px] px-2 py-0.5 rounded-md border border-gray-200 text-gray-500 hover:bg-gray-100 transition-colors">
+            +{{ d }} {{ t('crm.casePayment.days') }}
+          </button>
         </div>
       </div>
 
@@ -213,6 +235,8 @@ const deletingId = ref(null);
 const printingInvoice = ref(false);
 
 const quickDeadlineDays = [3, 7, 10];
+const editingPrice = ref(false);
+const editingDeadline = ref(false);
 
 const settingsForm = ref({
   total_price: 0,
@@ -339,15 +363,28 @@ async function fetchPayments() {
 async function saveSettings() {
   savingSettings.value = true;
   try {
-    await api.patch(`/cases/${props.caseId}/payment-settings`, {
+    const { data } = await api.patch(`/cases/${props.caseId}/payment-settings`, {
       total_price: settingsForm.value.total_price,
       payment_deadline: settingsForm.value.payment_deadline || null,
     });
+    const result = data?.data || data;
+    if (result?.total_price !== undefined) settingsForm.value.total_price = result.total_price;
+    if (result?.payment_deadline !== undefined) settingsForm.value.payment_deadline = result.payment_deadline || '';
   } catch (e) {
     console.error('Failed to save settings:', e);
   } finally {
     savingSettings.value = false;
   }
+}
+
+async function savePriceField() {
+  await saveSettings();
+  editingPrice.value = false;
+}
+
+async function saveDeadlineField() {
+  await saveSettings();
+  editingDeadline.value = false;
 }
 
 async function submitPayment() {

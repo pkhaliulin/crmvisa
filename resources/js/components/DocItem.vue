@@ -16,7 +16,7 @@
       <div class="flex-1 min-w-0">
         <!-- Name + badge -->
         <div class="flex items-center gap-2 flex-wrap">
-          <p class="text-sm font-medium text-gray-800">{{ item.name }}</p>
+          <p class="text-sm font-medium text-gray-800">{{ (locale === 'uz' && item.name_uz) ? item.name_uz : item.name }}</p>
           <span v-if="!item.is_required" class="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
             {{ t('crm.doc.optional') }}
           </span>
@@ -24,7 +24,7 @@
         </div>
 
         <!-- Description -->
-        <p v-if="item.description" class="text-xs text-gray-400 mt-0.5 leading-relaxed">{{ item.description }}</p>
+        <p v-if="item.description || item.description_uz" class="text-xs text-gray-400 mt-0.5 leading-relaxed">{{ (locale === 'uz' && item.description_uz) ? item.description_uz : item.description }}</p>
 
         <!-- Uploaded file -->
         <div v-if="item.document" class="mt-1.5 flex items-center gap-2 flex-wrap">
@@ -169,7 +169,7 @@ import { useI18n } from 'vue-i18n';
 import AppBadge from './AppBadge.vue';
 import DocAiPanel from './DocAiPanel.vue';
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const props = defineProps({ item: Object, aiLoading: { type: Boolean, default: false } });
 defineEmits(['upload', 'toggle', 'review', 'reject', 'translation', 'upload-translation', 'approve-translation', 'preview', 'delete', 'repeat', 'ai-analyze']);
 
