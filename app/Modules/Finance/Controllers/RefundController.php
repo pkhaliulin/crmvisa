@@ -111,13 +111,25 @@ class RefundController extends Controller
     /**
      * PATCH /cases/{caseId}/refunds/{refundId}/complete — отметить возврат выполненным.
      */
-    public function complete(string $caseId, string $refundId): JsonResponse
+    public function complete(Request $request, string $caseId, string $refundId): JsonResponse
     {
+        $case = VisaCase::findOrFail($caseId);
+
+        $policy = app(FinancePolicy::class);
+        if (!$policy->approveRefund($request->user(), $case)) {
+            return ApiResponse::forbidden('Только руководитель может подтвердить возврат.');
+        }
+
         $refund = CaseRefund::where('case_id', $caseId)->findOrFail($refundId);
 
         $refund->update([
             'status'       => 'completed',
             'completed_at' => now(),
+        ]);
+
+        AuditLog::log('finance.refund_completed', [
+            'case_id' => $caseId, 'refund_id' => $refundId,
+            'amount' => $refund->amount, 'user_id' => $request->user()->id,
         ]);
 
         return ApiResponse::success(['refund' => $refund], 'Возврат выполнен');

@@ -224,6 +224,7 @@ Route::middleware(['auth:api', 'role:owner,superadmin', 'plan.active'])->group(f
         Route::get('finance/debts',        [\App\Modules\Finance\Controllers\FinanceController::class, 'debts']);
         Route::get('finance/by-manager',   [\App\Modules\Finance\Controllers\FinanceController::class, 'byManager']);
         Route::get('finance/by-country',   [\App\Modules\Finance\Controllers\FinanceController::class, 'byCountry']);
+        Route::get('finance/audit-log',    [\App\Modules\Finance\Controllers\FinanceController::class, 'auditLog']);
     });
 });
 

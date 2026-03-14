@@ -308,6 +308,24 @@ class PublicCaseController extends Controller
             'remaining_balance'    => $case->remainingBalance(),
             'payment_deadline'     => $case->payment_deadline?->toDateString(),
             'payment_blocked'      => (bool) $case->payment_blocked,
+            'payment_history'      => $case->payments()
+                ->orderByDesc('paid_at')
+                ->get(['amount', 'currency', 'payment_method', 'paid_at'])
+                ->map(fn ($p) => [
+                    'amount'  => $p->amount,
+                    'currency'=> $p->currency,
+                    'method'  => $p->payment_method,
+                    'date'    => $p->paid_at?->toDateString(),
+                ]),
+            'contract'             => $case->contract_number ? [
+                'number'       => $case->contract_number,
+                'accepted_at'  => $case->contract_accepted_at?->toDateString(),
+            ] : null,
+            'refund'               => $case->public_status === 'cancelled' && $case->refund_amount ? [
+                'amount'  => $case->refund_amount,
+                'currency'=> $case->price_currency ?? 'UZS',
+            ] : null,
+            'cancellation_policy'  => app(\App\Modules\Finance\Services\ContractService::class)->getCancellationPolicy(),
             'appointment_date'     => $case->appointment_date?->toDateString(),
             'appointment_time'     => $case->appointment_time,
             'appointment_location' => $case->appointment_location,

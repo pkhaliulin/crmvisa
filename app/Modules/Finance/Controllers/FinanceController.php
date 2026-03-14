@@ -230,4 +230,37 @@ class FinanceController extends Controller
 
         return ApiResponse::success(['countries' => $data]);
     }
+
+    /**
+     * GET /finance/audit-log — журнал финансовых действий.
+     */
+    public function auditLog(Request $request): JsonResponse
+    {
+        $agencyId = $request->user()->agency_id;
+
+        $query = DB::table('audit_logs')
+            ->where('agency_id', $agencyId)
+            ->where('action', 'like', 'finance.%')
+            ->orderByDesc('created_at');
+
+        if ($request->filled('action')) {
+            $query->where('action', $request->input('action'));
+        }
+        if ($request->filled('from')) {
+            $query->where('created_at', '>=', $request->input('from'));
+        }
+        if ($request->filled('to')) {
+            $query->where('created_at', '<=', $request->input('to') . ' 23:59:59');
+        }
+
+        $logs = $query->paginate(50);
+
+        // Декодировать JSON
+        collect($logs->items())->each(function ($log) {
+            $log->context = json_decode($log->context, true);
+            $log->changes = json_decode($log->changes, true);
+        });
+
+        return ApiResponse::success($logs);
+    }
 }
