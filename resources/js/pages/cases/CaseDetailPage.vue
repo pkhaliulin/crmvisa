@@ -569,6 +569,9 @@
           </div>
         </div>
 
+        <!-- Payment block (сразу после клиента) -->
+        <CasePaymentBlock :case-id="caseData.id" />
+
         <!-- Visa Case Engine: Readiness -->
         <ReadinessPanel v-if="hasEngine || caseData.visa_case_rule_id"
           ref="readinessPanelRef"
@@ -638,9 +641,6 @@
             </div>
           </div>
         </div>
-
-        <!-- Payment block -->
-        <CasePaymentBlock :case-id="caseData.id" />
 
         <!-- Quick actions -->
         <div class="bg-white rounded-xl border border-gray-100 p-4">
