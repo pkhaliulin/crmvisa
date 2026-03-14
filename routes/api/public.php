@@ -58,6 +58,7 @@ Route::prefix('public')->middleware(['locale', 'auth.public'])->group(function (
     Route::post('me/document',            [PublicProfileController::class, 'uploadDocument']);
     Route::get('me/documents',            [PublicProfileController::class, 'allDocuments']);
     Route::post('me/documents/validate',  [PublicProfileController::class, 'crossDocumentValidationEndpoint']);
+    Route::post('me/dismiss-mismatches',  [PublicProfileController::class, 'dismissMismatches']);
     Route::post('me/email',        [PublicEmailController::class, 'saveEmail']);
     Route::post('me/email/verify', [PublicEmailController::class, 'verifyEmail']);
     Route::post('me/change-phone/send-otp', [PublicPhoneController::class, 'changePhoneSendOtp']);

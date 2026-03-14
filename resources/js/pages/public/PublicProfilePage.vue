@@ -1213,10 +1213,13 @@ function applyAllOcr() {
 
 function dismissOcrField(mm) {
     ocrMismatches.value = ocrMismatches.value.filter(m => m.field !== mm.field);
+    publicPortalApi.dismissMismatches([mm.field], ocrDetectedType.value || 'foreign_passport');
 }
 
 function dismissAllOcr() {
+    const fields = ocrMismatches.value.map(m => m.field);
     ocrMismatches.value = [];
+    if (fields.length) publicPortalApi.dismissMismatches(fields, ocrDetectedType.value || 'foreign_passport');
 }
 
 function resetOcr() {

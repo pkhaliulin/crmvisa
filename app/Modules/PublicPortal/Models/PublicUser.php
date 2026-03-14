@@ -72,6 +72,7 @@ class PublicUser extends Model
         'employed_years',
         'education_level',
         'last_login_at',
+        'dismissed_mismatches',
     ];
 
     protected $hidden = ['pin_hash', 'api_token', 'ocr_raw_data', 'passport_ocr_data', 'id_doc_ocr_data'];
@@ -98,6 +99,7 @@ class PublicUser extends Model
         'id_doc_issued_by'    => 'encrypted',
         'id_doc_ocr_data'     => 'encrypted:array',
         'recovery_email'      => 'encrypted',
+        'dismissed_mismatches' => 'array',
         'last_login_at'       => 'datetime',
         'email_verified_at'   => 'datetime',
         'has_children'        => 'boolean',

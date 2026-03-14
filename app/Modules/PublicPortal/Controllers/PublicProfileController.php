@@ -229,9 +229,15 @@ class PublicProfileController extends Controller
             $idExtracted = $user->id_doc_ocr_data;
         }
 
+        $dismissed = $user->dismissed_mismatches ?? [];
+
         $passportMismatches = $passportExtracted
             ? $this->detectMismatches($user, $passportExtracted, 'foreign_passport')
             : [];
+        $dismissedPassport = $dismissed['foreign_passport'] ?? [];
+        if ($dismissedPassport) {
+            $passportMismatches = array_values(array_filter($passportMismatches, fn ($m) => !in_array($m['field'], $dismissedPassport)));
+        }
 
         $crossValidation = ($passportExtracted && $idExtracted)
             ? $this->crossDocumentValidation($user)
@@ -371,6 +377,27 @@ class PublicProfileController extends Controller
             ->map(fn ($doc) => $this->formatDocumentForFrontend($doc));
 
         return ApiResponse::success(['documents' => $documents]);
+    }
+
+    /**
+     * POST /public/me/dismiss-mismatches
+     * Сохранить отклонённые расхождения, чтобы не показывать повторно.
+     */
+    public function dismissMismatches(Request $request): JsonResponse
+    {
+        $user = $request->get('_public_user');
+        $fields = $request->validate([
+            'fields'   => 'required|array',
+            'fields.*' => 'string|max:50',
+            'doc_type' => 'sometimes|string|max:30',
+        ]);
+
+        $docType = $fields['doc_type'] ?? 'foreign_passport';
+        $dismissed = $user->dismissed_mismatches ?? [];
+        $dismissed[$docType] = array_unique(array_merge($dismissed[$docType] ?? [], $fields['fields']));
+        $user->update(['dismissed_mismatches' => $dismissed]);
+
+        return ApiResponse::success(['dismissed' => $dismissed]);
     }
 
     /**
@@ -527,6 +554,11 @@ class PublicProfileController extends Controller
             ->where('doc_type', $docType)
             ->where('is_current', true)
             ->each(fn ($doc) => $doc->markReplaced('new_document'));
+
+        // Сбросить dismissed mismatches для этого типа (новый документ = новые данные)
+        $dismissed = $user->dismissed_mismatches ?? [];
+        unset($dismissed[$docType]);
+        $user->update(['dismissed_mismatches' => $dismissed ?: null]);
 
         return PublicUserDocument::create([
             'public_user_id' => $user->id,

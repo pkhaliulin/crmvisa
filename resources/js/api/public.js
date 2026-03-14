@@ -53,6 +53,7 @@ export const publicPortalApi = {
         if (docType) fd.append('doc_type', docType);
         return publicApi.post('/me/document', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
     },
+    dismissMismatches: (fields, docType = 'foreign_passport') => publicApi.post('/me/dismiss-mismatches', { fields, doc_type: docType }),
     allDocuments:     () => publicApi.get('/me/documents'),
     crossValidate:    () => publicApi.post('/me/documents/validate'),
 
