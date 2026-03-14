@@ -563,9 +563,14 @@ td{padding:6px 10px;border:1px solid #ddd}
 </div>
 <div class="parties">
 <div class="party"><h3>${t('crm.casePayment.contractAgency')}</h3>
-<p><strong>${c.agency?.name || ''}</strong></p>
+<p><strong>${c.agency?.name || ''}</strong>${c.agency?.legal_form ? ` (${c.agency.legal_form.toUpperCase()})` : ''}</p>
+${c.agency?.inn ? `<p>ИНН: ${c.agency.inn}</p>` : ''}
 <p>${c.agency?.address || ''}</p>
-<p>${c.agency?.phone || ''}</p></div>
+${c.agency?.bank_account ? `<p>Р/с: ${c.agency.bank_account}</p>` : ''}
+${c.agency?.bank_name ? `<p>Банк: ${c.agency.bank_name}${c.agency?.bank_mfo ? `, МФО: ${c.agency.bank_mfo}` : ''}</p>` : ''}
+<p>${c.agency?.phone || ''} ${c.agency?.email ? `/ ${c.agency.email}` : ''}</p>
+${c.agency?.director ? `<p>Руководитель: ${c.agency.director}${c.agency?.director_basis ? ` (${c.agency.director_basis})` : ''}</p>` : ''}
+</div>
 <div class="party"><h3>${t('crm.casePayment.contractClient')}</h3>
 <p><strong>${c.client?.name || ''}</strong></p>
 <p>${c.client?.phone || ''}</p></div>

@@ -19,6 +19,9 @@
         <svg v-else-if="tab.key === 'profile'" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/>
         </svg>
+        <svg v-else-if="tab.key === 'legal'" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/>
+        </svg>
         <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z"/>
         </svg>
@@ -714,6 +717,139 @@
           </template>
         </div>
       </template>
+
+      <!-- ==================== ВКЛАДКА: Реквизиты ==================== -->
+      <template v-if="activeTab === 'legal'">
+        <div class="space-y-4">
+          <!-- Юридические данные -->
+          <section class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div class="px-5 py-3 bg-gradient-to-r from-gray-50 to-white border-b border-gray-100 flex items-center gap-2">
+              <div class="w-7 h-7 rounded-lg bg-indigo-50 flex items-center justify-center">
+                <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/>
+                </svg>
+              </div>
+              <h2 class="font-semibold text-gray-700 text-sm">{{ t('crm.settings.legalTitle') }}</h2>
+            </div>
+            <div class="p-5 space-y-4">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('crm.settings.legalName') }}</label>
+                  <input v-model="form.legal_name" type="text"
+                    class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-colors" />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('crm.settings.legalForm') }}</label>
+                  <SearchSelect v-model="form.legal_form" :items="legalFormOptions" />
+                </div>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('crm.settings.inn') }}</label>
+                  <input v-model="form.inn" type="text" maxlength="20"
+                    class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-colors" />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('crm.settings.directorName') }}</label>
+                  <input v-model="form.director_name" type="text"
+                    class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-colors" />
+                </div>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('crm.settings.legalAddress') }}</label>
+                <input v-model="form.legal_address" type="text"
+                  class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-colors" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('crm.settings.directorBasis') }}</label>
+                <input v-model="form.director_basis" type="text" :placeholder="t('crm.settings.directorBasisPlaceholder')"
+                  class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-colors" />
+              </div>
+            </div>
+          </section>
+
+          <!-- Банковские реквизиты -->
+          <section class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div class="px-5 py-3 bg-gradient-to-r from-gray-50 to-white border-b border-gray-100 flex items-center gap-2">
+              <div class="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center">
+                <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z"/>
+                </svg>
+              </div>
+              <h2 class="font-semibold text-gray-700 text-sm">{{ t('crm.settings.bankTitle') }}</h2>
+            </div>
+            <div class="p-5 space-y-4">
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('crm.settings.bankAccount') }}</label>
+                  <input v-model="form.bank_account" type="text" maxlength="30"
+                    class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-colors" />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('crm.settings.bankName') }}</label>
+                  <input v-model="form.bank_name" type="text"
+                    class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-colors" />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('crm.settings.bankMfo') }}</label>
+                  <input v-model="form.bank_mfo" type="text" maxlength="10"
+                    class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-colors" />
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Политика возврата по умолчанию -->
+          <section class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div class="px-5 py-3 bg-gradient-to-r from-gray-50 to-white border-b border-gray-100 flex items-center gap-2">
+              <div class="w-7 h-7 rounded-lg bg-amber-50 flex items-center justify-center">
+                <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3"/>
+                </svg>
+              </div>
+              <h2 class="font-semibold text-gray-700 text-sm">{{ t('crm.settings.refundPolicyTitle') }}</h2>
+            </div>
+            <div class="p-5">
+              <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div v-for="stage in refundStages" :key="stage.key">
+                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ stage.label }}</label>
+                  <div class="relative">
+                    <input v-model.number="form.refund_policy[stage.key]" type="number" min="0" max="100"
+                      class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-colors pr-8" />
+                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Кнопка сохранения -->
+          <div class="flex items-center justify-between bg-white rounded-xl border border-gray-200 px-5 py-3">
+            <div>
+              <p v-if="successMsg" class="text-sm text-green-600 font-medium flex items-center gap-1.5">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/>
+                </svg>
+                {{ successMsg }}
+              </p>
+              <p v-if="errorMsg" class="text-sm text-red-600 flex items-center gap-1.5">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/>
+                </svg>
+                {{ errorMsg }}
+              </p>
+            </div>
+            <button @click="saveAgency" :disabled="saving"
+              class="px-6 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center gap-2">
+              <svg v-if="!saving" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/>
+              </svg>
+              <div v-else class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+              {{ saving ? t('crm.settings.saving') : t('crm.settings.save') }}
+            </button>
+          </div>
+        </div>
+      </template>
     </template>
   </div>
 </template>
@@ -724,6 +860,7 @@ import { useI18n } from 'vue-i18n';
 import api from '@/api/index';
 import AppInput from '@/components/AppInput.vue';
 import AppTextarea from '@/components/AppTextarea.vue';
+import SearchSelect from '@/components/SearchSelect.vue';
 import { useAuthStore } from '@/stores/auth';
 
 const { t } = useI18n();
@@ -766,6 +903,7 @@ const brandingForm = ref({
 const tabs = computed(() => [
   { key: 'agency',   label: t('crm.settings.tabAgency') },
   { key: 'profile',  label: t('crm.settings.tabProfile') },
+  { key: 'legal',    label: t('crm.settings.tabLegal') },
   { key: 'features', label: t('crm.settings.features') },
 ]);
 
@@ -786,7 +924,30 @@ const form = ref({
   description: '', description_uz: '', website_url: '', city: '',
   experience_years: null, address: '', managers_see_all_cases: false,
   lead_assignment_mode: 'manual', phone: '', email: '', latitude: '', longitude: '',
+  legal_name: '', legal_form: '', inn: '', legal_address: '',
+  director_name: '', director_basis: '',
+  bank_account: '', bank_name: '', bank_mfo: '',
+  refund_policy: {
+    before_start: null, documents_stage: null, doc_review_stage: null,
+    translation_stage: null, ready_stage: null, after_submission: null,
+  },
 });
+
+const legalFormOptions = computed(() => [
+  { value: 'ooo', label: t('crm.settings.formOoo') },
+  { value: 'ip', label: t('crm.settings.formIp') },
+  { value: 'chp', label: t('crm.settings.formChp') },
+  { value: 'other', label: t('crm.settings.formOther') },
+]);
+
+const refundStages = computed(() => [
+  { key: 'before_start', label: t('crm.settings.refundBeforeStart') },
+  { key: 'documents_stage', label: t('crm.settings.refundDocuments') },
+  { key: 'doc_review_stage', label: t('crm.settings.refundDocReview') },
+  { key: 'translation_stage', label: t('crm.settings.refundTranslation') },
+  { key: 'ready_stage', label: t('crm.settings.refundReady') },
+  { key: 'after_submission', label: t('crm.settings.refundAfterSubmission') },
+]);
 
 const profile = ref({
   name: '', email: '', phone: '', telegram_username: '', role: '',
@@ -985,7 +1146,13 @@ onMounted(async () => {
     const settingsRes = await api.get('/agency/settings');
     const data = settingsRes.data?.data || {};
     Object.keys(form.value).forEach(key => {
-      if (data[key] !== undefined && data[key] !== null) form.value[key] = data[key];
+      if (key === 'refund_policy') {
+        if (data[key] && typeof data[key] === 'object') {
+          Object.assign(form.value.refund_policy, data[key]);
+        }
+      } else if (data[key] !== undefined && data[key] !== null) {
+        form.value[key] = data[key];
+      }
     });
 
     const user = auth.user;

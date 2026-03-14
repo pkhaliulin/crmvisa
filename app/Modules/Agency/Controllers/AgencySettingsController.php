@@ -53,6 +53,18 @@ class AgencySettingsController extends Controller
             'email'                  => ['sometimes', 'nullable', 'email', 'max:255'],
             'latitude'               => ['sometimes', 'nullable', 'numeric'],
             'longitude'              => ['sometimes', 'nullable', 'numeric'],
+            // Юридические реквизиты
+            'legal_name'             => ['sometimes', 'nullable', 'string', 'max:500'],
+            'legal_form'             => ['sometimes', 'nullable', 'in:ooo,ip,chp,other'],
+            'inn'                    => ['sometimes', 'nullable', 'string', 'max:20'],
+            'legal_address'          => ['sometimes', 'nullable', 'string', 'max:500'],
+            'bank_account'           => ['sometimes', 'nullable', 'string', 'max:30'],
+            'bank_name'              => ['sometimes', 'nullable', 'string', 'max:255'],
+            'bank_mfo'               => ['sometimes', 'nullable', 'string', 'max:10'],
+            'director_name'          => ['sometimes', 'nullable', 'string', 'max:255'],
+            'director_basis'         => ['sometimes', 'nullable', 'string', 'max:100'],
+            'default_refund_policy'  => ['sometimes', 'nullable', 'array'],
+            'default_payment_terms'  => ['sometimes', 'nullable', 'array'],
         ]);
 
         $agency = Agency::findOrFail($request->user()->agency_id);
