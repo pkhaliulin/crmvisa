@@ -4,8 +4,10 @@ namespace App\Modules\Finance\Controllers;
 
 use App\Modules\Case\Models\VisaCase;
 use App\Modules\Finance\Models\CaseRefund;
+use App\Modules\Finance\Policies\FinancePolicy;
 use App\Modules\Finance\Services\ContractService;
 use App\Support\Helpers\ApiResponse;
+use App\Support\Helpers\AuditLog;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -51,6 +53,11 @@ class RefundController extends Controller
     {
         $case = VisaCase::findOrFail($caseId);
 
+        $policy = app(FinancePolicy::class);
+        if (!$policy->createRefund($request->user(), $case)) {
+            return ApiResponse::forbidden('Недостаточно прав для создания возврата.');
+        }
+
         $data = $request->validate([
             'amount'        => 'required|integer|min:1',
             'reason'        => 'required|string|max:500',
@@ -91,6 +98,12 @@ class RefundController extends Controller
             ['refund_id' => $refund->id, 'amount' => $data['amount']],
             true
         );
+
+        AuditLog::log('finance.refund_created', [
+            'case_id' => $case->id, 'refund_id' => $refund->id,
+            'amount' => $data['amount'], 'reason' => $data['reason'],
+            'user_id' => Auth::id(),
+        ]);
 
         return ApiResponse::success(['refund' => $refund], 'Возврат оформлен');
     }

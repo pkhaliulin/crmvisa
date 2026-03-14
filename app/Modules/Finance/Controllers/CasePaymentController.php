@@ -4,8 +4,10 @@ namespace App\Modules\Finance\Controllers;
 
 use App\Modules\Case\Models\CasePayment;
 use App\Modules\Case\Models\VisaCase;
+use App\Modules\Finance\Policies\FinancePolicy;
 use App\Modules\Finance\Services\CasePaymentService;
 use App\Support\Helpers\ApiResponse;
+use App\Support\Helpers\AuditLog;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -32,6 +34,11 @@ class CasePaymentController extends Controller
     {
         $case = VisaCase::findOrFail($caseId);
 
+        $policy = app(FinancePolicy::class);
+        if (!$policy->recordPayment($request->user(), $case)) {
+            return ApiResponse::forbidden('Недостаточно прав для записи оплаты.');
+        }
+
         $data = $request->validate([
             'amount'         => 'required|integer|min:1',
             'payment_method' => ['required', Rule::in(['cash', 'terminal', 'bank_transfer', 'payme', 'click', 'uzum', 'other'])],
@@ -42,6 +49,11 @@ class CasePaymentController extends Controller
 
         $payment = $this->service->recordPayment($case, $data);
 
+        AuditLog::log('finance.payment_recorded', [
+            'case_id' => $case->id, 'amount' => $data['amount'],
+            'method' => $data['payment_method'], 'user_id' => $request->user()->id,
+        ]);
+
         return ApiResponse::success([
             'payment' => $payment,
             'summary' => $this->service->getPaymentSummary($case->fresh()),
@@ -51,9 +63,20 @@ class CasePaymentController extends Controller
     /**
      * DELETE /cases/{caseId}/payments/{paymentId} — удалить платёж.
      */
-    public function destroy(string $caseId, string $paymentId): JsonResponse
+    public function destroy(Request $request, string $caseId, string $paymentId): JsonResponse
     {
+        $case = VisaCase::findOrFail($caseId);
+        $policy = app(FinancePolicy::class);
+        if (!$policy->deletePayment($request->user(), $case)) {
+            return ApiResponse::forbidden('Только руководитель может удалять платежи.');
+        }
+
         $payment = CasePayment::where('case_id', $caseId)->findOrFail($paymentId);
+
+        AuditLog::log('finance.payment_deleted', [
+            'case_id' => $caseId, 'payment_id' => $paymentId,
+            'amount' => $payment->amount, 'user_id' => $request->user()->id,
+        ]);
 
         $this->service->deletePayment($payment);
 
@@ -70,6 +93,17 @@ class CasePaymentController extends Controller
     {
         $case = VisaCase::findOrFail($caseId);
 
+        $policy = app(FinancePolicy::class);
+        if (!$policy->updatePaymentSettings($request->user(), $case)) {
+            return ApiResponse::forbidden('Недостаточно прав.');
+        }
+
+        // Проверка: нельзя менять стоимость подписанного договора
+        $activeContract = $case->activeContract;
+        if ($activeContract && $activeContract->isLocked() && isset($request->total_price)) {
+            return ApiResponse::error('Нельзя изменить стоимость подписанного договора. Создайте допсоглашение.', null, 422);
+        }
+
         $data = $request->validate([
             'total_price'      => 'sometimes|integer|min:0',
             'price_currency'   => 'sometimes|string|size:3',
@@ -83,6 +117,10 @@ class CasePaymentController extends Controller
         if (array_key_exists('payment_deadline', $data)) {
             $this->service->setPaymentDeadline($case, $data['payment_deadline']);
         }
+
+        AuditLog::log('finance.settings_updated', [
+            'case_id' => $case->id, 'changes' => $data, 'user_id' => $request->user()->id,
+        ]);
 
         return ApiResponse::success(
             $this->service->getPaymentSummary($case->fresh()),
@@ -137,12 +175,17 @@ class CasePaymentController extends Controller
     /**
      * POST /cases/{caseId}/contract/accept — зафиксировать принятие договора.
      */
-    public function acceptContract(string $caseId): JsonResponse
+    public function acceptContract(Request $request, string $caseId): JsonResponse
     {
         $case = VisaCase::findOrFail($caseId);
         $contractService = app(\App\Modules\Finance\Services\ContractService::class);
 
         $case = $contractService->acceptContract($case);
+
+        AuditLog::log('finance.contract_accepted', [
+            'case_id' => $case->id, 'contract_number' => $case->contract_number,
+            'user_id' => $request->user()?->id,
+        ]);
 
         return ApiResponse::success([
             'contract_number'      => $case->contract_number,
