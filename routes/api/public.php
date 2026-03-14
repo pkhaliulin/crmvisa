@@ -112,6 +112,7 @@ Route::prefix('public')->middleware(['locale', 'auth.public'])->group(function (
     Route::post('me/payments/initiate',        [ClientPaymentController::class, 'initiate'])->middleware('throttle:5,1');
     Route::post('me/payments/mark-paid',       [ClientPaymentController::class, 'markAsPaid'])->middleware('throttle:3,1');
     Route::get('me/cases/{id}/payment',        [ClientPaymentController::class, 'status']);
+    Route::get('me/cases/{id}/invoice',        [PublicCaseController::class, 'invoice']);
     Route::get('me/billing',                   [ClientPaymentController::class, 'history']);
 
     Route::get('scoring',            [PublicScoringController::class, 'scoreAll'])->middleware('throttle:5,1');

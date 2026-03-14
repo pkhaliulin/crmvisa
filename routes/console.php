@@ -23,3 +23,4 @@ Schedule::job(new \App\Modules\Case\Jobs\SendSlaWarningsJob)->everyFifteenMinute
 
 Schedule::command('app:verify-backup')->dailyAt('04:00');
 Schedule::command('tasks:generate-recurring')->dailyAt('06:00');
+Schedule::command('visabor:payment-deadline-check')->dailyAt('09:00');

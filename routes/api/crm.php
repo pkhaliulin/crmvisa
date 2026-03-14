@@ -73,6 +73,13 @@ Route::middleware(['auth:api', 'role:owner,manager,superadmin', 'plan.active', '
         'plan.limit:max_cases',
     ]);
 
+    // Оплата заявки
+    Route::get('cases/{id}/payments',          [\App\Modules\Case\Controllers\CasePaymentController::class, 'index']);
+    Route::post('cases/{id}/payments',         [\App\Modules\Case\Controllers\CasePaymentController::class, 'store']);
+    Route::delete('cases/{id}/payments/{pid}', [\App\Modules\Case\Controllers\CasePaymentController::class, 'destroy']);
+    Route::patch('cases/{id}/payment-settings', [\App\Modules\Case\Controllers\CasePaymentController::class, 'updateSettings']);
+    Route::get('cases/{id}/invoice',           [\App\Modules\Case\Controllers\CasePaymentController::class, 'invoice']);
+
     // Активности заявки (timeline)
     Route::get('cases/{id}/activities', [CaseActivityController::class, 'index']);
 

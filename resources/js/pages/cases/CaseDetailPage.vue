@@ -639,14 +639,8 @@
           </div>
         </div>
 
-        <!-- Payment -->
-        <div v-if="caseData.payment_status" class="bg-white rounded-xl border border-gray-100 p-4">
-          <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">{{ t('crm.caseDetail.paymentTitle') }}</p>
-          <span :class="['text-xs font-semibold px-2.5 py-1 rounded-full', paymentBadgeClass]">{{ paymentLabel }}</span>
-          <p v-if="caseData.total_amount" class="text-lg font-black text-gray-900 mt-2">
-            {{ Number(caseData.total_amount).toLocaleString() }} <span class="text-xs font-normal text-gray-400">{{ t('crm.caseDetail.sumLabel') }}</span>
-          </p>
-        </div>
+        <!-- Payment block -->
+        <CasePaymentBlock :case-id="caseData.id" />
 
         <!-- Quick actions -->
         <div class="bg-white rounded-xl border border-gray-100 p-4">
@@ -804,6 +798,7 @@ import AppModal  from '@/components/AppModal.vue';
 import AppSelect from '@/components/AppSelect.vue';
 import AppInput  from '@/components/AppInput.vue';
 import DocItem   from '@/components/DocItem.vue';
+import CasePaymentBlock from '@/components/CasePaymentBlock.vue';
 import ReadinessPanel from '@/components/engine/ReadinessPanel.vue';
 import CheckpointsList from '@/components/engine/CheckpointsList.vue';
 import FormWizard from '@/components/engine/FormWizard.vue';

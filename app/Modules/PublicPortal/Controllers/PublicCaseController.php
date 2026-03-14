@@ -302,6 +302,12 @@ class PublicCaseController extends Controller
             'payment_amount'       => $pendingPayment?->amount,
             'payment_currency'     => $pendingPayment?->currency,
             'price_breakdown'      => $pendingPayment?->metadata['price_breakdown'] ?? null,
+            'total_price'          => $case->total_price,
+            'price_currency'       => $case->price_currency ?? 'UZS',
+            'paid_amount'          => $case->paidAmount(),
+            'remaining_balance'    => $case->remainingBalance(),
+            'payment_deadline'     => $case->payment_deadline?->toDateString(),
+            'payment_blocked'      => (bool) $case->payment_blocked,
             'appointment_date'     => $case->appointment_date?->toDateString(),
             'appointment_time'     => $case->appointment_time,
             'appointment_location' => $case->appointment_location,
@@ -685,6 +691,40 @@ class PublicCaseController extends Controller
      * POST /public/me/cases/{id}/change-agency
      * Сменить агентство (до оплаты).
      */
+    /**
+     * GET /me/cases/{id}/invoice — данные счёта для клиента.
+     */
+    public function invoice(Request $request, string $id): JsonResponse
+    {
+        $publicUser = $request->get('_public_user');
+
+        $case = VisaCase::whereHas('client', fn ($q) => $q->where('public_user_id', $publicUser->id))
+            ->with(['agency:id,name,phone,address', 'client:id,name,phone'])
+            ->findOrFail($id);
+
+        return ApiResponse::success([
+            'invoice' => [
+                'case_number'    => $case->case_number,
+                'date'           => now()->toDateString(),
+                'agency'         => [
+                    'name'    => $case->agency->name ?? '',
+                    'phone'   => $case->agency->phone ?? '',
+                    'address' => $case->agency->address ?? '',
+                ],
+                'client'         => [
+                    'name'  => $case->client->name ?? $publicUser->name ?? '',
+                    'phone' => $case->client->phone ?? $publicUser->phone ?? '',
+                ],
+                'service'        => ($case->visa_type ?? '') . ' — ' . ($case->country_code ?? ''),
+                'total_price'    => $case->total_price ?? 0,
+                'paid_amount'    => $case->paidAmount(),
+                'remaining'      => $case->remainingBalance(),
+                'currency'       => $case->price_currency ?? 'UZS',
+                'payment_status' => $case->payment_status ?? 'unpaid',
+            ],
+        ]);
+    }
+
     public function changeAgency(Request $request, string $id): JsonResponse
     {
         $publicUser = $request->get('_public_user');

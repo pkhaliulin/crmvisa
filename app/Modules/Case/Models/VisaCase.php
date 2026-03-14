@@ -141,6 +141,10 @@ class VisaCase extends BaseModel
         'form_data',
         'missing_items',
         'next_action',
+        'total_price',
+        'price_currency',
+        'payment_deadline',
+        'payment_blocked',
     ];
 
     protected $casts = [
@@ -160,6 +164,9 @@ class VisaCase extends BaseModel
         'readiness_score'        => 'integer',
         'form_data'              => 'array',
         'missing_items'          => 'array',
+        'total_price'            => 'integer',
+        'payment_deadline'       => 'date',
+        'payment_blocked'        => 'boolean',
     ];
 
     public function agency(): BelongsTo
@@ -200,6 +207,45 @@ class VisaCase extends BaseModel
     public function caseActivities(): HasMany
     {
         return $this->hasMany(CaseActivity::class, 'case_id')->orderByDesc('created_at');
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(CasePayment::class, 'case_id');
+    }
+
+    /**
+     * Сумма всех оплат по заявке (в минорных единицах).
+     */
+    public function paidAmount(): int
+    {
+        return (int) $this->payments()->sum('amount');
+    }
+
+    /**
+     * Остаток к оплате (минимум 0).
+     */
+    public function remainingBalance(): int
+    {
+        return max(0, ($this->total_price ?? 0) - $this->paidAmount());
+    }
+
+    /**
+     * Полностью оплачена.
+     */
+    public function isFullyPaid(): bool
+    {
+        return $this->total_price > 0 && $this->paidAmount() >= $this->total_price;
+    }
+
+    /**
+     * Просрочена оплата: дедлайн прошёл и не полностью оплачена.
+     */
+    public function isPaymentOverdue(): bool
+    {
+        return $this->payment_deadline
+            && $this->payment_deadline->lt(today())
+            && ! $this->isFullyPaid();
     }
 
     /**

@@ -227,6 +227,28 @@ class CaseService extends BaseService
             }
         }
 
+        // Автоблокировка при просрочке оплаты — запрет любого перехода вперёд
+        if ($case->payment_blocked) {
+            // Разрешить только откат назад (переход на предыдущий этап)
+            $stageOrder = ['lead', 'qualification', 'documents', 'doc_review', 'translation', 'ready', 'review', 'result'];
+            $currentIdx = array_search($case->stage, $stageOrder);
+            $newIdx = array_search($newStage, $stageOrder);
+            if ($newIdx !== false && $currentIdx !== false && $newIdx > $currentIdx) {
+                throw ValidationException::withMessages([
+                    'payment_blocked' => ['Заявка заблокирована: просрочен дедлайн доплаты. Зафиксируйте оплату для продолжения.'],
+                ]);
+            }
+        }
+
+        // Переход documents -> doc_review: обязательна оплата (prepayment или paid)
+        if ($case->stage === 'documents' && $newStage === 'doc_review') {
+            if (!in_array($case->payment_status, ['paid', 'prepayment'])) {
+                throw ValidationException::withMessages([
+                    'payment_status' => ['Невозможно перейти к проверке документов без подтверждения оплаты.'],
+                ]);
+            }
+        }
+
         // Внешние лиды (не из VisaBor): qualification -> documents только после оплаты
         if ($case->stage === 'qualification' && $newStage === 'documents') {
             if ($this->isExternalLead($case) && $case->payment_status !== 'paid') {

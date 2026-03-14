@@ -190,10 +190,14 @@ class CaseController extends Controller
             ];
         }
 
+        $paymentSummary = app(\App\Modules\Case\Services\CasePaymentService::class)
+            ->getPaymentSummary($case);
+
         return ApiResponse::success([
             'case' => $caseResource,
             'allowed_transitions' => CaseService::ALLOWED_TRANSITIONS,
             'client_portrait' => $portrait,
+            'payment_summary' => $paymentSummary,
         ]);
     }
 
