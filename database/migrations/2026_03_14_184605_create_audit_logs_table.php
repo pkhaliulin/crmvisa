@@ -15,7 +15,7 @@ return new class extends Migration
             $table->foreignUuid('agency_id')->nullable();
             $table->string('user_role', 20)->nullable();
             $table->string('user_name', 255)->nullable();
-            $table->uuidMorphs('auditable'); // auditable_type + auditable_id
+            $table->nullableUuidMorphs('auditable'); // auditable_type + auditable_id
             $table->jsonb('context')->nullable();
             $table->jsonb('changes')->nullable(); // old/new values
             $table->string('ip', 45)->nullable();

@@ -29,9 +29,8 @@ class AuditLog
             'timestamp'  => now()->toIso8601String(),
         ]));
 
-        // БД лог (для UI и аналитики) — только если таблица существует
+        // БД лог (для UI и аналитики)
         try {
-            if (!\Illuminate\Support\Facades\Schema::hasTable('audit_logs')) return;
             DB::table('audit_logs')->insert([
                 'id'             => Str::uuid()->toString(),
                 'action'         => $action,
