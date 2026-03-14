@@ -190,6 +190,7 @@
     "passportIssuedBy": "Kim tomonidan berilgan",
     "pnfl": "JSHSHIR",
     "pnflHint": "14 xonali identifikator (ID-kartadan)",
+    "pnflPlaceholder": "14 raqam kiriting",
     "placeOfBirth": "Tug'ilgan joy",
     "firstNameLat": "Ism (lotin)",
     "lastNameLat": "Familiya (lotin)",

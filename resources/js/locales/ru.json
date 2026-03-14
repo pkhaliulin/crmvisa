@@ -190,6 +190,7 @@
     "passportIssuedBy": "Кем выдан",
     "pnfl": "ПИНФЛ",
     "pnflHint": "14-значный идентификатор (из ID-карты)",
+    "pnflPlaceholder": "Введите 14 цифр",
     "placeOfBirth": "Место рождения",
     "firstNameLat": "Имя (латиница)",
     "lastNameLat": "Фамилия (латиница)",

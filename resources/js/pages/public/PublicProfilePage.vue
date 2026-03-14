@@ -268,7 +268,7 @@
                             {{ $t('profile.pnfl') }}
                             <span class="text-gray-400 font-normal">({{ $t('profile.pnflHint') }})</span>
                         </label>
-                        <input v-model="form.pnfl" maxlength="14" inputmode="numeric" placeholder="00000000000000"
+                        <input v-model="form.pnfl" maxlength="14" inputmode="numeric" :placeholder="$t('profile.pnflPlaceholder')"
                             @input="form.pnfl = ($event.target.value || '').replace(/\D/g, '').slice(0, 14)"
                             class="w-full border rounded-xl px-3 py-2.5 text-sm outline-none transition-colors font-mono tracking-wider"
                             :class="form.pnfl && form.pnfl.length === 14 ? 'border-[#1BA97F]' : 'border-gray-200 focus:border-[#1BA97F]'"/>
