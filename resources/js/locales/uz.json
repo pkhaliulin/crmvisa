@@ -2896,6 +2896,8 @@
       "risks": "Xavflar",
       "reanalyze": "Qayta tahlil",
       "wrongPerson": "Boshqa odamning hujjati!",
+      "translitDiff": "Ism-familiya yozilishidagi farqlar",
+      "translitHint": "Ehtimol, turli transliteratsiya (o'zb./ingliz lotin). Hujjatni tekshiring.",
       "expectedPerson": "Kutilmoqda",
       "foundPerson": "Hujjatda"
     },

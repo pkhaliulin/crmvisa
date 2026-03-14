@@ -363,11 +363,9 @@ class ChecklistController extends Controller
 
         // Ожидаемое имя
         if ($item->family_member_id) {
-            // Документ для члена семьи
             $item->loadMissing('familyMember');
             $expectedName = $item->familyMember?->name ?? '';
         } else {
-            // Документ для основного заявителя
             $case->loadMissing('client');
             $expectedName = $case->client?->name ?? '';
         }
@@ -378,28 +376,42 @@ class ChecklistController extends Controller
 
         $normalizedExpected = $this->normalizeName($expectedName);
 
-        // Сравнение: ищем хотя бы частичное совпадение фамилии
+        // Прямое совпадение
         if ($normalizedDocName === $normalizedExpected) {
-            return null; // Совпадает полностью
+            return null;
         }
 
-        // Разбиваем на слова и проверяем пересечение
-        $docWords = array_filter(explode(' ', $normalizedDocName));
-        $expectedWords = array_filter(explode(' ', $normalizedExpected));
+        // Нормализация с учётом узбекской латиницы (X=KH, O'=O, G'=GH и т.д.)
+        $translitDoc = $this->normalizeUzbekLatin($normalizedDocName);
+        $translitExpected = $this->normalizeUzbekLatin($normalizedExpected);
+
+        if ($translitDoc === $translitExpected) {
+            return null; // Тот же человек, разная транслитерация
+        }
+
+        // Пословное сравнение (с учётом транслитерации)
+        $docWords = array_filter(explode(' ', $translitDoc));
+        $expectedWords = array_filter(explode(' ', $translitExpected));
         $common = array_intersect($docWords, $expectedWords);
 
-        // Если хотя бы фамилия совпадает — считаем OK (у семьи одна фамилия)
-        // Но если ни одного общего слова — точно не тот человек
         if (count($common) >= 1) {
-            // Одно общее слово (фамилия). Проверим, не совпадают ли остальные
-            // Если all words match except one — likely same person with different name format
             $diffCount = count(array_diff($docWords, $expectedWords)) + count(array_diff($expectedWords, $docWords));
             if ($diffCount <= 2) {
-                return null; // Достаточно похоже
+                // Совпадает после транслитерации — информационное предупреждение, не ошибка
+                $expectedLabel = $item->family_member_id
+                    ? ($item->familyMember?->name ?? 'член семьи')
+                    : ($case->client?->name ?? 'заявитель');
+
+                return [
+                    'expected_person' => $expectedLabel,
+                    'document_person' => $docName,
+                    'severity'        => 'info',
+                    'message'         => "Различия в написании ФИО: \"{$docName}\" / \"{$expectedLabel}\" — вероятно, разная транслитерация (узб./англ. латиница)",
+                ];
             }
         }
 
-        // Нет совпадений или слишком большая разница — несоответствие
+        // Нет совпадений — реальное несоответствие
         $expectedLabel = $item->family_member_id
             ? ($item->familyMember?->name ?? 'член семьи')
             : ($case->client?->name ?? 'заявитель');
@@ -468,5 +480,47 @@ class ChecklistController extends Controller
     private function normalizeName(string $name): string
     {
         return mb_strtolower(trim(preg_replace('/\s+/', ' ', $name)));
+    }
+
+    /**
+     * Нормализация имени с учётом различий узбекской и международной латиницы.
+     *
+     * Узбекский ID (внутренний паспорт) использует узбекскую латиницу,
+     * а загранпаспорт — международную (ICAO). Ключевые различия:
+     *
+     *   Узб. латиница  →  Междунар.  →  Кириллица
+     *   X              →  KH         →  Х
+     *   O'             →  O          →  Ў
+     *   G'             →  GH         →  Ғ
+     *   SH             →  SH         →  Ш (совпадает)
+     *   CH             →  CH         →  Ч (совпадает)
+     *   TS             →  TS         →  Ц (совпадает)
+     *   YO             →  YO         →  Ё (совпадает)
+     *   '              →  (убрать)   →  ъ/ь
+     */
+    private function normalizeUzbekLatin(string $name): string
+    {
+        // Приводим всё к единой международной форме
+        $replacements = [
+            // Узбекская → международная (порядок важен: сначала длинные)
+            'sh' => 'sh',   // совпадает, но фиксируем
+            'ch' => 'ch',   // совпадает
+            'kh' => 'kh',   // уже международная
+            'gh' => 'gh',   // уже международная
+            'x'  => 'kh',   // X → KH (узб. Х)
+            "o'" => 'o',    // O' → O (узб. Ў)
+            "g'" => 'gh',   // G' → GH (узб. Ғ)
+            "'"  => '',     // убираем оставшиеся апострофы (ъ/ь)
+            'ʻ'  => '',     // Unicode modifier letter (U+02BB)
+            'ʼ'  => '',     // Unicode modifier apostrophe (U+02BC)
+            '''  => '',     // правая одинарная кавычка
+        ];
+
+        $result = $name;
+        foreach ($replacements as $from => $to) {
+            $result = str_replace($from, $to, $result);
+        }
+
+        return $result;
     }
 }
