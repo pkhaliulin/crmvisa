@@ -1077,11 +1077,40 @@
             </div>
         </div>
     </div>
+
+    <!-- Модальное окно: несохранённые изменения -->
+    <Teleport to="body">
+        <Transition name="fade">
+            <div v-if="showUnsavedModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" @click.self="cancelLeave">
+                <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full mx-4 p-6">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+                            <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-[#0A1F44] text-sm">{{ $t('profile.unsavedTitle') }}</h3>
+                            <p class="text-xs text-gray-500 mt-0.5">{{ $t('profile.unsavedMessage') }}</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button @click="discardAndLeave" class="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors">
+                            {{ $t('profile.unsavedDiscard') }}
+                        </button>
+                        <button @click="saveAndLeave" class="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium bg-[#1BA97F] text-white hover:bg-[#169B72] transition-colors">
+                            {{ $t('profile.unsavedSave') }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </Transition>
+    </Teleport>
 </template>
 
 <script setup>
-import { ref, computed, reactive, onMounted, nextTick } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, computed, reactive, watch, onMounted, onBeforeUnmount, nextTick } from 'vue';
+import { useRouter, onBeforeRouteLeave } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { publicPortalApi } from '@/api/public';
 import { usePublicAuthStore } from '@/stores/publicAuth';
@@ -1884,6 +1913,7 @@ async function save() {
         // Обновить серверный процент
         await publicAuth.fetchMe();
         saveMsg.value = t('profile.profileSaved');
+        takeFormSnapshot();
         setTimeout(() => { saveMsg.value = ''; }, 3000);
     } catch (e) {
         saveError.value = true;
@@ -1891,6 +1921,58 @@ async function save() {
     } finally {
         saving.value = false;
     }
+}
+
+// --- Отслеживание несохранённых изменений ---
+const formSnapshot = ref('');
+const formDirty = computed(() => {
+    if (!formSnapshot.value) return false;
+    const current = JSON.stringify({ ...form, name: [firstName.value, lastName.value].filter(Boolean).join(' ').trim().toUpperCase() });
+    return current !== formSnapshot.value;
+});
+
+function takeFormSnapshot() {
+    formSnapshot.value = JSON.stringify({ ...form, name: [firstName.value, lastName.value].filter(Boolean).join(' ').trim().toUpperCase() });
+}
+
+// Предупреждение при уходе через vue-router
+onBeforeRouteLeave((to, from, next) => {
+    if (formDirty.value) {
+        showUnsavedModal.value = true;
+        pendingNavigation.value = () => { next(); };
+    } else {
+        next();
+    }
+});
+
+// Предупреждение при закрытии вкладки / обновлении страницы
+function onBeforeUnloadHandler(e) {
+    if (formDirty.value) {
+        e.preventDefault();
+        e.returnValue = '';
+    }
+}
+onMounted(() => window.addEventListener('beforeunload', onBeforeUnloadHandler));
+onBeforeUnmount(() => window.removeEventListener('beforeunload', onBeforeUnloadHandler));
+
+const showUnsavedModal = ref(false);
+const pendingNavigation = ref(null);
+
+async function saveAndLeave() {
+    await save();
+    showUnsavedModal.value = false;
+    if (pendingNavigation.value) { pendingNavigation.value(); pendingNavigation.value = null; }
+}
+
+function discardAndLeave() {
+    showUnsavedModal.value = false;
+    formSnapshot.value = ''; // Сброс чтобы next() не вызвал повторное предупреждение
+    if (pendingNavigation.value) { pendingNavigation.value(); pendingNavigation.value = null; }
+}
+
+function cancelLeave() {
+    showUnsavedModal.value = false;
+    pendingNavigation.value = null;
 }
 
 // --- Смена телефона ---
@@ -2079,6 +2161,8 @@ onMounted(async () => {
     loadFamilyMembers();
     // Загрузить OCR-данные + проверить наличие паспорта в заявках
     loadPassportData();
+    // Снэпшот формы для отслеживания несохранённых изменений
+    nextTick(() => takeFormSnapshot());
 });
 </script>
 
@@ -2088,4 +2172,6 @@ select {
     color-scheme: light;
     background-color: white;
 }
+.fade-enter-active, .fade-leave-active { transition: opacity 0.15s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
 </style>
