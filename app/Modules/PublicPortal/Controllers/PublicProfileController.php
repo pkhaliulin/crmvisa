@@ -201,8 +201,9 @@ class PublicProfileController extends Controller
     {
         $user = $request->get('_public_user');
 
-        // Проверяем наличие загруженного паспорта в заявках
+        // Проверяем наличие документов в заявках
         $hasPassportInCase = $this->checkPassportInCase($user);
+        $hasIdInCase = $this->checkIdInCase($user);
 
         // Текущие документы
         $currentPassport = $user->currentForeignPassport();
@@ -248,6 +249,7 @@ class PublicProfileController extends Controller
             ],
             'cross_validation'     => $crossValidation,
             'has_passport_in_case' => $hasPassportInCase,
+            'has_id_in_case'       => $hasIdInCase,
             // Обратная совместимость
             'extracted'            => $passportExtracted,
             'mismatches'           => $passportMismatches,
@@ -256,11 +258,17 @@ class PublicProfileController extends Controller
 
     /**
      * POST /public/me/passport-from-case
-     * Распознать паспорт из уже загруженного документа в чеклисте заявки.
+     * Распознать документ из чеклисте заявки (загранпаспорт или ID-карта).
      */
     public function ocrFromCase(Request $request): JsonResponse
     {
         $user = $request->get('_public_user');
+        $requestedType = $request->input('doc_type', 'foreign_passport');
+
+        // Паттерны поиска по типу документа
+        $namePatterns = $requestedType === 'id_card'
+            ? ['%удостоверен%', '%ID%', '%id.card%', '%id_card%']
+            : ['%аспорт%', '%passport%'];
 
         $checklistItem = CaseChecklist::whereHas('document')
             ->whereIn('case_id', function ($q) use ($user) {
@@ -272,7 +280,11 @@ class PublicProfileController extends Controller
                             ->where('public_user_id', $user->id);
                     });
             })
-            ->where('name', 'like', '%аспорт%')
+            ->where(function ($q) use ($namePatterns) {
+                foreach ($namePatterns as $pattern) {
+                    $q->orWhere('name', 'like', $pattern);
+                }
+            })
             ->whereIn('status', ['uploaded', 'approved'])
             ->orderByDesc('updated_at')
             ->first();
@@ -744,6 +756,16 @@ class PublicProfileController extends Controller
      */
     private function checkPassportInCase($user): bool
     {
+        return $this->checkDocInCase($user, ['%аспорт%', '%passport%']);
+    }
+
+    private function checkIdInCase($user): bool
+    {
+        return $this->checkDocInCase($user, ['%удостоверен%', '%ID%', '%id.card%', '%id_card%']);
+    }
+
+    private function checkDocInCase($user, array $namePatterns): bool
+    {
         return CaseChecklist::whereHas('document')
             ->whereIn('case_id', function ($q) use ($user) {
                 $q->select('id')
@@ -754,7 +776,11 @@ class PublicProfileController extends Controller
                             ->where('public_user_id', $user->id);
                     });
             })
-            ->where('name', 'like', '%аспорт%')
+            ->where(function ($q) use ($namePatterns) {
+                foreach ($namePatterns as $pattern) {
+                    $q->orWhere('name', 'like', $pattern);
+                }
+            })
             ->whereIn('status', ['uploaded', 'approved'])
             ->exists();
     }

@@ -59,13 +59,14 @@
                         </div>
                     </label>
                     <p v-if="ocrStatus === 'failed'" class="text-xs text-red-500 mt-2 text-center">{{ $t('profile.passportOcrFailed') }}</p>
-                    <!-- Кнопка: использовать паспорт из заявки -->
-                    <button v-if="hasPassportInCase && ocrDocType === 'foreign_passport'" @click="ocrFromCaseHandler" type="button" :disabled="ocrUploading"
+                    <!-- Кнопка: использовать документ из заявки -->
+                    <button v-if="(hasPassportInCase && ocrDocType === 'foreign_passport') || (hasIdInCase && ocrDocType === 'id_card')"
+                        @click="ocrFromCaseHandler" type="button" :disabled="ocrUploading"
                         class="w-full mt-3 flex items-center justify-center gap-2 px-4 py-2.5 border border-[#1BA97F]/40 rounded-xl text-sm font-medium text-[#1BA97F] hover:bg-[#1BA97F]/5 transition-colors">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/>
                         </svg>
-                        {{ $t('profile.passportOcrFromCase') }}
+                        {{ ocrDocType === 'id_card' ? $t('profile.idOcrFromCase') : $t('profile.passportOcrFromCase') }}
                     </button>
                 </div>
 
@@ -1097,6 +1098,7 @@ const ocrMismatches      = ref([]);
 const ocrAutoFilled      = ref([]);
 const ocrUploading       = ref(false);
 const hasPassportInCase  = ref(false);
+const hasIdInCase        = ref(false);
 const ocrDocType         = ref('foreign_passport');
 const ocrDetectedType    = ref(null);
 const crossValidation    = ref(null);
@@ -1233,7 +1235,7 @@ async function ocrFromCaseHandler() {
     ocrAutoFilled.value = [];
     ocrDetectedType.value = null;
     try {
-        const { data } = await publicPortalApi.ocrFromCase();
+        const { data } = await publicPortalApi.ocrFromCase(ocrDocType.value);
         const result = data?.data;
         ocrStatus.value = result?.ocr_status ?? 'failed';
         if (result?.ocr_status === 'completed' && result?.extracted) {
@@ -1254,6 +1256,7 @@ async function loadPassportData() {
         const { data } = await publicPortalApi.passportData();
         const result = data?.data;
         hasPassportInCase.value = !!result?.has_passport_in_case;
+        hasIdInCase.value = !!result?.has_id_in_case;
         crossValidation.value = result?.cross_validation || null;
         // Загрузить OCR-данные паспорта
         const passport = result?.passport;

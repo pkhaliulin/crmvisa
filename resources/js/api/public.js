@@ -46,7 +46,7 @@ export const publicPortalApi = {
         return publicApi.post('/me/passport', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
     },
     passportData: () => publicApi.get('/me/passport-data'),
-    ocrFromCase:  () => publicApi.post('/me/passport-from-case'),
+    ocrFromCase:  (docType = 'foreign_passport') => publicApi.post('/me/passport-from-case', { doc_type: docType }),
     uploadDocument: (file, docType = null) => {
         const fd = new FormData();
         fd.append('file', file);

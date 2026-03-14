@@ -171,6 +171,7 @@
     "passportOcrAutoFilled": "Avtomatik to'ldirildi:",
     "passportOcrAnother": "Boshqa pasport yuklash",
     "passportOcrFromCase": "Arizadagi pasportdan foydalanish",
+    "idOcrFromCase": "Arizadagi guvohnomadan foydalanish",
     "docUpload": "Hujjat yuklash",
     "docUploadHint": "Xorijiy pasport yoki ID-kartani avtomatik tanib olish uchun yuklang",
     "docTypePassport": "Xorijiy pasport",
