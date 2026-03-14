@@ -83,7 +83,7 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted, onUnmounted } from 'vue';
+import { computed, ref, onMounted, onBeforeUnmount } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { monitoringApi } from '@/api/monitoring';
@@ -109,7 +109,7 @@ onMounted(() => {
   alertInterval = setInterval(pollAlerts, 30000);
 });
 
-onUnmounted(() => {
+onBeforeUnmount(() => {
   clearInterval(alertInterval);
 });
 

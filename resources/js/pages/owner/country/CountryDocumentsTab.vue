@@ -392,7 +392,7 @@ async function saveDoc() {
         target_audience: form.target_audience,
         notes: form.notes || null,
         is_active: true,
-      }).catch(e => console.error('[CountryDocumentsTab]', e))
+      }).catch(() => {})
     );
     await Promise.all(promises);
 

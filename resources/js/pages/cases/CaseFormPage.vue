@@ -215,7 +215,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter, useRoute, RouterLink } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { casesApi } from '@/api/cases';
@@ -278,6 +278,11 @@ const showNoClientResults = computed(() =>
 );
 
 let clientDebounce;
+
+onBeforeUnmount(() => {
+  clearTimeout(clientDebounce);
+});
+
 function onClientInput() {
   if (form.client_id) {
     form.client_id = '';

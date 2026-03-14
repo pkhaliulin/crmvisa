@@ -2232,10 +2232,10 @@ onMounted(async () => {
         if (caseData.value?.country_code) {
             publicPortalApi.countryDetail(caseData.value.country_code)
                 .then(r => { countryInfo.value = r.data.data ?? null; })
-                .catch(e => console.error('[PublicCaseDetail] countryDetail', e));
+                .catch(() => {});
         }
         // Загружаем семью из профиля (для модала)
-        publicPortalApi.familyMembers().then(r => { profileFamily.value = r.data.data ?? []; }).catch(e => console.error('[PublicCaseDetail] familyMembers', e));
+        publicPortalApi.familyMembers().then(r => { profileFamily.value = r.data.data ?? []; }).catch(() => {});
     } catch {
         caseData.value = null;
     } finally {

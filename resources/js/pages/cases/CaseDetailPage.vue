@@ -1224,7 +1224,7 @@ async function doAiAnalyze(item) {
     await reloadChecklist();
     aiDashboardRef.value?.refresh();
   } catch (e) {
-    console.error('AI analyze error:', e);
+    // AI analyze failed silently
   } finally {
     aiAnalyzingId.value = null;
   }

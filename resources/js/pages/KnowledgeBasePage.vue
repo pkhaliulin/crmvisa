@@ -136,7 +136,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';
 import api from '@/api/index';
 import CountrySelect from '@/components/CountrySelect.vue';
@@ -218,5 +218,9 @@ async function openArticle(article) {
 onMounted(() => {
   loadArticles();
   loadCountries();
+});
+
+onBeforeUnmount(() => {
+  clearTimeout(debounceTimer);
 });
 </script>

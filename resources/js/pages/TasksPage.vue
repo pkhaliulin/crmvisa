@@ -284,7 +284,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
@@ -587,4 +587,8 @@ watch([activeFilter, filterAssignee], () => fetchTasks());
 watch(searchQuery, () => { clearTimeout(debounceTimer); debounceTimer = setTimeout(fetchTasks, 300); });
 
 onMounted(() => { fetchTasks(); fetchUsers(); });
+
+onBeforeUnmount(() => {
+  clearTimeout(debounceTimer);
+});
 </script>

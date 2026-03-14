@@ -151,17 +151,16 @@ class CaseController extends Controller
             $scores = \App\Modules\Scoring\Models\ClientScore::where('client_id', $client->id)
                 ->orderByDesc('score')
                 ->get();
-            $caseCount = \App\Modules\Case\Models\VisaCase::where('client_id', $client->id)
-                ->whereNotIn('public_status', ['draft', 'cancelled'])
-                ->count();
-            $completedCount = \App\Modules\Case\Models\VisaCase::where('client_id', $client->id)
-                ->where('stage', 'result')
-                ->where('result_type', 'approved')
-                ->count();
-            $rejectedCount = \App\Modules\Case\Models\VisaCase::where('client_id', $client->id)
-                ->where('stage', 'result')
-                ->where('result_type', 'rejected')
-                ->count();
+            $caseCounts = \App\Modules\Case\Models\VisaCase::where('client_id', $client->id)
+                ->selectRaw("
+                    COUNT(*) FILTER (WHERE public_status NOT IN ('draft','cancelled')) as total,
+                    COUNT(*) FILTER (WHERE stage = 'result' AND result_type = 'approved') as approved,
+                    COUNT(*) FILTER (WHERE stage = 'result' AND result_type = 'rejected') as rejected
+                ")
+                ->first();
+            $caseCount = $caseCounts->total ?? 0;
+            $completedCount = $caseCounts->approved ?? 0;
+            $rejectedCount = $caseCounts->rejected ?? 0;
 
             $portrait = [
                 'date_of_birth'       => $client->date_of_birth,

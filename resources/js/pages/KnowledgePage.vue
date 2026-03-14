@@ -302,7 +302,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { currentLocale } from '@/i18n';
 import api from '@/api/index';
@@ -523,5 +523,10 @@ onMounted(() => {
   loadNotes();
   loadArticles();
   loadCountries();
+});
+
+onBeforeUnmount(() => {
+  clearTimeout(notesDebounce);
+  clearTimeout(articlesDebounce);
 });
 </script>

@@ -178,7 +178,7 @@ async function refresh() {
     const res = await casesApi.aiRiskScore(props.caseId);
     data.value = res.data?.data ?? res.data;
   } catch (e) {
-    console.error('AI risk fetch error:', e);
+    // AI risk fetch failed silently
   } finally {
     loading.value = false;
   }

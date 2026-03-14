@@ -82,9 +82,11 @@ class PublicProfileController extends Controller
 
         $user->update($data);
 
+        $freshUser = $user->fresh();
+
         return ApiResponse::success([
-            'user'            => $user->fresh(),
-            'profile_percent' => $user->fresh()->profileCompleteness(),
+            'user'            => $freshUser,
+            'profile_percent' => $freshUser->profileCompleteness(),
         ], 'Профиль обновлён');
     }
 

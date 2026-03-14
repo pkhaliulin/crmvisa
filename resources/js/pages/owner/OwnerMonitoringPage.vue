@@ -310,7 +310,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { monitoringApi } from '@/api/monitoring';
 import SearchSelect from '@/components/SearchSelect.vue';
@@ -422,7 +422,7 @@ onMounted(() => {
   alertInterval = setInterval(loadAlerts, 30000);
 });
 
-onUnmounted(() => {
+onBeforeUnmount(() => {
   clearInterval(mainInterval);
   clearInterval(alertInterval);
 });
