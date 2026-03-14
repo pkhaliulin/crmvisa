@@ -466,8 +466,14 @@ class PublicProfileController extends Controller
             if (!$user->gender && $doc->gender)          $update['gender']         = $doc->gender;
             if (!$user->citizenship && $doc->nationality) $update['citizenship']   = $this->iso3ToIso2($doc->nationality);
             if (!$user->place_of_birth && $doc->place_of_birth) $update['place_of_birth'] = $doc->place_of_birth;
-            if (!$user->pnfl && $doc->pnfl && preg_match('/^\d{14}$/', $doc->pnfl)) {
-                $update['pnfl'] = $doc->pnfl;
+            // ПИНФЛ: из документа или извлечь из MRZ line 2
+            if (!($user->pnfl ?? $update['pnfl'] ?? null)) {
+                $pnfl = ($doc->pnfl && preg_match('/^\d{14}$/', $doc->pnfl)) ? $doc->pnfl : null;
+                if (!$pnfl && $doc->mrz_line2 && strlen($doc->mrz_line2) === 44) {
+                    $pnfl = substr($doc->mrz_line2, 28, 14);
+                    if (!preg_match('/^\d{14}$/', $pnfl)) $pnfl = null;
+                }
+                if ($pnfl) $update['pnfl'] = $pnfl;
             }
         }
 
@@ -668,11 +674,21 @@ class PublicProfileController extends Controller
             'passport_issue_date' => $doc->issue_date,
             'place_of_birth'      => $doc->place_of_birth,
             'issuing_authority'   => $doc->issued_by,
-            'pnfl'                => $doc->pnfl,
+            'pnfl'                => $doc->pnfl ?: $this->extractPnflFromMrz($doc->mrz_line2),
             'confidence'          => $doc->ocr_confidence,
             'provider'            => $doc->ocr_provider,
             'script_type'         => $doc->script_type,
         ];
+    }
+
+    /**
+     * Извлечь ПИНФЛ из MRZ line 2 (TD3: позиции 28-41 = персональный номер).
+     */
+    private function extractPnflFromMrz(?string $mrzLine2): ?string
+    {
+        if (!$mrzLine2 || strlen($mrzLine2) !== 44) return null;
+        $pnfl = substr($mrzLine2, 28, 14);
+        return preg_match('/^\d{14}$/', $pnfl) ? $pnfl : null;
     }
 
     /**

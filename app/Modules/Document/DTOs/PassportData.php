@@ -32,6 +32,14 @@ readonly class PassportData
 
     public static function fromArray(array $data, ?string $provider = null, ?string $rawResponse = null): self
     {
+        $mrzLine2 = $data['mrz_line2'] ?? null;
+
+        // ПИНФЛ: сначала из OCR, если невалиден — извлечь из MRZ line 2
+        $pnfl = self::validatePnfl($data['pnfl'] ?? null);
+        if (!$pnfl && $mrzLine2) {
+            $pnfl = self::extractPnflFromMrz($mrzLine2);
+        }
+
         return new self(
             firstName:        $data['first_name'] ?? null,
             lastName:         $data['last_name'] ?? null,
@@ -45,7 +53,7 @@ readonly class PassportData
             placeOfBirth:       $data['place_of_birth'] ?? null,
             issuingAuthority:   $data['issuing_authority'] ?? null,
             mrzLine1:           $data['mrz_line1'] ?? null,
-            mrzLine2:           $data['mrz_line2'] ?? null,
+            mrzLine2:           $mrzLine2,
             confidence:         (float) ($data['confidence'] ?? 0.0),
             rawResponse:        $rawResponse,
             provider:           $provider,
@@ -55,7 +63,7 @@ readonly class PassportData
             lastNameLatin:      $data['last_name_latin'] ?? null,
             firstNameCyrillic:  $data['first_name_cyrillic'] ?? null,
             lastNameCyrillic:   $data['last_name_cyrillic'] ?? null,
-            pnfl:               self::validatePnfl($data['pnfl'] ?? null),
+            pnfl:               $pnfl,
         );
     }
 
@@ -67,6 +75,52 @@ readonly class PassportData
         if ($value === null) return null;
         $digits = preg_replace('/\D/', '', $value);
         return strlen($digits) === 14 ? $digits : null;
+    }
+
+    /**
+     * Извлечь ПИНФЛ из MRZ line 2 (TD3 формат, 44 символа).
+     *
+     * Формат MRZ line 2:
+     *   [0-8]   Номер паспорта (9 символов)
+     *   [9]     Контрольная цифра номера
+     *   [10-12] Гражданство (3 буквы)
+     *   [13-18] Дата рождения YYMMDD (6 цифр)
+     *   [19]    Контрольная цифра DOB
+     *   [20]    Пол (M/F/<)
+     *   [21-26] Дата истечения YYMMDD (6 цифр)
+     *   [27]    Контрольная цифра даты истечения
+     *   [28-41] Персональный номер = ПИНФЛ (14 цифр)
+     *   [42]    Контрольная цифра перс. номера
+     *   [43]    Общая контрольная цифра
+     *
+     * ПИНФЛ (14 цифр): S + DDMMYY + RRRR + NN + C
+     *   S = код пола+века (3=муж 1900-1999, 4=жен 1900-1999, 5=муж 2000+, 6=жен 2000+)
+     *   DDMMYY = дата рождения
+     *   RRRR = код региона
+     *   NN = порядковый номер
+     *   C = контрольная цифра
+     */
+    private static function extractPnflFromMrz(string $mrzLine2): ?string
+    {
+        // MRZ TD3 = ровно 44 символа
+        if (strlen($mrzLine2) !== 44) return null;
+
+        // Позиции 28-41 = персональный номер (ПИНФЛ)
+        $personalNumber = substr($mrzLine2, 28, 14);
+
+        // Должно быть ровно 14 цифр
+        if (!preg_match('/^\d{14}$/', $personalNumber)) return null;
+
+        // Валидация структуры: первая цифра — код пола+века (1-6)
+        $sexCentury = (int) $personalNumber[0];
+        if ($sexCentury < 1 || $sexCentury > 6) return null;
+
+        // Валидация: DDMMYY в позициях 1-6 должна быть реальной датой
+        $dd = (int) substr($personalNumber, 1, 2);
+        $mm = (int) substr($personalNumber, 3, 2);
+        if ($dd < 1 || $dd > 31 || $mm < 1 || $mm > 12) return null;
+
+        return $personalNumber;
     }
 
     public function toArray(): array
