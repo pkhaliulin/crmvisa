@@ -27,6 +27,9 @@ class PublicProfileController extends Controller
     {
         $user = $request->get('_public_user');
 
+        // Синхронизация: если паспортные поля пусты, но есть кэшированный OCR-документ — заполнить
+        $this->syncProfileFromDocuments($user);
+
         return ApiResponse::success([
             'user'            => $user,
             'profile_percent' => $user->profileCompleteness(),
@@ -285,6 +288,29 @@ class PublicProfileController extends Controller
             return ApiResponse::error('Файл паспорта не найден', null, 404);
         }
 
+        // Проверить кэш: есть ли уже успешный OCR-результат для этого файла
+        $cachedDoc = PublicUserDocument::where('public_user_id', $user->id)
+            ->where('file_path', $doc->file_path)
+            ->where('is_current', true)
+            ->whereNotNull('ocr_confidence')
+            ->where('ocr_confidence', '>=', 0.3)
+            ->orderByDesc('created_at')
+            ->first();
+
+        if ($cachedDoc) {
+            // Использовать сохранённые данные без повторного OCR
+            $extracted = $this->buildExtractedFromDocRecord($cachedDoc);
+            $mismatches = $this->detectMismatches($user->fresh(), $extracted, $cachedDoc->doc_type);
+
+            return ApiResponse::success([
+                'ocr_status'    => 'completed',
+                'document_type' => $cachedDoc->doc_type,
+                'extracted'     => $extracted,
+                'mismatches'    => $mismatches,
+                'cached'        => true,
+            ]);
+        }
+
         try {
             $ocrService = app(OcrService::class);
             $ocrService->setContext(null, $user->id);
@@ -352,6 +378,65 @@ class PublicProfileController extends Controller
     // =========================================================================
 
     /**
+     * Синхронизировать пустые поля профиля из кэшированных OCR-документов.
+     * Вызывается при загрузке профиля — если OCR ранее отработал, но профиль не обновился.
+     */
+    private function syncProfileFromDocuments($user): void
+    {
+        $docs = PublicUserDocument::where('public_user_id', $user->id)
+            ->where('is_current', true)
+            ->whereNotNull('ocr_confidence')
+            ->where('ocr_confidence', '>=', 0.3)
+            ->get();
+
+        if ($docs->isEmpty()) return;
+
+        $update = [];
+
+        foreach ($docs as $doc) {
+            if ($doc->doc_type === 'foreign_passport') {
+                if (!$user->passport_number && $doc->doc_number)        $update['passport_number']     = $doc->doc_number;
+                if (!$user->passport_expires_at && $doc->expires_at)    $update['passport_expires_at'] = $doc->expires_at;
+                if (!$user->passport_issue_date && $doc->issue_date)    $update['passport_issue_date'] = $doc->issue_date;
+                if (!$user->passport_issued_by && $doc->issued_by)      $update['passport_issued_by']  = $doc->issued_by;
+                if (!$user->passport_file_path && $doc->file_path)      $update['passport_file_path']  = $doc->file_path;
+                if ($user->passport_ocr_status !== 'completed')         $update['passport_ocr_status'] = 'completed';
+                if (!$user->first_name_lat && $doc->script_type === 'latin' && $doc->first_name) {
+                    $update['first_name_lat'] = $doc->first_name;
+                }
+                if (!$user->last_name_lat && $doc->script_type === 'latin' && $doc->last_name) {
+                    $update['last_name_lat'] = $doc->last_name;
+                }
+            } else {
+                if (!$user->id_doc_number && $doc->doc_number)          $update['id_doc_number']     = $doc->doc_number;
+                if (!$user->id_doc_expires_at && $doc->expires_at)      $update['id_doc_expires_at'] = $doc->expires_at;
+                if (!$user->id_doc_issue_date && $doc->issue_date)      $update['id_doc_issue_date'] = $doc->issue_date;
+                if (!$user->id_doc_issued_by && $doc->issued_by)        $update['id_doc_issued_by']  = $doc->issued_by;
+                if (!$user->id_doc_type)                                $update['id_doc_type']       = $doc->doc_type;
+                if ($user->id_doc_ocr_status !== 'completed')           $update['id_doc_ocr_status'] = 'completed';
+                if (!$user->first_name_cyr && $doc->script_type === 'cyrillic' && $doc->first_name) {
+                    $update['first_name_cyr'] = $doc->first_name;
+                }
+                if (!$user->last_name_cyr && $doc->script_type === 'cyrillic' && $doc->last_name) {
+                    $update['last_name_cyr'] = $doc->last_name;
+                }
+            }
+
+            // Общие поля
+            if (!$user->dob && $doc->dob)                $update['dob']            = $doc->dob;
+            if (!$user->gender && $doc->gender)          $update['gender']         = $doc->gender;
+            if (!$user->citizenship && $doc->nationality) $update['citizenship']   = $this->iso3ToIso2($doc->nationality);
+            if (!$user->place_of_birth && $doc->place_of_birth) $update['place_of_birth'] = $doc->place_of_birth;
+            if (!$user->pnfl && $doc->pnfl)              $update['pnfl']           = $doc->pnfl;
+        }
+
+        if (!empty($update)) {
+            $user->update($update);
+            $user->refresh();
+        }
+    }
+
+    /**
      * Определить тип документа по OCR данным (эвристика).
      */
     private function detectDocumentType(PassportData $data): ?string
@@ -386,6 +471,36 @@ class PublicProfileController extends Controller
         }
 
         return null;
+    }
+
+    /**
+     * Восстановить extracted-массив из кэшированной записи PublicUserDocument.
+     */
+    private function buildExtractedFromDocRecord(PublicUserDocument $doc): array
+    {
+        return [
+            'document_type'       => $doc->doc_type,
+            'name'                => trim(($doc->first_name ?? '') . ' ' . ($doc->last_name ?? '')),
+            'first_name'          => $doc->first_name,
+            'last_name'           => $doc->last_name,
+            'middle_name'         => $doc->middle_name,
+            'first_name_latin'    => $doc->ocr_raw_data['firstNameLatin'] ?? null,
+            'last_name_latin'     => $doc->ocr_raw_data['lastNameLatin'] ?? null,
+            'first_name_cyrillic' => $doc->ocr_raw_data['firstNameCyrillic'] ?? null,
+            'last_name_cyrillic'  => $doc->ocr_raw_data['lastNameCyrillic'] ?? null,
+            'dob'                 => $doc->dob,
+            'gender'              => $doc->gender,
+            'citizenship'         => $this->iso3ToIso2($doc->nationality),
+            'passport_number'     => $doc->doc_number,
+            'passport_expires_at' => $doc->expires_at,
+            'passport_issue_date' => $doc->issue_date,
+            'place_of_birth'      => $doc->place_of_birth,
+            'issuing_authority'   => $doc->issued_by,
+            'pnfl'                => $doc->pnfl,
+            'confidence'          => $doc->ocr_confidence,
+            'provider'            => $doc->ocr_provider,
+            'script_type'         => $doc->script_type,
+        ];
     }
 
     /**

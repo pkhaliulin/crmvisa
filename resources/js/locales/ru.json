@@ -166,6 +166,8 @@
     "passportOcrMismatches": "Найдены расхождения ({count})",
     "passportOcrApplyAll": "Исправить все",
     "passportOcrApply": "Исправить",
+    "passportOcrDismissAll": "Отклонить все",
+    "passportOcrDismiss": "Отклонить",
     "passportOcrAutoFilled": "Автоматически заполнено:",
     "passportOcrAnother": "Загрузить другой паспорт",
     "passportOcrFromCase": "Использовать паспорт из заявки",

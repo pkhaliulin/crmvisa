@@ -75,6 +75,8 @@ PROMPT;
         ]);
 
         $start = microtime(true);
+        $this->preparedImageData = null;
+        $this->preparedImageMime = null;
 
         try {
             $result = match ($provider) {
@@ -452,27 +454,79 @@ PROMPT;
     //  Helpers
     // ---------------------------------------------------------------
 
-    private function imageToBase64(string $imagePath): string
+    /**
+     * Подготовить изображение для отправки в AI API.
+     * Сжимает большие файлы (>1MB) до JPEG с ресайзом до 2048px по длинной стороне.
+     */
+    private ?string $preparedImageData = null;
+    private ?string $preparedImageMime = null;
+
+    private function prepareImage(string $imagePath): void
     {
         if (!file_exists($imagePath)) {
             throw new \RuntimeException("Image file not found: {$imagePath}");
         }
 
-        return base64_encode(file_get_contents($imagePath));
+        $fileSize = filesize($imagePath);
+        $mime = finfo_file(finfo_open(FILEINFO_MIME_TYPE), $imagePath);
+        $maxSize = 1 * 1024 * 1024; // 1 MB
+
+        // Если файл маленький и формат поддерживается — отправляем как есть
+        if ($fileSize <= $maxSize && in_array($mime, ['image/jpeg', 'image/png', 'image/webp', 'image/gif'])) {
+            $this->preparedImageData = base64_encode(file_get_contents($imagePath));
+            $this->preparedImageMime = $mime;
+            return;
+        }
+
+        // Сжимаем: ресайз + конвертация в JPEG
+        $image = @imagecreatefromstring(file_get_contents($imagePath));
+        if (!$image) {
+            // Fallback — отправляем как есть
+            $this->preparedImageData = base64_encode(file_get_contents($imagePath));
+            $this->preparedImageMime = $mime ?: 'image/jpeg';
+            return;
+        }
+
+        $width = imagesx($image);
+        $height = imagesy($image);
+        $maxDim = 2048;
+
+        if ($width > $maxDim || $height > $maxDim) {
+            $ratio = min($maxDim / $width, $maxDim / $height);
+            $newW = (int) ($width * $ratio);
+            $newH = (int) ($height * $ratio);
+            $resized = imagecreatetruecolor($newW, $newH);
+            // Белый фон для PNG с альфа-каналом
+            $white = imagecolorallocate($resized, 255, 255, 255);
+            imagefill($resized, 0, 0, $white);
+            imagecopyresampled($resized, $image, 0, 0, 0, 0, $newW, $newH, $width, $height);
+            imagedestroy($image);
+            $image = $resized;
+        }
+
+        ob_start();
+        imagejpeg($image, null, 85);
+        $jpegData = ob_get_clean();
+        imagedestroy($image);
+
+        $this->preparedImageData = base64_encode($jpegData);
+        $this->preparedImageMime = 'image/jpeg';
+    }
+
+    private function imageToBase64(string $imagePath): string
+    {
+        if ($this->preparedImageData === null) {
+            $this->prepareImage($imagePath);
+        }
+        return $this->preparedImageData;
     }
 
     private function imageMimeType(string $imagePath): string
     {
-        $extension = strtolower(pathinfo($imagePath, PATHINFO_EXTENSION));
-
-        return match ($extension) {
-            'jpg', 'jpeg' => 'image/jpeg',
-            'png'         => 'image/png',
-            'webp'        => 'image/webp',
-            'gif'         => 'image/gif',
-            'pdf'         => 'application/pdf',
-            default       => 'image/jpeg',
-        };
+        if ($this->preparedImageMime === null) {
+            $this->prepareImage($imagePath);
+        }
+        return $this->preparedImageMime;
     }
 
     /**

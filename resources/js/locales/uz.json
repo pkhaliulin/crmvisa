@@ -166,6 +166,8 @@
     "passportOcrMismatches": "Farqlar topildi ({count})",
     "passportOcrApplyAll": "Hammasini tuzatish",
     "passportOcrApply": "Tuzatish",
+    "passportOcrDismissAll": "Hammasini rad etish",
+    "passportOcrDismiss": "Rad etish",
     "passportOcrAutoFilled": "Avtomatik to'ldirildi:",
     "passportOcrAnother": "Boshqa pasport yuklash",
     "passportOcrFromCase": "Arizadagi pasportdan foydalanish",

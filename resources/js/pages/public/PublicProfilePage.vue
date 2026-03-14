@@ -102,10 +102,16 @@
                     <div v-if="ocrMismatches.length" class="space-y-2 mb-3">
                         <div class="flex items-center justify-between">
                             <p class="text-xs font-medium text-amber-700">{{ $t('profile.passportOcrMismatches', { count: ocrMismatches.length }) }}</p>
-                            <button @click="applyAllOcr" type="button"
-                                class="text-[11px] font-semibold text-[#1BA97F] hover:text-[#169B72] px-2 py-1 border border-[#1BA97F]/30 rounded-lg hover:bg-[#1BA97F]/5 transition-colors">
-                                {{ $t('profile.passportOcrApplyAll') }}
-                            </button>
+                            <div class="flex items-center gap-2">
+                                <button @click="dismissAllOcr" type="button"
+                                    class="text-[11px] font-semibold text-gray-500 hover:text-gray-700 px-2 py-1 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                    {{ $t('profile.passportOcrDismissAll') }}
+                                </button>
+                                <button @click="applyAllOcr" type="button"
+                                    class="text-[11px] font-semibold text-[#1BA97F] hover:text-[#169B72] px-2 py-1 border border-[#1BA97F]/30 rounded-lg hover:bg-[#1BA97F]/5 transition-colors">
+                                    {{ $t('profile.passportOcrApplyAll') }}
+                                </button>
+                            </div>
                         </div>
                         <div v-for="mm in ocrMismatches" :key="mm.field"
                             class="flex items-center gap-2 p-2.5 rounded-xl bg-amber-50 border border-amber-200">
@@ -117,10 +123,16 @@
                                     <span class="text-xs font-semibold text-[#0A1F44]">{{ mm.ocr }}</span>
                                 </div>
                             </div>
-                            <button @click="applyOcrField(mm)" type="button"
-                                class="shrink-0 text-[11px] font-medium text-[#1BA97F] hover:text-[#169B72] px-2 py-1 border border-[#1BA97F]/30 rounded-lg hover:bg-[#1BA97F]/5 transition-colors">
-                                {{ $t('profile.passportOcrApply') }}
-                            </button>
+                            <div class="flex items-center gap-1.5 shrink-0">
+                                <button @click="dismissOcrField(mm)" type="button"
+                                    class="text-[11px] font-medium text-gray-500 hover:text-gray-700 px-2 py-1 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                    {{ $t('profile.passportOcrDismiss') }}
+                                </button>
+                                <button @click="applyOcrField(mm)" type="button"
+                                    class="text-[11px] font-medium text-[#1BA97F] hover:text-[#169B72] px-2 py-1 border border-[#1BA97F]/30 rounded-lg hover:bg-[#1BA97F]/5 transition-colors">
+                                    {{ $t('profile.passportOcrApply') }}
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -1195,6 +1207,14 @@ function applyOcrField(mm) {
 
 function applyAllOcr() {
     [...ocrMismatches.value].forEach(mm => applyOcrField(mm));
+}
+
+function dismissOcrField(mm) {
+    ocrMismatches.value = ocrMismatches.value.filter(m => m.field !== mm.field);
+}
+
+function dismissAllOcr() {
+    ocrMismatches.value = [];
 }
 
 function resetOcr() {
