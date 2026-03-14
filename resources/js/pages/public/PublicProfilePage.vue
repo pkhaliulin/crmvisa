@@ -15,6 +15,109 @@
             </button>
         </div>
 
+        <!-- Загрузка паспорта (OCR) -->
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div class="px-5 py-4 border-b border-gray-50">
+                <h3 class="font-bold text-[#0A1F44] text-sm">{{ $t('profile.passportOcr') }}</h3>
+                <p class="text-xs text-gray-400 mt-0.5">{{ $t('profile.passportOcrHint') }}</p>
+            </div>
+            <div class="p-5">
+                <!-- Статус: ничего не загружено или ошибка — показать зону загрузки -->
+                <div v-if="!ocrUploading && ocrStatus !== 'completed'">
+                    <label
+                        class="flex flex-col items-center gap-3 p-6 border-2 border-dashed rounded-2xl cursor-pointer transition-colors"
+                        :class="ocrStatus === 'failed'
+                            ? 'border-red-300 bg-red-50 hover:bg-red-100'
+                            : 'border-[#1BA97F]/40 bg-[#1BA97F]/5 hover:bg-[#1BA97F]/10'">
+                        <input type="file" accept="image/*" capture="environment" class="sr-only" @change="handlePassportUpload" />
+                        <div class="w-12 h-12 rounded-full flex items-center justify-center"
+                             :class="ocrStatus === 'failed' ? 'bg-red-100' : 'bg-[#1BA97F]/10'">
+                            <svg class="w-6 h-6" :class="ocrStatus === 'failed' ? 'text-red-500' : 'text-[#1BA97F]'" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z"/>
+                            </svg>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-sm font-semibold" :class="ocrStatus === 'failed' ? 'text-red-700' : 'text-[#0A1F44]'">
+                                {{ ocrStatus === 'failed' ? $t('profile.passportOcrRetry') : $t('profile.passportOcrUpload') }}
+                            </p>
+                            <p class="text-[11px] text-gray-400 mt-1">{{ $t('profile.passportOcrFormats') }}</p>
+                        </div>
+                    </label>
+                    <p v-if="ocrStatus === 'failed'" class="text-xs text-red-500 mt-2 text-center">{{ $t('profile.passportOcrFailed') }}</p>
+                </div>
+
+                <!-- Статус: загрузка / распознавание -->
+                <div v-if="ocrUploading" class="flex flex-col items-center gap-3 p-6">
+                    <div class="w-12 h-12 rounded-full bg-[#1BA97F]/10 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-[#1BA97F] animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                        </svg>
+                    </div>
+                    <p class="text-sm font-semibold text-[#0A1F44]">{{ $t('profile.passportOcrProcessing') }}</p>
+                    <p class="text-[11px] text-gray-400">{{ $t('profile.passportOcrWait') }}</p>
+                </div>
+
+                <!-- Статус: распознано — показать результат -->
+                <div v-if="!ocrUploading && ocrStatus === 'completed' && ocrExtracted">
+                    <div class="flex items-center gap-2 mb-3">
+                        <div class="w-5 h-5 rounded-full bg-[#1BA97F] flex items-center justify-center">
+                            <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                        </div>
+                        <p class="text-sm font-semibold text-[#0A1F44]">{{ $t('profile.passportOcrDone') }}</p>
+                        <span v-if="ocrExtracted.confidence" class="ml-auto text-[10px] font-medium px-2 py-0.5 rounded-full"
+                            :class="ocrExtracted.confidence >= 0.8 ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'">
+                            {{ Math.round(ocrExtracted.confidence * 100) }}%
+                        </span>
+                    </div>
+
+                    <!-- Расхождения -->
+                    <div v-if="ocrMismatches.length" class="space-y-2 mb-3">
+                        <div class="flex items-center justify-between">
+                            <p class="text-xs font-medium text-amber-700">{{ $t('profile.passportOcrMismatches', { count: ocrMismatches.length }) }}</p>
+                            <button @click="applyAllOcr" type="button"
+                                class="text-[11px] font-semibold text-[#1BA97F] hover:text-[#169B72] px-2 py-1 border border-[#1BA97F]/30 rounded-lg hover:bg-[#1BA97F]/5 transition-colors">
+                                {{ $t('profile.passportOcrApplyAll') }}
+                            </button>
+                        </div>
+                        <div v-for="mm in ocrMismatches" :key="mm.field"
+                            class="flex items-center gap-2 p-2.5 rounded-xl bg-amber-50 border border-amber-200">
+                            <div class="flex-1 min-w-0">
+                                <p class="text-[11px] text-amber-600 font-medium">{{ ocrFieldLabel(mm.field) }}</p>
+                                <div class="flex items-center gap-2 mt-0.5">
+                                    <span class="text-xs text-gray-500 line-through">{{ mm.current }}</span>
+                                    <svg class="w-3 h-3 text-amber-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
+                                    <span class="text-xs font-semibold text-[#0A1F44]">{{ mm.ocr }}</span>
+                                </div>
+                            </div>
+                            <button @click="applyOcrField(mm)" type="button"
+                                class="shrink-0 text-[11px] font-medium text-[#1BA97F] hover:text-[#169B72] px-2 py-1 border border-[#1BA97F]/30 rounded-lg hover:bg-[#1BA97F]/5 transition-colors">
+                                {{ $t('profile.passportOcrApply') }}
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Автозаполненные поля -->
+                    <div v-if="ocrAutoFilled.length" class="mb-3">
+                        <p class="text-xs font-medium text-[#1BA97F] mb-1.5">{{ $t('profile.passportOcrAutoFilled') }}</p>
+                        <div class="flex flex-wrap gap-1.5">
+                            <span v-for="af in ocrAutoFilled" :key="af.field"
+                                class="text-[11px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-medium">
+                                {{ ocrFieldLabel(af.field) }}: {{ af.value }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Кнопка: загрузить другой паспорт -->
+                    <button @click="resetOcr" type="button"
+                        class="text-[11px] text-gray-400 hover:text-gray-600 transition-colors">
+                        {{ $t('profile.passportOcrAnother') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- Основные данные (паспорт) -->
         <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             <div class="px-5 py-4 border-b border-gray-50">
@@ -868,6 +971,117 @@ const saving    = ref(false);
 const saveMsg   = ref('');
 const saveError = ref(false);
 
+// --- OCR паспорта ---
+const ocrStatus     = ref(publicAuth.user?.ocr_status ?? '');
+const ocrExtracted  = ref(null);
+const ocrMismatches = ref([]);
+const ocrAutoFilled = ref([]);
+const ocrUploading  = ref(false);
+
+const OCR_FIELD_MAP = {
+    name: 'profile.firstName',
+    dob: 'profile.dob',
+    gender: 'profile.gender',
+    citizenship: 'profile.citizenship',
+    passport_number: 'profile.passportNumber',
+    passport_expires_at: 'profile.passportExpiry',
+};
+
+function ocrFieldLabel(field) {
+    return t(OCR_FIELD_MAP[field] || field);
+}
+
+async function handlePassportUpload(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    ocrUploading.value = true;
+    ocrStatus.value = 'processing';
+    ocrMismatches.value = [];
+    ocrAutoFilled.value = [];
+    try {
+        const { data } = await publicPortalApi.uploadPassport(file);
+        const result = data?.data;
+        ocrStatus.value = result?.ocr_status ?? 'failed';
+        if (result?.ocr_status === 'completed' && result?.extracted) {
+            ocrExtracted.value = result.extracted;
+            ocrMismatches.value = result.mismatches || [];
+            autoFillFromOcr(result.extracted);
+        }
+    } catch {
+        ocrStatus.value = 'failed';
+    } finally {
+        ocrUploading.value = false;
+        e.target.value = '';
+    }
+}
+
+function autoFillFromOcr(extracted) {
+    const filled = [];
+    const fieldMap = {
+        first_name: { formField: null, set: v => { if (!firstName.value) { firstName.value = (v || '').toUpperCase(); filled.push({ field: 'name', value: v }); } } },
+        last_name:  { formField: null, set: v => { if (!lastName.value) { lastName.value = (v || '').toUpperCase(); filled.push({ field: 'name', value: v }); } } },
+        dob:                 { formField: 'dob', format: v => v?.slice(0, 10) },
+        gender:              { formField: 'gender' },
+        citizenship:         { formField: 'citizenship' },
+        passport_number:     { formField: 'passport_number' },
+        passport_expires_at: { formField: 'passport_expires_at', format: v => v?.slice(0, 10) },
+    };
+    for (const [ocrKey, cfg] of Object.entries(fieldMap)) {
+        const val = extracted[ocrKey];
+        if (!val) continue;
+        if (cfg.set) { cfg.set(val); continue; }
+        const fk = cfg.formField;
+        if (fk && !form[fk]) {
+            form[fk] = cfg.format ? cfg.format(val) : val;
+            filled.push({ field: fk, value: form[fk] });
+        }
+    }
+    // Обновить паспортные поля ввода
+    if (filled.some(f => f.field === 'passport_number')) initPassportFields(form.passport_number);
+    ocrAutoFilled.value = filled;
+}
+
+function applyOcrField(mm) {
+    const val = mm.ocr;
+    if (mm.field === 'name') {
+        const parts = (val || '').trim().split(/\s+/);
+        firstName.value = (parts[0] || '').toUpperCase();
+        lastName.value = (parts.slice(1).join(' ') || '').toUpperCase();
+        form.name = val;
+    } else if (mm.field === 'passport_number') {
+        form.passport_number = val;
+        initPassportFields(val);
+    } else if (mm.field === 'dob' || mm.field === 'passport_expires_at') {
+        form[mm.field] = val?.slice(0, 10) ?? val;
+    } else {
+        form[mm.field] = val;
+    }
+    ocrMismatches.value = ocrMismatches.value.filter(m => m.field !== mm.field);
+}
+
+function applyAllOcr() {
+    [...ocrMismatches.value].forEach(mm => applyOcrField(mm));
+}
+
+function resetOcr() {
+    ocrStatus.value = '';
+    ocrExtracted.value = null;
+    ocrMismatches.value = [];
+    ocrAutoFilled.value = [];
+}
+
+async function loadPassportData() {
+    try {
+        const { data } = await publicPortalApi.passportData();
+        const result = data?.data;
+        if (result?.extracted) {
+            ocrExtracted.value = result.extracted;
+            ocrMismatches.value = result.mismatches || [];
+            ocrStatus.value = 'completed';
+        }
+    } catch { /* ignore */ }
+}
+
 const showWizard = ref(false);
 const wizardStep = ref(0);
 const wizardAnswers = reactive({});
@@ -1639,6 +1853,11 @@ onMounted(async () => {
         emailVerified.value = !!publicAuth.user?.email_verified_at;
     } catch { /* ignore */ }
     loadFamilyMembers();
+    // Загрузить OCR-данные если ранее распознаны
+    if (publicAuth.user?.ocr_status === 'completed') {
+        ocrStatus.value = 'completed';
+        loadPassportData();
+    }
 });
 </script>
 

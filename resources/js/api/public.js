@@ -45,6 +45,7 @@ export const publicPortalApi = {
         fd.append('passport', file);
         return publicApi.post('/me/passport', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
     },
+    passportData: () => publicApi.get('/me/passport-data'),
 
     // Cases
     cases:      ()     => publicApi.get('/me/cases'),
