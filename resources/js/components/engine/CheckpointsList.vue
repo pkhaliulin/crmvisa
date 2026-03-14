@@ -19,7 +19,7 @@
 
       <template v-else>
         <div v-for="(items, stage) in groupedCheckpoints" :key="stage" class="mb-3 last:mb-0">
-          <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">{{ stage }}</p>
+          <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">{{ t(`crm.stages.${stage.toLowerCase()}`, stage) }}</p>
           <div class="space-y-1.5">
             <label v-for="cp in items" :key="cp.id"
               :class="['flex items-start gap-2.5 p-2 rounded-lg cursor-pointer transition-colors group',

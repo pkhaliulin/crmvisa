@@ -78,7 +78,7 @@
             <span :class="['w-1.5 h-1.5 rounded-full mt-1.5 shrink-0',
               item.type === 'checkpoint' ? (item.blocking ? 'bg-red-500' : 'bg-orange-400') :
               item.type === 'document' ? 'bg-blue-400' : 'bg-gray-400']"></span>
-            <span class="text-xs text-gray-600 leading-snug">{{ item.name }}</span>
+            <span class="text-xs text-gray-600 leading-snug">{{ docSlugLabel(item.name) }}</span>
           </div>
           <p v-if="missingItems.length > 8" class="text-[10px] text-gray-400">
             {{ t('crm.engine.andMore', { n: missingItems.length - 8 }) }}
@@ -105,6 +105,28 @@ const emit = defineEmits(['initialized', 'updated'])
 
 const loading = ref(false)
 const engineData = ref(null)
+
+const docSlugLabels = {
+  travel_insurance: 'Медицинская страховка',
+  hotel_booking: 'Бронь отеля',
+  air_tickets: 'Авиабилеты',
+  employment_certificate: 'Справка с работы',
+  foreign_passport: 'Загранпаспорт',
+  internal_passport: 'Внутренний паспорт',
+  income_certificate: 'Справка о доходах',
+  bank_balance_certificate: 'Справка об остатке на счёте',
+  bank_statement: 'Выписка из банка',
+  photo: 'Фото',
+  application_form: 'Анкета-заявление',
+  invitation_letter: 'Приглашение',
+  birth_certificate: 'Свидетельство о рождении',
+  marriage_certificate: 'Свидетельство о браке',
+  sponsor_letter: 'Спонсорское письмо',
+}
+function docSlugLabel(name) {
+  if (!name) return ''
+  return docSlugLabels[name] || name.replace(/_/g, ' ')
+}
 
 const score = computed(() => engineData.value?.readiness_score ?? 0)
 const missingItems = computed(() => engineData.value?.missing_items ?? [])

@@ -473,7 +473,7 @@
             <!-- Breakdown -->
             <div v-if="countryScore.breakdown" class="mt-1.5 space-y-0.5">
               <div v-for="(val, key) in countryScore.breakdown" :key="key" class="flex items-center gap-1.5">
-                <span class="text-[10px] text-gray-400 w-16 truncate">{{ visaborBlockLabel(key) }}</span>
+                <span class="text-[10px] text-gray-400 w-20 truncate" :title="visaborBlockLabel(key)">{{ visaborBlockLabel(key) }}</span>
                 <div class="flex-1 h-1 bg-gray-100 rounded-full overflow-hidden">
                   <div class="h-full rounded-full bg-emerald-400" :style="{ width: `${val}%` }" />
                 </div>
@@ -1133,7 +1133,21 @@ const educationLabel = computed(() => {
 
 function scoreColor(s) { return s >= 80 ? 'text-green-600' : s >= 60 ? 'text-yellow-600' : 'text-red-600'; }
 function scoreBarColor(s) { return s >= 80 ? 'bg-green-500' : s >= 60 ? 'bg-yellow-400' : 'bg-red-400'; }
-function visaborBlockLabel(key) { return t(`crm.clientDetail.vb_${key}`, key); }
+const scoringLabels = {
+  finance: 'crm.caseDetail.scorFinance',
+  finances: 'crm.caseDetail.scorFinance',
+  visa_type: 'crm.caseDetail.scorVisaType',
+  difficulty: 'crm.caseDetail.scorDifficulty',
+  destination: 'crm.caseDetail.scorDestination',
+  social_ties: 'crm.caseDetail.scorSocialTies',
+  profile_base: 'crm.caseDetail.scorProfile',
+  raw_weighted: 'crm.caseDetail.scorWeighted',
+  visa_history: 'crm.caseDetail.scorVisaHistory',
+  country_bonus: 'crm.caseDetail.scorCountryBonus',
+  travel_purpose: 'crm.caseDetail.scorTravelPurpose',
+  profile: 'crm.caseDetail.scorProfile',
+};
+function visaborBlockLabel(key) { return t(scoringLabels[key] || `crm.clientDetail.vb_${key}`, key); }
 function fmtMoney(v) { return Number(v).toLocaleString('en-US', { maximumFractionDigits: 0 }); }
 
 // Helpers
