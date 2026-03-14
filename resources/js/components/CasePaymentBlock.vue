@@ -55,17 +55,14 @@
         <div class="flex items-center justify-between">
           <span class="text-xs font-medium text-gray-500">{{ t('crm.casePayment.totalPrice') }}</span>
           <div class="flex items-center gap-1.5">
-            <!-- Если сумма не задана или редактируем — показать поле ввода -->
-            <template v-if="!totalPrice || editingPrice">
+            <template v-if="!priceSaved || editingPrice">
               <input v-model.number="settingsForm.total_price" type="number" min="0" step="1000" ref="priceInput"
-                :placeholder="'0'" @blur="onPriceBlur" @keyup.enter="savePriceField"
-                class="w-32 border rounded-lg px-2 py-1 text-sm text-right outline-none"
-                :class="editingPrice ? 'border-[#1BA97F]' : 'border-gray-200 focus:border-[#1BA97F]'" />
-              <button v-if="editingPrice" @click="savePriceField" class="w-6 h-6 flex items-center justify-center rounded-md hover:bg-green-50 text-[#1BA97F]">
+                :placeholder="'0'" @keyup.enter="savePriceField"
+                class="w-32 border border-gray-200 focus:border-[#1BA97F] rounded-lg px-2 py-1 text-sm text-right outline-none" />
+              <button @click="savePriceField" class="w-6 h-6 flex items-center justify-center rounded-md hover:bg-green-50 text-[#1BA97F]" :title="t('crm.casePayment.totalPrice')">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
               </button>
             </template>
-            <!-- Если сумма задана и не редактируем — показать значение + карандашик -->
             <template v-else>
               <span class="text-sm font-bold text-gray-900">{{ formatAmount(totalPrice) }}</span>
               <button @click="editingPrice = true; $nextTick(() => $refs.priceInput?.focus())" class="w-6 h-6 flex items-center justify-center rounded-md hover:bg-gray-100 text-gray-400">
@@ -78,14 +75,10 @@
         <div class="flex items-center justify-between">
           <span class="text-xs font-medium text-gray-500">{{ t('crm.casePayment.deadline') }}</span>
           <div class="flex items-center gap-1.5">
-            <template v-if="!settingsForm.payment_deadline || editingDeadline">
+            <template v-if="!deadlineSaved || editingDeadline">
               <input v-model="settingsForm.payment_deadline" type="date" ref="deadlineInput"
-                @blur="onDeadlineBlur" @keyup.enter="saveDeadlineField"
-                class="w-36 border rounded-lg px-2 py-1 text-sm outline-none"
-                :class="editingDeadline ? 'border-[#1BA97F]' : 'border-gray-200 focus:border-[#1BA97F]'" />
-              <button v-if="editingDeadline" @click="saveDeadlineField" class="w-6 h-6 flex items-center justify-center rounded-md hover:bg-green-50 text-[#1BA97F]">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-              </button>
+                @change="saveDeadlineField"
+                class="w-36 border border-gray-200 focus:border-[#1BA97F] rounded-lg px-2 py-1 text-sm outline-none" />
             </template>
             <template v-else>
               <span class="text-sm text-gray-700">{{ settingsForm.payment_deadline }}</span>
@@ -235,6 +228,8 @@ const printingInvoice = ref(false);
 const quickDeadlineDays = [3, 7, 10];
 const editingPrice = ref(false);
 const editingDeadline = ref(false);
+const priceSaved = ref(false);
+const deadlineSaved = ref(false);
 
 const settingsForm = ref({
   total_price: 0,
@@ -343,13 +338,19 @@ async function fetchPayments() {
   try {
     const { data } = await api.get(`/cases/${props.caseId}/payments`);
     const result = data.data || data;
-    if (Array.isArray(result)) {
+    // API возвращает: { total_price, paid_amount, remaining_balance, payment_status, payments: [...], payment_deadline, ... }
+    if (result.payments && Array.isArray(result.payments)) {
+      payments.value = result.payments;
+    } else if (Array.isArray(result)) {
       payments.value = result;
     }
-    // Restore settings from response if available
-    if (data.settings) {
-      settingsForm.value.total_price = data.settings.total_price || 0;
-      settingsForm.value.payment_deadline = data.settings.payment_deadline || '';
+    if (result.total_price !== undefined) {
+      settingsForm.value.total_price = result.total_price || 0;
+      priceSaved.value = result.total_price > 0;
+    }
+    if (result.payment_deadline !== undefined) {
+      settingsForm.value.payment_deadline = result.payment_deadline || '';
+      deadlineSaved.value = !!result.payment_deadline;
     }
   } catch (e) {
     console.error('Failed to fetch payments:', e);
@@ -376,25 +377,17 @@ async function saveSettings() {
 }
 
 async function savePriceField() {
+  if (!settingsForm.value.total_price || settingsForm.value.total_price <= 0) return;
   await saveSettings();
   editingPrice.value = false;
+  priceSaved.value = true;
 }
 
 async function saveDeadlineField() {
+  if (!settingsForm.value.payment_deadline) return;
   await saveSettings();
   editingDeadline.value = false;
-}
-
-function onPriceBlur() {
-  if (settingsForm.value.total_price > 0) {
-    savePriceField();
-  }
-}
-
-function onDeadlineBlur() {
-  if (settingsForm.value.payment_deadline) {
-    saveDeadlineField();
-  }
+  deadlineSaved.value = true;
 }
 
 async function submitPayment() {
