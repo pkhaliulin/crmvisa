@@ -9,6 +9,7 @@ use App\Http\Middleware\LogApiRequest;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\SetLocale;
 use App\Http\Middleware\SetTenantContext;
+use App\Http\Middleware\ValidateJwtAgency;
 use App\Modules\PublicPortal\Middleware\AuthPublicUser;
 use App\Support\Helpers\ApiResponse;
 use Illuminate\Auth\AuthenticationException;
@@ -61,6 +62,11 @@ return Application::configure(basePath: dirname(__DIR__))
         // Логирование всех API-запросов
         $middleware->api(append: [
             LogApiRequest::class,
+        ]);
+
+        // Валидация agency_id в JWT токене
+        $middleware->api(append: [
+            ValidateJwtAgency::class,
         ]);
 
         // SetTenantContext ДОЛЖЕН работать ДО Authenticate,

@@ -11,7 +11,7 @@
           </svg>
           <div>
             <div class="font-bold text-sm leading-none text-white">VisaBor</div>
-            <div class="text-[10px] text-white/40 mt-0.5 uppercase tracking-wider">Owner Panel</div>
+            <div class="text-[10px] text-white/40 mt-0.5 uppercase tracking-wider">{{ t('owner.layout.ownerPanel') }}</div>
           </div>
         </div>
       </div>
@@ -56,12 +56,12 @@
           </div>
           <div class="min-w-0">
             <div class="text-xs font-medium text-white/80 truncate">{{ auth.user?.name }}</div>
-            <div class="text-[10px] text-white/30">Суперадмин</div>
+            <div class="text-[10px] text-white/30">{{ t('crm.roles.superadmin') }}</div>
           </div>
         </div>
         <button @click="logout"
           class="text-xs text-white/30 hover:text-white/70 transition-colors">
-          Выйти из системы
+          {{ t('owner.layout.logoutFull') }}
         </button>
       </div>
     </aside>
@@ -85,8 +85,11 @@
 <script setup>
 import { computed, ref, onMounted, onBeforeUnmount } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { useAuthStore } from '@/stores/auth';
 import { monitoringApi } from '@/api/monitoring';
+
+const { t } = useI18n();
 
 const auth   = useAuthStore();
 const route  = useRoute();
@@ -185,7 +188,7 @@ const routeTitles = {
   '/crm/website':      'Сайт VisaBor',
 };
 
-const currentPageTitle = computed(() => routeTitles[route.path] ?? 'Owner Panel');
+const currentPageTitle = computed(() => routeTitles[route.path] ?? t('owner.layout.ownerPanel'));
 
 function logout() {
   auth.logout();

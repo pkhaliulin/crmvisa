@@ -17,7 +17,7 @@ use App\Modules\Document\Controllers\ChecklistController;
 use App\Modules\Document\Controllers\DocumentController;
 use App\Modules\Document\Controllers\OcrController;
 use App\Modules\Owner\Controllers\CountryDetailController;
-use App\Modules\Owner\Controllers\OwnerController;
+use App\Modules\Owner\Controllers\OwnerReferenceDataController;
 use App\Modules\Payment\Controllers\BillingController;
 use App\Modules\Payment\Controllers\MarketplaceController;
 use App\Modules\Scoring\Controllers\ScoringController;
@@ -216,8 +216,8 @@ Route::middleware(['auth:api', 'role:owner,superadmin', 'plan.active'])->group(f
 // Глобальный каталог услуг + страны + типы виз (все авторизованные)
 Route::middleware(['auth:api', 'role:owner,manager,superadmin', 'plan.active'])->group(function () {
     Route::get('services',   [ServiceCatalogController::class, 'index']);
-    Route::get('countries',  [OwnerController::class, 'countries']);
-    Route::get('visa-types', [OwnerController::class, 'visaTypes']);
+    Route::get('countries',  [OwnerReferenceDataController::class, 'countries']);
+    Route::get('visa-types', [OwnerReferenceDataController::class, 'visaTypes']);
     Route::get('references/all', [\App\Modules\Owner\Controllers\ReferenceController::class, 'all']);
     Route::get('countries/{code}/visa-settings', [CountryDetailController::class, 'visaSettingsPublic']);
 });

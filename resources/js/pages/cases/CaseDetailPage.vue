@@ -1181,17 +1181,34 @@ async function load() {
     loadError.value = e.response?.data?.message || t('crm.caseDetail.loadError');
   } finally { loading.value = false; }
 }
-async function reloadChecklist() { checklist.value = (await casesApi.getChecklist(id)).data.data; }
+async function reloadChecklist() {
+  try {
+    checklist.value = (await casesApi.getChecklist(id)).data.data;
+  } catch (e) {
+    showToast(e?.response?.data?.message ?? t('crm.caseDetail.loadError'), 'error');
+  }
+}
 async function reloadAll() {
-  const [c, cl] = await Promise.all([casesApi.get(id), casesApi.getChecklist(id)]);
-  const resp = c.data.data;
-  caseData.value = resp.case ?? resp;
-  if (resp.allowed_transitions) allowedTransitions.value = resp.allowed_transitions;
-  checklist.value = cl.data.data;
+  try {
+    const [c, cl] = await Promise.all([casesApi.get(id), casesApi.getChecklist(id)]);
+    const resp = c.data.data;
+    caseData.value = resp.case ?? resp;
+    if (resp.allowed_transitions) allowedTransitions.value = resp.allowed_transitions;
+    checklist.value = cl.data.data;
+  } catch (e) {
+    showToast(e?.response?.data?.message ?? t('crm.caseDetail.loadError'), 'error');
+  }
 }
 
 // Actions
-async function quickMove(stage) { await casesApi.moveStage(id, { stage }); await reloadAll(); }
+async function quickMove(stage) {
+  try {
+    await casesApi.moveStage(id, { stage });
+    await reloadAll();
+  } catch (e) {
+    showToast(e?.response?.data?.message ?? t('crm.caseDetail.loadError'), 'error');
+  }
+}
 
 const MAX_FILE_SIZE_MB = 20;
 
@@ -1230,28 +1247,68 @@ async function doAiAnalyze(item) {
   }
 }
 
-async function toggleCheck(item) { await casesApi.checkSlot(id, item.id, !item.is_checked); await reloadChecklist(); }
+async function toggleCheck(item) {
+  try {
+    await casesApi.checkSlot(id, item.id, !item.is_checked);
+    await reloadChecklist();
+  } catch (e) {
+    showToast(e?.response?.data?.message ?? t('crm.caseDetail.loadError'), 'error');
+  }
+}
 
 function openReject(item) { rejectItem.value = item; rejectNote.value = ''; showRejectModal.value = true; }
-async function submitReject() { await casesApi.reviewSlot(id, rejectItem.value.id, { status: 'rejected', notes: rejectNote.value }); showRejectModal.value = false; rejectItem.value = null; rejectNote.value = ''; await reloadAll(); }
-async function reviewSlot(item, status) { await casesApi.reviewSlot(id, item.id, { status }); await reloadAll(); }
+async function submitReject() {
+  try {
+    await casesApi.reviewSlot(id, rejectItem.value.id, { status: 'rejected', notes: rejectNote.value });
+    showRejectModal.value = false;
+    rejectItem.value = null;
+    rejectNote.value = '';
+    await reloadAll();
+  } catch (e) {
+    showToast(e?.response?.data?.message ?? t('crm.caseDetail.loadError'), 'error');
+  }
+}
+async function reviewSlot(item, status) {
+  try {
+    await casesApi.reviewSlot(id, item.id, { status });
+    await reloadAll();
+  } catch (e) {
+    showToast(e?.response?.data?.message ?? t('crm.caseDetail.loadError'), 'error');
+  }
+}
 
 function openTranslation(item) { translationItem.value = item; translationForm.pages = 1; translationForm.notes = ''; showTranslationModal.value = true; }
 async function submitTranslation() {
-  await casesApi.reviewSlot(id, translationItem.value.id, { status: 'needs_translation', notes: translationForm.notes || null, translation_pages: parseInt(translationForm.pages) || 1 });
-  showTranslationModal.value = false; await reloadAll();
+  try {
+    await casesApi.reviewSlot(id, translationItem.value.id, { status: 'needs_translation', notes: translationForm.notes || null, translation_pages: parseInt(translationForm.pages) || 1 });
+    showTranslationModal.value = false;
+    await reloadAll();
+  } catch (e) {
+    showToast(e?.response?.data?.message ?? t('crm.caseDetail.loadError'), 'error');
+  }
 }
 
 async function doUploadTranslation(item, event) {
   const file = event.target?.files?.[0];
   if (!file) return;
-  const fd = new FormData();
-  fd.append('file', file);
-  await casesApi.uploadTranslation(id, item.id, fd);
-  await reloadAll();
+  try {
+    const fd = new FormData();
+    fd.append('file', file);
+    await casesApi.uploadTranslation(id, item.id, fd);
+    await reloadAll();
+  } catch (e) {
+    showToast(e?.response?.data?.message ?? t('crm.doc.uploadFailed'), 'error');
+  }
 }
 
-async function doApproveTranslation(item) { await casesApi.approveTranslation(id, item.id); await reloadAll(); }
+async function doApproveTranslation(item) {
+  try {
+    await casesApi.approveTranslation(id, item.id);
+    await reloadAll();
+  } catch (e) {
+    showToast(e?.response?.data?.message ?? t('crm.caseDetail.loadError'), 'error');
+  }
+}
 
 async function doSubmitToEmbassy() {
   if (!embassyForm.submitted_at || !embassyForm.expected_result_date) return;
@@ -1281,7 +1338,14 @@ async function doUpdateExpectedDate() {
   finally { expectedDateForm.loading = false; }
 }
 
-async function repeatSlot(item) { await casesApi.addChecklistItem(id, { name: item.name, description: item.description, is_required: false }); await reloadChecklist(); }
+async function repeatSlot(item) {
+  try {
+    await casesApi.addChecklistItem(id, { name: item.name, description: item.description, is_required: false });
+    await reloadChecklist();
+  } catch (e) {
+    showToast(e?.response?.data?.message ?? t('crm.caseDetail.loadError'), 'error');
+  }
+}
 
 async function addSlot() {
   if (!newSlot.name) return;
@@ -1290,7 +1354,15 @@ async function addSlot() {
   finally { newSlot.loading = false; }
 }
 
-async function deleteSlot(item) { if (!confirm(t('crm.caseDetail.confirmDeleteSlot'))) return; await casesApi.deleteChecklistItem(id, item.id); await reloadChecklist(); }
+async function deleteSlot(item) {
+  if (!confirm(t('crm.caseDetail.confirmDeleteSlot'))) return;
+  try {
+    await casesApi.deleteChecklistItem(id, item.id);
+    await reloadChecklist();
+  } catch (e) {
+    showToast(e?.response?.data?.message ?? t('crm.caseDetail.loadError'), 'error');
+  }
+}
 
 async function downloadZip() {
   zipLoading.value = true;
@@ -1307,7 +1379,15 @@ async function doMoveStage() {
   finally { moveForm.loading = false; }
 }
 
-async function confirmDelete() { if (!confirm(t('crm.caseDetail.confirmDeleteCase'))) return; await casesApi.remove(id); router.push({ name: 'cases' }); }
+async function confirmDelete() {
+  if (!confirm(t('crm.caseDetail.confirmDeleteCase'))) return;
+  try {
+    await casesApi.remove(id);
+    router.push({ name: 'cases' });
+  } catch (e) {
+    showToast(e?.response?.data?.message ?? t('crm.caseDetail.loadError'), 'error');
+  }
+}
 
 async function loadManagers() {
   if (!auth.isOwner) return;

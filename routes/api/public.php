@@ -5,7 +5,10 @@ use App\Modules\Payment\Controllers\ClientPaymentController;
 use App\Modules\Payment\Controllers\MarketplaceController;
 use App\Modules\PublicPortal\Controllers\PublicAgencyController;
 use App\Modules\PublicPortal\Controllers\PublicAuthController;
+use App\Modules\PublicPortal\Controllers\PublicCaseController;
+use App\Modules\PublicPortal\Controllers\PublicEmailController;
 use App\Modules\PublicPortal\Controllers\PublicFamilyController;
+use App\Modules\PublicPortal\Controllers\PublicPhoneController;
 use App\Modules\PublicPortal\Controllers\PublicProfileController;
 use App\Modules\PublicPortal\Controllers\PublicReviewController;
 use App\Modules\PublicPortal\Controllers\PublicScoringController;
@@ -50,21 +53,21 @@ Route::prefix('public')->middleware(['locale', 'auth.public'])->group(function (
     Route::get('me',             [PublicProfileController::class, 'me']);
     Route::patch('me',           [PublicProfileController::class, 'update']);
     Route::post('me/passport',   [PublicProfileController::class, 'uploadPassport']);
-    Route::post('me/email',        [PublicProfileController::class, 'saveEmail']);
-    Route::post('me/email/verify', [PublicProfileController::class, 'verifyEmail']);
-    Route::post('me/change-phone/send-otp', [PublicProfileController::class, 'changePhoneSendOtp']);
-    Route::post('me/change-phone/verify',   [PublicProfileController::class, 'changePhoneVerify']);
-    Route::get('me/cases',                                    [PublicProfileController::class, 'cases']);
-    Route::post('me/cases',                                   [PublicProfileController::class, 'createDraftCase'])->middleware('throttle:10,1');
-    Route::get('me/cases/{id}',                               [PublicProfileController::class, 'caseDetail']);
-    Route::patch('me/cases/{id}',                             [PublicProfileController::class, 'updateCase']);
-    Route::post('me/cases/{id}/cancel',                      [PublicProfileController::class, 'cancelCase']);
+    Route::post('me/email',        [PublicEmailController::class, 'saveEmail']);
+    Route::post('me/email/verify', [PublicEmailController::class, 'verifyEmail']);
+    Route::post('me/change-phone/send-otp', [PublicPhoneController::class, 'changePhoneSendOtp']);
+    Route::post('me/change-phone/verify',   [PublicPhoneController::class, 'changePhoneVerify']);
+    Route::get('me/cases',                                    [PublicCaseController::class, 'cases']);
+    Route::post('me/cases',                                   [PublicCaseController::class, 'createDraftCase'])->middleware('throttle:10,1');
+    Route::get('me/cases/{id}',                               [PublicCaseController::class, 'caseDetail']);
+    Route::patch('me/cases/{id}',                             [PublicCaseController::class, 'updateCase']);
+    Route::post('me/cases/{id}/cancel',                      [PublicCaseController::class, 'cancelCase']);
     Route::get('me/cases/{id}/activities',                    [\App\Modules\Case\Controllers\CaseActivityController::class, 'publicIndex']);
-    Route::post('me/cases/{caseId}/checklist/{itemId}/upload',[PublicProfileController::class, 'uploadChecklistItem'])->middleware('throttle:20,1');
-    Route::patch('me/cases/{caseId}/checklist/{itemId}/check',[PublicProfileController::class, 'checkChecklistItem'])->middleware('throttle:30,1');
-    Route::post('me/cases/{caseId}/checklist/{itemId}/repeat',[PublicProfileController::class, 'repeatChecklistItem'])->middleware('throttle:20,1');
-    Route::delete('me/cases/{caseId}/checklist/{itemId}',    [PublicProfileController::class, 'deleteChecklistItem'])->middleware('throttle:20,1');
-    Route::get('me/documents/{documentId}/preview',          [PublicProfileController::class, 'previewDocument']);
+    Route::post('me/cases/{caseId}/checklist/{itemId}/upload',[PublicCaseController::class, 'uploadChecklistItem'])->middleware('throttle:20,1');
+    Route::patch('me/cases/{caseId}/checklist/{itemId}/check',[PublicCaseController::class, 'checkChecklistItem'])->middleware('throttle:30,1');
+    Route::post('me/cases/{caseId}/checklist/{itemId}/repeat',[PublicCaseController::class, 'repeatChecklistItem'])->middleware('throttle:20,1');
+    Route::delete('me/cases/{caseId}/checklist/{itemId}',    [PublicCaseController::class, 'deleteChecklistItem'])->middleware('throttle:20,1');
+    Route::get('me/documents/{documentId}/preview',          [PublicCaseController::class, 'previewDocument']);
 
     // Семья -- профиль
     Route::get('me/family',                [PublicFamilyController::class, 'index']);
@@ -85,8 +88,8 @@ Route::prefix('public')->middleware(['locale', 'auth.public'])->group(function (
     Route::get('me/can-review/{id}',    [PublicReviewController::class, 'canReview']);
 
     // Inline-выбор агентства для кейса + смена агентства
-    Route::get('me/cases/{id}/agencies',       [PublicProfileController::class, 'caseAgencies']);
-    Route::post('me/cases/{id}/change-agency',  [PublicProfileController::class, 'changeAgency']);
+    Route::get('me/cases/{id}/agencies',       [PublicCaseController::class, 'caseAgencies']);
+    Route::post('me/cases/{id}/change-agency',  [PublicCaseController::class, 'changeAgency']);
 
     // Группы
     Route::get('me/groups',                     [PublicGroupController::class, 'index']);

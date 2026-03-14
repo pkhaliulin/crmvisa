@@ -7,7 +7,10 @@ use App\Modules\Owner\Controllers\FeatureFlagController;
 use App\Modules\Owner\Controllers\MemoryController;
 use App\Modules\Owner\Controllers\MonitoringController;
 use App\Modules\Owner\Controllers\OwnerBillingController;
-use App\Modules\Owner\Controllers\OwnerController;
+use App\Modules\Owner\Controllers\OwnerAgencyController;
+use App\Modules\Owner\Controllers\OwnerDashboardController;
+use App\Modules\Owner\Controllers\OwnerLeadController;
+use App\Modules\Owner\Controllers\OwnerReferenceDataController;
 use App\Modules\Owner\Controllers\WebsiteSettingsController;
 use App\Modules\Payment\Controllers\BillingController;
 use App\Modules\Payment\Controllers\MarketplaceController;
@@ -40,27 +43,27 @@ Route::middleware(['auth:api', 'role:superadmin'])->group(function () {
 // Owner Admin API -- только superadmin
 Route::middleware(['auth:api', 'role:superadmin'])->prefix('owner')->group(function () {
     // Дашборд
-    Route::get('dashboard', [OwnerController::class, 'dashboard']);
+    Route::get('dashboard', [OwnerDashboardController::class, 'dashboard']);
 
     // Агентства
-    Route::get('agencies',          [OwnerController::class, 'agencies']);
-    Route::get('agencies/{id}',     [OwnerController::class, 'agencyShow']);
-    Route::patch('agencies/{id}',   [OwnerController::class, 'agencyUpdate']);
-    Route::delete('agencies/{id}',  [OwnerController::class, 'agencyDestroy']);
+    Route::get('agencies',          [OwnerAgencyController::class, 'agencies']);
+    Route::get('agencies/{id}',     [OwnerAgencyController::class, 'agencyShow']);
+    Route::patch('agencies/{id}',   [OwnerAgencyController::class, 'agencyUpdate']);
+    Route::delete('agencies/{id}',  [OwnerAgencyController::class, 'agencyDestroy']);
 
     // Пользователи публичного портала
-    Route::get('public-users',             [OwnerController::class, 'publicUsers']);
-    Route::get('public-users/{id}',        [OwnerController::class, 'publicUserShow']);
-    Route::post('public-users/{id}/block', [OwnerController::class, 'publicUserBlock']);
+    Route::get('public-users',             [OwnerAgencyController::class, 'publicUsers']);
+    Route::get('public-users/{id}',        [OwnerAgencyController::class, 'publicUserShow']);
+    Route::post('public-users/{id}/block', [OwnerAgencyController::class, 'publicUserBlock']);
 
     // Лиды
-    Route::get('leads',         [OwnerController::class, 'leads']);
-    Route::patch('leads/{id}',  [OwnerController::class, 'leadUpdate']);
+    Route::get('leads',         [OwnerLeadController::class, 'leads']);
+    Route::patch('leads/{id}',  [OwnerLeadController::class, 'leadUpdate']);
 
     // Страны (portal scoring)
-    Route::get('countries',            [OwnerController::class, 'countries']);
-    Route::post('countries',           [OwnerController::class, 'countryStore']);
-    Route::patch('countries/{code}',   [OwnerController::class, 'countryUpdate']);
+    Route::get('countries',            [OwnerReferenceDataController::class, 'countries']);
+    Route::post('countries',           [OwnerReferenceDataController::class, 'countryStore']);
+    Route::patch('countries/{code}',   [OwnerReferenceDataController::class, 'countryUpdate']);
 
     // Country Operations Center -- детальная страница страны
     Route::get('countries/{code}/detail',                  [CountryDetailController::class, 'countryShow']);
@@ -78,10 +81,10 @@ Route::middleware(['auth:api', 'role:superadmin'])->prefix('owner')->group(funct
     Route::get('countries/{code}/stats',                   [CountryDetailController::class, 'stats']);
 
     // Типы виз
-    Route::get('visa-types',           [OwnerController::class, 'visaTypes']);
-    Route::post('visa-types',          [OwnerController::class, 'visaTypeStore']);
-    Route::patch('visa-types/{slug}',  [OwnerController::class, 'visaTypeUpdate']);
-    Route::delete('visa-types/{slug}', [OwnerController::class, 'visaTypeDestroy']);
+    Route::get('visa-types',           [OwnerReferenceDataController::class, 'visaTypes']);
+    Route::post('visa-types',          [OwnerReferenceDataController::class, 'visaTypeStore']);
+    Route::patch('visa-types/{slug}',  [OwnerReferenceDataController::class, 'visaTypeUpdate']);
+    Route::delete('visa-types/{slug}', [OwnerReferenceDataController::class, 'visaTypeDestroy']);
 
     // Справочники
     Route::get('references',                          [\App\Modules\Owner\Controllers\ReferenceController::class, 'categories']);
@@ -92,15 +95,15 @@ Route::middleware(['auth:api', 'role:superadmin'])->prefix('owner')->group(funct
     Route::delete('references/{category}/{id}',       [\App\Modules\Owner\Controllers\ReferenceController::class, 'destroy']);
 
     // Документы
-    Route::get('documents', [OwnerController::class, 'documents']);
+    Route::get('documents', [OwnerReferenceDataController::class, 'documents']);
 
     // CRM-пользователи
-    Route::get('crm-users',           [OwnerController::class, 'crmUsers']);
-    Route::post('crm-users',          [OwnerController::class, 'crmUserStore']);
-    Route::patch('crm-users/{id}',    [OwnerController::class, 'crmUserUpdate']);
+    Route::get('crm-users',           [OwnerReferenceDataController::class, 'crmUsers']);
+    Route::post('crm-users',          [OwnerReferenceDataController::class, 'crmUserStore']);
+    Route::patch('crm-users/{id}',    [OwnerReferenceDataController::class, 'crmUserUpdate']);
 
     // Финансы
-    Route::get('transactions', [OwnerController::class, 'transactions']);
+    Route::get('transactions', [OwnerReferenceDataController::class, 'transactions']);
 
     // Глобальный каталог услуг (только superadmin)
     Route::get('services',             [ServiceCatalogController::class, 'index']);

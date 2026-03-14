@@ -4118,6 +4118,10 @@
       "message": "Сообщение",
       "note": "Заметка",
       "noActivities": "Нет событий"
+    },
+    "layout": {
+      "ownerPanel": "Owner Panel",
+      "logoutFull": "Выйти из системы"
     }
   }
 }

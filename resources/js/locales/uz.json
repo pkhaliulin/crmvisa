@@ -4118,6 +4118,10 @@
       "message": "Xabar",
       "note": "Eslatma",
       "noActivities": "Voqealar yo'q"
+    },
+    "layout": {
+      "ownerPanel": "Owner Panel",
+      "logoutFull": "Tizimdan chiqish"
     }
   }
 }
