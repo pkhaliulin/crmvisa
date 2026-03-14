@@ -649,6 +649,7 @@
             <button @click="showMoveModal = true" class="w-full text-left text-xs px-3 py-2 rounded-lg hover:bg-gray-50 text-gray-600 transition-colors">{{ t('crm.caseDetail.actionChangeStage') }}</button>
             <button @click="showAddSlot = true" class="w-full text-left text-xs px-3 py-2 rounded-lg hover:bg-gray-50 text-gray-600 transition-colors">{{ t('crm.caseDetail.actionAddDocument') }}</button>
             <button v-if="uploadedCount > 0" @click="downloadZip" class="w-full text-left text-xs px-3 py-2 rounded-lg hover:bg-gray-50 text-gray-600 transition-colors">{{ t('crm.caseDetail.actionDownloadAll') }}</button>
+            <button v-if="canCancelCase" @click="openCancelModal" class="w-full text-left text-xs px-3 py-2 rounded-lg hover:bg-red-50 text-red-600 transition-colors">{{ t('crm.caseDetail.actionCancel') }}</button>
           </div>
         </div>
       </div>
@@ -764,6 +765,43 @@
     </div>
   </AppModal>
 
+  <!-- Cancel case modal -->
+  <AppModal v-model="showCancelModal" :title="t('crm.caseDetail.cancelTitle')">
+    <div class="space-y-4">
+      <!-- Финансовая сводка -->
+      <div v-if="cancelRefundInfo" class="bg-gray-50 rounded-xl p-4 space-y-2">
+        <div class="flex justify-between text-sm">
+          <span class="text-gray-500">{{ t('crm.casePayment.totalPrice') }}</span>
+          <span class="font-bold">{{ Number(caseData.total_price || 0).toLocaleString('ru-RU') }} {{ caseData.price_currency || 'UZS' }}</span>
+        </div>
+        <div class="flex justify-between text-sm">
+          <span class="text-gray-500">{{ t('crm.casePayment.paid') }}</span>
+          <span class="font-bold text-green-600">{{ Number(cancelRefundInfo.paid_amount || 0).toLocaleString('ru-RU') }}</span>
+        </div>
+        <div class="flex justify-between text-sm border-t pt-2">
+          <span class="text-gray-500">{{ t('crm.caseDetail.cancelRefundAmount') }} ({{ cancelRefundInfo.refund_percent }}%)</span>
+          <span class="font-bold text-orange-600">{{ Number(cancelRefundInfo.refund_amount || 0).toLocaleString('ru-RU') }}</span>
+        </div>
+        <div class="flex justify-between text-sm">
+          <span class="text-gray-500">{{ t('crm.caseDetail.cancelRetained') }}</span>
+          <span class="font-bold text-gray-900">{{ Number(cancelRefundInfo.retained || 0).toLocaleString('ru-RU') }}</span>
+        </div>
+      </div>
+      <!-- Причина -->
+      <AppInput v-model="cancelForm.reason" :label="t('crm.caseDetail.cancelReason')" :placeholder="t('crm.caseDetail.cancelReasonPlaceholder')" />
+      <!-- Предупреждение -->
+      <div class="bg-red-50 border border-red-200 rounded-xl p-3">
+        <p class="text-xs text-red-700">{{ t('crm.caseDetail.cancelWarning') }}</p>
+      </div>
+      <div class="flex gap-2 justify-end">
+        <AppButton variant="outline" @click="showCancelModal = false">{{ t('common.cancel') }}</AppButton>
+        <AppButton variant="danger" @click="doCancelCase" :disabled="cancellingCase || !cancelForm.reason">
+          {{ cancellingCase ? '...' : t('crm.caseDetail.cancelConfirmBtn') }}
+        </AppButton>
+      </div>
+    </div>
+  </AppModal>
+
   <!-- File preview -->
   <div v-if="preview" class="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" @click.self="preview = null">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
@@ -791,6 +829,7 @@ import { ref, computed, onMounted, reactive } from 'vue';
 import { useRoute, useRouter, RouterLink } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { casesApi } from '@/api/cases';
+import api from '@/api/index';
 import { useCountries } from '@/composables/useCountries';
 import AppBadge  from '@/components/AppBadge.vue';
 import AppButton from '@/components/AppButton.vue';
@@ -846,6 +885,39 @@ const rejectNote = ref('');
 const rejectItem = ref(null);
 const translationItem = ref(null);
 const preview = ref(null);
+
+// --- Cancel case ---
+const showCancelModal = ref(false);
+const cancellingCase = ref(false);
+const cancelRefundInfo = ref(null);
+const cancelForm = reactive({ reason: '' });
+
+const canCancelCase = computed(() => {
+  if (!caseData.value) return false;
+  return !['review', 'result'].includes(caseData.value.stage) && caseData.value.public_status !== 'cancelled';
+});
+
+async function openCancelModal() {
+  try {
+    const { data } = await api.get(`/cases/${caseData.value.id}/refund-preview`);
+    cancelRefundInfo.value = data.data || data;
+  } catch { cancelRefundInfo.value = null; }
+  cancelForm.reason = '';
+  showCancelModal.value = true;
+}
+
+async function doCancelCase() {
+  cancellingCase.value = true;
+  try {
+    await casesApi.cancel(caseData.value.id, cancelForm.reason);
+    showCancelModal.value = false;
+    await loadCase();
+  } catch (e) {
+    alert(e?.response?.data?.message ?? 'Ошибка отмены');
+  } finally {
+    cancellingCase.value = false;
+  }
+}
 const zipLoading = ref(false);
 
 // Engine refs

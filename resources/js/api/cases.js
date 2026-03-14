@@ -44,6 +44,9 @@ export const casesApi = {
     bulkPriority: (data) => api.post('/cases/bulk/priority', data),
     bulkExport:   (data) => api.post('/cases/bulk/export', data, { responseType: 'blob' }),
 
+    // Cancel
+    cancel:       (id, reason) => api.post(`/cases/${id}/cancel`, { reason }),
+
     // Activities (timeline)
     activities:   (caseId, params) => api.get(`/cases/${caseId}/activities`, { params }),
 };

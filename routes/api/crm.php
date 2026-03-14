@@ -82,6 +82,9 @@ Route::middleware(['auth:api', 'role:owner,manager,superadmin', 'plan.active', '
     Route::get('cases/{id}/contract',          [\App\Modules\Finance\Controllers\CasePaymentController::class, 'contract']);
     Route::post('cases/{id}/contract/accept',  [\App\Modules\Finance\Controllers\CasePaymentController::class, 'acceptContract']);
     Route::get('cases/{id}/refund-preview',    [\App\Modules\Finance\Controllers\CasePaymentController::class, 'refundPreview']);
+    Route::get('cases/{id}/refunds',           [\App\Modules\Finance\Controllers\RefundController::class, 'index']);
+    Route::post('cases/{id}/refunds',          [\App\Modules\Finance\Controllers\RefundController::class, 'store']);
+    Route::patch('cases/{id}/refunds/{rid}/complete', [\App\Modules\Finance\Controllers\RefundController::class, 'complete']);
 
     // Активности заявки (timeline)
     Route::get('cases/{id}/activities', [CaseActivityController::class, 'index']);
