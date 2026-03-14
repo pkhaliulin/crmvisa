@@ -162,16 +162,13 @@ class ChecklistController extends Controller
 
     /**
      * DELETE /api/v1/cases/{caseId}/checklist/{itemId}
-     * Удалить кастомный слот
+     * Удалить слот из чек-листа (любой — кастомный или стандартный).
+     * Агентство регулирует какие документы нужны для конкретной заявки.
      */
     public function destroy(Request $request, string $caseId, string $itemId): JsonResponse
     {
         $this->authorizeCase($request, $caseId);
         $item = $this->authorizeItem($request, $caseId, $itemId);
-
-        if ($item->requirement_id || $item->country_requirement_id) {
-            return ApiResponse::error('Cannot delete standard checklist items', null, 403);
-        }
 
         $this->service->removeSlot($item);
 

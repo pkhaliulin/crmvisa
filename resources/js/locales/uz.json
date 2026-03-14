@@ -2881,7 +2881,8 @@
       "fileTooLarge": "Fayl juda katta. Maks. {max} MB",
       "maxFileSize": "{max} MB gacha",
       "uploadFailed": "Fayl yuklashda xatolik",
-      "managerHints": "Ko'rsatmalar"
+      "managerHints": "Ko'rsatmalar",
+      "deleteSlot": "Hujjatni ro'yxatdan o'chirish"
     },
     "docAi": {
       "analyze": "AI tahlili",

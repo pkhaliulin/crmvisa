@@ -2881,7 +2881,8 @@
       "fileTooLarge": "Файл слишком большой. Макс. {max} МБ",
       "maxFileSize": "до {max} МБ",
       "uploadFailed": "Ошибка загрузки файла",
-      "managerHints": "Подсказки"
+      "managerHints": "Подсказки",
+      "deleteSlot": "Удалить документ из списка"
     },
     "docAi": {
       "analyze": "Анализ AI",
