@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Modules\Case\Controllers;
+namespace App\Modules\Finance\Controllers;
 
 use App\Modules\Case\Models\CasePayment;
 use App\Modules\Case\Models\VisaCase;
-use App\Modules\Case\Services\CasePaymentService;
+use App\Modules\Finance\Services\CasePaymentService;
 use App\Support\Helpers\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;

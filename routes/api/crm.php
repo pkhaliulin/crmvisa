@@ -74,14 +74,14 @@ Route::middleware(['auth:api', 'role:owner,manager,superadmin', 'plan.active', '
     ]);
 
     // Оплата заявки
-    Route::get('cases/{id}/payments',          [\App\Modules\Case\Controllers\CasePaymentController::class, 'index']);
-    Route::post('cases/{id}/payments',         [\App\Modules\Case\Controllers\CasePaymentController::class, 'store']);
-    Route::delete('cases/{id}/payments/{pid}', [\App\Modules\Case\Controllers\CasePaymentController::class, 'destroy']);
-    Route::patch('cases/{id}/payment-settings', [\App\Modules\Case\Controllers\CasePaymentController::class, 'updateSettings']);
-    Route::get('cases/{id}/invoice',           [\App\Modules\Case\Controllers\CasePaymentController::class, 'invoice']);
-    Route::get('cases/{id}/contract',          [\App\Modules\Case\Controllers\CasePaymentController::class, 'contract']);
-    Route::post('cases/{id}/contract/accept',  [\App\Modules\Case\Controllers\CasePaymentController::class, 'acceptContract']);
-    Route::get('cases/{id}/refund-preview',    [\App\Modules\Case\Controllers\CasePaymentController::class, 'refundPreview']);
+    Route::get('cases/{id}/payments',          [\App\Modules\Finance\Controllers\CasePaymentController::class, 'index']);
+    Route::post('cases/{id}/payments',         [\App\Modules\Finance\Controllers\CasePaymentController::class, 'store']);
+    Route::delete('cases/{id}/payments/{pid}', [\App\Modules\Finance\Controllers\CasePaymentController::class, 'destroy']);
+    Route::patch('cases/{id}/payment-settings', [\App\Modules\Finance\Controllers\CasePaymentController::class, 'updateSettings']);
+    Route::get('cases/{id}/invoice',           [\App\Modules\Finance\Controllers\CasePaymentController::class, 'invoice']);
+    Route::get('cases/{id}/contract',          [\App\Modules\Finance\Controllers\CasePaymentController::class, 'contract']);
+    Route::post('cases/{id}/contract/accept',  [\App\Modules\Finance\Controllers\CasePaymentController::class, 'acceptContract']);
+    Route::get('cases/{id}/refund-preview',    [\App\Modules\Finance\Controllers\CasePaymentController::class, 'refundPreview']);
 
     // Активности заявки (timeline)
     Route::get('cases/{id}/activities', [CaseActivityController::class, 'index']);

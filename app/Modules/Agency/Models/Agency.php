@@ -59,6 +59,19 @@ class Agency extends BaseModel
         'secondary_color',
         'custom_domain',
         'favicon_url',
+        // Юридические реквизиты
+        'legal_name',
+        'legal_form',
+        'inn',
+        'legal_address',
+        'bank_account',
+        'bank_name',
+        'bank_mfo',
+        'director_name',
+        'director_basis',
+        'stamp_url',
+        'default_refund_policy',
+        'default_payment_terms',
     ];
 
     protected $casts = [
@@ -77,6 +90,8 @@ class Agency extends BaseModel
         'created_at'             => 'datetime',
         'updated_at'             => 'datetime',
         'deleted_at'             => 'datetime',
+        'default_refund_policy'  => 'array',
+        'default_payment_terms'  => 'array',
     ];
 
     // -------------------------------------------------------------------------

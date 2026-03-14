@@ -719,7 +719,7 @@ class CaseService extends BaseService
                 });
 
             // Рассчитать возврат по политике отмены
-            $refund = app(\App\Modules\Case\Services\ContractService::class)->calculateRefund($case);
+            $refund = app(\App\Modules\Finance\Services\ContractService::class)->calculateRefund($case);
 
             $cancelledBy = Auth::check() && Auth::user()->agency_id ? 'agent' : 'client';
 

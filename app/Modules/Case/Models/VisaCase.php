@@ -223,6 +223,28 @@ class VisaCase extends BaseModel
         return $this->hasMany(CasePayment::class, 'case_id');
     }
 
+    public function contracts(): HasMany
+    {
+        return $this->hasMany(\App\Modules\Finance\Models\CaseContract::class, 'case_id');
+    }
+
+    public function activeContract()
+    {
+        return $this->hasOne(\App\Modules\Finance\Models\CaseContract::class, 'case_id')
+            ->whereIn('status', ['signed', 'confirmed', 'generated'])
+            ->latest();
+    }
+
+    public function refunds(): HasMany
+    {
+        return $this->hasMany(\App\Modules\Finance\Models\CaseRefund::class, 'case_id');
+    }
+
+    public function financialDocuments(): HasMany
+    {
+        return $this->hasMany(\App\Modules\Finance\Models\CaseFinancialDocument::class, 'case_id');
+    }
+
     /**
      * Сумма всех оплат по заявке (в минорных единицах).
      */

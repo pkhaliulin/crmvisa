@@ -190,7 +190,7 @@ class CaseController extends Controller
             ];
         }
 
-        $paymentSummary = app(\App\Modules\Case\Services\CasePaymentService::class)
+        $paymentSummary = app(\App\Modules\Finance\Services\CasePaymentService::class)
             ->getPaymentSummary($case);
 
         return ApiResponse::success([

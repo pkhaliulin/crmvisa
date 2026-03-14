@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Modules\Case\Services;
+namespace App\Modules\Finance\Services;
 
 use App\Modules\Case\Models\VisaCase;
 use Illuminate\Support\Str;
