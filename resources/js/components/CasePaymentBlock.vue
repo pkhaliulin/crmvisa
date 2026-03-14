@@ -51,21 +51,21 @@
 
       <!-- Inline settings: total_price + deadline -->
       <div class="space-y-3">
-        <!-- Total price (inline edit) -->
+        <!-- Total price -->
         <div class="flex items-center justify-between">
           <span class="text-xs font-medium text-gray-500">{{ t('crm.casePayment.totalPrice') }}</span>
           <div class="flex items-center gap-1.5">
-            <template v-if="editingPrice">
+            <!-- Если сумма не задана или редактируем — показать поле ввода -->
+            <template v-if="!totalPrice || editingPrice">
               <input v-model.number="settingsForm.total_price" type="number" min="0" step="1000" ref="priceInput"
-                @keyup.enter="savePriceField" @keyup.escape="editingPrice = false"
-                class="w-32 border border-[#1BA97F] rounded-lg px-2 py-1 text-sm text-right outline-none" />
-              <button @click="savePriceField" class="w-6 h-6 flex items-center justify-center rounded-md hover:bg-green-50 text-[#1BA97F]">
+                :placeholder="'0'" @blur="onPriceBlur" @keyup.enter="savePriceField"
+                class="w-32 border rounded-lg px-2 py-1 text-sm text-right outline-none"
+                :class="editingPrice ? 'border-[#1BA97F]' : 'border-gray-200 focus:border-[#1BA97F]'" />
+              <button v-if="editingPrice" @click="savePriceField" class="w-6 h-6 flex items-center justify-center rounded-md hover:bg-green-50 text-[#1BA97F]">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
               </button>
-              <button @click="editingPrice = false" class="w-6 h-6 flex items-center justify-center rounded-md hover:bg-gray-100 text-gray-400">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-              </button>
             </template>
+            <!-- Если сумма задана и не редактируем — показать значение + карандашик -->
             <template v-else>
               <span class="text-sm font-bold text-gray-900">{{ formatAmount(totalPrice) }}</span>
               <button @click="editingPrice = true; $nextTick(() => $refs.priceInput?.focus())" class="w-6 h-6 flex items-center justify-center rounded-md hover:bg-gray-100 text-gray-400">
@@ -74,23 +74,21 @@
             </template>
           </div>
         </div>
-        <!-- Deadline (inline edit) -->
+        <!-- Deadline -->
         <div class="flex items-center justify-between">
           <span class="text-xs font-medium text-gray-500">{{ t('crm.casePayment.deadline') }}</span>
           <div class="flex items-center gap-1.5">
-            <template v-if="editingDeadline">
+            <template v-if="!settingsForm.payment_deadline || editingDeadline">
               <input v-model="settingsForm.payment_deadline" type="date" ref="deadlineInput"
-                @keyup.enter="saveDeadlineField" @keyup.escape="editingDeadline = false"
-                class="w-36 border border-[#1BA97F] rounded-lg px-2 py-1 text-sm outline-none" />
-              <button @click="saveDeadlineField" class="w-6 h-6 flex items-center justify-center rounded-md hover:bg-green-50 text-[#1BA97F]">
+                @blur="onDeadlineBlur" @keyup.enter="saveDeadlineField"
+                class="w-36 border rounded-lg px-2 py-1 text-sm outline-none"
+                :class="editingDeadline ? 'border-[#1BA97F]' : 'border-gray-200 focus:border-[#1BA97F]'" />
+              <button v-if="editingDeadline" @click="saveDeadlineField" class="w-6 h-6 flex items-center justify-center rounded-md hover:bg-green-50 text-[#1BA97F]">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-              </button>
-              <button @click="editingDeadline = false" class="w-6 h-6 flex items-center justify-center rounded-md hover:bg-gray-100 text-gray-400">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
               </button>
             </template>
             <template v-else>
-              <span class="text-sm text-gray-700">{{ settingsForm.payment_deadline || '—' }}</span>
+              <span class="text-sm text-gray-700">{{ settingsForm.payment_deadline }}</span>
               <button @click="editingDeadline = true; $nextTick(() => $refs.deadlineInput?.focus())" class="w-6 h-6 flex items-center justify-center rounded-md hover:bg-gray-100 text-gray-400">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
               </button>
@@ -385,6 +383,18 @@ async function savePriceField() {
 async function saveDeadlineField() {
   await saveSettings();
   editingDeadline.value = false;
+}
+
+function onPriceBlur() {
+  if (settingsForm.value.total_price > 0) {
+    savePriceField();
+  }
+}
+
+function onDeadlineBlur() {
+  if (settingsForm.value.payment_deadline) {
+    saveDeadlineField();
+  }
 }
 
 async function submitPayment() {
