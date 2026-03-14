@@ -143,14 +143,18 @@ class CaseController extends Controller
 
         $caseResource = new CaseResource($case);
 
-        // Client portrait data
+        // Client portrait data (единый источник — public_users)
         $portrait = null;
         if ($case->client) {
             $client = $case->client;
-            $profile = \App\Modules\Scoring\Models\ClientProfile::where('client_id', $client->id)->first();
-            $scores = \App\Modules\Scoring\Models\ClientScore::where('client_id', $client->id)
-                ->orderByDesc('score')
-                ->get();
+            $publicUser = $client->public_user_id
+                ? \App\Modules\PublicPortal\Models\PublicUser::find($client->public_user_id)
+                : null;
+            $visaborScores = $publicUser
+                ? \App\Modules\PublicPortal\Models\PublicScoreCache::where('public_user_id', $publicUser->id)
+                    ->orderByDesc('score')
+                    ->get(['country_code', 'score', 'breakdown', 'calculated_at'])
+                : [];
             $caseCounts = \App\Modules\Case\Models\VisaCase::where('client_id', $client->id)
                 ->selectRaw("
                     COUNT(*) FILTER (WHERE public_status NOT IN ('draft','cancelled')) as total,
@@ -158,19 +162,31 @@ class CaseController extends Controller
                     COUNT(*) FILTER (WHERE stage = 'result' AND result_type = 'rejected') as rejected
                 ")
                 ->first();
-            $caseCount = $caseCounts->total ?? 0;
-            $completedCount = $caseCounts->approved ?? 0;
-            $rejectedCount = $caseCounts->rejected ?? 0;
 
             $portrait = [
                 'date_of_birth'       => $client->date_of_birth,
                 'passport_number'     => $client->passport_number,
                 'passport_expires_at' => $client->passport_expires_at,
-                'total_cases'         => $caseCount,
-                'approved_cases'      => $completedCount,
-                'rejected_cases'      => $rejectedCount,
-                'profile'             => $profile,
-                'scores'              => $scores,
+                'total_cases'         => $caseCounts->total ?? 0,
+                'approved_cases'      => $caseCounts->approved ?? 0,
+                'rejected_cases'      => $caseCounts->rejected ?? 0,
+                'profile'             => $publicUser ? [
+                    'marital_status'     => $publicUser->marital_status,
+                    'children_count'     => $publicUser->children_count,
+                    'employment_type'    => $publicUser->employment_type,
+                    'employed_years'     => $publicUser->employed_years,
+                    'monthly_income_usd' => $publicUser->monthly_income_usd,
+                    'has_property'       => $publicUser->has_property,
+                    'has_car'            => $publicUser->has_car,
+                    'has_schengen_visa'  => $publicUser->has_schengen_visa,
+                    'has_us_visa'        => $publicUser->has_us_visa,
+                    'had_visa_refusal'   => $publicUser->had_visa_refusal,
+                    'refusals_count'     => $publicUser->refusals_count,
+                    'had_overstay'       => $publicUser->had_overstay,
+                    'had_deportation'    => $publicUser->had_deportation,
+                    'education_level'    => $publicUser->education_level,
+                ] : null,
+                'scores'              => $visaborScores,
             ];
         }
 

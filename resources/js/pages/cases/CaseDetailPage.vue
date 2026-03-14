@@ -461,7 +461,7 @@
             </p>
           </div>
 
-          <!-- Scoring for this case country -->
+          <!-- VisaBor scoring for this case country -->
           <div v-if="countryScore" class="pt-2 border-t border-gray-50">
             <div class="flex items-center justify-between mb-1">
               <span class="text-[10px] text-gray-400 uppercase font-bold">{{ t('crm.caseDetail.portraitScoring') }}</span>
@@ -470,7 +470,16 @@
             <div class="bg-gray-200 rounded-full h-1.5 overflow-hidden">
               <div :class="['h-full rounded-full transition-all', scoreBarColor(countryScore.score)]" :style="{ width: `${countryScore.score}%` }"></div>
             </div>
-            <p class="text-[10px] text-gray-500 mt-0.5">{{ countryScore.level_label }}</p>
+            <!-- Breakdown -->
+            <div v-if="countryScore.breakdown" class="mt-1.5 space-y-0.5">
+              <div v-for="(val, key) in countryScore.breakdown" :key="key" class="flex items-center gap-1.5">
+                <span class="text-[10px] text-gray-400 w-16 truncate">{{ visaborBlockLabel(key) }}</span>
+                <div class="flex-1 h-1 bg-gray-100 rounded-full overflow-hidden">
+                  <div class="h-full rounded-full bg-emerald-400" :style="{ width: `${val}%` }" />
+                </div>
+                <span class="text-[10px] text-gray-500 w-5 text-right">{{ val }}</span>
+              </div>
+            </div>
           </div>
 
           <!-- Profile sections (only if profile exists) -->
@@ -481,11 +490,9 @@
               <p class="text-[10px] text-gray-400 uppercase font-bold mb-1">{{ t('crm.caseDetail.portraitFamily') }}</p>
               <div class="flex flex-wrap gap-x-3 gap-y-0.5">
                 <span class="text-xs text-gray-700">{{ maritalLabel }}</span>
-                <span v-if="profile.marital_status === 'married' && profile.spouse_employed" class="text-xs text-green-600">{{ t('crm.caseDetail.portraitSpouseWorks') }}</span>
                 <span class="text-xs text-gray-700">
                   <template v-if="profile.children_count > 0">
                     {{ t('crm.caseDetail.portraitChildren', { n: profile.children_count }) }}
-                    <span v-if="profile.children_staying_home" class="text-green-600">({{ t('crm.caseDetail.portraitChildrenHome') }})</span>
                   </template>
                   <template v-else>{{ t('crm.caseDetail.portraitNoChildren') }}</template>
                 </span>
@@ -496,41 +503,26 @@
             <div class="pt-2 border-t border-gray-50">
               <p class="text-[10px] text-gray-400 uppercase font-bold mb-1">{{ t('crm.caseDetail.portraitWork') }}</p>
               <div class="space-y-0.5">
-                <div class="flex items-center gap-2">
-                  <span :class="['text-xs font-medium', employmentColor]">{{ employmentLabel }}</span>
-                  <span v-if="profile.position" class="text-xs text-gray-500">{{ profile.position }}</span>
-                </div>
-                <p v-if="profile.employer_name" class="text-xs text-gray-500">{{ profile.employer_name }}</p>
-                <p v-if="profile.years_at_current_job" class="text-xs text-gray-400">{{ t('crm.caseDetail.portraitYearsJob', { n: profile.years_at_current_job }) }}</p>
+                <span :class="['text-xs font-medium', employmentColor]">{{ employmentLabel }}</span>
+                <p v-if="profile.employed_years" class="text-xs text-gray-400">{{ t('crm.caseDetail.portraitYearsJob', { n: profile.employed_years }) }}</p>
               </div>
             </div>
 
             <!-- Finance -->
-            <div class="pt-2 border-t border-gray-50">
+            <div v-if="profile.monthly_income_usd" class="pt-2 border-t border-gray-50">
               <p class="text-[10px] text-gray-400 uppercase font-bold mb-1">{{ t('crm.caseDetail.portraitFinance') }}</p>
-              <div class="grid grid-cols-2 gap-1">
-                <div v-if="profile.monthly_income">
-                  <p class="text-[10px] text-gray-400">{{ t('crm.caseDetail.portraitIncome') }}</p>
-                  <p class="text-xs font-semibold text-gray-800">${{ fmtMoney(profile.monthly_income) }}</p>
-                </div>
-                <div v-if="profile.bank_balance">
-                  <p class="text-[10px] text-gray-400">{{ t('crm.caseDetail.portraitBank') }}</p>
-                  <p class="text-xs font-semibold text-gray-800">${{ fmtMoney(profile.bank_balance) }}</p>
-                </div>
-                <div v-if="profile.has_fixed_deposit && profile.fixed_deposit_amount">
-                  <p class="text-[10px] text-gray-400">{{ t('crm.caseDetail.portraitDeposit') }}</p>
-                  <p class="text-xs font-semibold text-gray-800">${{ fmtMoney(profile.fixed_deposit_amount) }}</p>
-                </div>
+              <div>
+                <p class="text-[10px] text-gray-400">{{ t('crm.caseDetail.portraitIncome') }}</p>
+                <p class="text-xs font-semibold text-gray-800">${{ fmtMoney(profile.monthly_income_usd) }}</p>
               </div>
             </div>
 
             <!-- Assets -->
             <div class="pt-2 border-t border-gray-50">
               <p class="text-[10px] text-gray-400 uppercase font-bold mb-1">{{ t('crm.caseDetail.portraitAssets') }}</p>
-              <div v-if="profile.has_real_estate || profile.has_car || profile.has_business" class="flex flex-wrap gap-1.5">
-                <span v-if="profile.has_real_estate" class="text-[10px] px-2 py-0.5 rounded-full bg-green-50 text-green-700 font-medium">{{ t('crm.caseDetail.portraitRealEstate') }}</span>
+              <div v-if="profile.has_property || profile.has_car" class="flex flex-wrap gap-1.5">
+                <span v-if="profile.has_property" class="text-[10px] px-2 py-0.5 rounded-full bg-green-50 text-green-700 font-medium">{{ t('crm.caseDetail.portraitRealEstate') }}</span>
                 <span v-if="profile.has_car" class="text-[10px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-medium">{{ t('crm.caseDetail.portraitCar') }}</span>
-                <span v-if="profile.has_business" class="text-[10px] px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 font-medium">{{ t('crm.caseDetail.portraitBusiness') }}</span>
               </div>
               <p v-else class="text-xs text-gray-400">{{ t('crm.caseDetail.portraitNoAssets') }}</p>
             </div>
@@ -538,18 +530,18 @@
             <!-- Visa History -->
             <div class="pt-2 border-t border-gray-50">
               <p class="text-[10px] text-gray-400 uppercase font-bold mb-1">{{ t('crm.caseDetail.portraitVisaHistory') }}</p>
-              <div v-if="profile.has_schengen_visa || profile.has_us_visa || profile.has_uk_visa" class="flex flex-wrap gap-1.5 mb-1">
+              <div v-if="profile.has_schengen_visa || profile.has_us_visa" class="flex flex-wrap gap-1.5 mb-1">
                 <span v-if="profile.has_schengen_visa" class="text-[10px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-medium">{{ t('crm.caseDetail.portraitSchengen') }}</span>
                 <span v-if="profile.has_us_visa" class="text-[10px] px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 font-medium">{{ t('crm.caseDetail.portraitUSA') }}</span>
-                <span v-if="profile.has_uk_visa" class="text-[10px] px-2 py-0.5 rounded-full bg-red-50 text-red-700 font-medium">{{ t('crm.caseDetail.portraitUK') }}</span>
               </div>
               <div v-else class="mb-1">
                 <span class="text-xs text-gray-400">{{ t('crm.caseDetail.portraitNoVisas') }}</span>
               </div>
               <div class="flex flex-wrap gap-2">
-                <span v-if="profile.previous_refusals > 0" class="text-xs font-semibold text-red-500">{{ t('crm.caseDetail.portraitRefusals', { n: profile.previous_refusals }) }}</span>
+                <span v-if="profile.refusals_count > 0" class="text-xs font-semibold text-red-500">{{ t('crm.caseDetail.portraitRefusals', { n: profile.refusals_count }) }}</span>
                 <span v-else class="text-xs text-green-600">{{ t('crm.caseDetail.portraitCleanHistory') }}</span>
-                <span v-if="profile.has_overstay" class="text-xs font-semibold text-red-600">{{ t('crm.caseDetail.portraitOverstay') }}</span>
+                <span v-if="profile.had_overstay" class="text-xs font-semibold text-red-600">{{ t('crm.caseDetail.portraitOverstay') }}</span>
+                <span v-if="profile.had_deportation" class="text-xs font-semibold text-red-700">{{ t('crm.caseDetail.portraitDeportation') }}</span>
               </div>
             </div>
 
@@ -1125,7 +1117,7 @@ const maritalLabel = computed(() => {
   return k ? t(`crm.caseDetail.${k}`) : '---';
 });
 
-const EMPLOYMENT_MAP = { government: 'portraitGovernment', private: 'portraitPrivate', business_owner: 'portraitBusinessOwner', self_employed: 'portraitSelfEmployed', student: 'portraitStudent', retired: 'portraitRetired', unemployed: 'portraitUnemployed' };
+const EMPLOYMENT_MAP = { government: 'portraitGovernment', private: 'portraitPrivate', employed: 'portraitPrivate', business_owner: 'portraitBusinessOwner', self_employed: 'portraitSelfEmployed', student: 'portraitStudent', retired: 'portraitRetired', unemployed: 'portraitUnemployed' };
 const employmentLabel = computed(() => {
   const k = EMPLOYMENT_MAP[profile.value?.employment_type];
   return k ? t(`crm.caseDetail.${k}`) : profile.value?.employment_type ?? '---';
@@ -1146,6 +1138,7 @@ const educationLabel = computed(() => {
 
 function scoreColor(s) { return s >= 80 ? 'text-green-600' : s >= 60 ? 'text-yellow-600' : 'text-red-600'; }
 function scoreBarColor(s) { return s >= 80 ? 'bg-green-500' : s >= 60 ? 'bg-yellow-400' : 'bg-red-400'; }
+function visaborBlockLabel(key) { return t(`crm.clientDetail.vb_${key}`, key); }
 function fmtMoney(v) { return Number(v).toLocaleString('en-US', { maximumFractionDigits: 0 }); }
 
 // Helpers
