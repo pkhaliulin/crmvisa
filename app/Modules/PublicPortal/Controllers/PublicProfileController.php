@@ -550,15 +550,36 @@ class PublicProfileController extends Controller
                     $update['id_doc_ocr_status'] = 'completed';
                 }
 
-                // Кириллические имена из внутреннего документа
+                // ФИО из внутреннего документа (узбекская латиница: XALIULIN, не KHALIULIN)
+                // Хранится в first_name_cyr/last_name_cyr как "ФИО из внутреннего документа"
                 $surname = $extracted['surname'] ?? $extracted['last_name'] ?? null;
                 $givenNames = $extracted['given_names'] ?? $extracted['first_name'] ?? null;
+
+                // Если нет отдельных полей — парсить full_name (формат: "ФАМИЛИЯ ИМЯ ОТЧЕСТВО")
+                if (!$surname && !$givenNames) {
+                    $fullName = $extracted['full_name'] ?? null;
+                    if ($fullName) {
+                        $parts = preg_split('/\s+/', trim($fullName));
+                        $surname = $parts[0] ?? null;
+                        $givenNames = $parts[1] ?? null;
+                        // Отчество — если есть третья часть
+                        if (isset($parts[2]) && !($user->middle_name_cyr ?? $update['middle_name_cyr'] ?? null)) {
+                            $update['middle_name_cyr'] = $parts[2];
+                        }
+                    }
+                }
+
                 if (!($user->first_name_cyr ?? $update['first_name_cyr'] ?? null) && $givenNames) {
-                    $firstName = explode(' ', $givenNames)[0] ?? $givenNames;
-                    $update['first_name_cyr'] = $firstName;
+                    $update['first_name_cyr'] = explode(' ', $givenNames)[0];
                 }
                 if (!($user->last_name_cyr ?? $update['last_name_cyr'] ?? null) && $surname) {
                     $update['last_name_cyr'] = $surname;
+                }
+
+                // Место рождения из внутреннего документа
+                $placeOfBirth = $extracted['place_of_birth'] ?? null;
+                if (!($user->place_of_birth ?? $update['place_of_birth'] ?? null) && $placeOfBirth) {
+                    $update['place_of_birth'] = $placeOfBirth;
                 }
 
                 // ПИНФЛ из ID
@@ -590,9 +611,20 @@ class PublicProfileController extends Controller
                     $update['passport_ocr_status'] = 'completed';
                 }
 
-                // Латинские имена из загранпаспорта
+                // Латинские имена из загранпаспорта (английская латиница: KHALIULIN)
                 $surname = $extracted['surname'] ?? $extracted['last_name'] ?? null;
                 $givenNames = $extracted['given_names'] ?? $extracted['first_name'] ?? null;
+
+                // Парсить full_name если нет отдельных полей
+                if (!$surname && !$givenNames) {
+                    $fullName = $extracted['full_name'] ?? null;
+                    if ($fullName) {
+                        $parts = preg_split('/\s+/', trim($fullName));
+                        $surname = $parts[0] ?? null;
+                        $givenNames = $parts[1] ?? null;
+                    }
+                }
+
                 if (!($user->first_name_lat ?? $update['first_name_lat'] ?? null) && $givenNames) {
                     $firstName = explode(' ', $givenNames)[0] ?? $givenNames;
                     $update['first_name_lat'] = $firstName;

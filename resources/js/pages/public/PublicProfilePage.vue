@@ -486,6 +486,23 @@
                         class="w-full border rounded-xl px-3 py-2.5 text-sm outline-none transition-colors font-mono"
                         :class="form.id_doc_number ? 'border-[#1BA97F]' : 'border-gray-200 focus:border-[#1BA97F]'"/>
                 </div>
+                <!-- ФИО из внутреннего документа (узбекская латиница) -->
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.idDocLastName') }}</label>
+                    <input v-model="form.last_name_cyr"
+                        @input="form.last_name_cyr = ($event.target.value || '').toUpperCase()"
+                        class="w-full border rounded-xl px-3 py-2.5 text-sm outline-none transition-colors"
+                        :class="form.last_name_cyr ? 'border-[#1BA97F]' : 'border-gray-200 focus:border-[#1BA97F]'"
+                        :placeholder="$t('profile.idDocLastNamePlaceholder')"/>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.idDocFirstName') }}</label>
+                    <input v-model="form.first_name_cyr"
+                        @input="form.first_name_cyr = ($event.target.value || '').toUpperCase()"
+                        class="w-full border rounded-xl px-3 py-2.5 text-sm outline-none transition-colors"
+                        :class="form.first_name_cyr ? 'border-[#1BA97F]' : 'border-gray-200 focus:border-[#1BA97F]'"
+                        :placeholder="$t('profile.idDocFirstNamePlaceholder')"/>
+                </div>
                 <div>
                     <label class="block text-xs font-medium text-gray-600 mb-1">{{ $t('profile.idDocExpiry') }}</label>
                     <input v-model="form.id_doc_expires_at" type="date"
@@ -1444,6 +1461,9 @@ const form = reactive({
     passport_expires_at:  publicAuth.user?.passport_expires_at?.slice(0, 10) ?? '',
     passport_issue_date:  publicAuth.user?.passport_issue_date?.slice(0, 10) ?? '',
     passport_issued_by:   publicAuth.user?.passport_issued_by ?? '',
+    first_name_cyr:       publicAuth.user?.first_name_cyr ?? '',
+    last_name_cyr:        publicAuth.user?.last_name_cyr ?? '',
+    middle_name_cyr:      publicAuth.user?.middle_name_cyr ?? '',
     id_doc_type:          publicAuth.user?.id_doc_type ?? '',
     id_doc_number:        publicAuth.user?.id_doc_number ?? '',
     id_doc_expires_at:    publicAuth.user?.id_doc_expires_at?.slice(0, 10) ?? '',
