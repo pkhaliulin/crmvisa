@@ -232,6 +232,37 @@ class FinanceController extends Controller
     }
 
     /**
+     * GET /finance/contracts — все договоры агентства.
+     */
+    public function contracts(Request $request): JsonResponse
+    {
+        $agencyId = $request->user()->agency_id;
+
+        $query = DB::table('case_contracts as cc')
+            ->join('cases as c', 'c.id', '=', 'cc.case_id')
+            ->leftJoin('clients as cl', 'cl.id', '=', 'c.client_id')
+            ->leftJoin('users as u', 'u.id', '=', 'cc.created_by')
+            ->where('cc.agency_id', $agencyId)
+            ->whereNull('cc.deleted_at')
+            ->select(
+                'cc.id', 'cc.contract_number', 'cc.version', 'cc.status',
+                'cc.total_price', 'cc.prepayment_amount', 'cc.remaining_amount', 'cc.currency',
+                'cc.payment_deadline', 'cc.client_confirmed_at', 'cc.signed_at', 'cc.locked_at',
+                'cc.created_at',
+                'c.case_number', 'c.country_code', 'c.visa_type', 'c.stage as case_stage',
+                'cl.name as client_name',
+                'u.name as created_by_name'
+            );
+
+        if ($request->filled('status')) $query->where('cc.status', $request->input('status'));
+        if ($request->filled('client')) $query->where('cl.name', 'ilike', '%' . $request->input('client') . '%');
+
+        $contracts = $query->orderByDesc('cc.created_at')->paginate(50);
+
+        return ApiResponse::success($contracts);
+    }
+
+    /**
      * GET /finance/audit-log — журнал финансовых действий.
      */
     public function auditLog(Request $request): JsonResponse

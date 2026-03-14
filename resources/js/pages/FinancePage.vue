@@ -285,6 +285,74 @@
         <div v-if="!byCountry.length" class="text-sm text-gray-400 text-center py-4">{{ t('crm.finance.noData') }}</div>
       </div>
     </div>
+
+    <!-- === ДОГОВОРЫ === -->
+    <div v-else-if="activeTab === 'contracts'" class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-semibold text-gray-700">{{ t('crm.finance.contractsTitle') }}</h3>
+        <div class="flex gap-2">
+          <SearchSelect v-model="contractFilter.status" :items="contractStatuses" compact allow-all :all-label="t('crm.finance.filterStatus')" class="w-36" />
+          <input v-model="contractFilter.client" type="text" :placeholder="t('crm.finance.filterClient')"
+            class="border border-gray-200 rounded-lg px-3 py-1.5 text-sm w-40 outline-none focus:border-[#1BA97F]" />
+          <button @click="loadContracts" class="text-xs px-3 py-1.5 rounded-lg bg-[#1BA97F] text-white font-medium hover:bg-[#168c69]">
+            {{ t('crm.finance.filterApply') }}
+          </button>
+        </div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead><tr class="text-left border-b border-gray-200">
+            <th class="px-3 py-2 font-medium text-gray-500">{{ t('crm.finance.contractNumber') }}</th>
+            <th class="px-3 py-2 font-medium text-gray-500">{{ t('crm.finance.caseNumber') }}</th>
+            <th class="px-3 py-2 font-medium text-gray-500">{{ t('crm.finance.client') }}</th>
+            <th class="px-3 py-2 font-medium text-gray-500">{{ t('crm.finance.totalAmount') }}</th>
+            <th class="px-3 py-2 font-medium text-gray-500">{{ t('crm.finance.contractStatus') }}</th>
+            <th class="px-3 py-2 font-medium text-gray-500">{{ t('crm.finance.date') }}</th>
+          </tr></thead>
+          <tbody>
+            <tr v-for="c in contracts" :key="c.id" class="border-b border-gray-50 hover:bg-gray-50/50">
+              <td class="px-3 py-2 font-mono text-xs text-[#1BA97F]">{{ c.contract_number }}</td>
+              <td class="px-3 py-2">
+                <router-link :to="{ name: 'cases.show', params: { id: c.case_number?.replace('VB-','') } }" class="text-blue-600 hover:underline text-xs">
+                  {{ c.case_number }}
+                </router-link>
+              </td>
+              <td class="px-3 py-2 text-gray-700">{{ c.client_name }}</td>
+              <td class="px-3 py-2 font-semibold">{{ fmtAmount(c.total_price) }}</td>
+              <td class="px-3 py-2">
+                <span :class="['text-[10px] font-bold px-2 py-0.5 rounded-full', contractStatusClass(c.status)]">{{ contractStatusLabel(c.status) }}</span>
+              </td>
+              <td class="px-3 py-2 text-gray-400 text-xs">{{ c.created_at?.slice(0,10) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div v-if="!contracts.length" class="text-sm text-gray-400 text-center py-6">{{ t('crm.finance.noData') }}</div>
+    </div>
+
+    <!-- === ЖУРНАЛ === -->
+    <div v-else-if="activeTab === 'audit'" class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+      <h3 class="font-semibold text-gray-700 mb-4">{{ t('crm.finance.auditTitle') }}</h3>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead><tr class="text-left border-b border-gray-200">
+            <th class="px-3 py-2 font-medium text-gray-500">{{ t('crm.finance.date') }}</th>
+            <th class="px-3 py-2 font-medium text-gray-500">{{ t('crm.finance.auditAction') }}</th>
+            <th class="px-3 py-2 font-medium text-gray-500">{{ t('crm.finance.auditUser') }}</th>
+            <th class="px-3 py-2 font-medium text-gray-500">{{ t('crm.finance.auditDetails') }}</th>
+          </tr></thead>
+          <tbody>
+            <tr v-for="log in auditLogs" :key="log.id" class="border-b border-gray-50">
+              <td class="px-3 py-2 text-gray-400 text-xs whitespace-nowrap">{{ log.created_at?.slice(0,16)?.replace('T',' ') }}</td>
+              <td class="px-3 py-2"><span class="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">{{ log.action }}</span></td>
+              <td class="px-3 py-2 text-gray-700 text-xs">{{ log.user_name || '—' }}</td>
+              <td class="px-3 py-2 text-gray-500 text-xs">{{ formatAuditContext(log.context) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div v-if="!auditLogs.length" class="text-sm text-gray-400 text-center py-6">{{ t('crm.finance.noData') }}</div>
+    </div>
   </div>
 </template>
 
@@ -312,6 +380,38 @@ const payments = ref({ data: [], current_page: 1, last_page: 1 });
 const debts = ref([]);
 const byManager = ref([]);
 const byCountry = ref([]);
+const contracts = ref([]);
+const contractFilter = ref({ status: '', client: '' });
+const auditLogs = ref([]);
+
+const contractStatuses = computed(() => [
+  { value: 'draft', label: t('crm.finance.csDraft') },
+  { value: 'generated', label: t('crm.finance.csGenerated') },
+  { value: 'sent', label: t('crm.finance.csSent') },
+  { value: 'confirmed', label: t('crm.finance.csConfirmed') },
+  { value: 'signed', label: t('crm.finance.csSigned') },
+  { value: 'cancelled', label: t('crm.finance.csCancelled') },
+  { value: 'terminated', label: t('crm.finance.csTerminated') },
+]);
+
+function contractStatusLabel(s) {
+  const map = { draft: t('crm.finance.csDraft'), generated: t('crm.finance.csGenerated'), sent: t('crm.finance.csSent'), confirmed: t('crm.finance.csConfirmed'), signed: t('crm.finance.csSigned'), cancelled: t('crm.finance.csCancelled'), terminated: t('crm.finance.csTerminated') };
+  return map[s] || s;
+}
+function contractStatusClass(s) {
+  const map = { draft: 'bg-gray-100 text-gray-600', generated: 'bg-blue-50 text-blue-600', sent: 'bg-amber-50 text-amber-600', confirmed: 'bg-emerald-50 text-emerald-600', signed: 'bg-green-100 text-green-700', cancelled: 'bg-red-50 text-red-600', terminated: 'bg-red-100 text-red-700' };
+  return map[s] || 'bg-gray-100 text-gray-600';
+}
+function formatAuditContext(ctx) {
+  if (!ctx) return '';
+  if (typeof ctx === 'string') try { ctx = JSON.parse(ctx); } catch { return ctx; }
+  const parts = [];
+  if (ctx.amount) parts.push(fmtAmount(ctx.amount));
+  if (ctx.method) parts.push(ctx.method);
+  if (ctx.reason) parts.push(ctx.reason);
+  if (ctx.case_id) parts.push('case: ' + ctx.case_id.slice(0,8));
+  return parts.join(' | ') || JSON.stringify(ctx).slice(0,80);
+}
 
 // Фильтры платежей
 const filters = ref({ method: '', from: '', to: '', client: '' });
@@ -319,8 +419,10 @@ const filters = ref({ method: '', from: '', to: '', client: '' });
 const tabs = computed(() => [
   { key: 'overview',  label: t('crm.finance.tabOverview') },
   { key: 'payments',  label: t('crm.finance.tabPayments') },
+  { key: 'contracts', label: t('crm.finance.tabContracts') },
   { key: 'debts',     label: t('crm.finance.tabDebts') },
   { key: 'analytics', label: t('crm.finance.tabAnalytics') },
+  { key: 'audit',     label: t('crm.finance.tabAudit') },
 ]);
 
 const methodOptions = computed(() => [
@@ -407,6 +509,19 @@ async function loadByCountry() {
   byCountry.value = res.data.data;
 }
 
+async function loadContracts() {
+  const params = {};
+  if (contractFilter.value.status) params.status = contractFilter.value.status;
+  if (contractFilter.value.client) params.client = contractFilter.value.client;
+  const res = await api.get('/finance/contracts', { params });
+  contracts.value = res.data.data?.data || res.data.data || [];
+}
+
+async function loadAuditLog() {
+  const res = await api.get('/finance/audit-log');
+  auditLogs.value = res.data.data?.data || res.data.data || [];
+}
+
 async function loadTab(tab) {
   loading.value = true;
   try {
@@ -414,10 +529,14 @@ async function loadTab(tab) {
       await loadOverview();
     } else if (tab === 'payments') {
       await loadPayments();
+    } else if (tab === 'contracts') {
+      await loadContracts();
     } else if (tab === 'debts') {
       await loadDebts();
     } else if (tab === 'analytics') {
       await Promise.all([loadByManager(), loadByCountry()]);
+    } else if (tab === 'audit') {
+      await loadAuditLog();
     }
   } catch { /* ignore */ } finally {
     loading.value = false;
