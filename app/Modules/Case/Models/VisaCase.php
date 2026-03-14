@@ -145,6 +145,12 @@ class VisaCase extends BaseModel
         'price_currency',
         'payment_deadline',
         'payment_blocked',
+        'contract_accepted_at',
+        'contract_number',
+        'refund_amount',
+        'cancel_reason',
+        'cancelled_at',
+        'cancelled_by',
     ];
 
     protected $casts = [
@@ -167,6 +173,9 @@ class VisaCase extends BaseModel
         'total_price'            => 'integer',
         'payment_deadline'       => 'date',
         'payment_blocked'        => 'boolean',
+        'contract_accepted_at'   => 'datetime',
+        'cancelled_at'           => 'datetime',
+        'refund_amount'          => 'integer',
     ];
 
     public function agency(): BelongsTo

@@ -3525,7 +3525,20 @@
       "methodPayme": "PayMe",
       "methodClick": "Click",
       "methodUzum": "Uzum",
-      "methodOther": "Boshqa"
+      "methodOther": "Boshqa",
+      "printContract": "Shartnoma",
+      "contractTitle": "Viza xizmatlari bo'yicha shartnoma",
+      "contractNumber": "Shartnoma №",
+      "contractDate": "Sana",
+      "contractAgency": "Ijrochi",
+      "contractClient": "Buyurtmachi",
+      "contractService": "Shartnoma predmeti",
+      "contractPayment": "To'lov shartlari",
+      "contractPrepayment": "Oldindan to'lov",
+      "contractCancellation": "Bekor qilish va qaytarish shartlari",
+      "contractStage": "Bosqich",
+      "contractRefund": "Qaytarish",
+      "contractCondition": "Shart"
     }
   },
   "owner": {

@@ -113,6 +113,13 @@
           </svg>
           {{ t('crm.casePayment.printInvoice') }}
         </button>
+        <button @click="printContract"
+          class="text-xs px-4 py-2 rounded-lg border border-gray-200 text-gray-600 font-medium hover:bg-gray-50 transition-colors flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+          {{ t('crm.casePayment.printContract') }}
+        </button>
       </div>
 
       <!-- Payment history -->
@@ -518,6 +525,74 @@ function openPrintWindow(html) {
   win.document.write(html);
   win.document.close();
   win.onload = () => win.print();
+}
+
+async function printContract() {
+  try {
+    // Принять договор (сгенерировать номер)
+    await api.post(`/cases/${props.caseId}/contract/accept`);
+    // Получить данные договора
+    const { data } = await api.get(`/cases/${props.caseId}/contract`);
+    const c = data.data || data;
+    const fmt = (v) => v ? Number(v).toLocaleString('ru-RU') : '0';
+    const policy = (c.cancellation_policy || []).map(p =>
+      `<tr><td style="padding:6px 10px;border:1px solid #ddd">${p.stage}</td><td style="padding:6px 10px;border:1px solid #ddd">${p.refund}</td><td style="padding:6px 10px;border:1px solid #ddd">${p.description}</td></tr>`
+    ).join('');
+
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${t('crm.casePayment.contractTitle')}</title>
+<style>body{font-family:Arial,sans-serif;margin:40px;color:#0A1F44;font-size:13px;line-height:1.6}
+h1{font-size:18px;text-align:center;margin-bottom:8px}
+h2{font-size:14px;margin-top:24px;border-bottom:1px solid #ccc;padding-bottom:4px}
+.header{text-align:center;margin-bottom:24px}
+.num{font-size:12px;color:#666}
+.parties{display:flex;justify-content:space-between;gap:40px;margin:16px 0}
+.party{flex:1}
+.party h3{font-size:13px;color:#666;margin-bottom:4px}
+table{width:100%;border-collapse:collapse;margin:8px 0}
+th{text-align:left;padding:6px 10px;border:1px solid #ddd;background:#f5f5f5;font-size:11px}
+td{padding:6px 10px;border:1px solid #ddd}
+.amount{font-size:16px;font-weight:bold}
+.signatures{display:flex;justify-content:space-between;margin-top:60px}
+.sig{width:45%;border-top:1px solid #333;padding-top:8px;font-size:12px}
+.footer{margin-top:40px;font-size:10px;color:#aaa;text-align:center}
+@media print{body{margin:20px}}</style></head><body>
+<div class="header">
+<h1>${t('crm.casePayment.contractTitle')}</h1>
+<p class="num">${t('crm.casePayment.contractNumber')}: ${c.contract_number || '—'}</p>
+<p class="num">${t('crm.casePayment.contractDate')}: ${c.date || '—'}</p>
+</div>
+<div class="parties">
+<div class="party"><h3>${t('crm.casePayment.contractAgency')}</h3>
+<p><strong>${c.agency?.name || ''}</strong></p>
+<p>${c.agency?.address || ''}</p>
+<p>${c.agency?.phone || ''}</p></div>
+<div class="party"><h3>${t('crm.casePayment.contractClient')}</h3>
+<p><strong>${c.client?.name || ''}</strong></p>
+<p>${c.client?.phone || ''}</p></div>
+</div>
+<h2>${t('crm.casePayment.contractService')}</h2>
+<p>${c.service?.description || ''} (${c.case_number || ''})</p>
+<h2>${t('crm.casePayment.contractPayment')}</h2>
+<table>
+<tr><td>${t('crm.casePayment.totalPrice')}</td><td class="amount">${fmt(c.payment?.total_price)} ${c.payment?.currency || 'UZS'}</td></tr>
+<tr><td>${t('crm.casePayment.contractPrepayment')}</td><td>${fmt(c.payment?.prepayment)} ${c.payment?.currency || 'UZS'}</td></tr>
+<tr><td>${t('crm.casePayment.remaining')}</td><td>${fmt(c.payment?.remaining)} ${c.payment?.currency || 'UZS'}</td></tr>
+${c.payment?.deadline ? `<tr><td>${t('crm.casePayment.deadline')}</td><td>${c.payment.deadline}</td></tr>` : ''}
+</table>
+<h2>${t('crm.casePayment.contractCancellation')}</h2>
+<table><thead><tr><th>${t('crm.casePayment.contractStage')}</th><th>${t('crm.casePayment.contractRefund')}</th><th>${t('crm.casePayment.contractCondition')}</th></tr></thead>
+<tbody>${policy}</tbody></table>
+<div class="signatures">
+<div class="sig">${t('crm.casePayment.contractAgency')}: ________________</div>
+<div class="sig">${t('crm.casePayment.contractClient')}: ________________</div>
+</div>
+<div class="footer">VisaCRM -- ${new Date().toLocaleDateString('ru-RU')}</div>
+</body></html>`;
+
+    openPrintWindow(html);
+  } catch (e) {
+    console.error('Contract error:', e);
+  }
 }
 
 // --- Init ---

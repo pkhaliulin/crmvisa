@@ -3525,7 +3525,20 @@
       "methodPayme": "PayMe",
       "methodClick": "Click",
       "methodUzum": "Uzum",
-      "methodOther": "Другое"
+      "methodOther": "Другое",
+      "printContract": "Договор",
+      "contractTitle": "Договор об оказании визовых услуг",
+      "contractNumber": "Договор №",
+      "contractDate": "Дата",
+      "contractAgency": "Исполнитель",
+      "contractClient": "Заказчик",
+      "contractService": "Предмет договора",
+      "contractPayment": "Условия оплаты",
+      "contractPrepayment": "Предоплата",
+      "contractCancellation": "Условия отмены и возврата",
+      "contractStage": "Этап",
+      "contractRefund": "Возврат",
+      "contractCondition": "Условие"
     }
   },
   "owner": {

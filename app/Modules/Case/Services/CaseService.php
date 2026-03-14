@@ -705,7 +705,7 @@ class CaseService extends BaseService
                 ->whereNull('exited_at')
                 ->update(['exited_at' => now()]);
 
-            // Отменить все pending платежи по этой заявке (#8)
+            // Отменить все pending платежи по этой заявке
             ClientPayment::where('case_id', $case->id)
                 ->where('status', 'pending')
                 ->each(function (ClientPayment $payment) {
@@ -718,12 +718,28 @@ class CaseService extends BaseService
                     ]);
                 });
 
+            // Рассчитать возврат по политике отмены
+            $refund = app(\App\Modules\Case\Services\ContractService::class)->calculateRefund($case);
+
+            $cancelledBy = Auth::check() && Auth::user()->agency_id ? 'agent' : 'client';
+
             $case->update([
                 'public_status'  => 'cancelled',
                 'payment_status' => $case->payment_status === 'paid' ? 'paid' : 'cancelled',
+                'cancel_reason'  => $reason,
+                'cancelled_at'   => now(),
+                'cancelled_by'   => $cancelledBy,
+                'refund_amount'  => $refund['refund_amount'],
                 'notes'          => $case->notes
-                    ? $case->notes . "\n\nОтмена: " . ($reason ?? 'без причины')
-                    : 'Отмена: ' . ($reason ?? 'без причины'),
+                    ? $case->notes . "\n\nОтмена: " . ($reason ?? 'без причины') . ". Возврат: " . number_format($refund['refund_amount']) . " ({$refund['refund_percent']}%)"
+                    : 'Отмена: ' . ($reason ?? 'без причины') . ". Возврат: " . number_format($refund['refund_amount']) . " ({$refund['refund_percent']}%)",
+            ]);
+
+            self::logActivity($case, 'case_cancelled', "Заявка отменена. Возврат: " . number_format($refund['refund_amount']) . " {$refund['currency']} ({$refund['refund_percent']}%)", [
+                'reason'         => $reason,
+                'cancelled_by'   => $cancelledBy,
+                'refund_amount'  => $refund['refund_amount'],
+                'refund_percent' => $refund['refund_percent'],
             ]);
 
             return $case->fresh(['client', 'assignee', 'stageHistory']);

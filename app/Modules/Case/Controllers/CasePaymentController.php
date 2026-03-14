@@ -122,4 +122,42 @@ class CasePaymentController extends Controller
             ],
         ]);
     }
+
+    /**
+     * GET /cases/{caseId}/contract — данные договора для печати.
+     */
+    public function contract(string $caseId): JsonResponse
+    {
+        $case = VisaCase::findOrFail($caseId);
+        $contractService = app(\App\Modules\Case\Services\ContractService::class);
+
+        return ApiResponse::success($contractService->getContractData($case));
+    }
+
+    /**
+     * POST /cases/{caseId}/contract/accept — зафиксировать принятие договора.
+     */
+    public function acceptContract(string $caseId): JsonResponse
+    {
+        $case = VisaCase::findOrFail($caseId);
+        $contractService = app(\App\Modules\Case\Services\ContractService::class);
+
+        $case = $contractService->acceptContract($case);
+
+        return ApiResponse::success([
+            'contract_number'      => $case->contract_number,
+            'contract_accepted_at' => $case->contract_accepted_at?->toDateTimeString(),
+        ], 'Договор принят');
+    }
+
+    /**
+     * GET /cases/{caseId}/refund-preview — предварительный расчёт возврата при отмене.
+     */
+    public function refundPreview(string $caseId): JsonResponse
+    {
+        $case = VisaCase::findOrFail($caseId);
+        $contractService = app(\App\Modules\Case\Services\ContractService::class);
+
+        return ApiResponse::success($contractService->calculateRefund($case));
+    }
 }
