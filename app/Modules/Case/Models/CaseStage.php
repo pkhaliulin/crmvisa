@@ -37,12 +37,7 @@ class CaseStage extends Model
         return $this->belongsTo(VisaCase::class, 'case_id');
     }
 
-    public function visaCase(): BelongsTo
-    {
-        return $this->belongsTo(VisaCase::class, 'case_id');
-    }
-
-    public function user(): BelongsTo
+public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
