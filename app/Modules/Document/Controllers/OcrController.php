@@ -5,6 +5,7 @@ namespace App\Modules\Document\Controllers;
 use App\Http\Controllers\Controller;
 use App\Modules\Document\Services\OcrService;
 use App\Support\Helpers\ApiResponse;
+use App\Support\Rules\SafeFileName;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -23,7 +24,7 @@ class OcrController extends Controller
     public function passport(Request $request): JsonResponse
     {
         $request->validate([
-            'image' => ['required', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:10240'],
+            'image' => ['required', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:10240', new SafeFileName],
         ]);
 
         $file     = $request->file('image');

@@ -5,6 +5,7 @@ namespace App\Modules\Payment\Jobs;
 use App\Modules\Payment\Events\SubscriptionExpired;
 use App\Modules\Payment\Services\BillingHelperService;
 use App\Modules\Payment\Models\AgencySubscription;
+use App\Support\Traits\HasTenantJob;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -14,10 +15,13 @@ use Illuminate\Support\Facades\Log;
 
 class ProcessExpiredSubscriptionsJob implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, HasTenantJob;
 
     public function handle(BillingHelperService $billingHelper): void
     {
+        // Глобальный job — superadmin context
+        $this->captureTenant(null);
+        $this->setTenantContext();
         $expiredBefore = AgencySubscription::query()
             ->where('status', 'active')
             ->where('ends_at', '<', now())

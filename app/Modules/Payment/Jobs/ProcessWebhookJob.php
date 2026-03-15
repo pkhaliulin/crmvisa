@@ -3,6 +3,7 @@
 namespace App\Modules\Payment\Jobs;
 
 use App\Modules\Payment\Services\ClientPaymentService;
+use App\Support\Traits\HasTenantJob;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -16,7 +17,7 @@ use Illuminate\Support\Facades\Log;
  */
 class ProcessWebhookJob implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, HasTenantJob;
 
     public int $tries = 3;
     public int $backoff = 30;
@@ -26,10 +27,13 @@ class ProcessWebhookJob implements ShouldQueue
         private readonly array $data,
     ) {
         $this->onQueue('payments');
+        // Webhook — superadmin context (агентство определяется по payment_id внутри)
+        $this->captureTenant(null);
     }
 
     public function handle(ClientPaymentService $service): void
     {
+        $this->setTenantContext();
         $service->handleCallback($this->provider, $this->data);
     }
 

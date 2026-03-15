@@ -255,15 +255,61 @@ class ClientController extends Controller
         $puUpdates = [];
         $applied = [];
 
+        // Карта slug шаблонов для AI-маппинга (надёжнее чем str_contains по имени)
+        $slugMap = [
+            'passport'            => 'passport',
+            'international_passport' => 'passport',
+            'zagranpassport'      => 'passport',
+            'internal_passport'   => 'internal_passport',
+            'id_card'             => 'internal_passport',
+            'marriage_certificate'=> 'marriage',
+            'property_extract'    => 'property',
+            'property_certificate'=> 'property',
+            'vehicle_registration'=> 'vehicle',
+            'car_registration'    => 'vehicle',
+            'birth_certificate'   => 'birth_certificate',
+            'child_birth_certificate' => 'birth_certificate',
+        ];
+
         foreach ($items as $item) {
             $data = $item->ai_analysis['extracted_data'] ?? [];
             if (empty($data)) continue;
 
-            $name = $item->name;
-            $isApplicant = empty($item->family_member_id); // только документы заявителя
+            $isApplicant = empty($item->family_member_id);
 
-            // Загранпаспорт — основные данные клиента (только заявитель)
-            if ($isApplicant && (str_contains($name, 'Загранпаспорт') || str_contains($name, 'загранпаспорт'))) {
+            // Определяем тип документа по slug шаблона (SSOT) или fallback по имени
+            $templateSlug = null;
+            if ($item->country_requirement_id) {
+                $templateSlug = \DB::table('country_visa_requirements as cvr')
+                    ->join('document_templates as dt', 'dt.id', '=', 'cvr.document_template_id')
+                    ->where('cvr.id', $item->country_requirement_id)
+                    ->value('dt.slug');
+            }
+
+            $docType = $slugMap[$templateSlug ?? ''] ?? null;
+
+            // Fallback: если шаблон не найден, определяем по имени
+            if (!$docType) {
+                $nameLower = mb_strtolower($item->name);
+                if (str_contains($nameLower, 'загранпаспорт') || str_contains($nameLower, 'passport')) {
+                    $docType = 'passport';
+                } elseif (str_contains($nameLower, 'внутренний паспорт') || str_contains($nameLower, 'id card')) {
+                    $docType = 'internal_passport';
+                } elseif (str_contains($nameLower, 'браке') || str_contains($nameLower, 'marriage')) {
+                    $docType = 'marriage';
+                } elseif (str_contains($nameLower, 'недвижимост') || str_contains($nameLower, 'property')) {
+                    $docType = 'property';
+                } elseif (str_contains($nameLower, 'техпаспорт') || str_contains($nameLower, 'автомобил') || str_contains($nameLower, 'vehicle')) {
+                    $docType = 'vehicle';
+                } elseif (str_contains($nameLower, 'метрика') || str_contains($nameLower, 'birth')) {
+                    $docType = 'birth_certificate';
+                }
+            }
+
+            if (!$docType) continue;
+
+            // Загранпаспорт
+            if ($isApplicant && $docType === 'passport') {
                 if (!empty($data['passport_number']) && empty($clientUpdates['passport_number'])) {
                     $clientUpdates['passport_number'] = $data['passport_number'];
                 }
@@ -276,45 +322,45 @@ class ClientController extends Controller
                 if (!empty($data['nationality']) && empty($clientUpdates['nationality'])) {
                     $clientUpdates['nationality'] = $this->nationalityToAlpha3($data['nationality']);
                 }
-                $applied[] = $name;
+                $applied[] = $item->name;
             }
 
-            // Внутренний паспорт — дата рождения, место рождения (только заявитель)
-            if ($isApplicant && (str_contains($name, 'Внутренний паспорт') || str_contains($name, 'внутренний паспорт'))) {
+            // Внутренний паспорт
+            if ($isApplicant && $docType === 'internal_passport') {
                 if (!empty($data['date_of_birth']) && empty($clientUpdates['date_of_birth'])) {
                     $clientUpdates['date_of_birth'] = $data['date_of_birth'];
                 }
-                $applied[] = $name;
+                $applied[] = $item->name;
             }
 
-            // Свидетельство о браке → married
-            if (str_contains($name, 'браке') || str_contains($name, 'Свидетельство о браке')) {
+            // Свидетельство о браке
+            if ($docType === 'marriage') {
                 if (!empty($data['marriage_date'])) {
                     $puUpdates['marital_status'] = 'married';
                 }
-                $applied[] = $name;
+                $applied[] = $item->name;
             }
 
-            // Выписка о недвижимости
-            if ($isApplicant && (str_contains($name, 'недвижимост') || str_contains($name, 'Выписка о недвижимост'))) {
+            // Недвижимость
+            if ($isApplicant && $docType === 'property') {
                 if (!empty($data['owner_name'])) {
                     $puUpdates['has_property'] = true;
                 }
-                $applied[] = $name;
+                $applied[] = $item->name;
             }
 
-            // Техпаспорт автомобиля
-            if ($isApplicant && (str_contains($name, 'техпаспорт') || str_contains($name, 'Техпаспорт') || str_contains($name, 'автомобил'))) {
+            // Автомобиль
+            if ($isApplicant && $docType === 'vehicle') {
                 $puUpdates['has_car'] = true;
-                $applied[] = $name;
+                $applied[] = $item->name;
             }
 
             // Метрика ребёнка
-            if (str_contains($name, 'Метрика') || str_contains($name, 'метрика')) {
+            if ($docType === 'birth_certificate') {
                 $existingChildren = $puUpdates['children_count'] ?? 0;
                 $puUpdates['children_count'] = $existingChildren + 1;
                 $puUpdates['has_children'] = true;
-                $applied[] = $name;
+                $applied[] = $item->name;
             }
         }
 
@@ -413,7 +459,7 @@ class ClientController extends Controller
     public function parsePassport(Request $request): JsonResponse
     {
         $request->validate([
-            'file' => ['required', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:10240'],
+            'file' => ['required', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:10240', new \App\Support\Rules\SafeFileName],
         ]);
 
         $agencyId = $request->user()->agency_id;

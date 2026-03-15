@@ -6,6 +6,7 @@ use App\Modules\Scoring\Models\ClientProfile;
 use App\Modules\Scoring\Models\ClientScore;
 use App\Modules\Scoring\Services\ScoringDataAdapter;
 use App\Modules\Scoring\Services\UnifiedScoringEngine;
+use App\Support\Traits\HasTenantJob;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -15,14 +16,22 @@ use Illuminate\Support\Facades\DB;
 
 class CalculateClientScoreJob implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, HasTenantJob;
 
     public int $tries = 3;
 
-    public function __construct(public ClientProfile $profile) {}
+    public function __construct(public ClientProfile $profile)
+    {
+        // Получить agency_id через client -> agency_id
+        $agencyId = DB::table('clients')
+            ->where('id', $profile->client_id)
+            ->value('agency_id');
+        $this->captureTenant($agencyId);
+    }
 
     public function handle(UnifiedScoringEngine $engine): void
     {
+        $this->setTenantContext();
         $data = ScoringDataAdapter::fromClientProfile($this->profile);
 
         $countries = DB::table('scoring_country_weights')

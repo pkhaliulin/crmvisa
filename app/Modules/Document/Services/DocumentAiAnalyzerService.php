@@ -54,9 +54,9 @@ class DocumentAiAnalyzerService
         } catch (\Throwable $e) {
             Log::error('Document AI analysis failed', [
                 'template' => $template->slug,
-                'error' => $e->getMessage(),
+                'error' => $this->sanitizeError($e->getMessage()),
             ]);
-            return DocumentAnalysisResult::failed($e->getMessage());
+            return DocumentAnalysisResult::failed($this->sanitizeError($e->getMessage()));
         }
     }
 
@@ -287,7 +287,7 @@ PROMPT;
                 model: $provider === 'openai' ? 'gpt-4o-mini' : 'claude-haiku-4-5-20251001',
                 usage: $this->lastCallContext['usage'] ?? [],
                 status: 'error',
-                error: mb_substr($e->getMessage(), 0, 500),
+                error: $this->sanitizeError($e->getMessage()),
                 durationMs: $durationMs,
             );
 
@@ -626,5 +626,12 @@ PROMPT;
         $penalty = ($criticalIssues * 30) + ($warnings * 10);
 
         return max(0, min(100, $baseConfidence - $penalty));
+    }
+
+    private function sanitizeError(string $message): string
+    {
+        $message = preg_replace('/(?:key|token|api_key|apikey|secret|password|authorization)[=:]\s*["\']?[\w\-\.]{10,}["\']?/i', '[REDACTED]', $message);
+        $message = preg_replace('/Bearer\s+[\w\-\.]+/i', 'Bearer [REDACTED]', $message);
+        return mb_substr($message, 0, 500);
     }
 }

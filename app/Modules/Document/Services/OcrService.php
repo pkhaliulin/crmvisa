@@ -118,7 +118,7 @@ PROMPT;
                 model: $provider === 'openai' ? 'gpt-4o-mini' : ($provider === 'claude' ? 'claude-sonnet-4-20250514' : $provider),
                 usage: $this->lastUsage['tokens'] ?? [],
                 status: 'error',
-                error: mb_substr($e->getMessage(), 0, 500),
+                error: $this->sanitizeError($e->getMessage()),
                 durationMs: $durationMs,
                 agencyId: $this->agencyId,
                 userId: $this->userId,
@@ -126,7 +126,7 @@ PROMPT;
 
             Log::error('OCR passport extraction failed', [
                 'provider' => $provider,
-                'error'    => $e->getMessage(),
+                'error'    => $this->sanitizeError($e->getMessage()),
             ]);
 
             throw $e;
@@ -564,5 +564,18 @@ PROMPT;
     private static function base64urlEncode(string $data): string
     {
         return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
+    }
+
+    /**
+     * Sanitize error messages — убрать API ключи, URL с токенами.
+     */
+    private function sanitizeError(string $message): string
+    {
+        // Убрать API ключи из URL и сообщений
+        $message = preg_replace('/(?:key|token|api_key|apikey|secret|password|authorization)[=:]\s*["\']?[\w\-\.]{10,}["\']?/i', '[REDACTED]', $message);
+        // Убрать Bearer токены
+        $message = preg_replace('/Bearer\s+[\w\-\.]+/i', 'Bearer [REDACTED]', $message);
+        // Обрезать
+        return mb_substr($message, 0, 500);
     }
 }

@@ -4,6 +4,7 @@ namespace App\Modules\Case\Jobs;
 
 use App\Modules\Case\Events\SlaViolation;
 use App\Modules\Case\Models\VisaCase;
+use App\Support\Traits\HasTenantJob;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -13,10 +14,13 @@ use Illuminate\Support\Facades\Log;
 
 class SendSlaWarningsJob implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, HasTenantJob;
 
     public function handle(): void
     {
+        // Глобальный job — superadmin context для доступа ко всем агентствам
+        $this->captureTenant(null);
+        $this->setTenantContext();
         $warningThreshold = now()->addDays(3);
 
         $cases = VisaCase::query()

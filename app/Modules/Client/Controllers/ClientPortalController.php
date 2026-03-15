@@ -160,7 +160,7 @@ class ClientPortalController extends Controller
                                                            ->firstOrFail();
 
         $request->validate([
-            'file' => ['required', 'file', 'max:20480', 'mimes:pdf,jpg,jpeg,png,webp,doc,docx,xls,xlsx,tiff,bmp'],
+            'file' => ['required', 'file', 'max:20480', 'mimes:pdf,jpg,jpeg,png,webp,doc,docx,xls,xlsx,tiff,bmp', new \App\Support\Rules\SafeFileName],
         ]);
 
         $result = $this->checklist->uploadToSlot($item, $request->file('file'), $case, $request->user()->id);
