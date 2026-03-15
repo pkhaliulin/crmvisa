@@ -7,15 +7,17 @@ use App\Modules\Client\Models\Client;
 use App\Modules\Scoring\Jobs\CalculateClientScoreJob;
 use App\Modules\Scoring\Models\ClientProfile;
 use App\Modules\Scoring\Models\ClientScore;
-use App\Modules\Scoring\Services\ScoringEngine;
+use App\Modules\Scoring\Services\ScoringDataAdapter;
+use App\Modules\Scoring\Services\UnifiedScoringEngine;
 use App\Support\Helpers\ApiResponse;
 use App\Support\Rules\ReferenceExists;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ScoringController extends Controller
 {
-    public function __construct(private ScoringEngine $engine) {}
+    public function __construct(private UnifiedScoringEngine $engine) {}
 
     /**
      * GET /clients/{id}/profile — получить или создать профиль
@@ -74,7 +76,7 @@ class ScoringController extends Controller
             'education_level'      => ['sometimes', new ReferenceExists('education_level')],
             'has_criminal_record'  => ['sometimes', 'boolean'],
             'age'                  => ['sometimes', 'integer', 'min:18', 'max:100'],
-            // Block G
+            // Block G (legacy, принимаем но не используем в новом движке)
             'travel_purpose'       => ['sometimes', new ReferenceExists('travel_purpose')],
             'has_return_ticket'    => ['sometimes', 'boolean'],
             'has_hotel_booking'    => ['sometimes', 'boolean'],
@@ -88,7 +90,7 @@ class ScoringController extends Controller
             $data
         );
 
-        // Асинхронный пересчёт
+        // Асинхронный пересчёт через UnifiedScoringEngine
         CalculateClientScoreJob::dispatch($profile);
 
         return ApiResponse::success($profile, 'Profile saved. Score recalculation queued.');
@@ -120,23 +122,46 @@ class ScoringController extends Controller
             ->first();
 
         if (! $score) {
-            return ApiResponse::notFound('Score not calculated yet. Trigger recalculation first.');
+            // Рассчитать на лету через UnifiedScoringEngine
+            $profile = ClientProfile::firstOrCreate(['client_id' => $client->id]);
+            $data = ScoringDataAdapter::fromClientProfile($profile);
+            $result = $this->engine->scoreForCountry($data, strtoupper($country));
+
+            // Сохранить результат
+            $score = ClientScore::updateOrCreate(
+                ['client_id' => $client->id, 'country_code' => strtoupper($country)],
+                [
+                    'score'           => $result['score'],
+                    'block_scores'    => $result['blocks'],
+                    'flags'           => $result['flags'],
+                    'recommendations' => $result['recommendations'],
+                    'weak_blocks'     => collect($result['blocks'])->filter(fn ($v) => $v < 50)->keys()->toArray(),
+                    'is_blocked'      => $result['is_blocked'],
+                    'calculated_at'   => now(),
+                ]
+            );
         }
 
         return ApiResponse::success($score);
     }
 
     /**
-     * GET /clients/{id}/scoring/recommendations — умные рекомендации по всем странам
+     * GET /clients/{id}/scoring/recommendations — рекомендации по профилю
      */
     public function recommendations(Request $request, string $clientId): JsonResponse
     {
         $client  = $this->resolveClient($request, $clientId);
         $profile = ClientProfile::firstOrCreate(['client_id' => $client->id]);
 
-        $recs = $this->engine->recommendations($profile);
+        $data = ScoringDataAdapter::fromClientProfile($profile);
+        $result = $this->engine->scoreProfile($data);
 
-        return ApiResponse::success($recs);
+        return ApiResponse::success([
+            'score'           => $result['score'],
+            'blocks'          => $result['blocks'],
+            'recommendations' => $result['recommendations'],
+            'flags'           => $result['flags'],
+        ]);
     }
 
     /**
@@ -146,11 +171,36 @@ class ScoringController extends Controller
     {
         $client  = $this->resolveClient($request, $clientId);
         $profile = ClientProfile::firstOrCreate(['client_id' => $client->id]);
+        $data    = ScoringDataAdapter::fromClientProfile($profile);
 
-        $scores = $this->engine->calculateAll($profile);
+        // Получить все страны из scoring_country_weights
+        $countries = DB::table('scoring_country_weights')
+            ->distinct()
+            ->pluck('country_code');
+
+        if ($countries->isEmpty()) {
+            $countries = collect(['DE', 'ES', 'FR', 'IT', 'PL', 'CZ', 'GB', 'US', 'CA', 'KR', 'AE']);
+        }
+
+        $results = $countries->map(function ($cc) use ($data, $profile) {
+            $result = $this->engine->scoreForCountry($data, $cc);
+
+            return ClientScore::updateOrCreate(
+                ['client_id' => $profile->client_id, 'country_code' => $cc],
+                [
+                    'score'           => $result['score'],
+                    'block_scores'    => $result['blocks'],
+                    'flags'           => $result['flags'],
+                    'recommendations' => $result['recommendations'],
+                    'weak_blocks'     => collect($result['blocks'])->filter(fn ($v) => $v < 50)->keys()->toArray(),
+                    'is_blocked'      => $result['is_blocked'],
+                    'calculated_at'   => now(),
+                ]
+            );
+        });
 
         return ApiResponse::success(
-            $scores->sortByDesc('score')->values(),
+            $results->sortByDesc('score')->values(),
             'Scores recalculated.'
         );
     }
@@ -160,7 +210,7 @@ class ScoringController extends Controller
      */
     public function countries(): JsonResponse
     {
-        $data = \Illuminate\Support\Facades\DB::table('scoring_country_weights')
+        $data = DB::table('scoring_country_weights')
             ->get()
             ->groupBy('country_code')
             ->map(fn ($rows) => $rows->pluck('weight', 'block_code'));
