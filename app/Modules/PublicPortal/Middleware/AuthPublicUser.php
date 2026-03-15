@@ -29,11 +29,11 @@ class AuthPublicUser
         $request->setUserResolver(fn () => $user);
 
         // RLS: разрешить публичному пользователю работу с его записями
-        DB::statement("SET app.is_public_user = 'true'");
+        DB::statement("SELECT set_config('app.is_public_user', 'true', false)");
 
         $userId = $user->id;
         if (preg_match('/^[0-9a-f\-]{36}$/i', $userId)) {
-            DB::statement("SET app.public_user_id = '{$userId}'");
+            DB::statement("SELECT set_config('app.public_user_id', ?, false)", [$userId]);
         }
 
         return $next($request);
