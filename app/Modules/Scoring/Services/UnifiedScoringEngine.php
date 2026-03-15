@@ -46,18 +46,20 @@ class UnifiedScoringEngine
         $raw   = 0;
         $flags = [];
         $recs  = [];
-        $maxRaw = 100;
 
-        // --- Тип занятости (0-40) ---
+        // Определяем доступность расширенных данных (CRM vs публичный портал)
+        $hasExtendedData = isset($d['income_type']) || isset($d['bank_history_months']);
+
+        // --- Тип занятости ---
         $empType = $d['employment_type'] ?? null;
         $empScore = match ($empType) {
-            'government'     => 40,
-            'business_owner' => 38,
-            'employed'       => 35, // alias для private
-            'private'        => 35,
-            'self_employed'  => 25,
-            'retired'        => 20,
-            'student'        => 10,
+            'government'     => 45,
+            'business_owner' => 42,
+            'employed'       => 38,
+            'private'        => 38,
+            'self_employed'  => 28,
+            'retired'        => 22,
+            'student'        => 12,
             'unemployed'     => 0,
             default          => 0,
         };
@@ -68,15 +70,15 @@ class UnifiedScoringEngine
             $recs[] = ['type' => 'F', 'priority' => 'high', 'text' => 'employment_needed'];
         }
 
-        // --- Ежемесячный доход (0-40) ---
+        // --- Ежемесячный доход ---
         $income = (int) ($d['monthly_income_usd'] ?? $d['monthly_income'] ?? 0);
         $incomeScore = match (true) {
-            $income >= 5000 => 40,
-            $income >= 3000 => 35,
-            $income >= 1500 => 25,
-            $income >= 800  => 15,
-            $income >= 400  => 8,
-            $income > 0     => 3,
+            $income >= 5000 => 50,
+            $income >= 3000 => 40,
+            $income >= 1500 => 30,
+            $income >= 800  => 18,
+            $income >= 400  => 10,
+            $income > 0     => 4,
             default         => 0,
         };
         $raw += $incomeScore;
@@ -89,32 +91,33 @@ class UnifiedScoringEngine
             $recs[] = ['type' => 'F', 'priority' => 'high', 'text' => 'income_not_specified'];
         }
 
-        // --- Официальный доход (0-8) ---
-        $incomeType = $d['income_type'] ?? null;
-        if ($incomeType === 'official') {
-            $raw += 8;
-        } elseif ($empType && $empType !== 'unemployed' && $empType !== 'student') {
-            $recs[] = ['type' => 'F', 'priority' => 'medium', 'text' => 'official_income_helps'];
+        if ($hasExtendedData) {
+            // --- Официальный доход (CRM) ---
+            $incomeType = $d['income_type'] ?? null;
+            if ($incomeType === 'official') {
+                $raw += 5;
+            } elseif ($empType && $empType !== 'unemployed' && $empType !== 'student') {
+                $recs[] = ['type' => 'F', 'priority' => 'medium', 'text' => 'official_income_helps'];
+            }
+
+            // --- Банковская история (CRM) ---
+            $bankMonths = (int) ($d['bank_history_months'] ?? 0);
+            if ($bankMonths >= 6)      $raw += 5;
+            elseif ($bankMonths >= 3)  $raw += 3;
+            else $recs[] = ['type' => 'F', 'priority' => 'medium', 'text' => 'bank_statement_helps'];
+
+            // --- Стабильность баланса (CRM) ---
+            if ($d['bank_balance_stable'] ?? false) $raw += 2;
+
+            // --- Депозиты и инвестиции (CRM) ---
+            if ($d['has_fixed_deposit'] ?? false) $raw += 1;
+            if ($d['has_investments'] ?? false)   $raw += 1;
         }
 
-        // --- Банковская история (0-7) ---
-        $bankMonths = (int) ($d['bank_history_months'] ?? 0);
-        if ($bankMonths >= 6) {
-            $raw += 7;
-        } elseif ($bankMonths >= 3) {
-            $raw += 4;
-        } else {
-            $recs[] = ['type' => 'F', 'priority' => 'medium', 'text' => 'bank_statement_helps'];
-        }
-
-        // --- Стабильность баланса (0-3) ---
-        if ($d['bank_balance_stable'] ?? false) {
-            $raw += 3;
-        }
-
-        // --- Депозиты и инвестиции (0-2) ---
-        if ($d['has_fixed_deposit'] ?? false) $raw += 1;
-        if ($d['has_investments'] ?? false)   $raw += 1;
+        // maxRaw зависит от доступных данных:
+        // Публичный: занятость(45) + доход(50) = 95 => нормализуем на 95
+        // CRM: +5+5+2+1+1 = 109 => нормализуем на 109
+        $maxRaw = $hasExtendedData ? 109 : 95;
 
         $score = (int) round(min($raw / $maxRaw * 100, 100));
 
