@@ -4,7 +4,10 @@
         <!-- Header -->
         <header class="fixed top-0 inset-x-0 z-50 h-14 bg-white border-b border-gray-100 flex items-center gap-3 px-4 sm:px-6">
             <a href="/" class="flex items-center shrink-0">
-                <LogoBrand size="1.4rem" />
+                <img v-if="brand?.isWhiteLabel && brand?.logoUrl"
+                     :src="brand.logoUrl" :alt="brand.agencyName"
+                     class="h-7 max-w-[140px] object-contain" />
+                <LogoBrand v-else size="1.4rem" />
             </a>
 
             <!-- Mobile page title -->
@@ -299,6 +302,34 @@ function toggleLocale() {
 const router     = useRouter();
 const route      = useRoute();
 const publicAuth = usePublicAuthStore();
+
+// White-label branding
+const brand = ref(null);
+async function loadBrand() {
+    try {
+        const slug = new URLSearchParams(window.location.search).get('agency');
+        const headers = slug ? { 'X-Agency-Slug': slug } : {};
+        const res = await publicPortalApi.branding(headers);
+        brand.value = res.data?.data;
+        if (brand.value?.isWhiteLabel) {
+            // Динамический title и favicon
+            document.title = brand.value.agencyName + ' — Visa Portal';
+            if (brand.value.faviconUrl) {
+                const link = document.querySelector("link[rel~='icon']") || document.createElement('link');
+                link.rel = 'icon';
+                link.href = brand.value.faviconUrl;
+                document.head.appendChild(link);
+            }
+            // CSS custom properties для динамических цветов
+            if (brand.value.primaryColor) {
+                document.documentElement.style.setProperty('--brand-primary', brand.value.primaryColor);
+            }
+            if (brand.value.secondaryColor) {
+                document.documentElement.style.setProperty('--brand-secondary', brand.value.secondaryColor);
+            }
+        }
+    } catch { /* default brand */ }
+}
 const showNewCase = ref(false);
 
 const newCaseForm = ref({ country_code: '', visa_type: '' });
@@ -506,6 +537,7 @@ function logout() {
 }
 
 onMounted(() => {
+    loadBrand();
     if (publicAuth.isLoggedIn) {
         loadStatusSummary();
     }

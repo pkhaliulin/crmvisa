@@ -27,6 +27,9 @@ publicApi.interceptors.response.use(
 );
 
 export const publicPortalApi = {
+    // Branding (white-label)
+    branding:  (headers = {}) => publicApi.get('/branding', { headers }),
+
     // Auth
     sendOtp:   (phone)       => publicApi.post('/auth/send-otp', { phone }),
     verifyOtp: (phone, code) => publicApi.post('/auth/verify-otp', { phone, code }),

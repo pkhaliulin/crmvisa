@@ -24,6 +24,12 @@ Route::post('marketplace/{slug}/lead', [MarketplaceController::class, 'sendLead'
 // Telegram Bot Webhook
 Route::post('telegram/webhook', [TelegramBotController::class, 'webhook']);
 
+// White-label branding -- без авторизации
+Route::get('public/branding', function (\Illuminate\Http\Request $request) {
+    $brand = app(\App\Modules\Agency\Services\BrandService::class)->resolve($request);
+    return \App\Support\Helpers\ApiResponse::success($brand->toArray());
+})->middleware([\App\Http\Middleware\ResolveBrand::class]);
+
 // Публичный портал -- без авторизации
 Route::prefix('public')->middleware('locale')->group(function () {
     // Справочники (публичные, без авторизации)
