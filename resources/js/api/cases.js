@@ -39,6 +39,10 @@ export const casesApi = {
     aiAnalyze:    (caseId, itemId) => api.post(`/cases/${caseId}/checklist/${itemId}/ai-analyze`),
     aiRiskScore:  (caseId) => api.get(`/cases/${caseId}/ai-risk`),
 
+    // AI-генерация документов
+    generateDocTypes: (caseId) => api.get(`/cases/${caseId}/generate-document/types`),
+    generateDoc:      (caseId, data) => api.post(`/cases/${caseId}/generate-document`, data),
+
     // Bulk actions
     bulkAssign:   (data) => api.post('/cases/bulk/assign', data),
     bulkPriority: (data) => api.post('/cases/bulk/priority', data),

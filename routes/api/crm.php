@@ -114,6 +114,10 @@ Route::middleware(['auth:api', 'role:owner,manager,superadmin', 'plan.active', '
     // AI-оценка рисков кейса
     Route::get('cases/{caseId}/ai-risk', [ChecklistController::class, 'caseRiskScore']);
 
+    // AI-генерация документов
+    Route::get('cases/{caseId}/generate-document/types', [\App\Modules\Document\Controllers\DocumentGenerationController::class, 'types']);
+    Route::post('cases/{caseId}/generate-document',      [\App\Modules\Document\Controllers\DocumentGenerationController::class, 'generate']);
+
     // Visa Case Engine
     Route::prefix('cases/{id}/engine')->group(function () {
         Route::get('readiness',              [CaseEngineController::class, 'readiness']);

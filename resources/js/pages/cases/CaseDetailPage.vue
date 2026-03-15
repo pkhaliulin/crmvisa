@@ -377,6 +377,9 @@
         <!-- ===== AI RISK DASHBOARD ===== -->
         <CaseAiDashboard :case-id="id" ref="aiDashboardRef" />
 
+        <!-- ===== AI DOCUMENT GENERATION ===== -->
+        <DocGeneratePanel :case-id="id" />
+
         <!-- ===== TIMELINE (collapsed) ===== -->
         <div class="bg-white rounded-xl border border-gray-100">
           <button @click="timelineOpen = !timelineOpen"
@@ -843,6 +846,7 @@ import CheckpointsList from '@/components/engine/CheckpointsList.vue';
 import FormWizard from '@/components/engine/FormWizard.vue';
 import CaseGuidancePanel from '@/components/engine/CaseGuidancePanel.vue';
 import CaseAiDashboard from '@/components/CaseAiDashboard.vue';
+import DocGeneratePanel from '@/components/DocGeneratePanel.vue';
 import { useAuthStore } from '@/stores/auth';
 import { usersApi } from '@/api/users';
 import { formatPhone } from '@/utils/format';
